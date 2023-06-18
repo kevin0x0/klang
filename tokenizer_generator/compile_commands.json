@@ -1,0 +1,17 @@
+[
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/graph.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/graph.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/graph.c"
+ }
+]
