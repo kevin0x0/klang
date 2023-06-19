@@ -2,7 +2,7 @@
 #define KEVCC_TOKENIZER_GENERATOR_INCLUDE_FINITE_AUTOMATA_ARRAY_SET_ARRAY_H
 
 #include "tokenizer_generator/include/finite_automata/bitset/bitset.h"
-#include "tokenizer_generator/include/general/int_type.h"
+#include "tokenizer_generator/include/general/global_def.h"
 
 typedef struct tagKevSetArray {
   KevBitSet** begin;

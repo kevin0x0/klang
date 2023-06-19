@@ -1,5 +1,4 @@
 #include "tokenizer_generator/include/finite_automata/hashmap/address_map.h"
-#include "tokenizer_generator/include/general/int_type.h"
 
 #include <stdlib.h>
 

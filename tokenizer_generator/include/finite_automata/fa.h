@@ -2,8 +2,7 @@
 #define KEVCC_TOKENIZER_GENERATOR_INCLUDE_FINITE_AUTOMATA_NFA_H
 
 #include "tokenizer_generator/include/finite_automata/graph.h"
-#include "tokenizer_generator/include/general/int_type.h"
-#include <stdint.h>
+#include "tokenizer_generator/include/general/global_def.h"
 
 #define KEV_NFA_SYMBOL_EPSILON        (-1)
 #define KEV_NFA_SYMBOL_EMPTY          (-2)
@@ -25,7 +24,7 @@ KevFA* kev_fa_create_copy(KevFA* src);
 KevFA* kev_fa_create_set(KevGraphNodeList* state_list, KevGraphNode* start, KevGraphNode* accept);
 void kev_fa_delete(KevFA* nfa);
 
-static inline bool kev_fa_add_symbol(KevFA* nfa, int64_t symbol);
+static inline bool kev_nfa_add_symbol(KevFA* nfa, int64_t symbol);
 uint64_t kev_fa_state_labeling(KevFA* nfa, uint64_t start_number);
 
 /* Do concatenation between 'dest' and 'src'. 
@@ -49,7 +48,7 @@ bool kev_dfa_minimization(KevFA* dfa, uint64_t* pre_partition);
 
 /*begin the inline function definition */
 
-static inline bool kev_fa_add_symbol(KevFA* nfa, int64_t symbol) {
+static inline bool kev_nfa_add_symbol(KevFA* nfa, int64_t symbol) {
   if (symbol == KEV_NFA_SYMBOL_EMPTY) return true;
   return kev_graphnode_connect(nfa->start_state, nfa->accept_states, symbol);
 }
@@ -60,10 +59,10 @@ static inline bool kev_nfa_kleene(KevFA* nfa) {
 }
 
 static inline KevGraphNode* kev_fa_get_start_state(KevFA* nfa) {
-  return nfa ? nfa->start_state : NULL;
+  return nfa->start_state;
 }
 static inline KevGraphNode* kev_fa_get_accept_state(KevFA* nfa) {
-  return nfa ? nfa->accept_states : NULL;
+  return nfa->accept_states;
 }
 
 #endif

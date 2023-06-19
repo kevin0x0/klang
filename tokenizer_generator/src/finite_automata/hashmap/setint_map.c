@@ -1,6 +1,5 @@
 #include "tokenizer_generator/include/finite_automata/hashmap/setint_map.h"
 #include "tokenizer_generator/include/finite_automata/bitset/bitset.h"
-#include "tokenizer_generator/include/general/int_type.h"
 
 #include <stdlib.h>
 

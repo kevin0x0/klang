@@ -2,7 +2,7 @@
 #define KEVCC_TOKENIZER_GENERATOR_INCLUDE_FINITE_AUTOMATA_HASHMAP_INTSET_MAP_H
 
 #include "tokenizer_generator/include/finite_automata/bitset/bitset.h"
-#include "tokenizer_generator/include/general/int_type.h"
+#include "tokenizer_generator/include/general/global_def.h"
 
 typedef struct tagKevIntSetMapNode {
   uint64_t key;

@@ -1,5 +1,4 @@
 #include "tokenizer_generator/include/finite_automata/queue/int_queue.h"
-#include "tokenizer_generator/include/general/int_type.h"
 
 #include <stdint.h>
 #include <stdlib.h>

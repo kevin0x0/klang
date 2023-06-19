@@ -1,7 +1,6 @@
 #include "tokenizer_generator/include/finite_automata/fa.h"
 #include "tokenizer_generator/include/finite_automata/graph.h"
 #include "tokenizer_generator/include/finite_automata/object_pool/fa_pool.h"
-#include <stdint.h>
 
 
 #define KEV_NFA_STATE_NAME_PLACE_HOLDER   (0)

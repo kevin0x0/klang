@@ -1,7 +1,7 @@
 #ifndef KEVCC_TOKENIZER_GENERATOR_INCLUDE_FINITE_AUTOMATA_QUEUE_INT_QUEUE_H
 #define KEVCC_TOKENIZER_GENERATOR_INCLUDE_FINITE_AUTOMATA_QUEUE_INT_QUEUE_H
 
-#include "tokenizer_generator/include/general/int_type.h"
+#include "tokenizer_generator/include/general/global_def.h"
 
 typedef struct tagKevIntQueue {
   uint64_t* array;

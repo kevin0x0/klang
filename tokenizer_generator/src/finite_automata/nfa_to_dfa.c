@@ -5,7 +5,6 @@
 #include "tokenizer_generator/include/finite_automata/queue/int_queue.h"
 #include "tokenizer_generator/include/finite_automata/array/set_array.h"
 #include "tokenizer_generator/include/finite_automata/array/node_array.h"
-#include "tokenizer_generator/include/general/int_type.h"
 
 #include <stdlib.h>
 
