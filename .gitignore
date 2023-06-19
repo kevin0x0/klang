@@ -3,4 +3,5 @@
 *.so
 *.exe
 compile_commands.json
+bin/
 
