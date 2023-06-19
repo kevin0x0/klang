@@ -37,8 +37,6 @@ static inline bool kev_bitset_empty(KevBitSet* set);
 
 
 static inline bool kev_bitset_set(KevBitSet* bitset, uint64_t bit) {
-  if (!bitset) return false;
-
   uint64_t i = bit >> KEV_BITSET_SHIFT;
   if (i >= bitset->length && !kev_bitset_expand(bitset, bit + 1)) {
     return false;
@@ -48,15 +46,12 @@ static inline bool kev_bitset_set(KevBitSet* bitset, uint64_t bit) {
 }
 
 static inline void kev_bitset_clear(KevBitSet* bitset, uint64_t bit) {
-  if (!bitset) return;
   uint64_t i = bit >> KEV_BITSET_SHIFT;
   if (i < bitset->length)
     bitset->bits[i] &= ~((uint64_t)0x1 << (bit & KEV_BITSET_MASK));
 }
 
 static inline bool kev_bitset_has_element(KevBitSet* bitset, uint64_t bit) {
-  if (!bitset) return false;
-
   uint64_t i = bit >> KEV_BITSET_SHIFT;
   if (i >= bitset->length) {
     return false;
@@ -69,7 +64,6 @@ static inline uint64_t kev_bitset_iterate_begin(KevBitSet* bitset) {
 }
 
 static inline bool kev_bitset_empty(KevBitSet* set) {
-  if (!set) return true;
   for (uint64_t i = 0; i < set->length; ++i) {
     if (set->bits[i]) return false;
   }

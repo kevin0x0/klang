@@ -27,8 +27,6 @@ void kev_nodearray_destroy(KevNodeArray* array) {
 }
 
 bool kev_nodearray_push_back(KevNodeArray* array,KevGraphNode* node) {
-  if (!array) return false;
-
   if (array->current == array->end &&
       !kev_nodearray_expand(array)) {
     return false;
@@ -38,7 +36,6 @@ bool kev_nodearray_push_back(KevNodeArray* array,KevGraphNode* node) {
 }
 
 inline bool kev_nodearray_expand(KevNodeArray* array) {
-  if (!array) return false;
   uint64_t new_size = kev_nodearray_size(array) * 2;
   KevGraphNode** new_array = (KevGraphNode**)realloc(array->begin, sizeof (KevGraphNode*) * new_size);
   if (!new_array) return false;

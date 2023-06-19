@@ -20,7 +20,7 @@ GEN_INC_PATH = $(INC_PATH)general/
 FA_INC_PATH = $(INC_PATH)finite_automata/
 FA_PATH = $(SRC_PATH)finite_automata/
 
-graph_test.exe : graph_test.c $(FA_PATH)graph.c $(FA_PATH)object_pool/nfa_pool.c $(FA_PATH)object_pool/node_pool.c $(FA_PATH)object_pool/edge_pool.c $(FA_PATH)hashmap/address_map.c $(FA_PATH)object_pool/graph_pool.c $(FA_PATH)nfa.c $(FA_PATH)bitset/bitset.c $(FA_PATH)array/node_array.c $(FA_PATH)queue/int_queue.c $(FA_PATH)hashmap/intset_map.c $(FA_PATH)hashmap/setint_map.c $(FA_PATH)object_pool/intsetmap_node_pool.c $(FA_PATH)nfa_to_dfa.c $(FA_PATH)array/set_array.c $(FA_PATH)dfa.c 
+graph_test.exe : graph_test.c $(FA_PATH)graph.c $(FA_PATH)object_pool/fa_pool.c $(FA_PATH)object_pool/node_pool.c $(FA_PATH)object_pool/edge_pool.c $(FA_PATH)hashmap/address_map.c $(FA_PATH)object_pool/graph_pool.c $(FA_PATH)fa.c $(FA_PATH)bitset/bitset.c $(FA_PATH)array/node_array.c $(FA_PATH)queue/int_queue.c $(FA_PATH)hashmap/intset_map.c $(FA_PATH)hashmap/setint_map.c $(FA_PATH)object_pool/intsetmap_node_pool.c $(FA_PATH)nfa_to_dfa.c $(FA_PATH)array/set_array.c
 	$(CC) -o $@ $^ $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 

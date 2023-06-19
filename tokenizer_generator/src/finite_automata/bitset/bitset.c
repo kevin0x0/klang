@@ -1,7 +1,6 @@
 #include "tokenizer_generator/include/finite_automata/bitset/bitset.h"
 #include "tokenizer_generator/include/general/int_type.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 
 #define FIND_BIT_MASK32       ((uint64_t)0xFFFFFFFF)
@@ -10,7 +9,6 @@
 #define FIND_BIT_MASK4        ((uint64_t)0xF);
 
 bool kev_bitset_expand(KevBitSet* bitset, uint64_t new_size) {
-  if (!bitset) return false;
   new_size = new_size & KEV_BITSET_MASK ? (new_size >> KEV_BITSET_SHIFT) + 1 : new_size >> KEV_BITSET_SHIFT;
   if (new_size > bitset->length) {
     uint64_t* new_bits = (uint64_t*)realloc(bitset->bits, sizeof (uint64_t) * new_size);
@@ -101,8 +99,6 @@ void kev_bitset_delete(KevBitSet* bitset) {
 }
 
 bool kev_bitset_intersection(KevBitSet* dest, KevBitSet* src) {
-  if (!dest || !src) return false;
-  
   uint64_t min_len = dest->length > src->length ? src->length : dest->length;
   uint64_t i = 0;
   uint64_t* dest_bits = dest->bits;
@@ -119,8 +115,6 @@ bool kev_bitset_intersection(KevBitSet* dest, KevBitSet* src) {
 }
 
 bool kev_bitset_union(KevBitSet* dest, KevBitSet* src) {
-  if (!dest || !src) return false;
-
   if (dest->length < src->length && !kev_bitset_expand(dest, src->length << KEV_BITSET_SHIFT)) {
     return false;
   }
@@ -134,7 +128,6 @@ bool kev_bitset_union(KevBitSet* dest, KevBitSet* src) {
 }
 
 bool kev_bitset_completion(KevBitSet* bitset) {
-  if (!bitset) return false;
   uint64_t len = bitset->length;
   uint64_t* bits = bitset->bits;
   for (uint64_t i = 0; i < len; ++i)
@@ -143,7 +136,6 @@ bool kev_bitset_completion(KevBitSet* bitset) {
 }
 
 bool kev_bitset_equal(KevBitSet* set1, KevBitSet* set2) {
-  if (!set1 || !set2) return false;
   uint64_t min_length = set1->length < set2->length ? set1->length : set2->length;
   for (uint64_t i = 0; i < min_length; ++i) {
     if (set1->bits[i] != set2->bits[i])
@@ -173,7 +165,6 @@ static inline uint8_t kev_bitset_find_first_bit(uint64_t bits) {
 }
 
 uint64_t kev_bitset_iterate_next(KevBitSet* bitset, uint64_t previous) {
-  if (!bitset) return previous;
   uint64_t index = (previous + 1) >> KEV_BITSET_SHIFT;
   if (index >= bitset->length) return previous;
   uint64_t bit = (previous + 1) & KEV_BITSET_MASK;

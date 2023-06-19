@@ -8,8 +8,6 @@ inline static uint64_t kev_address_map_hashing(void* key) {
 }
 
 static void kev_address_map_rehash(KevAddressMap* to, KevAddressMap* from) {
-  if (!to || !from) return;
-
   uint64_t from_capacity = from->capacity;
   uint64_t to_capacity = to->capacity;
   KevAddressMapNode** from_array = from->array;
@@ -34,8 +32,6 @@ static void kev_address_map_rehash(KevAddressMap* to, KevAddressMap* from) {
 }
 
 static bool kev_address_map_expand(KevAddressMap* map) {
-  if (!map) return false;
-
   KevAddressMap new_map;
   if (!kev_address_map_init(&new_map, map->capacity << 1))
     return false;

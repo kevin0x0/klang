@@ -16,8 +16,6 @@ inline static uint64_t kev_setint_map_hashing(KevBitSet* key) {
 }
 
 static void kev_setint_map_rehash(KevSetIntMap* to, KevSetIntMap* from) {
-  if (!to || !from) return;
-
   uint64_t from_capacity = from->capacity;
   uint64_t to_capacity = to->capacity;
   KevSetIntMapNode** from_array = from->array;
@@ -42,8 +40,6 @@ static void kev_setint_map_rehash(KevSetIntMap* to, KevSetIntMap* from) {
 }
 
 static bool kev_setint_map_expand(KevSetIntMap* map) {
-  if (!map) return false;
-
   KevSetIntMap new_map;
   if (!kev_setint_map_init(&new_map, map->capacity << 1))
     return false;
@@ -132,8 +128,6 @@ KevSetIntMapNode* kev_setint_map_search(KevSetIntMap* map, KevBitSet* key) {
 }
 
 void kev_setint_map_make_empty(KevSetIntMap* map) {
-  if (!map) return;
-
   KevSetIntMapNode** array = map->array;
   uint64_t capacity = map->capacity;
   for (uint64_t i = 0; i < capacity; ++i) {

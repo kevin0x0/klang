@@ -1,13 +1,11 @@
-#include "tokenizer_generator/include/finite_automata/dfa.h"
+#include "tokenizer_generator/include/finite_automata/fa.h"
 #include "tokenizer_generator/include/finite_automata/graph.h"
-#include "tokenizer_generator/include/finite_automata/nfa.h"
 #include "tokenizer_generator/include/finite_automata/hashmap/address_map.h"
 #include "tokenizer_generator/include/finite_automata/hashmap/intset_map.h"
 #include "tokenizer_generator/include/finite_automata/hashmap/setint_map.h"
 #include "tokenizer_generator/include/finite_automata/bitset/bitset.h"
 #include "tokenizer_generator/include/finite_automata/array/node_array.h"
 #include "tokenizer_generator/include/finite_automata/queue/int_queue.h"
-#include "tokenizer_generator/include/finite_automata/nfa_to_dfa.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -36,14 +34,14 @@ void print_graph(FILE* out, KevGraph* graph) {
   }
 }
 
-void print_nfa(FILE* out, KevNFA* nfa) {
-  if (!nfa || !nfa->start_state || !nfa->accept_state) return;
+void print_nfa(FILE* out, KevFA* nfa) {
+  if (!nfa || !nfa->start_state || !nfa->accept_states) return;
   fprintf(out, "start: %llu\n", nfa->start_state->attr);
-  fprintf(out, "accept: %llu\n", nfa->accept_state->attr);
+  fprintf(out, "accept: %llu\n", nfa->accept_states->attr);
   print_graph(out, &nfa->transition);
 }
 
-void print_dfa(FILE* out, KevDFA* dfa) {
+void print_dfa(FILE* out, KevFA* dfa) {
   if (!dfa || !dfa->start_state) return;
   fprintf(out, "start: %llu\n", dfa->start_state->attr);
   KevGraphNode* accept_node = dfa->accept_states;
@@ -63,16 +61,41 @@ void print_bitset(FILE* out, KevBitSet* bitset) {
   fprintf(out, "\n");
 }
 
+void print_acc_mapping_array(FILE* out, KevFA* dfa, uint64_t* array) {
+  if (!dfa || !array) return;
+  KevGraphNode* accept_node = dfa->accept_states;
+  uint64_t i = 0;
+  while (accept_node) {
+    fprintf(out, "accept node %llu is from %llust nfa\n", accept_node->attr, array[i++] + 1);
+    accept_node = accept_node->next;
+  }
+}
+
 int main(void) {
   while (true) {
-    KevNFA* nfa1 = kev_nfa_create('a');
-    kev_nfa_kleene(nfa1);
-    KevNFA* nfa_array[2] = { nfa1, NULL };
-    KevDFA* dfa = kev_nfa_to_dfa(nfa_array, NULL);
-    kev_nfa_state_labeling((KevNFA*)dfa, 0);
-    //print_dfa(stdout, dfa);
-    kev_dfa_delete(dfa);
-    kev_nfa_delete(nfa1);
+    KevFA* nfa1 = kev_fa_create('a');
+    KevFA* nfa2 = kev_fa_create('b');
+    KevFA* nfa3 = kev_fa_create('c');
+    KevFA* nfa4 = kev_fa_create('d');
+    KevFA* nfa5 = kev_fa_create('e');
+    KevFA* nfa6 = kev_fa_create('f');
+    KevFA* nfa7 = kev_fa_create('g');
+    uint64_t* acc_map = NULL;
+    KevFA* nfa_array[8] = { nfa1, nfa2, nfa3, nfa4, nfa5, nfa6, nfa7, NULL };
+    KevFA* dfa = kev_nfa_to_dfa(nfa_array, NULL);
+    kev_fa_state_labeling(dfa, 0);
+    print_dfa(stdout, dfa);
+    print_acc_mapping_array(stdout, dfa, acc_map);
+    putchar('\n');
+    kev_fa_delete(dfa);
+    kev_fa_delete(nfa1);
+    kev_fa_delete(nfa2);
+    kev_fa_delete(nfa3);
+    kev_fa_delete(nfa4);
+    kev_fa_delete(nfa5);
+    kev_fa_delete(nfa6);
+    kev_fa_delete(nfa7);
+    free(acc_map);
   }
 
 
@@ -160,14 +183,14 @@ int main(void) {
   }
 
   while (true) {
-    KevNFA* nfa1 = kev_nfa_create('b');
-    KevNFA* nfa2 = kev_nfa_create('a');
+    KevFA* nfa1 = kev_fa_create('b');
+    KevFA* nfa2 = kev_fa_create('a');
     kev_nfa_alternation(nfa1, nfa2);
-    kev_nfa_state_labeling(nfa1, 0);
+    kev_fa_state_labeling(nfa1, 0);
     print_nfa(stdout, nfa1);
     putchar('\n');
     putchar('\n');
-    kev_nfa_delete(nfa1);
+    kev_fa_delete(nfa1);
   }
 
   while (true) {

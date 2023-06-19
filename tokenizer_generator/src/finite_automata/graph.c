@@ -82,13 +82,12 @@ inline KevGraphNode* kev_graphnode_create(KevGraphNodeAttr attr) {
 }
 
 inline void kev_graphnode_delete(KevGraphNode* node) {
+  if (!node) return;
   kev_graph_edgelist_delete(node->edges);
   kev_graph_node_pool_deallocate(node);
 }
 
 bool kev_graphnode_connect(KevGraphNode* from, KevGraphNode* to, KevGraphEdgeAttr attr) {
-  if (!from || !to) return false;
-
   KevGraphEdgeList* new_edge = kev_graph_edge_pool_allocate();
   if (!new_edge) return false;
   new_edge->next = from->edges;

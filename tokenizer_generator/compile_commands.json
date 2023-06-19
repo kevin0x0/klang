@@ -13,5 +13,215 @@
    "C:/Users/flamm/work/kevcc/"
   ],
   "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/graph.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/nfa_to_dfa.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/nfa_to_dfa.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/nfa_to_dfa.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/graph_pool.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/graph_pool.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/graph_pool.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/node_pool.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/node_pool.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/node_pool.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/edge_pool.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/edge_pool.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/edge_pool.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/intsetmap_node_pool.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/intsetmap_node_pool.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/intsetmap_node_pool.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/address_map.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/hashmap/address_map.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/hashmap/address_map.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/intset_map.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/hashmap/intset_map.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/hashmap/intset_map.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/setint_map.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/hashmap/setint_map.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/hashmap/setint_map.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/bitset.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/bitset/bitset.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/bitset/bitset.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/node_array.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/array/node_array.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/array/node_array.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/set_array.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/array/set_array.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/array/set_array.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/int_queue.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/queue/int_queue.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/queue/int_queue.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/fa.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/fa.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/fa.c"
+ },
+ {
+  "directory": "C:\\Users\\flamm\\work\\kevcc\\tokenizer_generator",
+  "arguments": [
+   "gcc",
+   "-c",
+   "-o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/bin/fa_pool.o",
+   "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/fa_pool.c",
+   "-g",
+   "-Wall",
+   "-I",
+   "C:/Users/flamm/work/kevcc/"
+  ],
+  "file": "C:/Users/flamm/work/kevcc/tokenizer_generator/src/finite_automata/object_pool/fa_pool.c"
  }
 ]

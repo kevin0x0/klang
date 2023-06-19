@@ -28,8 +28,6 @@ void kev_setarray_destroy(KevSetArray* array) {
 }
 
 bool kev_setarray_push_back(KevSetArray* array, KevBitSet* set) {
-  if (!array) return false;
-
   if (array->current == array->end &&
       !kev_setarray_expand(array)) {
     return false;
@@ -39,7 +37,6 @@ bool kev_setarray_push_back(KevSetArray* array, KevBitSet* set) {
 }
 
 inline bool kev_setarray_expand(KevSetArray* array) {
-  if (!array) return false;
   uint64_t new_size = kev_setarray_size(array) * 2;
   KevBitSet** new_array = (KevBitSet**)realloc(array->begin, sizeof (KevBitSet*) * new_size);
   if (!new_array) return false;

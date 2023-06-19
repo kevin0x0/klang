@@ -10,8 +10,14 @@ typedef struct tagKevIntSetMapNode {
   struct tagKevIntSetMapNode* next;
 } KevIntSetMapNode;
 
+typedef struct tagKevIntSetMapBucket {
+  KevIntSetMapNode* map_node_list;
+  struct tagKevIntSetMapBucket* next;
+} KevIntSetMapBucket;
+
 typedef struct tagKevIntSetMap {
-  KevIntSetMapNode** array;
+  KevIntSetMapBucket* array;
+  KevIntSetMapBucket* bucket_head;
   uint64_t capacity;
   uint64_t size;
 } KevIntSetMap;
@@ -28,10 +34,7 @@ static inline KevIntSetMapNode* kev_intset_map_iterate_begin(KevIntSetMap* map);
 KevIntSetMapNode* kev_intset_map_iterate_next(KevIntSetMap* map, KevIntSetMapNode* current);
 
 static inline KevIntSetMapNode* kev_intset_map_iterate_begin(KevIntSetMap* map) {
-  if (!map) return NULL;
-  for (uint64_t i = 0; i < map->capacity; ++i)
-    if (map->array[i]) return map->array[i];
-  return NULL;
+    return map->bucket_head ? map->bucket_head->map_node_list : NULL;
 }
 
 

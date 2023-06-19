@@ -46,13 +46,12 @@ bool kev_graphnode_connect(KevGraphNode* from, KevGraphNode* to, KevGraphEdgeAtt
 static inline KevGraphEdgeList* kev_graphnode_get_edges(KevGraphNode* node);
 
 static inline KevGraphNodeList* kev_graphnode_list_insert(KevGraphNodeList* lst, KevGraphNode* node) {
-  if (!node) return NULL;
+  if (!node) return lst;
   node->next = lst;
   return node;
 }
 
 static inline void kev_graph_add_node(KevGraph* graph, KevGraphNode* node) {
-  if (!graph || !node) return;
   node->next = NULL;
   if (graph->tail) {
     graph->tail->next = node;
@@ -64,14 +63,12 @@ static inline void kev_graph_add_node(KevGraph* graph, KevGraphNode* node) {
 }
 
 static inline KevGraphNodeList* kev_graph_get_nodes(KevGraph* graph) {
-    return graph ? graph->head : NULL;
+    return graph->head;
 }
 
 static inline KevGraphEdgeList* kev_graphnode_get_edges(KevGraphNode* node) {
-  return node ? node->edges : NULL;
+  return node->edges;
 }
-
-void kev_graph_pool_free(void);
 
 
 

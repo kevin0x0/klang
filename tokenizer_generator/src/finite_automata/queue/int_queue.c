@@ -33,7 +33,6 @@ void kev_intqueue_destroy(KevIntQueue* queue) {
 }
 
 bool kev_intqueue_expand(KevIntQueue* queue) {
-  if (!queue) return false;
   uint64_t new_size = queue->capacity * 2;
   uint64_t* array = (uint64_t*)malloc(new_size * sizeof (uint64_t));
   if (!array) return false;
