@@ -1,0 +1,56 @@
+#include "tokenizer_generator/include/finite_automaton/queue/int_queue.h"
+
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define KEV_INTQUEUE_DEFAULT_SIZE   (32)
+
+bool kev_intqueue_init(KevIntQueue* queue) {
+  if (!queue) return false;
+  queue->array = NULL;
+  queue->head = 0;
+  queue->array = (uint64_t*)malloc(sizeof (uint64_t) * KEV_INTQUEUE_DEFAULT_SIZE);
+  if (!queue->array) {
+    queue->tail = 0;
+    queue->capacity = 0;
+    return false;
+  }
+  queue->tail = 0;
+  queue->capacity = 8;
+  return true;
+}
+
+void kev_intqueue_destroy(KevIntQueue* queue) {
+  if (queue) {
+    free(queue->array);
+    queue->array = NULL;
+    queue->capacity = 0;
+    queue->head = 0;
+    queue->tail = 0;
+  }
+}
+
+bool kev_intqueue_expand(KevIntQueue* queue) {
+  uint64_t new_size = queue->capacity * 2;
+  uint64_t* array = (uint64_t*)malloc(new_size * sizeof (uint64_t));
+  if (!array) return false;
+  if (queue->head < queue->tail) {
+    memcpy(array, queue->array + queue->head, sizeof (uint64_t) * (queue->tail - queue->head));
+    free(queue->array);
+    queue->array = array;
+    queue->tail = queue->tail - queue->head;
+    queue->head = 0;
+    queue->capacity = new_size;
+  } else if (queue->head > queue->tail) {
+    memcpy(array, queue->array + queue->head, sizeof (uint64_t) * (queue->capacity - queue->head));
+    memcpy(array + (queue->capacity - queue->head), queue->array, queue->tail * sizeof (uint64_t));
+    queue->tail = queue->tail + queue->capacity - queue->head;
+    queue->head = 0;
+    queue->capacity = new_size;
+  } else {
+    queue->capacity = new_size;
+  }
+  return true;
+}
+
