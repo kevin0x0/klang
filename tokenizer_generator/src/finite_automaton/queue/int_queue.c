@@ -1,6 +1,5 @@
 #include "tokenizer_generator/include/finite_automaton/queue/int_queue.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 

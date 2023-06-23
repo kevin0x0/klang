@@ -2,7 +2,7 @@
 #define KEVCC_TOKENIZER_GENERATOR_INCLUDE_FINITE_AUTOMATON_LIST_BITSET_CROSS_LIST_H
 /* used in kev_dfa_minimization(hopcroft algorithm) */
 
-#include "tokenizer_generator/include/finite_automaton/bitset/bitset.h"
+#include "tokenizer_generator/include/finite_automaton/set/bitset.h"
 #include "tokenizer_generator/include/general/global_def.h"
 #include <stdint.h>
 

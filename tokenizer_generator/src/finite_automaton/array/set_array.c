@@ -1,5 +1,4 @@
 #include "tokenizer_generator/include/finite_automaton/array/set_array.h"
-#include "tokenizer_generator/include/finite_automaton/bitset/bitset.h"
 
 #include <stdlib.h>
 

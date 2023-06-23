@@ -1,5 +1,4 @@
 #include "tokenizer_generator/include/finite_automaton/hashmap/intset_map.h"
-#include "tokenizer_generator/include/finite_automaton/bitset/bitset.h"
 #include "tokenizer_generator/include/finite_automaton/object_pool/intsetmap_node_pool.h"
 
 

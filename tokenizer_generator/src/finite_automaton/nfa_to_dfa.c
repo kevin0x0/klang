@@ -1,5 +1,5 @@
 #include "tokenizer_generator/include/finite_automaton/fa.h"
-#include "tokenizer_generator/include/finite_automaton/bitset/bitset.h"
+#include "tokenizer_generator/include/finite_automaton/set/bitset.h"
 #include "tokenizer_generator/include/finite_automaton/hashmap/intset_map.h"
 #include "tokenizer_generator/include/finite_automaton/hashmap/setint_map.h"
 #include "tokenizer_generator/include/finite_automaton/queue/int_queue.h"

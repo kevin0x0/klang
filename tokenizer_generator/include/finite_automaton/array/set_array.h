@@ -1,7 +1,7 @@
 #ifndef KEVCC_TOKENIZER_GENERATOR_INCLUDE_FINITE_AUTOMATON_ARRAY_SET_ARRAY_H
 #define KEVCC_TOKENIZER_GENERATOR_INCLUDE_FINITE_AUTOMATON_ARRAY_SET_ARRAY_H
 
-#include "tokenizer_generator/include/finite_automaton/bitset/bitset.h"
+#include "tokenizer_generator/include/finite_automaton/set/bitset.h"
 #include "tokenizer_generator/include/general/global_def.h"
 
 typedef struct tagKevSetArray {

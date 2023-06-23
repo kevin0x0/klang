@@ -1,6 +1,6 @@
 #include "tokenizer_generator/include/finite_automaton/fa.h"
 #include "tokenizer_generator/include/finite_automaton/graph.h"
-#include "tokenizer_generator/include/finite_automaton/bitset/bitset.h"
+#include "tokenizer_generator/include/finite_automaton/set/bitset.h"
 #include "tokenizer_generator/include/finite_automaton/list/set_cross_list.h"
 #include "tokenizer_generator/include/finite_automaton/hashmap/intset_map.h"
 #include "tokenizer_generator/include/general/global_def.h"
