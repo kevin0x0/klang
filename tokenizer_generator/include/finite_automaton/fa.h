@@ -43,7 +43,7 @@ bool kev_nfa_positive(KevFA* nfa);
  * NFA in the input array of NFA pointers. */
 KevFA* kev_nfa_to_dfa(KevFA** nfa_array, uint64_t** p_accept_state_mapping_array);
 
-KevFA* kev_dfa_minimization(KevFA* dfa, uint64_t* pre_partition);
+KevFA* kev_dfa_minimization(KevFA* dfa, uint64_t* accept_state_mapping);
 
 
 /*begin the inline function definition */

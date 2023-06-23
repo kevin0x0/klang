@@ -7,6 +7,7 @@
 #include "tokenizer_generator/include/finite_automaton/array/node_array.h"
 #include "tokenizer_generator/include/finite_automaton/queue/int_queue.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -71,6 +72,7 @@ void print_acc_mapping_array(FILE* out, KevFA* dfa, uint64_t* array) {
 }
 
 int main(void) {
+  int i = 0;
   while (true) {
     KevFA* nfa1 = kev_fa_create('a');
     KevFA* nfa2 = kev_fa_create('b');
@@ -79,22 +81,16 @@ int main(void) {
     KevFA* nfa5 = kev_fa_create('e');
     KevFA* nfa6 = kev_fa_create('f');
     KevFA* nfa7 = kev_fa_create('g');
-    for (int i = 0; i < 4; ++i) {
-      KevFA* copy1 = kev_fa_create_copy(nfa1);
-      KevFA* copy2 = kev_fa_create_copy(nfa7);
-      kev_nfa_alternation(copy1, copy2);
-      kev_nfa_concatenation(nfa7, copy1);
-      kev_fa_delete(copy1);
-      kev_fa_delete(copy2);
-    }
     uint64_t* acc_map = NULL;
     KevFA* nfa_array[8] = { nfa1, nfa2, nfa3, nfa4, nfa5, nfa6, nfa7, NULL };
     KevFA* dfa = kev_nfa_to_dfa(nfa_array, &acc_map);
-    kev_fa_state_assign_id(dfa, 0);
-    print_dfa(stdout, dfa);
-    print_acc_mapping_array(stdout, dfa, acc_map);
+    KevFA* min_dfa = kev_dfa_minimization(dfa, acc_map);
+    kev_fa_state_assign_id(min_dfa, 0);
+    print_dfa(stdout, min_dfa);
+    print_acc_mapping_array(stdout, min_dfa, acc_map);
     putchar('\n');
     kev_fa_delete(dfa);
+    kev_fa_delete(min_dfa);
     kev_fa_delete(nfa1);
     kev_fa_delete(nfa2);
     kev_fa_delete(nfa3);
@@ -103,6 +99,7 @@ int main(void) {
     kev_fa_delete(nfa6);
     kev_fa_delete(nfa7);
     free(acc_map);
+    fprintf(stderr, "Hello, %d\n", i++);
   }
 
 

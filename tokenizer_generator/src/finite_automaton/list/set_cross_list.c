@@ -1,6 +1,7 @@
 #include "tokenizer_generator/include/finite_automaton/list/set_cross_list.h"
 #include "tokenizer_generator/include/finite_automaton/object_pool/set_cross_list_node_pool.h"
 #include "tokenizer_generator/include/general/global_def.h"
+#include <stdint.h>
 
 void kev_setcrosslist_destroy(KevSetCrossList* crosslist) {
   if (!crosslist) return;
@@ -18,14 +19,26 @@ void kev_setcrosslist_destroy(KevSetCrossList* crosslist) {
   crosslist->tail_sentinel.w_prev = &crosslist->head_sentinel;
 }
 
-KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevBitSet* set) {
+KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevBitSet* set, uint64_t set_size) {
   KevSetCrossListNode* new_node = kev_set_cross_list_node_pool_allocate();
   if (!new_node) return new_node;
   new_node->set = set;
+  new_node->set_size = set_size;
   new_node->w_next = NULL;
   new_node->p_prev = position->p_prev;
   new_node->p_next = position;
   position->p_prev = new_node;
   new_node->p_prev->p_next = new_node;
   return new_node;
+}
+
+uint64_t kev_setcrosslist_size(KevSetCrossList* crosslist) {
+  uint64_t count = 0;
+  KevSetCrossListNode* end = kev_setcrosslist_iterate_end(crosslist);
+  for (KevSetCrossListNode* itr = kev_setcrosslist_iterate_begin(crosslist);
+      itr != end;
+      itr = kev_setcrosslist_iterate_next(itr)) {
+    ++count;
+  }
+  return count;
 }

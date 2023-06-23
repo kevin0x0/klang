@@ -36,6 +36,7 @@ static inline bool kev_bitset_has_element(KevBitSet* bitset, uint64_t bit);
 bool kev_bitset_equal(KevBitSet* set1, KevBitSet* set2);
 static inline bool kev_bitset_empty(KevBitSet* set);
 uint64_t kev_bitset_size(KevBitSet* bitset);
+static inline uint64_t kev_bitset_capacity(KevBitSet* bitset);
 
 
 static inline bool kev_bitset_set(KevBitSet* bitset, uint64_t bit) {
@@ -70,5 +71,9 @@ static inline bool kev_bitset_empty(KevBitSet* set) {
     if (set->bits[i]) return false;
   }
   return true;
+}
+
+static inline uint64_t kev_bitset_capacity(KevBitSet* bitset) {
+  return bitset->length << KEV_BITSET_SHIFT;
 }
 #endif

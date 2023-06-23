@@ -4,9 +4,11 @@
 
 #include "tokenizer_generator/include/finite_automaton/bitset/bitset.h"
 #include "tokenizer_generator/include/general/global_def.h"
+#include <stdint.h>
 
 typedef struct tagKevSetCrossListNode {
   KevBitSet* set;
+  uint64_t set_size;
   struct tagKevSetCrossListNode* p_prev;
   struct tagKevSetCrossListNode* p_next;
   struct tagKevSetCrossListNode* w_prev;
@@ -20,11 +22,12 @@ typedef struct tagKevBitSetCrossList {
 
 static inline bool kev_setcrosslist_init(KevSetCrossList* crosslist);
 void kev_setcrosslist_destroy(KevSetCrossList* crosslist);
-KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevBitSet* set);
+KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevBitSet* set, uint64_t set_size);
 //KevSetCrossListNode* kev_setcrosslist_remove(KevSetCrossListNode* position);
 static inline bool kev_setcrosslist_node_in_worklist(KevSetCrossListNode* node);
 static inline void kev_setcrosslist_add_to_worklist(KevSetCrossList* crosslist, KevSetCrossListNode* position);
 static inline KevSetCrossListNode* kev_setcrosslist_get_workset(KevSetCrossList* crosslist);
+uint64_t kev_setcrosslist_size(KevSetCrossList* crosslist);
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_begin(KevSetCrossList* crosslist);
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_end(KevSetCrossList* crosslist);
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_next(KevSetCrossListNode* current);
@@ -58,9 +61,9 @@ static inline KevSetCrossListNode* kev_setcrosslist_get_workset(KevSetCrossList*
   KevSetCrossListNode* ret = crosslist->head_sentinel.w_next;
   if (crosslist->head_sentinel.w_next == &crosslist->tail_sentinel)
     return ret;
-  ret->w_next = NULL;
   crosslist->head_sentinel.w_next = ret->w_next;
   ret->w_next->w_prev = &crosslist->head_sentinel;
+  ret->w_next = NULL;
   return ret;
 }
 
@@ -69,7 +72,7 @@ static inline KevSetCrossListNode* kev_setcrosslist_iterate_begin(KevSetCrossLis
 }
 
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_end(KevSetCrossList* crosslist) {
-  return &crosslist->head_sentinel;
+  return &crosslist->tail_sentinel;
 }
 
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_next(KevSetCrossListNode* current) {

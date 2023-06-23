@@ -38,19 +38,19 @@ bool kev_fa_init_copy(KevFA* fa, KevFA* src) {
     return false;
   }
 
-  int64_t original_start_symbol = src->start_state->id;
-  int64_t original_accept_symbol = src->accept_states->id;
+  int64_t original_start_id = src->start_state->id;
+  int64_t original_accept_id = src->accept_states->id;
   src->start_state->id = KEV_NFA_STATE_NAME_START_MARK;
   src->accept_states->id = KEV_NFA_STATE_NAME_ACCEPT_MARK;
   if (!kev_graph_init_copy(&fa->transition, &src->transition)) {
     fa->start_state = NULL;
     fa->accept_states = NULL;
-    src->start_state->id = original_start_symbol;
-    src->accept_states->id = original_accept_symbol;
+    src->start_state->id = original_start_id;
+    src->accept_states->id = original_accept_id;
     return false;
   }
-  src->start_state->id = original_start_symbol;
-  src->accept_states->id = original_accept_symbol;
+  src->start_state->id = original_start_id;
+  src->accept_states->id = original_accept_id;
 
   int count = 0;
   KevGraphNode* node = fa->transition.head;
