@@ -72,7 +72,27 @@ void print_acc_mapping_array(FILE* out, KevFA* dfa, uint64_t* array) {
 }
 
 int main(void) {
-  int i = 0;
+  
+  while (false) {
+    KevGraphNode* node0 = kev_graphnode_create(0);
+    KevGraphNode* node1 = kev_graphnode_create(0);
+    KevGraphNode* node2 = kev_graphnode_create(0);
+    kev_graphnode_connect(node1, node2, 'a');
+    kev_graphnode_connect(node2, node2, 'a');
+    kev_graphnode_connect(node0, node1, 'a');
+    node0->next = node1;
+    node1->next = node2;
+    node2->next = NULL;
+    KevFA* dfa = kev_fa_create_set(node0, node0, node1);
+    KevFA* min_dfa = kev_dfa_minimization(dfa, NULL);
+    kev_fa_state_assign_id(min_dfa, 0);
+    print_dfa(stdout, min_dfa);
+    putchar('\n');
+    kev_fa_delete(dfa);
+    kev_fa_delete(min_dfa);
+  }
+
+
   while (true) {
     KevFA* nfa1 = kev_fa_create('a');
     KevFA* nfa2 = kev_fa_create('b');
@@ -81,10 +101,21 @@ int main(void) {
     KevFA* nfa5 = kev_fa_create('e');
     KevFA* nfa6 = kev_fa_create('f');
     KevFA* nfa7 = kev_fa_create('g');
+    KevFA* tmp = kev_fa_create_copy(nfa7);
+    kev_nfa_positive(nfa7);
+    for (int i = 0; i < 100; ++i) {
+      KevFA* copy1 = kev_fa_create_copy(nfa1);
+      KevFA* copy2 = kev_fa_create_copy(tmp);
+      kev_nfa_alternation(copy1, copy2);
+      kev_nfa_concatenation(nfa7, copy1);
+      kev_fa_delete(copy1);
+      kev_fa_delete(copy2);
+    }
+    kev_fa_delete(tmp);
     uint64_t* acc_map = NULL;
     KevFA* nfa_array[8] = { nfa1, nfa2, nfa3, nfa4, nfa5, nfa6, nfa7, NULL };
     KevFA* dfa = kev_nfa_to_dfa(nfa_array, &acc_map);
-    KevFA* min_dfa = kev_dfa_minimization(dfa, acc_map);
+    KevFA* min_dfa = kev_fa_create_copy(dfa);//kev_dfa_minimization(dfa, acc_map);
     kev_fa_state_assign_id(min_dfa, 0);
     print_dfa(stdout, min_dfa);
     print_acc_mapping_array(stdout, min_dfa, acc_map);
@@ -99,7 +130,6 @@ int main(void) {
     kev_fa_delete(nfa6);
     kev_fa_delete(nfa7);
     free(acc_map);
-    fprintf(stderr, "Hello, %d\n", i++);
   }
 
 

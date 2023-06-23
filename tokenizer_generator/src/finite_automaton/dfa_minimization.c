@@ -206,7 +206,7 @@ static uint64_t* kev_indeces_state_ownership(KevSetCrossList* partition, KevGrap
     do {
       state_in_set = next_state;
       ownership[state_in_set] = i;
-    next_state = kev_bitset_iterate_begin(itr->set);
+    next_state = kev_bitset_iterate_next(itr->set, state_in_set);
     } while (next_state != state_in_set);
   }
   return ownership;
@@ -258,8 +258,8 @@ static KevFA* kev_organize_states(KevGraphNode** min_dfa_states, KevFA* dfa, uin
       corresponding_state->id = ++accept_state_number;
       corresponding_state->next = accept_states;
       accept_states = corresponding_state;
-      accept_state_in_dfa = accept_state_in_dfa->next;
     }
+    accept_state_in_dfa = accept_state_in_dfa->next;
   }
   /* construct accept_state_mapping for min DFA */
   if (accept_state_mapping) {
@@ -272,7 +272,7 @@ static KevFA* kev_organize_states(KevGraphNode** min_dfa_states, KevFA* dfa, uin
       min_dfa_accept_state_mapping[accept_state_number - corresponding_state->id] = accept_state_mapping[i++];
       accept_state_in_dfa = accept_state_in_dfa->next;
     }
-    memcpy(accept_state_mapping, min_dfa_accept_state_mapping, min_dfa_state_number * sizeof (uint64_t));
+    memcpy(accept_state_mapping, min_dfa_accept_state_mapping, accept_state_number * sizeof (uint64_t));
     free(min_dfa_accept_state_mapping);
   }
   
