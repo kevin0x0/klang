@@ -26,7 +26,8 @@ static bool kev_construct_min_dfa_edges(KevGraphNode** min_dfa_states, KevSetCro
 static KevFA* kev_classify_min_dfa_states(KevGraphNode** min_dfa_states, uint64_t min_dfa_state_number, KevFA* dfa,
                                           uint64_t* accept_state_mapping);
 static bool kev_construct_min_dfa_acc_state_map(KevGraphNode** min_dfa_states, uint64_t min_dfa_acc_state_number, KevFA* dfa, uint64_t* accept_state_mapping);
-static bool kev_do_pre_partition_for_accept_state(KevIntListMap* map, KevGraphNode* acc_state, uint64_t* accept_state_mapping);
+static bool kev_do_pre_partition_for_accept_states(KevIntListMap* pre_partition, KevGraphNode* acc_state, uint64_t* accept_state_mapping);
+static bool kev_add_pre_partition_for_accept_states(KevSetCrossList* setlist, KevIntListMap* pre_partition, uint64_t cuurent_position, KevPartitionUniverse universe);
 
 static void kev_destroy_all_list(KevIntListMap* map);
 static void kev_destroy_all_sets(KevSetCrossList* setlist);
@@ -53,23 +54,23 @@ KevFA* kev_dfa_minimization(KevFA* dfa, uint64_t* accept_state_mapping) {
   return min_dfa;
 }
 
-static bool kev_initialize_hopcroft(KevPartitionUniverse* universe, KevSetCrossList* setlist,
+static bool kev_initialize_hopcroft(KevPartitionUniverse* p_universe, KevSetCrossList* setlist,
                                     KevFA* dfa, uint64_t* accept_state_mapping) {
   uint64_t dfa_state_number = kev_fa_state_number(dfa);
-  KevPartitionUniverse universe_set = kev_partition_universe_create(dfa_state_number);
-  if (!universe_set) return false;
+  KevPartitionUniverse universe = kev_partition_universe_create(dfa_state_number);
+  if (!universe) return false;
   uint64_t current_position = 0;
   KevGraphNode* state = kev_fa_get_states(dfa);
   KevGraphNode* acc_state = kev_fa_get_accept_state(dfa);
-  KevPartitionSet* set = kev_partition_set_create_from_graphnode(universe_set, state, acc_state, current_position);
+  KevPartitionSet* set = kev_partition_set_create_from_graphnode(universe, state, acc_state, current_position);
   if (!set) {
-    kev_partition_universe_delete(universe_set);
+    kev_partition_universe_delete(universe);
     return false;
   }
   current_position = set->end;
   if (kev_partition_set_size(set) != 0) {
     if (!kev_setcrosslist_insert(kev_setcrosslist_iterate_begin(setlist), set)) {
-      kev_partition_universe_delete(universe_set);
+      kev_partition_universe_delete(universe);
       kev_partition_set_delete(set);
       return false;
     }
@@ -79,39 +80,25 @@ static bool kev_initialize_hopcroft(KevPartitionUniverse* universe, KevSetCrossL
 
   KevIntListMap pre_partition;
   if (!kev_intlistmap_init(&pre_partition, 16)) {
-    kev_partition_universe_delete(universe_set);
+    kev_partition_universe_delete(universe);
     kev_destroy_all_sets(setlist);
     return false;
   }
-  if (!kev_do_pre_partition_for_accept_state(&pre_partition, acc_state, accept_state_mapping)) {
-    kev_partition_universe_delete(universe_set);
+  if (!kev_do_pre_partition_for_accept_states(&pre_partition, acc_state, accept_state_mapping)) {
+    kev_partition_universe_delete(universe);
     kev_intlistmap_destroy(&pre_partition);
     kev_destroy_all_sets(setlist);
     return false;
   }
-  
-  for (KevIntListMapNode* itr = kev_intlistmap_iterate_begin(&pre_partition);
-       itr != NULL;
-       itr = kev_intlistmap_iterate_next(&pre_partition, itr)) {
-    set = kev_partition_set_create(universe_set, itr->value, current_position);
-    if (!set) {
-      kev_partition_universe_delete(universe_set);
-      kev_destroy_all_list(&pre_partition);
-      kev_destroy_all_sets(setlist);
-      kev_intlistmap_destroy(&pre_partition);
-      return false;
-    }
-    current_position = set->end;
-    if (!kev_setcrosslist_insert(kev_setcrosslist_iterate_begin(setlist), set)) {
-      kev_partition_universe_delete(universe_set);
-      kev_destroy_all_list(&pre_partition);
-      kev_destroy_all_sets(setlist);
-      kev_intlistmap_destroy(&pre_partition);
-      return false;
-    }
-    kev_setcrosslist_add_to_worklist(setlist, kev_setcrosslist_iterate_begin(setlist));
+  if (!kev_add_pre_partition_for_accept_states(setlist, &pre_partition, current_position, universe)) {
+    kev_partition_universe_delete(universe);
+    kev_destroy_all_list(&pre_partition);
+    kev_destroy_all_sets(setlist);
+    kev_intlistmap_destroy(&pre_partition);
+    return false;
   }
-  *universe = universe_set;
+  
+  *p_universe = universe;
   kev_destroy_all_list(&pre_partition);
   kev_intlistmap_destroy(&pre_partition);
   return true;
@@ -330,7 +317,7 @@ static bool kev_construct_min_dfa_acc_state_map(KevGraphNode** min_dfa_states, u
   return true;
 }
 
-static bool kev_do_pre_partition_for_accept_state(KevIntListMap* pre_partition, KevGraphNode* acc_state, uint64_t* accept_state_mapping) {
+static bool kev_do_pre_partition_for_accept_states(KevIntListMap* pre_partition, KevGraphNode* acc_state, uint64_t* accept_state_mapping) {
   uint64_t i = 0;
   while (acc_state) {
     uint64_t owner = accept_state_mapping ? accept_state_mapping[i] : 0;
@@ -352,6 +339,20 @@ static bool kev_do_pre_partition_for_accept_state(KevIntListMap* pre_partition, 
     }
     lstnode->value = lst;
     acc_state = acc_state->next;
+  }
+  return true;
+}
+
+static bool kev_add_pre_partition_for_accept_states(KevSetCrossList* setlist, KevIntListMap* pre_partition, uint64_t current_position, KevPartitionUniverse universe) {
+  for (KevIntListMapNode* itr = kev_intlistmap_iterate_begin(pre_partition);
+       itr != NULL;
+       itr = kev_intlistmap_iterate_next(pre_partition, itr)) {
+    KevPartitionSet* set = kev_partition_set_create(universe, itr->value, current_position);
+    if (!set) return false;
+    current_position = set->end;
+    if (!kev_setcrosslist_insert(kev_setcrosslist_iterate_begin(setlist), set))
+      return false;
+    kev_setcrosslist_add_to_worklist(setlist, kev_setcrosslist_iterate_begin(setlist));
   }
   return true;
 }
