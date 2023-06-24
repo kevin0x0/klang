@@ -42,8 +42,13 @@ bool kev_nfa_positive(KevFA* nfa);
  * it means that the third accepting state in the DFA corresponds to the first
  * NFA in the input array of NFA pointers. */
 KevFA* kev_nfa_to_dfa(KevFA** nfa_array, uint64_t** p_accept_state_mapping_array);
-
 KevFA* kev_dfa_minimization(KevFA* dfa, uint64_t* accept_state_mapping);
+static inline uint64_t kev_fa_state_number(KevFA* dfa);
+static inline uint64_t kev_dfa_accept_state_number(KevFA* dfa);
+static inline KevGraphNode* kev_fa_get_start_state(KevFA* fa);
+static inline KevGraphNode* kev_fa_get_accept_state(KevFA* fa);
+static inline KevGraphNode* kev_fa_get_states(KevFA* fa);
+
 
 
 /*begin the inline function definition */
@@ -67,6 +72,26 @@ static inline KevGraphNode* kev_fa_get_accept_state(KevFA* fa) {
 
 static inline KevGraphNode* kev_fa_get_states(KevFA* fa) {
   return kev_graph_get_nodes(&fa->transition);
+}
+
+static inline uint64_t kev_fa_state_number(KevFA* dfa) {
+  KevGraphNode* node = kev_fa_get_states(dfa);
+  uint64_t count = 0;
+  while (node) {
+    ++count;
+    node = node->next;
+  }
+  return count;
+}
+
+static inline uint64_t kev_dfa_accept_state_number(KevFA* dfa) {
+  KevGraphNode* node = dfa->accept_states;
+  uint64_t count = 0;
+  while (node) {
+    ++count;
+    node = node->next;
+  }
+  return count;
 }
 
 #endif

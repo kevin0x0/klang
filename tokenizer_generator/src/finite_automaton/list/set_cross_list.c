@@ -19,11 +19,10 @@ void kev_setcrosslist_destroy(KevSetCrossList* crosslist) {
   crosslist->tail_sentinel.w_prev = &crosslist->head_sentinel;
 }
 
-KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevBitSet* set, uint64_t set_size) {
+KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevPartitionSet* set) {
   KevSetCrossListNode* new_node = kev_set_cross_list_node_pool_allocate();
   if (!new_node) return new_node;
   new_node->set = set;
-  new_node->set_size = set_size;
   new_node->w_next = NULL;
   new_node->p_prev = position->p_prev;
   new_node->p_next = position;

@@ -2,13 +2,12 @@
 #define KEVCC_TOKENIZER_GENERATOR_INCLUDE_FINITE_AUTOMATON_LIST_BITSET_CROSS_LIST_H
 /* used in kev_dfa_minimization(hopcroft algorithm) */
 
-#include "tokenizer_generator/include/finite_automaton/set/bitset.h"
+#include "tokenizer_generator/include/finite_automaton/set/partition.h"
 #include "tokenizer_generator/include/general/global_def.h"
 #include <stdint.h>
 
 typedef struct tagKevSetCrossListNode {
-  KevBitSet* set;
-  uint64_t set_size;
+  KevPartitionSet* set;
   struct tagKevSetCrossListNode* p_prev;
   struct tagKevSetCrossListNode* p_next;
   struct tagKevSetCrossListNode* w_prev;
@@ -22,7 +21,7 @@ typedef struct tagKevBitSetCrossList {
 
 static inline bool kev_setcrosslist_init(KevSetCrossList* crosslist);
 void kev_setcrosslist_destroy(KevSetCrossList* crosslist);
-KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevBitSet* set, uint64_t set_size);
+KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevPartitionSet* set);
 //KevSetCrossListNode* kev_setcrosslist_remove(KevSetCrossListNode* position);
 static inline bool kev_setcrosslist_node_in_worklist(KevSetCrossListNode* node);
 static inline void kev_setcrosslist_add_to_worklist(KevSetCrossList* crosslist, KevSetCrossListNode* position);
