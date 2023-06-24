@@ -67,22 +67,26 @@ static bool kev_initialize_hopcroft(KevPartitionUniverse* universe, KevSetCrossL
     return false;
   }
   current_position = set->end;
-  if (!kev_setcrosslist_insert(kev_setcrosslist_iterate_begin(setlist), set)) {
-    kev_partition_universe_delete(universe_set);
+  if (kev_partition_set_size(set) != 0) {
+    if (!kev_setcrosslist_insert(kev_setcrosslist_iterate_begin(setlist), set)) {
+      kev_partition_universe_delete(universe_set);
+      kev_partition_set_delete(set);
+      return false;
+    }
+  } else {
     kev_partition_set_delete(set);
-    return false;
   }
 
   KevIntListMap pre_partition;
   if (!kev_intlistmap_init(&pre_partition, 16)) {
     kev_partition_universe_delete(universe_set);
-      kev_destroy_all_sets(setlist);
+    kev_destroy_all_sets(setlist);
     return false;
   }
   if (!kev_do_pre_partition_for_accept_state(&pre_partition, acc_state, accept_state_mapping)) {
     kev_partition_universe_delete(universe_set);
     kev_intlistmap_destroy(&pre_partition);
-      kev_destroy_all_sets(setlist);
+    kev_destroy_all_sets(setlist);
     return false;
   }
   

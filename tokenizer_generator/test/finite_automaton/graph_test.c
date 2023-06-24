@@ -73,21 +73,21 @@ void print_acc_mapping_array(FILE* out, KevFA* dfa, uint64_t* array) {
 
 int main(void) {
   
-  while (false) {
+  while (true) {
     KevGraphNode* node0 = kev_graphnode_create(0);
     KevGraphNode* node1 = kev_graphnode_create(0);
     KevGraphNode* node2 = kev_graphnode_create(0);
-    kev_graphnode_connect(node1, node2, 'a');
+    //kev_graphnode_connect(node1, node2, 'a');
     kev_graphnode_connect(node2, node2, 'a');
     kev_graphnode_connect(node0, node1, 'a');
     node0->next = node1;
     node1->next = node2;
     node2->next = NULL;
-    KevFA* dfa = kev_fa_create_set(node0, node0, node1);
+    KevFA* dfa = kev_fa_create_set(node0, node0, node2);
     KevFA* min_dfa = /*kev_fa_create_copy(dfa);*/kev_dfa_minimization(dfa, NULL);
     kev_fa_state_assign_id(min_dfa, 0);
-    //print_dfa(stdout, min_dfa);
-    //putchar('\n');
+    print_dfa(stdout, min_dfa);
+    putchar('\n');
     kev_fa_delete(dfa);
     kev_fa_delete(min_dfa);
   }
