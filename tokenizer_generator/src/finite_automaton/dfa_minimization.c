@@ -7,7 +7,6 @@
 #include "tokenizer_generator/include/general/global_def.h"
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -41,19 +40,13 @@ KevFA* kev_dfa_minimization(KevFA* dfa, uint64_t* accept_state_mapping) {
     kev_setcrosslist_destroy(&setlist);
     return NULL;
   }
-  printf("just finished initialize_hopcroft()\n");
-  getchar();
   if (!kev_do_hopcroft(&setlist, universe, dfa)) {
     kev_partition_universe_delete(universe);
     kev_destroy_all_sets(&setlist);
     kev_setcrosslist_destroy(&setlist);
     return NULL;
   }
-  printf("just finished do_hopcroft()\n");
-  getchar();
   KevFA* min_dfa = kev_construct_min_dfa(&setlist, universe, dfa, accept_state_mapping);
-  printf("just finished construct_min_dfa()\n");
-  getchar();
   kev_partition_universe_delete(universe);
   kev_destroy_all_sets(&setlist);
   kev_setcrosslist_destroy(&setlist);
@@ -213,6 +206,8 @@ static bool kev_hopcroft_do_partition_for_single_target(KevSetCrossList* setlist
       if (dif_size == 0) {
         kev_partition_set_delete(itr->set);
         itr->set = intersection;
+      } else {
+        kev_partition_set_delete(intersection);
       }
       continue;
     }
