@@ -4,7 +4,6 @@
 
 #include "tokenizer_generator/include/finite_automaton/set/partition.h"
 #include "tokenizer_generator/include/general/global_def.h"
-#include <stdint.h>
 
 typedef struct tagKevSetCrossListNode {
   KevPartitionSet* set;

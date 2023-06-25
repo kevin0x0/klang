@@ -1,6 +1,5 @@
 #include "tokenizer_generator/include/finite_automaton/set/bitset.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 
 #define FIND_BIT_MASK32       ((uint64_t)0xFFFFFFFF)

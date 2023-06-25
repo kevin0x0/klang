@@ -86,8 +86,8 @@ int main(void) {
     KevFA* dfa = kev_fa_create_set(node0, node0, node2);
     KevFA* min_dfa = /*kev_fa_create_copy(dfa);*/kev_dfa_minimization(dfa, NULL);
     kev_fa_state_assign_id(min_dfa, 0);
-    print_dfa(stdout, min_dfa);
-    putchar('\n');
+    //print_dfa(stdout, min_dfa);
+    //putchar('\n');
     kev_fa_delete(dfa);
     kev_fa_delete(min_dfa);
   }
@@ -103,7 +103,7 @@ int main(void) {
     KevFA* nfa7 = kev_fa_create('g');
     KevFA* tmp = kev_fa_create_copy(nfa7);
     kev_nfa_positive(nfa7);
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 10; ++i) {
       KevFA* copy1 = kev_fa_create_copy(nfa1);
       KevFA* copy2 = kev_fa_create_copy(tmp);
       kev_nfa_alternation(copy1, copy2);
@@ -117,9 +117,9 @@ int main(void) {
     KevFA* dfa = kev_nfa_to_dfa(nfa_array, &acc_map);
     KevFA* min_dfa = /*kev_fa_create_copy(dfa);*/kev_dfa_minimization(dfa, acc_map);
     kev_fa_state_assign_id(min_dfa, 0);
-    print_dfa(stdout, min_dfa);
-    print_acc_mapping_array(stdout, min_dfa, acc_map);
-    putchar('\n');
+    //print_dfa(stdout, min_dfa);
+    //print_acc_mapping_array(stdout, min_dfa, acc_map);
+    //putchar('\n');
     kev_fa_delete(dfa);
     kev_fa_delete(min_dfa);
     kev_fa_delete(nfa1);

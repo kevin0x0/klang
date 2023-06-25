@@ -2,6 +2,7 @@ OPTIMIZE = -g
 CC = gcc
 AR = ar
 
+AR_OPTION = rcs
 
 ROOT_PATH = C:/Users/flamm/work/kevcc/
 
@@ -33,8 +34,8 @@ LIST_INC_PATH = $(FA_INC_PATH)list/
 
 
 
-.PHONY: all
-all : $(BIN_PATH)graph.o $(BIN_PATH)fa.o $(BIN_PATH)nfa_to_dfa.o $(BIN_PATH)graph_pool.o $(BIN_PATH)node_pool.o $(BIN_PATH)edge_pool.o $(BIN_PATH)intsetmap_node_pool.o $(BIN_PATH)fa_pool.o $(BIN_PATH)address_map.o $(BIN_PATH)intset_map.o $(BIN_PATH)setint_map.o $(BIN_PATH)bitset.o $(BIN_PATH)node_array.o $(BIN_PATH)set_array.o $(BIN_PATH)int_queue.o $(BIN_PATH)set_cross_list.o $(BIN_PATH)set_cross_list_node_pool.o $(BIN_PATH)dfa_minimization.o $(BIN_PATH)partition.o $(BIN_PATH)intlist_map.o $(BIN_PATH)intlistmap_node_pool.o $(BIN_PATH)nodelist_node_pool.o $(BIN_PATH)partition_set_pool.o $(BIN_PATH)node_list.o
+$(BIN_PATH)finite_automaton.a : $(BIN_PATH)graph.o $(BIN_PATH)fa.o $(BIN_PATH)nfa_to_dfa.o $(BIN_PATH)graph_pool.o $(BIN_PATH)node_pool.o $(BIN_PATH)edge_pool.o $(BIN_PATH)intsetmap_node_pool.o $(BIN_PATH)fa_pool.o $(BIN_PATH)address_map.o $(BIN_PATH)intset_map.o $(BIN_PATH)setint_map.o $(BIN_PATH)bitset.o $(BIN_PATH)node_array.o $(BIN_PATH)set_array.o $(BIN_PATH)int_queue.o $(BIN_PATH)set_cross_list.o $(BIN_PATH)set_cross_list_node_pool.o $(BIN_PATH)dfa_minimization.o $(BIN_PATH)partition.o $(BIN_PATH)intlist_map.o $(BIN_PATH)intlistmap_node_pool.o $(BIN_PATH)nodelist_node_pool.o $(BIN_PATH)partition_set_pool.o $(BIN_PATH)node_list.o
+	$(AR) $(AR_OPTION) $@ $^
 
 $(BIN_PATH)graph.o : $(FA_PATH)graph.c $(FA_INC_PATH)graph.h $(GEN_INC_PATH)global_def.h $(OBJP_INC_PATH)graph_pool.h $(OBJP_INC_PATH)node_pool.h $(OBJP_INC_PATH)edge_pool.h $(HMAP_INC_PATH)address_map.h
 	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)

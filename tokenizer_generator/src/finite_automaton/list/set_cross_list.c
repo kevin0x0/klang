@@ -1,7 +1,6 @@
 #include "tokenizer_generator/include/finite_automaton/list/set_cross_list.h"
 #include "tokenizer_generator/include/finite_automaton/object_pool/set_cross_list_node_pool.h"
 #include "tokenizer_generator/include/general/global_def.h"
-#include <stdint.h>
 
 void kev_setcrosslist_destroy(KevSetCrossList* crosslist) {
   if (!crosslist) return;
