@@ -1,4 +1,4 @@
-#include "tokenizer_generator/include/finite_automaton/fa.h"
+#include "tokenizer_generator/include/finite_automaton/finite_automaton.h"
 #include "tokenizer_generator/include/finite_automaton/graph.h"
 #include "tokenizer_generator/include/finite_automaton/list/node_list.h"
 #include "tokenizer_generator/include/finite_automaton/set/partition.h"

@@ -1,4 +1,4 @@
-#include "tokenizer_generator/include/finite_automaton/fa.h"
+#include "tokenizer_generator/include/finite_automaton/finite_automaton.h"
 #include "tokenizer_generator/include/finite_automaton/set/bitset.h"
 #include "tokenizer_generator/include/finite_automaton/hashmap/intset_map.h"
 #include "tokenizer_generator/include/finite_automaton/hashmap/setint_map.h"

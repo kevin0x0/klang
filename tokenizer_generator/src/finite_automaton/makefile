@@ -40,13 +40,13 @@ $(BIN_PATH)libfa.a : $(BIN_PATH)graph.o $(BIN_PATH)fa.o $(BIN_PATH)nfa_to_dfa.o 
 $(BIN_PATH)graph.o : $(FA_PATH)graph.c $(FA_INC_PATH)graph.h $(GEN_INC_PATH)global_def.h $(OBJP_INC_PATH)graph_pool.h $(OBJP_INC_PATH)node_pool.h $(OBJP_INC_PATH)edge_pool.h $(HMAP_INC_PATH)address_map.h
 	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
-$(BIN_PATH)fa.o : $(FA_PATH)fa.c $(FA_INC_PATH)fa.h $(GEN_INC_PATH)global_def.h $(FA_INC_PATH)graph.h $(OBJP_INC_PATH)fa_pool.h
+$(BIN_PATH)fa.o : $(FA_PATH)finite_automaton.c $(FA_INC_PATH)finite_automaton.h $(GEN_INC_PATH)global_def.h $(FA_INC_PATH)graph.h $(OBJP_INC_PATH)fa_pool.h
 	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
-$(BIN_PATH)nfa_to_dfa.o : $(FA_PATH)nfa_to_dfa.c $(FA_INC_PATH)fa.h $(FA_INC_PATH)graph.h $(HMAP_INC_PATH)intset_map.h $(HMAP_INC_PATH)setint_map.h $(SET_INC_PATH)bitset.h $(QUEUE_INC_PATH)int_queue.h $(ARRAY_INC_PATH)set_array.h $(ARRAY_INC_PATH)node_array.h $(GEN_INC_PATH)global_def.h
+$(BIN_PATH)nfa_to_dfa.o : $(FA_PATH)nfa_to_dfa.c $(FA_INC_PATH)finite_automaton.h $(FA_INC_PATH)graph.h $(HMAP_INC_PATH)intset_map.h $(HMAP_INC_PATH)setint_map.h $(SET_INC_PATH)bitset.h $(QUEUE_INC_PATH)int_queue.h $(ARRAY_INC_PATH)set_array.h $(ARRAY_INC_PATH)node_array.h $(GEN_INC_PATH)global_def.h
 	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
-$(BIN_PATH)dfa_minimization.o : $(FA_PATH)dfa_minimization.c $(FA_INC_PATH)fa.h $(FA_INC_PATH)graph.h $(HMAP_INC_PATH)intlist_map.h $(LIST_INC_PATH)set_cross_list.h $(GEN_INC_PATH)global_def.h $(LIST_INC_PATH)node_list.h $(SET_INC_PATH)partition.h
+$(BIN_PATH)dfa_minimization.o : $(FA_PATH)dfa_minimization.c $(FA_INC_PATH)finite_automaton.h $(FA_INC_PATH)graph.h $(HMAP_INC_PATH)intlist_map.h $(LIST_INC_PATH)set_cross_list.h $(GEN_INC_PATH)global_def.h $(LIST_INC_PATH)node_list.h $(SET_INC_PATH)partition.h
 	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 $(BIN_PATH)graph_pool.o : $(OBJP_PATH)graph_pool.c  $(OBJP_INC_PATH)graph_pool.h $(FA_INC_PATH)graph.h $(GEN_INC_PATH)global_def.h
@@ -58,7 +58,7 @@ $(BIN_PATH)node_pool.o : $(OBJP_PATH)node_pool.c  $(OBJP_INC_PATH)node_pool.h $(
 $(BIN_PATH)edge_pool.o : $(OBJP_PATH)edge_pool.c  $(OBJP_INC_PATH)edge_pool.h $(FA_INC_PATH)graph.h $(GEN_INC_PATH)global_def.h
 	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
-$(BIN_PATH)fa_pool.o : $(OBJP_PATH)fa_pool.c  $(OBJP_INC_PATH)fa_pool.h $(FA_INC_PATH)fa.h $(GEN_INC_PATH)global_def.h
+$(BIN_PATH)fa_pool.o : $(OBJP_PATH)fa_pool.c  $(OBJP_INC_PATH)fa_pool.h $(FA_INC_PATH)finite_automaton.h $(GEN_INC_PATH)global_def.h
 	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 $(BIN_PATH)intsetmap_node_pool.o : $(OBJP_PATH)intsetmap_node_pool.c  $(OBJP_INC_PATH)intsetmap_node_pool.h $(SET_INC_PATH)bitset.h $(GEN_INC_PATH)global_def.h
