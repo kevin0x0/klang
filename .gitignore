@@ -3,6 +3,9 @@
 *.so
 *.exe
 compile_commands.json
-bin/*
-.cache
+bin/
+.cache/
+test/
+
+
 
