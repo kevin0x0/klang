@@ -6,7 +6,6 @@
 #include "tokenizer_generator/include/finite_automaton/array/set_array.h"
 #include "tokenizer_generator/include/finite_automaton/array/node_array.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 /* Package some objects that works collaboratively to maintain the generated DFA states */
 typedef struct tagKevStateSets {

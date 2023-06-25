@@ -5,7 +5,6 @@
 #include "tokenizer_generator/include/finite_automaton/graph.h"
 #include "tokenizer_generator/include/finite_automaton/list/node_list.h"
 #include "tokenizer_generator/include/general/global_def.h"
-#include <stdint.h>
 
 typedef KevGraphNode* KevPartitionElementType;
 typedef KevPartitionElementType* KevPartitionUniverse;

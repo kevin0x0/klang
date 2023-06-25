@@ -6,7 +6,6 @@
 #include "tokenizer_generator/include/finite_automaton/hashmap/intlist_map.h"
 #include "tokenizer_generator/include/general/global_def.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
