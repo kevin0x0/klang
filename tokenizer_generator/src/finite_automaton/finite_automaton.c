@@ -4,11 +4,9 @@
 
 
 #define KEV_NFA_STATE_NAME_PLACE_HOLDER   (0)
-#define KEV_NFA_STATE_NAME_START_MARK     (-1)
-#define KEV_NFA_STATE_NAME_ACCEPT_MARK    (-2)
 
 
-bool kev_fa_init(KevFA* fa, int64_t symbol) {
+bool kev_nfa_init(KevFA* fa, int64_t symbol) {
   if (!fa) return false;
   
   KevGraphNode* start = kev_graphnode_create(KEV_NFA_STATE_NAME_PLACE_HOLDER);
@@ -38,34 +36,22 @@ bool kev_fa_init_copy(KevFA* fa, KevFA* src) {
     return false;
   }
 
-  int64_t original_start_id = src->start_state->id;
-  int64_t original_accept_id = src->accept_states->id;
-  src->start_state->id = KEV_NFA_STATE_NAME_START_MARK;
-  src->accept_states->id = KEV_NFA_STATE_NAME_ACCEPT_MARK;
   if (!kev_graph_init_copy(&fa->transition, &src->transition)) {
     fa->start_state = NULL;
     fa->accept_states = NULL;
-    src->start_state->id = original_start_id;
-    src->accept_states->id = original_accept_id;
     return false;
   }
-  src->start_state->id = original_start_id;
-  src->accept_states->id = original_accept_id;
-
-  int count = 0;
-  KevGraphNode* node = fa->transition.head;
-  while (count != 2) {
-    if (node->id == KEV_NFA_STATE_NAME_START_MARK) {
-      fa->start_state = node;
-      ++count;
-    } else if (node->id == KEV_NFA_STATE_NAME_ACCEPT_MARK) {
-      fa->accept_states = node;
-      ++count;
+  KevGraphNode* fa_node = fa->transition.head;
+  KevGraphNode* src_node = src->transition.head;
+  while (src_node) {
+    if (src_node == src->start_state) {
+      fa->start_state = fa_node;
+    } else if (src_node == src->accept_states) {
+      fa->accept_states = fa_node;
     }
-    node = node->next;
+    src_node = src_node->next;
+    fa_node = fa_node->next;
   }
-  src->start_state->id = KEV_NFA_STATE_NAME_PLACE_HOLDER;
-  src->accept_states->id = KEV_NFA_STATE_NAME_PLACE_HOLDER;
   return true;
 }
 
@@ -100,11 +86,11 @@ void kev_fa_destroy(KevFA* fa) {
   }
 }
 
-KevFA* kev_fa_create(int64_t symbol) {
+KevFA* kev_nfa_create(int64_t symbol) {
   KevFA* fa = kev_fa_pool_allocate();
   if (!fa) return false;
 
-  if (!kev_fa_init(fa, symbol)) {
+  if (!kev_nfa_init(fa, symbol)) {
     kev_fa_pool_deallocate(fa);
     return NULL;
   }

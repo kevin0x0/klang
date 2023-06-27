@@ -146,7 +146,7 @@ static KevFA* kev_regex_unit(KevParser* parser) {
     nfa = kev_regex_charset(parser);
     if (!nfa) return NULL;
   } else if (ch == '.') {
-    nfa = kev_fa_create(ch);
+    nfa = kev_nfa_create(ch);
     if (!nfa ||
         !kev_char_range(nfa, 0, 256)) {
       kev_fa_delete(nfa);
@@ -157,15 +157,13 @@ static KevFA* kev_regex_unit(KevParser* parser) {
     kev_next_char(parser);
   } else if (illegal[ch]) {
     parser_error = KEV_REGEX_ERR_SYNTAX;
-    static char* info = "unpexpected \' \'";
-    info[13] = ch;
-    kev_regex_set_error_info("expected \')\'");
+    kev_regex_set_error_info("expected character");
     return NULL;
   } else if (ch == '\\') {
     nfa = kev_regex_escape_nfa(parser);
     if (!nfa) return NULL;
   } else {
-    nfa = kev_fa_create(ch);
+    nfa = kev_nfa_create(ch);
     if (!nfa) {
       parser_error = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create NFA");
@@ -195,7 +193,7 @@ static int kev_regex_escape(KevParser* parser) {
     case 'u':
     case 'x': {
       char* pos = NULL;
-      number = strtoull((char*)parser->current + 1, &pos, 8);
+      number = strtoull((char*)parser->current + 1, &pos, 16);
       parser->current = (uint8_t*)pos;
       break;
     }
@@ -227,7 +225,7 @@ static int kev_regex_escape(KevParser* parser) {
 static inline KevFA* kev_regex_escape_nfa(KevParser* parser) {
   int number = kev_regex_escape(parser);
   if (number < 0) return NULL;
-  KevFA* nfa = kev_fa_create(number);
+  KevFA* nfa = kev_nfa_create(number);
   if (!nfa) {
     parser_error = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("failed to create NFA");
@@ -340,14 +338,14 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
   }
 
   KevFA result;
-  if (!kev_fa_init(&result, KEV_NFA_SYMBOL_EPSILON)) {
+  if (!kev_nfa_init(&result, KEV_NFA_SYMBOL_EPSILON)) {
     kev_fa_delete(nfa);
     parser_error = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("failed to repeat");
     return false;
   }
   
-  for (uint64_t i = 1; i < m; ++i) {
+  for (uint64_t i = 0; i < m; ++i) {
     if (!kev_nfa_append(&result, nfa)) {
       kev_fa_destroy(&result);
       kev_fa_delete(nfa);
@@ -388,6 +386,12 @@ static KevFA* kev_regex_charset(KevParser* parser) {
     kev_next_char(parser);
     uint8_t* name = kev_regex_ref_name(parser);
     if (!name) return NULL;
+    if (*parser->current != ':') {
+      free(name);
+      parser_error = KEV_REGEX_ERR_SYNTAX;
+      kev_regex_set_error_info("expected \':\'");
+      return NULL;
+    }
     kev_next_char(parser);
     if (*parser->current != ']') {
       free(name);
@@ -395,6 +399,7 @@ static KevFA* kev_regex_charset(KevParser* parser) {
       kev_regex_set_error_info("expected \']\'");
       return NULL;
     }
+    kev_next_char(parser);
     KevFA* nfa = kev_get_named_charset(name);
     free(name);
     return nfa;
@@ -411,7 +416,7 @@ static KevFA* kev_regex_charset(KevParser* parser) {
       int number = kev_regex_escape(parser);
       if (number < 0) return NULL;
       begin = (uint8_t)number;
-    } else if (*parser->current == '\0') {
+    } else if (*parser->current == '\0' || *parser->current == '-') {
       parser_error = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("expected \']\'");
       return NULL;
@@ -425,7 +430,7 @@ static KevFA* kev_regex_charset(KevParser* parser) {
         int number = kev_regex_escape(parser);
         if (number < 0) return NULL;
         end = (uint8_t)number;
-      } else if (*parser->current == ']' || *parser->current == '\0') {
+      } else if (*parser->current == ']' || *parser->current == '\0' || *parser->current == '-') {
         parser_error = KEV_REGEX_ERR_SYNTAX;
         kev_regex_set_error_info("expected character");
         return NULL;
@@ -439,7 +444,7 @@ static KevFA* kev_regex_charset(KevParser* parser) {
     for (int i = begin; i <= end; ++i)
       in_charset[i] = mark;
   }
-  KevFA* nfa = kev_fa_create(KEV_NFA_SYMBOL_EMPTY);
+  KevFA* nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
   if (!nfa) {
     kev_fa_delete(nfa);
     parser_error = KEV_REGEX_ERR_GENERATE;
@@ -478,33 +483,27 @@ static inline bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end) {
 }
 
 uint8_t* kev_regex_ref_name(KevParser* parser) {
-  kev_next_char(parser);
   uint8_t* name_end = parser->current;
-  while (*name_end <= 'z' && *name_end >= 'a' &&
-         *name_end <= 'Z' && *name_end >= 'A') {
+  while ((*name_end <= 'z' && *name_end >= 'a') ||
+         (*name_end <= 'Z' && *name_end >= 'A')) {
     ++name_end;
   }
-  if (*name_end != ':') {
-    parser_error = KEV_REGEX_ERR_SYNTAX;
-    kev_regex_set_error_info("expected \':\'");
-    return NULL;
-  }
-  uint8_t* name = (uint8_t*)malloc(sizeof (uint8_t) * (name_end - parser->current));
+  uint8_t* name = (uint8_t*)malloc(sizeof (uint8_t) * (name_end - parser->current + 1));
   if (!name) {
     parser_error = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("out of memory");
     return NULL;
   }
-  kev_next_char(parser);
   memcpy(name, parser->current, (name_end - parser->current) * sizeof (uint8_t));
   name[name_end - parser->current] = '\0';
   parser->current = name_end;
+  kev_parser_clear_blank(parser);
   return name;
 }
 
 KevFA* kev_get_named_charset(uint8_t* name) {
   char* charset_name = (char*)name;
-  KevFA* nfa = kev_fa_create(KEV_NFA_SYMBOL_EMPTY);
+  KevFA* nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
   if (!nfa) {
     parser_error = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("failed to create nfa in kev_get_named_charset");
@@ -570,3 +569,11 @@ KevFA* kev_get_named_charset(uint8_t* name) {
   }
   return nfa;
 } 
+
+uint64_t kev_regex_get_error(void) {
+  return parser_error;
+}
+
+char* kev_regex_get_info(void) {
+  return error_info;
+}

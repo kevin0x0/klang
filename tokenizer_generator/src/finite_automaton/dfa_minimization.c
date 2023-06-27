@@ -298,7 +298,7 @@ static KevFA* kev_classify_min_dfa_states(KevGraphNode** min_dfa_states, uint64_
     if (!kev_construct_min_dfa_acc_state_map(min_dfa_states, min_dfa_acc_state_number, dfa, accept_state_mapping))
       return NULL;
   }
-  KevGraphNode* min_dfa_start_state = min_dfa_states[kev_fa_get_states(dfa)->id];
+  KevGraphNode* min_dfa_start_state = min_dfa_states[kev_fa_get_start_state(dfa)->id];
   return kev_fa_create_set(min_dfa_all_states, min_dfa_start_state, min_dfa_accept_states);
 }
 

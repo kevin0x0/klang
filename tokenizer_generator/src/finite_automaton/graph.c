@@ -160,6 +160,7 @@ static bool kev_graph_edge_list_copy(KevAddressMap* map, KevGraphEdgeList** p_de
 }
 
 bool kev_graph_init_copy(KevGraph* graph, KevGraph* src) {
+  /* TODO: optimize this function */
   if (!graph) return false;
   graph->head = NULL;
   graph->tail = NULL;

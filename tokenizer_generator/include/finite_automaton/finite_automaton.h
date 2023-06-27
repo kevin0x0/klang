@@ -15,12 +15,12 @@ typedef struct tagKevFA {
 } KevFA;
 
 
-bool kev_fa_init(KevFA* fa, int64_t symbol);
+bool kev_nfa_init(KevFA* fa, int64_t symbol);
 bool kev_fa_init_copy(KevFA* fa, KevFA* src);
 bool kev_fa_init_move(KevFA* fa, KevFA* src);
 bool kev_fa_init_set(KevFA* fa, KevGraphNodeList* state_list, KevGraphNode* start, KevGraphNode* accept);
 void kev_fa_destroy(KevFA* fa);
-KevFA* kev_fa_create(int64_t symbol);
+KevFA* kev_nfa_create(int64_t symbol);
 KevFA* kev_fa_create_copy(KevFA* src);
 KevFA* kev_fa_create_move(KevFA* src);
 KevFA* kev_fa_create_set(KevGraphNodeList* state_list, KevGraphNode* start, KevGraphNode* accept);
