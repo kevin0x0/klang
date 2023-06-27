@@ -69,6 +69,16 @@ bool kev_fa_init_copy(KevFA* fa, KevFA* src) {
   return true;
 }
 
+bool kev_fa_init_move(KevFA* fa, KevFA* src) {
+  if (!fa || !src) return false;
+  kev_graph_init_move(&fa->transition, &src->transition);
+  fa->start_state = src->start_state;
+  fa->accept_states = src->accept_states;
+  src->start_state = NULL;
+  src->accept_states = NULL;
+  return true;
+}
+
 bool kev_fa_init_set(KevFA* fa, KevGraphNodeList* state_list, KevGraphNode* start, KevGraphNode* accept) {
   if (!fa) return false;
 
@@ -106,6 +116,17 @@ KevFA* kev_fa_create_copy(KevFA* src) {
   if (!fa) return false;
 
   if (!kev_fa_init_copy(fa, src)) {
+    kev_fa_pool_deallocate(fa);
+    return NULL;
+  }
+  return fa;
+}
+
+KevFA* kev_fa_create_move(KevFA* src) {
+  KevFA* fa = kev_fa_pool_allocate();
+  if (!fa) return false;
+
+  if (!kev_fa_init_move(fa, src)) {
     kev_fa_pool_deallocate(fa);
     return NULL;
   }

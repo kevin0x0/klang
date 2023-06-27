@@ -1,13 +1,3 @@
-OPTIMIZE = -g
-CC = gcc
-AR = ar
-
-AR_OPTION = rcs
-
-ROOT_PATH = $(abspath $(shell pwd)/../../..)/
-
-CC_GLOBAL_PARAM = -Wall -I $(ROOT_PATH)
-
 TOKENIZER_PATH = $(ROOT_PATH)tokenizer_generator/
 INC_PATH = $(TOKENIZER_PATH)include/
 SRC_PATH = $(TOKENIZER_PATH)src/

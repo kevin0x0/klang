@@ -51,23 +51,31 @@ KevGraph* kev_graph_create(KevGraphNode* node) {
     return NULL;
 }
 
+bool kev_graph_create_move(KevGraph* src) {
+  KevGraph* graph = kev_graph_pool_allocate();
+  if (kev_graph_init_move(graph, src))
+    return graph;
+  else
+    return NULL;
+}
+
 void kev_graph_delete(KevGraph* graph) {
   kev_graph_destroy(graph);
   kev_graph_pool_deallocate(graph);
 }
 
-bool kev_graph_merge(KevGraph* to, KevGraph* from) {
-  if (!to || !from) return false;
+bool kev_graph_merge(KevGraph* dest, KevGraph* src) {
+  if (!dest || !src) return false;
 
-  if (!to->head) {
-    to->head = from->head;
-    to->tail = from->tail;
-  } else if (from->head) {
-    to->tail->next = from->head;
-    to->tail = from->tail;
+  if (!dest->head) {
+    dest->head = src->head;
+    dest->tail = src->tail;
+  } else if (src->head) {
+    dest->tail->next = src->head;
+    dest->tail = src->tail;
   }
-  from->head = NULL;
-  from->tail = NULL;
+  src->head = NULL;
+  src->tail = NULL;
   return true;
 }
 
