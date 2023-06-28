@@ -604,3 +604,8 @@ bool kev_regex_insert_named_nfa(char* name, KevFA* nfa) {
     return false;
   return true;
 }
+
+void kev_regex_destroy_named_nfa(void) {
+  kev_strfamap_delete(named_nfa);
+  named_nfa = NULL;
+}
