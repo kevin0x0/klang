@@ -23,6 +23,7 @@ $(BIN_PATH)regex_parser.o : $(RP_PATH)regex_parser.c $(RP_INC_PATH)regex_parser.
 	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 $(BIN_PATH)strfa_map.o : $(RP_PATH)hashmap/strfa_map.c $(RP_INC_PATH)hashmap/strfa_map.h
+	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 .PHONY: clean
 
