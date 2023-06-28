@@ -22,7 +22,7 @@ FA_PATH = $(SRC_PATH)finite_automaton/
 RP_INC_PATH = $(INC_PATH)regex_parser/
 RP_PATH = $(SRC_PATH)regex_parser/
 
-test.exe : test.c $(RP_PATH)regex_parser.c $(BIN_PATH)libfa.a
+test.exe : test.c $(RP_PATH)regex_parser.c $(BIN_PATH)libfa.a $(RP_PATH)hashmap/strfa_map.c
 	$(CC) -o $@ $^ $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 
