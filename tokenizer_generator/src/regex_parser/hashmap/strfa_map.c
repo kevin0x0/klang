@@ -94,6 +94,15 @@ bool kev_strfamap_init(KevStringFaMap* map, uint64_t capacity) {
   return true;
 }
 
+KevStringFaMap* kev_strfamap_create(uint64_t capacity) {
+  KevStringFaMap* map = (KevStringFaMap*)malloc(sizeof (KevStringFaMap));
+  if (!map || !kev_strfamap_init(map, capacity)) {
+    free(map);
+    return NULL;
+  }
+  return map;
+}
+
 void kev_strfamap_destroy(KevStringFaMap* map) {
   if (map) {
     KevStringFaMapBucket* bucket = map->bucket_head;
@@ -108,6 +117,11 @@ void kev_strfamap_destroy(KevStringFaMap* map) {
     map->capacity = 0;
     map->size = 0;
   }
+}
+
+void kev_strfamap_delete(KevStringFaMap* map) {
+  kev_strfamap_destroy(map);
+  free(map);
 }
 
 bool kev_strfamap_insert(KevStringFaMap* map, char* key, KevFA* value) {
