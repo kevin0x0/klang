@@ -1,6 +1,5 @@
 #include "tokenizer_generator/include/regex_parser/hashmap/strfa_map.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 
 inline static uint64_t kev_strfamap_hashing(char* key) {
