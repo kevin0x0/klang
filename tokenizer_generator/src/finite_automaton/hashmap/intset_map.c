@@ -48,7 +48,7 @@ static bool kev_intsetmap_expand(KevIntSetMap* map) {
   return true;
 }
 
-static void kev_intset_map_bucket_free(KevIntSetMapBucket* bucket) {
+static void kev_intsetmap_bucket_free(KevIntSetMapBucket* bucket) {
   KevIntSetMapNode* node = bucket->map_node_list;
   while (node) {
     KevIntSetMapNode* tmp = node->next;
@@ -95,7 +95,7 @@ void kev_intsetmap_destroy(KevIntSetMap* map) {
     KevIntSetMapBucket* bucket = map->bucket_head;
     while (bucket) {
       KevIntSetMapBucket* tmp = bucket->next;
-      kev_intset_map_bucket_free(bucket);
+      kev_intsetmap_bucket_free(bucket);
       bucket = tmp;
     }
     free(map->array);
@@ -141,7 +141,7 @@ void kev_intsetmap_make_empty(KevIntSetMap* map) {
   KevIntSetMapBucket* bucket = map->bucket_head;
   while (bucket) {
     KevIntSetMapBucket* tmp = bucket->next;
-    kev_intset_map_bucket_free(bucket);
+    kev_intsetmap_bucket_free(bucket);
     bucket = tmp;
   }
   
