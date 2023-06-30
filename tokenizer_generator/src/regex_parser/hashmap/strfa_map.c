@@ -1,12 +1,13 @@
 #include "tokenizer_generator/include/regex_parser/hashmap/strfa_map.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 inline static uint64_t kev_strfamap_hashing(char* key) {
   uint64_t hash_val = 0;
   uint64_t count = 0;
-  while (*key != '\0' && count < 8) {
-    hash_val ^= ((uint64_t)*key << (hash_val & 0x3F));
+  while (*key != '\0' && count++ < 8) {
+    hash_val ^= ((uint64_t)*key++ << (hash_val & 0x3F));
   }
   return hash_val;
 }
@@ -147,7 +148,7 @@ KevStringFaMapNode* kev_strfamap_search(KevStringFaMap* map, char* key) {
   uint64_t index = (map->capacity - 1) & kev_strfamap_hashing(key);
   KevStringFaMapNode* node = map->array[index].map_node_list;
   while (node) {
-    if (node->key == key)
+    if (strcmp(node->key, key) == 0)
       break;
     node = node->next;
   }

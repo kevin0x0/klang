@@ -51,6 +51,7 @@ KevFA* kev_regex_parse(uint8_t* regex) {
   parser_error = KEV_REGEX_ERR_NONE;
   if (!regex) {
     parser_error = KEV_REGEX_ERR_INVALID_INPUT;
+    kev_regex_set_error_info("empty input");
     return NULL;
   }
   KevParser parser;
@@ -180,7 +181,7 @@ static KevFA* kev_regex_unit(KevParser* parser) {
 
 static int kev_regex_escape(KevParser* parser) {
   uint8_t ch = *++parser->current;
-  uint8_t number = 0;
+  int64_t number = 0;
   switch (ch) {
     case '\0': {
       parser_error = KEV_REGEX_ERR_SYNTAX;
@@ -200,6 +201,20 @@ static int kev_regex_escape(KevParser* parser) {
       parser->current = (uint8_t*)pos;
       break;
     }
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9': {
+      char* pos = NULL;
+      number = strtoull((char*)parser->current, &pos, 10);
+      parser->current = (uint8_t*)pos;
+      break;
+    }
     case 'n': {
       number = '\n';
       parser->current++;
@@ -212,6 +227,11 @@ static int kev_regex_escape(KevParser* parser) {
     }
     case 't': {
       number = '\t';
+      parser->current++;
+      break;
+    }
+    case 'a': {
+      number = '\a';
       parser->current++;
       break;
     }

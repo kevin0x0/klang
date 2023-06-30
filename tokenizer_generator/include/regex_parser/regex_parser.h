@@ -13,7 +13,7 @@
 
 KevFA* kev_regex_parse(uint8_t* regex);
 bool kev_regex_insert_named_nfa(char* name, KevFA* nfa);
-void kev_regex_destroy_all_named_nfa(void);
+void kev_regex_destroy_named_nfa(void);
 uint64_t kev_regex_get_error(void);
 char* kev_regex_get_info(void);
 

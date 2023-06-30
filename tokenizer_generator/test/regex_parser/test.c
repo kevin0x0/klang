@@ -53,20 +53,26 @@ void print_acc_mapping_array(FILE* out, KevFA* dfa, uint64_t* array) {
 }
 
 int main(int argc, char** argv) {
-  KevFA* nfa = kev_regex_parse(argv[1]);
-  if (nfa) {
-    kev_fa_state_assign_id(nfa, 0);
-    print_nfa(stdout, nfa);
-    KevFA* array[2] = { nfa, NULL };
-    KevFA* dfa = kev_nfa_to_dfa(array, NULL);
-    KevFA* min_dfa = kev_dfa_minimization(dfa, NULL);
-    kev_fa_state_assign_id(min_dfa, 0);
-    print_dfa(stdout, min_dfa);
-    kev_fa_delete(nfa);
-    kev_fa_delete(min_dfa);
-    kev_fa_delete(dfa);
-  } else {
-    printf("%s\n", kev_regex_get_info());
+  while (true) {
+    KevFA* nfa_a = kev_nfa_create('a');
+    kev_regex_insert_named_nfa("mynfa", nfa_a);
+    KevFA* nfa = kev_regex_parse(argv[1]);
+    if (nfa) {
+      kev_fa_state_assign_id(nfa, 0);
+      print_nfa(stdout, nfa);
+      KevFA* array[2] = { nfa, NULL };
+      KevFA* dfa = kev_nfa_to_dfa(array, NULL);
+      KevFA* min_dfa = kev_dfa_minimization(dfa, NULL);
+      kev_fa_state_assign_id(min_dfa, 0);
+      print_dfa(stdout, min_dfa);
+      kev_fa_delete(nfa);
+      kev_fa_delete(min_dfa);
+      kev_fa_delete(dfa);
+    } else {
+      printf("%s\n", kev_regex_get_info());
+    }
+    kev_fa_delete(nfa_a);
+    kev_regex_destroy_named_nfa();
   }
   return 0;
   
