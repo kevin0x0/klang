@@ -30,8 +30,8 @@ KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevP
   return new_node;
 }
 
-uint64_t kev_setcrosslist_size(KevSetCrossList* crosslist) {
-  uint64_t count = 0;
+size_t kev_setcrosslist_size(KevSetCrossList* crosslist) {
+  size_t count = 0;
   KevSetCrossListNode* end = kev_setcrosslist_iterate_end(crosslist);
   for (KevSetCrossListNode* itr = kev_setcrosslist_iterate_begin(crosslist);
       itr != end;

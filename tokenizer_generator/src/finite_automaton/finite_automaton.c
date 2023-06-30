@@ -6,13 +6,13 @@
 #define KEV_NFA_STATE_NAME_PLACE_HOLDER   (0)
 
 
-bool kev_nfa_init(KevFA* fa, int64_t symbol) {
+bool kev_nfa_init(KevFA* fa, KevNFAChar character) {
   if (!fa) return false;
   
   KevGraphNode* start = kev_graphnode_create(KEV_NFA_STATE_NAME_PLACE_HOLDER);
   KevGraphNode* accept = kev_graphnode_create(KEV_NFA_STATE_NAME_PLACE_HOLDER);
   if (!start || !accept ||
-      !(symbol == KEV_NFA_SYMBOL_EMPTY || kev_graphnode_connect(start, accept, symbol))) {
+      !(character == KEV_NFA_SYMBOL_EMPTY || kev_graphnode_connect(start, accept, character))) {
     kev_graphnode_delete(start);
     kev_graphnode_delete(accept);
     fa->start_state = NULL;
@@ -86,11 +86,11 @@ void kev_fa_destroy(KevFA* fa) {
   }
 }
 
-KevFA* kev_nfa_create(int64_t symbol) {
+KevFA* kev_nfa_create(KevNFAChar character) {
   KevFA* fa = kev_fa_pool_allocate();
   if (!fa) return false;
 
-  if (!kev_nfa_init(fa, symbol)) {
+  if (!kev_nfa_init(fa, character)) {
     kev_fa_pool_deallocate(fa);
     return NULL;
   }
@@ -198,9 +198,9 @@ bool kev_nfa_positive(KevFA* nfa) {
   return true;
 }
 
-uint64_t kev_fa_state_assign_id(KevFA* fa, uint64_t start_id) {
+size_t kev_fa_state_assign_id(KevFA* fa, KevStateId start_id) {
   KevGraphNodeList* nodes = kev_graph_get_nodes(&fa->transition);
-  uint64_t count = start_id;
+  size_t count = start_id;
   KevGraphNode* current_node = nodes;
   while (current_node) {
     current_node->id = count;

@@ -2,29 +2,29 @@
 
 #include <stdlib.h>
 
-inline static uint64_t kev_setintmap_hashing(KevBitSet* key) {
+inline static size_t kev_setintmap_hashing(KevBitSet* key) {
   if (!key) return 0;
-  uint64_t length = key->length;
-  uint64_t* bits = key->bits;
-  uint64_t hashing_value = 0;
-  for (uint64_t i = 0; i < length; ++i) {
+  size_t length = key->length;
+  size_t* bits = key->bits;
+  size_t hashing_value = 0;
+  for (size_t i = 0; i < length; ++i) {
     hashing_value += bits[i] >> (hashing_value & 0x3F);
   }
   return hashing_value;
 }
 
 static void kev_setintmap_rehash(KevSetIntMap* to, KevSetIntMap* from) {
-  uint64_t from_capacity = from->capacity;
-  uint64_t to_capacity = to->capacity;
+  size_t from_capacity = from->capacity;
+  size_t to_capacity = to->capacity;
   KevSetIntMapNode** from_array = from->array;
   KevSetIntMapNode** to_array = to->array;
-  uint64_t mask = to_capacity - 1;
-  for (uint64_t i = 0; i < from_capacity; ++i) {
+  size_t mask = to_capacity - 1;
+  for (size_t i = 0; i < from_capacity; ++i) {
     KevSetIntMapNode* node = from_array[i];
     while (node) {
       KevSetIntMapNode* tmp = node->next;
-      uint64_t hash_val = kev_setintmap_hashing(node->key);
-      uint64_t index = hash_val & mask;
+      size_t hash_val = kev_setintmap_hashing(node->key);
+      size_t index = hash_val & mask;
       node->next = to_array[index];
       to_array[index] = node;
       node = tmp;
@@ -54,15 +54,15 @@ static void kev_setintmap_bucket_free(KevSetIntMapNode* bucket) {
   }
 }
 
-inline static uint64_t pow_of_2_above(uint64_t num) {
-  uint64_t pow = 8;
+inline static size_t pow_of_2_above(size_t num) {
+  size_t pow = 8;
   while (pow < num)
     pow <<= 1;
 
   return pow;
 }
 
-bool kev_setintmap_init(KevSetIntMap* map, uint64_t capacity) {
+bool kev_setintmap_init(KevSetIntMap* map, size_t capacity) {
   if (!map) return false;
 
   /* TODO: make sure capacity is power of 2 */
@@ -75,7 +75,7 @@ bool kev_setintmap_init(KevSetIntMap* map, uint64_t capacity) {
     return false;
   }
 
-  for (uint64_t i = 0; i < capacity; ++i) {
+  for (size_t i = 0; i < capacity; ++i) {
     array[i] = NULL;
   }
   
@@ -88,8 +88,8 @@ bool kev_setintmap_init(KevSetIntMap* map, uint64_t capacity) {
 void kev_setintmap_destroy(KevSetIntMap* map) {
   if (map) {
     KevSetIntMapNode** array = map->array;
-    uint64_t capacity = map->capacity;
-    for (uint64_t i = 0; i < capacity; ++i)
+    size_t capacity = map->capacity;
+    for (size_t i = 0; i < capacity; ++i)
       kev_setintmap_bucket_free(array[i]);
     free(array);
     map->array = NULL;
@@ -98,14 +98,14 @@ void kev_setintmap_destroy(KevSetIntMap* map) {
   }
 }
 
-bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, uint64_t value) {
+bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, size_t value) {
   if (map->size >= map->capacity && !kev_setintmap_expand(map))
     return false;
 
   KevSetIntMapNode* new_node = (KevSetIntMapNode*)malloc(sizeof (KevSetIntMapNode));
   if (!new_node) return false;
 
-  uint64_t index = (map->capacity - 1) & kev_setintmap_hashing(key);
+  size_t index = (map->capacity - 1) & kev_setintmap_hashing(key);
   new_node->key = key;
   new_node->value = value;
   new_node->next = map->array[index];
@@ -115,7 +115,7 @@ bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, uint64_t value) {
 }
 
 KevSetIntMapNode* kev_setintmap_search(KevSetIntMap* map, KevBitSet* key) {
-  uint64_t index = (map->capacity - 1) & kev_setintmap_hashing(key);
+  size_t index = (map->capacity - 1) & kev_setintmap_hashing(key);
   KevSetIntMapNode* node = map->array[index];
   while (node) {
     if (kev_bitset_equal(node->key, key))
@@ -127,8 +127,8 @@ KevSetIntMapNode* kev_setintmap_search(KevSetIntMap* map, KevBitSet* key) {
 
 void kev_setintmap_make_empty(KevSetIntMap* map) {
   KevSetIntMapNode** array = map->array;
-  uint64_t capacity = map->capacity;
-  for (uint64_t i = 0; i < capacity; ++i) {
+  size_t capacity = map->capacity;
+  for (size_t i = 0; i < capacity; ++i) {
     kev_setintmap_bucket_free(array[i]);
     array[i] = NULL;
   }

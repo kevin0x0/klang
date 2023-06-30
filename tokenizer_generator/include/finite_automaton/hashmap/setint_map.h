@@ -6,21 +6,21 @@
 
 typedef struct tagKevSetIntMapNode {
   KevBitSet* key;
-  uint64_t value;
+  size_t value;
   struct tagKevSetIntMapNode* next;
 } KevSetIntMapNode;
 
 typedef struct tagKevSetIntMap {
   KevSetIntMapNode** array;
-  uint64_t capacity;
-  uint64_t size;
+  size_t capacity;
+  size_t size;
 } KevSetIntMap;
 
 
-bool kev_setintmap_init(KevSetIntMap* map, uint64_t capacity);
+bool kev_setintmap_init(KevSetIntMap* map, size_t capacity);
 void kev_setintmap_destroy(KevSetIntMap* map);
 
-bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, uint64_t value);
+bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, size_t value);
 KevSetIntMapNode* kev_setintmap_search(KevSetIntMap* map, KevBitSet* key);
 void kev_setintmap_make_empty(KevSetIntMap* map);
 

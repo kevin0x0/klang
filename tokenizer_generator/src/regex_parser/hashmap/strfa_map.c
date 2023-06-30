@@ -3,28 +3,28 @@
 #include <stdlib.h>
 #include <string.h>
 
-inline static uint64_t kev_strfamap_hashing(char* key) {
-  uint64_t hash_val = 0;
-  uint64_t count = 0;
+inline static size_t kev_strfamap_hashing(char* key) {
+  size_t hash_val = 0;
+  size_t count = 0;
   while (*key != '\0' && count++ < 8) {
-    hash_val ^= ((uint64_t)*key++ << (hash_val & 0x3F));
+    hash_val ^= ((size_t)*key++ << (hash_val & 0x3F));
   }
   return hash_val;
 }
 
 static void kev_strfamap_rehash(KevStringFaMap* to, KevStringFaMap* from) {
-  uint64_t from_capacity = from->capacity;
-  uint64_t to_capacity = to->capacity;
+  size_t from_capacity = from->capacity;
+  size_t to_capacity = to->capacity;
   KevStringFaMapBucket* from_array = from->array;
   KevStringFaMapBucket* to_array = to->array;
   KevStringFaMapBucket* bucket_head = NULL;
-  uint64_t mask = to_capacity - 1;
-  for (uint64_t i = 0; i < from_capacity; ++i) {
+  size_t mask = to_capacity - 1;
+  for (size_t i = 0; i < from_capacity; ++i) {
     KevStringFaMapNode* node = from_array[i].map_node_list;
     while (node) {
       KevStringFaMapNode* tmp = node->next;
-      uint64_t hash_val = kev_strfamap_hashing(node->key);
-      uint64_t index = hash_val & mask;
+      size_t hash_val = kev_strfamap_hashing(node->key);
+      size_t index = hash_val & mask;
       node->next = to_array[index].map_node_list;
       to_array[index].map_node_list = node;
       if (node->next == NULL) {
@@ -63,15 +63,15 @@ static void kev_strfamap_bucket_free(KevStringFaMapBucket* bucket) {
   bucket->next = NULL;
 }
 
-inline static uint64_t pow_of_2_above(uint64_t num) {
-  uint64_t pow = 8;
+inline static size_t pow_of_2_above(size_t num) {
+  size_t pow = 8;
   while (pow < num)
     pow <<= 1;
 
   return pow;
 }
 
-bool kev_strfamap_init(KevStringFaMap* map, uint64_t capacity) {
+bool kev_strfamap_init(KevStringFaMap* map, size_t capacity) {
   if (!map) return false;
 
   map->bucket_head = NULL;
@@ -84,7 +84,7 @@ bool kev_strfamap_init(KevStringFaMap* map, uint64_t capacity) {
     return false;
   }
 
-  for (uint64_t i = 0; i < capacity; ++i) {
+  for (size_t i = 0; i < capacity; ++i) {
     array[i].map_node_list = NULL;
   }
   
@@ -94,7 +94,7 @@ bool kev_strfamap_init(KevStringFaMap* map, uint64_t capacity) {
   return true;
 }
 
-KevStringFaMap* kev_strfamap_create(uint64_t capacity) {
+KevStringFaMap* kev_strfamap_create(size_t capacity) {
   KevStringFaMap* map = (KevStringFaMap*)malloc(sizeof (KevStringFaMap));
   if (!map || !kev_strfamap_init(map, capacity)) {
     free(map);
@@ -131,7 +131,7 @@ bool kev_strfamap_insert(KevStringFaMap* map, char* key, KevFA* value) {
   KevStringFaMapNode* new_node = (KevStringFaMapNode*)malloc(sizeof (KevStringFaMapNode));
   if (!new_node) return false;
 
-  uint64_t index = (map->capacity - 1) & kev_strfamap_hashing(key);
+  size_t index = (map->capacity - 1) & kev_strfamap_hashing(key);
   new_node->key = key;
   new_node->value = value;
   new_node->next = map->array[index].map_node_list;
@@ -145,7 +145,7 @@ bool kev_strfamap_insert(KevStringFaMap* map, char* key, KevFA* value) {
 }
 
 KevStringFaMapNode* kev_strfamap_search(KevStringFaMap* map, char* key) {
-  uint64_t index = (map->capacity - 1) & kev_strfamap_hashing(key);
+  size_t index = (map->capacity - 1) & kev_strfamap_hashing(key);
   KevStringFaMapNode* node = map->array[index].map_node_list;
   while (node) {
     if (strcmp(node->key, key) == 0)
@@ -169,7 +169,7 @@ void kev_strfamap_make_empty(KevStringFaMap* map) {
 
 KevStringFaMapNode* kev_strfamap_iterate_next(KevStringFaMap* map, KevStringFaMapNode* current) {
   if (current->next) return current->next;
-  uint64_t index = (map->capacity - 1) & kev_strfamap_hashing(current->key);
+  size_t index = (map->capacity - 1) & kev_strfamap_hashing(current->key);
   KevStringFaMapBucket* current_bucket = &map->array[index];
   if (current_bucket->next)
     return current_bucket->next->map_node_list;

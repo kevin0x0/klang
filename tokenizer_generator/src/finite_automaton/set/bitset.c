@@ -7,12 +7,12 @@
 #define FIND_BIT_MASK8        ((uint64_t)0xFF);
 #define FIND_BIT_MASK4        ((uint64_t)0xF);
 
-bool kev_bitset_expand(KevBitSet* bitset, uint64_t new_size) {
+bool kev_bitset_expand(KevBitSet* bitset, size_t new_size) {
   new_size = new_size & KEV_BITSET_MASK ? (new_size >> KEV_BITSET_SHIFT) + 1 : new_size >> KEV_BITSET_SHIFT;
   if (new_size > bitset->length) {
     uint64_t* new_bits = (uint64_t*)realloc(bitset->bits, sizeof (uint64_t) * new_size);
     if (!new_bits) return false;
-    for (uint64_t i = bitset->length; i < new_size; ++i)
+    for (size_t i = bitset->length; i < new_size; ++i)
       new_bits[i] = 0;
     bitset->bits = new_bits;
     bitset->length = new_size;
@@ -20,7 +20,7 @@ bool kev_bitset_expand(KevBitSet* bitset, uint64_t new_size) {
   return true;
 }
 
-inline static uint64_t kev_bit_count(uint64_t word) {
+inline static size_t kev_bit_count(uint64_t word) {
   word = word - ((word >> 1) & 0x5555555555555555);
   word = (word & 0x3333333333333333) + ((word >> 2) & 0x3333333333333333);
   word = (word + (word >> 4)) & 0x0f0f0f0f0f0f0f0f;
@@ -30,7 +30,7 @@ inline static uint64_t kev_bit_count(uint64_t word) {
   return word & 0x7f;
 }
 
-bool kev_bitset_init(KevBitSet* bitset, uint64_t initial_size) {
+bool kev_bitset_init(KevBitSet* bitset, size_t initial_size) {
   if (!bitset) return false;
   if (sizeof (uint64_t) != 8) {
     bitset->bits = NULL;
@@ -46,7 +46,7 @@ bool kev_bitset_init(KevBitSet* bitset, uint64_t initial_size) {
     return false;
   }
   bitset->length = initial_size;
-  for (uint64_t i = 0; i < initial_size; ++i)
+  for (size_t i = 0; i < initial_size; ++i)
     bits[i] = 0;
   return true;
 }
@@ -59,7 +59,7 @@ bool kev_bitset_init_copy(KevBitSet* bitset, KevBitSet* src) {
     return false;
   }
 
-  uint64_t length = src->length;
+  size_t length = src->length;
   uint64_t* bits = (uint64_t*)malloc(sizeof (uint64_t) * length);
   bitset->bits = bits;
   if (!bits) {
@@ -68,7 +68,7 @@ bool kev_bitset_init_copy(KevBitSet* bitset, KevBitSet* src) {
   }
 
   uint64_t* src_bits = src->bits;
-  for (uint64_t i = 0; i < length; ++i)
+  for (size_t i = 0; i < length; ++i)
     bits[i] = src_bits[i];
   bitset->length = length;
   return true;
@@ -82,7 +82,7 @@ void kev_bitset_destroy(KevBitSet* bitset) {
   }
 }
 
-KevBitSet* kev_bitset_create(uint64_t initial_size) {
+KevBitSet* kev_bitset_create(size_t initial_size) {
   KevBitSet* bitset = (KevBitSet*)malloc(sizeof (KevBitSet));
   if (!bitset || !kev_bitset_init(bitset, initial_size)) {
     kev_bitset_destroy(bitset);
@@ -108,15 +108,15 @@ void kev_bitset_delete(KevBitSet* bitset) {
 }
 
 bool kev_bitset_intersection(KevBitSet* dest, KevBitSet* src) {
-  uint64_t min_len = dest->length > src->length ? src->length : dest->length;
-  uint64_t i = 0;
+  size_t min_len = dest->length > src->length ? src->length : dest->length;
+  size_t i = 0;
   uint64_t* dest_bits = dest->bits;
   uint64_t* src_bits = src->bits;
   while (i < min_len) {
     dest_bits[i] &= src_bits[i];
     ++i;
   }
-  uint64_t dest_size = dest->length;
+  size_t dest_size = dest->length;
   while (i < dest_size) {
     dest_bits[i] = 0;
   }
@@ -128,46 +128,46 @@ bool kev_bitset_union(KevBitSet* dest, KevBitSet* src) {
     return false;
   }
 
-  uint64_t len = src->length;
+  size_t len = src->length;
   uint64_t* dest_bits = dest->bits;
   uint64_t* src_bits = src->bits;
-  for (uint64_t i = 0; i < len; ++i)
+  for (size_t i = 0; i < len; ++i)
     dest_bits[i] |= src_bits[i];
   return true;
 }
 
 bool kev_bitset_completion(KevBitSet* bitset) {
-  uint64_t len = bitset->length;
+  size_t len = bitset->length;
   uint64_t* bits = bitset->bits;
-  for (uint64_t i = 0; i < len; ++i)
+  for (size_t i = 0; i < len; ++i)
     bits[i] = ~bits[i];
   return true;
 }
 
 bool kev_bitset_difference(KevBitSet* dest, KevBitSet* src) {
-  uint64_t len = src->length < dest->length ? src->length : dest->length;
+  size_t len = src->length < dest->length ? src->length : dest->length;
   uint64_t* dest_bits = dest->bits;
   uint64_t* src_bits = src->bits;
-  for (uint64_t i = 0; i < len; ++i)
+  for (size_t i = 0; i < len; ++i)
     dest_bits[i] &= ~src_bits[i];
   return true;
 }
 
 bool kev_bitset_equal(KevBitSet* set1, KevBitSet* set2) {
-  uint64_t min_length = set1->length < set2->length ? set1->length : set2->length;
-  for (uint64_t i = 0; i < min_length; ++i) {
+  size_t min_length = set1->length < set2->length ? set1->length : set2->length;
+  for (size_t i = 0; i < min_length; ++i) {
     if (set1->bits[i] != set2->bits[i])
       return false;
   }
   KevBitSet* the_larger_set = set1->length < set2->length ? set1 : set2;
-  for (uint64_t i = min_length; i < the_larger_set->length; ++i) {
+  for (size_t i = min_length; i < the_larger_set->length; ++i) {
     if (the_larger_set->bits[i] != 0)
       return false;
   }
   return true;
 }
 
-static inline uint8_t kev_bitset_find_first_bit(uint64_t bits) {
+static inline uint8_t kev_bitset_find_first_bit(size_t bits) {
   uint64_t mask = FIND_BIT_MASK32;
   uint8_t current_pos = 0;
   uint8_t half_size = 32;
@@ -182,24 +182,24 @@ static inline uint8_t kev_bitset_find_first_bit(uint64_t bits) {
   return current_pos;
 }
 
-uint64_t kev_bitset_iterate_next(KevBitSet* bitset, uint64_t previous) {
-  uint64_t index = (previous + 1) >> KEV_BITSET_SHIFT;
+size_t kev_bitset_iterate_next(KevBitSet* bitset, size_t previous) {
+  size_t index = (previous + 1) >> KEV_BITSET_SHIFT;
   if (index >= bitset->length) return previous;
-  uint64_t bit = (previous + 1) & KEV_BITSET_MASK;
+  size_t bit = (previous + 1) & KEV_BITSET_MASK;
   uint64_t* bits = bitset->bits;
   if (bits[index] >> bit)
     return 64 * index + bit + kev_bitset_find_first_bit(bits[index] >> bit);
 
-  for (uint64_t i = index + 1; i < bitset->length; ++i) {
+  for (size_t i = index + 1; i < bitset->length; ++i) {
     if (bits[i] != 0)
       return 64 * i + kev_bitset_find_first_bit(bits[i]);
   }
   return previous;
 }
 
-uint64_t kev_bitset_size(KevBitSet* bitset) {
-  uint64_t count = 0;
-  for (uint64_t i = 0; i < bitset->length; ++i) {
+size_t kev_bitset_size(KevBitSet* bitset) {
+  size_t count = 0;
+  for (size_t i = 0; i < bitset->length; ++i) {
     if (bitset->bits[i])
       count += kev_bit_count(bitset->bits[i]);
   }

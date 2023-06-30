@@ -5,7 +5,7 @@
 #include "tokenizer_generator/include/general/global_def.h"
 
 typedef struct tagKevIntSetMapNode {
-  uint64_t key;
+  size_t key;
   KevBitSet* value;
   struct tagKevIntSetMapNode* next;
 } KevIntSetMapNode;
@@ -18,16 +18,16 @@ typedef struct tagKevIntSetMapBucket {
 typedef struct tagKevIntSetMap {
   KevIntSetMapBucket* array;
   KevIntSetMapBucket* bucket_head;
-  uint64_t capacity;
-  uint64_t size;
+  size_t capacity;
+  size_t size;
 } KevIntSetMap;
 
 
-bool kev_intsetmap_init(KevIntSetMap* map, uint64_t capacity);
+bool kev_intsetmap_init(KevIntSetMap* map, size_t capacity);
 void kev_intsetmap_destroy(KevIntSetMap* map);
 
-bool kev_intsetmap_insert(KevIntSetMap* map, uint64_t key, KevBitSet* value);
-KevIntSetMapNode* kev_intsetmap_search(KevIntSetMap* map, uint64_t key);
+bool kev_intsetmap_insert(KevIntSetMap* map, size_t key, KevBitSet* value);
+KevIntSetMapNode* kev_intsetmap_search(KevIntSetMap* map, size_t key);
 void kev_intsetmap_make_empty(KevIntSetMap* map);
 
 static inline KevIntSetMapNode* kev_intsetmap_iterate_begin(KevIntSetMap* map);

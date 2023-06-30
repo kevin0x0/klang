@@ -310,8 +310,8 @@ static bool kev_regex_post(KevParser* parser, KevFA* nfa) {
 
 static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
   kev_next_char(parser);
-  uint64_t m = 0;
-  uint64_t n = 0;
+  size_t m = 0;
+  size_t n = 0;
   if (*parser->current <= '9' && *parser->current >= '0') {
     uint8_t* pos = NULL;
     m = strtoull((char*)parser->current, (char**)&pos, 10);
@@ -368,7 +368,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
     return false;
   }
   
-  for (uint64_t i = 0; i < m; ++i) {
+  for (size_t i = 0; i < m; ++i) {
     if (!kev_nfa_append(&result, nfa)) {
       kev_fa_destroy(&result);
       kev_fa_delete(nfa);
@@ -384,7 +384,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
       kev_regex_set_error_info("failed to repeat");
       return false;
   }
-  for (uint64_t i = m; i < n; ++i) {
+  for (size_t i = m; i < n; ++i) {
     if (!kev_nfa_append(&result, nfa)) {
       kev_fa_destroy(&result);
       kev_fa_delete(nfa);

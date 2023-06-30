@@ -3,15 +3,15 @@
 
 #include <stdlib.h>
 
-KevPartitionUniverse kev_partition_universe_create(uint64_t element_number) {
+KevPartitionUniverse kev_partition_universe_create(size_t element_number) {
   KevPartitionUniverse universe = (KevPartitionUniverse)malloc(sizeof (KevPartitionElementType) * element_number);
   return universe;
 }
 
-KevPartitionSet* kev_partition_set_create(KevPartitionUniverse universe, KevNodeList* nodes, uint64_t begin_position) {
+KevPartitionSet* kev_partition_set_create(KevPartitionUniverse universe, KevNodeList* nodes, size_t begin_position) {
   KevPartitionSet* set = kev_partition_set_pool_allocate();
   if (!set) return NULL;
-  uint64_t end_position = begin_position;
+  size_t end_position = begin_position;
   while (nodes) {
     nodes->element->id = end_position;
     universe[end_position++] = nodes->element;
@@ -22,10 +22,10 @@ KevPartitionSet* kev_partition_set_create(KevPartitionUniverse universe, KevNode
   return set;
 }
 
-KevPartitionSet* kev_partition_set_create_from_graphnode(KevPartitionUniverse universe, KevGraphNode* nodes, KevGraphNode* end, uint64_t begin_position) {
+KevPartitionSet* kev_partition_set_create_from_graphnode(KevPartitionUniverse universe, KevGraphNode* nodes, KevGraphNode* end, size_t begin_position) {
   KevPartitionSet* set = kev_partition_set_pool_allocate();
   if (!set) return NULL;
-  uint64_t end_position = begin_position;
+  size_t end_position = begin_position;
   while (nodes != end) {
     nodes->id = end_position;
     universe[end_position++] = nodes;
@@ -43,12 +43,12 @@ void kev_partition_universe_delete(KevPartitionUniverse universe) {
 KevPartitionSet* kev_partition_refine(KevPartitionUniverse partition, KevPartitionSet* set, KevNodeList* target) {
   KevPartitionSet* new_set = kev_partition_set_pool_allocate();
   if (!new_set) return NULL;
-  uint64_t begin = set->begin;
-  uint64_t end = set->end;
-  uint64_t pivot = end;
+  size_t begin = set->begin;
+  size_t end = set->end;
+  size_t pivot = end;
   KevNodeListNode* node = target;
   while (node) {
-    uint64_t id = node->element->id;
+    size_t id = node->element->id;
     if (begin <= id && id < pivot) {
       kev_partition_swap_element(partition, id, --pivot);
     }

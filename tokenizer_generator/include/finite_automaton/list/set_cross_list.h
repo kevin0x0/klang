@@ -25,7 +25,7 @@ KevSetCrossListNode* kev_setcrosslist_insert(KevSetCrossListNode* position, KevP
 static inline bool kev_setcrosslist_node_in_worklist(KevSetCrossListNode* node);
 static inline void kev_setcrosslist_add_to_worklist(KevSetCrossList* crosslist, KevSetCrossListNode* position);
 static inline KevSetCrossListNode* kev_setcrosslist_get_workset(KevSetCrossList* crosslist);
-uint64_t kev_setcrosslist_size(KevSetCrossList* crosslist);
+size_t kev_setcrosslist_size(KevSetCrossList* crosslist);
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_begin(KevSetCrossList* crosslist);
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_end(KevSetCrossList* crosslist);
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_next(KevSetCrossListNode* current);

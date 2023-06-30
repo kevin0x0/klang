@@ -10,17 +10,17 @@ typedef KevGraphNode* KevPartitionElementType;
 typedef KevPartitionElementType* KevPartitionUniverse;
 
 typedef struct tagKevPartitionSet {
-  uint64_t begin;
-  uint64_t end;
+  size_t begin;
+  size_t end;
 } KevPartitionSet;
 
-KevPartitionUniverse kev_partition_universe_create(uint64_t element_number);
+KevPartitionUniverse kev_partition_universe_create(size_t element_number);
 void kev_partition_universe_delete(KevPartitionUniverse universe);
 KevPartitionSet* kev_partition_refine(KevPartitionUniverse universe, KevPartitionSet* set, KevNodeList* target);
-static inline void kev_partition_swap_element(KevPartitionUniverse universe, uint64_t element1, uint64_t element2);
-static inline void kev_partition_indeces(KevPartitionUniverse universe, KevPartitionSet* set, uint64_t index);
-KevPartitionSet* kev_partition_set_create(KevPartitionUniverse universe, KevNodeList* nodes, uint64_t begin_position);
-KevPartitionSet* kev_partition_set_create_from_graphnode(KevPartitionUniverse universe, KevGraphNode* nodes, KevGraphNode* end, uint64_t begin_position);
+static inline void kev_partition_swap_element(KevPartitionUniverse universe, size_t element1, size_t element2);
+static inline void kev_partition_indeces(KevPartitionUniverse universe, KevPartitionSet* set, size_t index);
+KevPartitionSet* kev_partition_set_create(KevPartitionUniverse universe, KevNodeList* nodes, size_t begin_position);
+KevPartitionSet* kev_partition_set_create_from_graphnode(KevPartitionUniverse universe, KevGraphNode* nodes, KevGraphNode* end, size_t begin_position);
 static inline KevGraphNode* kev_partition_set_representative(KevPartitionUniverse universe, KevPartitionSet* set);
 static inline bool kev_partition_set_has(KevPartitionSet* set, KevGraphNode* element);
 static inline bool kev_partition_set_size(KevPartitionSet* set);
@@ -34,7 +34,7 @@ static inline bool kev_partition_set_size(KevPartitionSet* set) {
   return set->end - set->begin;
 }
 
-static inline void kev_partition_swap_element(KevPartitionUniverse universe, uint64_t element1, uint64_t element2) {
+static inline void kev_partition_swap_element(KevPartitionUniverse universe, size_t element1, size_t element2) {
   KevGraphNode* tmp = universe[element1];
   universe[element1] = universe[element2];
   universe[element2] = tmp;
@@ -42,8 +42,8 @@ static inline void kev_partition_swap_element(KevPartitionUniverse universe, uin
   universe[element2]->id = element2;
 }
 
-static inline void kev_partition_indeces(KevPartitionUniverse universe, KevPartitionSet* set, uint64_t index) {
-  for (uint64_t i = set->begin; i < set->end; ++i)
+static inline void kev_partition_indeces(KevPartitionUniverse universe, KevPartitionSet* set, size_t index) {
+  for (size_t i = set->begin; i < set->end; ++i)
     universe[i]->id = index;
 }
 

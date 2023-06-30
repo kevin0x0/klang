@@ -55,16 +55,16 @@ void print_dfa(FILE* out, KevFA* dfa) {
 void print_bitset(FILE* out, KevBitSet* bitset) {
   if (!bitset) return;
 
-  for (uint64_t i = 0; i < bitset->length; ++i) {
+  for (size_t i = 0; i < bitset->length; ++i) {
     fprintf(out, "%016llX", bitset->bits[i]);
   }
   fprintf(out, "\n");
 }
 
-void print_acc_mapping_array(FILE* out, KevFA* dfa, uint64_t* array) {
+void print_acc_mapping_array(FILE* out, KevFA* dfa, size_t* array) {
   if (!dfa || !array) return;
   KevGraphNode* accept_node = dfa->accept_states;
-  uint64_t i = 0;
+  size_t i = 0;
   while (accept_node) {
     fprintf(out, "accept node %llu is from %lluth nfa\n", accept_node->id, array[i++] + 1);
     accept_node = accept_node->next;
@@ -93,13 +93,13 @@ int main(void) {
   }
 
 
-    KevFA* nfa1 = kev_fa_create('a');
-    KevFA* nfa2 = kev_fa_create('b');
-    KevFA* nfa3 = kev_fa_create('c');
-    KevFA* nfa4 = kev_fa_create('d');
-    KevFA* nfa5 = kev_fa_create('e');
-    KevFA* nfa6 = kev_fa_create('f');
-    KevFA* nfa7 = kev_fa_create('g');
+    KevFA* nfa1 = kev_nfa_create('a');
+    KevFA* nfa2 = kev_nfa_create('b');
+    KevFA* nfa3 = kev_nfa_create('c');
+    KevFA* nfa4 = kev_nfa_create('d');
+    KevFA* nfa5 = kev_nfa_create('e');
+    KevFA* nfa6 = kev_nfa_create('f');
+    KevFA* nfa7 = kev_nfa_create('g');
     KevFA* tmp = kev_fa_create_copy(nfa7);
     kev_nfa_positive(nfa7);
     for (int i = 0; i < 10; ++i) {
@@ -111,7 +111,7 @@ int main(void) {
       kev_fa_delete(copy2);
     }
     kev_fa_delete(tmp);
-    uint64_t* acc_map = NULL;
+    size_t* acc_map = NULL;
     KevFA* nfa_array[8] = { nfa1, nfa2, nfa3, nfa4, nfa5, nfa6, nfa7, NULL };
     KevFA* dfa = kev_nfa_to_dfa(nfa_array, &acc_map);
     KevFA* min_dfa = /*kev_fa_create_copy(dfa);*/kev_dfa_minimization(dfa, acc_map);
@@ -156,15 +156,15 @@ int main(void) {
   while (true) {
     KevIntQueue queue;
     kev_intqueue_init(&queue);
-    for (uint64_t i = 0; i < 144; ++i) {
+    for (size_t i = 0; i < 144; ++i) {
       kev_intqueue_insert(&queue, i);
     }
 
-    for (uint64_t i = 0; i < 72; ++i) {
+    for (size_t i = 0; i < 72; ++i) {
       printf("%llu ", kev_intqueue_pop(&queue));
     }
 
-    for (uint64_t i = 144; i < 180; ++i) {
+    for (size_t i = 144; i < 180; ++i) {
       kev_intqueue_insert(&queue, i);
     }
 
@@ -178,12 +178,12 @@ int main(void) {
   while (true) {
     KevNodeArray array;
     kev_nodearray_init(&array);
-    for (uint64_t i = 0; i < 144; ++i) {
+    for (size_t i = 0; i < 144; ++i) {
       KevGraphNode* node = kev_graphnode_create(i);
       kev_nodearray_push_back(&array, node);
     }
 
-    for (uint64_t i = 0; i < kev_nodearray_size(&array); ++i) {
+    for (size_t i = 0; i < kev_nodearray_size(&array); ++i) {
       printf("%llu ", kev_nodearray_visit(&array, i)->id);
       kev_graphnode_delete(kev_nodearray_visit(&array, i));
     }
@@ -205,8 +205,8 @@ int main(void) {
     //print_bitset(stdout, bitset);
     putchar('\n');
 
-    uint64_t i = 0;
-    uint64_t next = 0;
+    size_t i = 0;
+    size_t next = 0;
     while ((next = kev_bitset_iterate_next(bitset, i)) != i) {
       printf("%llu ", i = next);
     }
@@ -216,8 +216,8 @@ int main(void) {
   }
 
   while (true) {
-    KevFA* nfa1 = kev_fa_create('b');
-    KevFA* nfa2 = kev_fa_create('a');
+    KevFA* nfa1 = kev_nfa_create('b');
+    KevFA* nfa2 = kev_nfa_create('a');
     kev_nfa_alternation(nfa1, nfa2);
     kev_fa_state_assign_id(nfa1, 0);
     print_nfa(stdout, nfa1);

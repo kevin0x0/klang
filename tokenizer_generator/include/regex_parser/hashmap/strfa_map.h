@@ -16,13 +16,13 @@ typedef struct tagKevStringFaMapBucket {
 typedef struct tagKevStringFaMap {
   KevStringFaMapBucket* array;
   KevStringFaMapBucket* bucket_head;
-  uint64_t capacity;
-  uint64_t size;
+  size_t capacity;
+  size_t size;
 } KevStringFaMap;
 
 
-bool kev_strfamap_init(KevStringFaMap* map, uint64_t capacity);
-KevStringFaMap* kev_strfamap_create(uint64_t capacity);
+bool kev_strfamap_init(KevStringFaMap* map, size_t capacity);
+KevStringFaMap* kev_strfamap_create(size_t capacity);
 void kev_strfamap_destroy(KevStringFaMap* map);
 void kev_strfamap_delete(KevStringFaMap* map);
 

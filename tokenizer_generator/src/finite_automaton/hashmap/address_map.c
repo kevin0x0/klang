@@ -2,22 +2,22 @@
 
 #include <stdlib.h>
 
-inline static uint64_t kev_addressmap_hashing(void* key) {
-  return (uint64_t)key;
+inline static size_t kev_addressmap_hashing(void* key) {
+  return (size_t)key;
 }
 
 static void kev_addressmap_rehash(KevAddressMap* to, KevAddressMap* from) {
-  uint64_t from_capacity = from->capacity;
-  uint64_t to_capacity = to->capacity;
+  size_t from_capacity = from->capacity;
+  size_t to_capacity = to->capacity;
   KevAddressMapNode** from_array = from->array;
   KevAddressMapNode** to_array = to->array;
-  uint64_t mask = to_capacity - 1;
-  for (uint64_t i = 0; i < from_capacity; ++i) {
+  size_t mask = to_capacity - 1;
+  for (size_t i = 0; i < from_capacity; ++i) {
     KevAddressMapNode* node = from_array[i];
     while (node) {
       KevAddressMapNode* tmp = node->next;
-      uint64_t hash_val = kev_addressmap_hashing(node->key);
-      uint64_t index = hash_val & mask;
+      size_t hash_val = kev_addressmap_hashing(node->key);
+      size_t index = hash_val & mask;
       node->next = to_array[index];
       to_array[index] = node;
       node = tmp;
@@ -47,15 +47,15 @@ static void kev_addressmap_bucket_free(KevAddressMapNode* bucket) {
   }
 }
 
-inline static uint64_t pow_of_2_above(uint64_t num) {
-  uint64_t pow = 8;
+inline static size_t pow_of_2_above(size_t num) {
+  size_t pow = 8;
   while (pow < num)
     pow <<= 1;
 
   return pow;
 }
 
-bool kev_addressmap_init(KevAddressMap* map, uint64_t capacity) {
+bool kev_addressmap_init(KevAddressMap* map, size_t capacity) {
   if (!map) return false;
 
   /* TODO: make sure capacity is power of 2 */
@@ -68,7 +68,7 @@ bool kev_addressmap_init(KevAddressMap* map, uint64_t capacity) {
     return false;
   }
 
-  for (uint64_t i = 0; i < capacity; ++i) {
+  for (size_t i = 0; i < capacity; ++i) {
     array[i] = NULL;
   }
   
@@ -81,8 +81,8 @@ bool kev_addressmap_init(KevAddressMap* map, uint64_t capacity) {
 void kev_addressmap_destroy(KevAddressMap* map) {
   if (map) {
     KevAddressMapNode** array = map->array;
-    uint64_t capacity = map->capacity;
-    for (uint64_t i = 0; i < capacity; ++i)
+    size_t capacity = map->capacity;
+    for (size_t i = 0; i < capacity; ++i)
       kev_addressmap_bucket_free(array[i]);
     free(array);
     map->array = NULL;
@@ -98,7 +98,7 @@ bool kev_addressmap_insert(KevAddressMap* map, void* key, void* value) {
   KevAddressMapNode* new_node = (KevAddressMapNode*)malloc(sizeof (*new_node));
   if (!new_node) return false;
 
-  uint64_t index = (map->capacity - 1) & kev_addressmap_hashing(key);
+  size_t index = (map->capacity - 1) & kev_addressmap_hashing(key);
   new_node->key = key;
   new_node->value = value;
   new_node->next = map->array[index];
@@ -108,7 +108,7 @@ bool kev_addressmap_insert(KevAddressMap* map, void* key, void* value) {
 }
 
 KevAddressMapNode* kev_addressmap_search(KevAddressMap* map, void* key) {
-  uint64_t index = (map->capacity - 1) & kev_addressmap_hashing(key);
+  size_t index = (map->capacity - 1) & kev_addressmap_hashing(key);
   KevAddressMapNode* node = map->array[index];
   while (node) {
     if (node->key == key)

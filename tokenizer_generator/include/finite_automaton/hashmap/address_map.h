@@ -11,12 +11,12 @@ typedef struct tagKevAddressMapNode {
 
 typedef struct tagKevAddressMap {
   KevAddressMapNode** array;
-  uint64_t capacity;
-  uint64_t size;
+  size_t capacity;
+  size_t size;
 } KevAddressMap;
 
 
-bool kev_addressmap_init(KevAddressMap* map, uint64_t capacity);
+bool kev_addressmap_init(KevAddressMap* map, size_t capacity);
 void kev_addressmap_destroy(KevAddressMap* map);
 
 bool kev_addressmap_insert(KevAddressMap* map, void* key, void* value);

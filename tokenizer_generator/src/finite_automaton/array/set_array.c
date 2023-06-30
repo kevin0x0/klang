@@ -36,7 +36,7 @@ bool kev_setarray_push_back(KevSetArray* array, KevBitSet* set) {
 }
 
 inline bool kev_setarray_expand(KevSetArray* array) {
-  uint64_t new_size = kev_setarray_size(array) * 2;
+  size_t new_size = kev_setarray_size(array) * 2;
   KevBitSet** new_array = (KevBitSet**)realloc(array->begin, sizeof (KevBitSet*) * new_size);
   if (!new_array) return false;
   array->current = new_array + (array->current - array->begin);

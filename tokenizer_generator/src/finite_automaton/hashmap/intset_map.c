@@ -4,23 +4,23 @@
 
 #include <stdlib.h>
 
-inline static uint64_t kev_intsetmap_hashing(uint64_t key) {
-  return (uint64_t)key;
+inline static size_t kev_intsetmap_hashing(size_t key) {
+  return (size_t)key;
 }
 
 static void kev_intsetmap_rehash(KevIntSetMap* to, KevIntSetMap* from) {
-  uint64_t from_capacity = from->capacity;
-  uint64_t to_capacity = to->capacity;
+  size_t from_capacity = from->capacity;
+  size_t to_capacity = to->capacity;
   KevIntSetMapBucket* from_array = from->array;
   KevIntSetMapBucket* to_array = to->array;
   KevIntSetMapBucket* bucket_head = NULL;
-  uint64_t mask = to_capacity - 1;
-  for (uint64_t i = 0; i < from_capacity; ++i) {
+  size_t mask = to_capacity - 1;
+  for (size_t i = 0; i < from_capacity; ++i) {
     KevIntSetMapNode* node = from_array[i].map_node_list;
     while (node) {
       KevIntSetMapNode* tmp = node->next;
-      uint64_t hash_val = kev_intsetmap_hashing(node->key);
-      uint64_t index = hash_val & mask;
+      size_t hash_val = kev_intsetmap_hashing(node->key);
+      size_t index = hash_val & mask;
       node->next = to_array[index].map_node_list;
       to_array[index].map_node_list = node;
       if (node->next == NULL) {
@@ -59,15 +59,15 @@ static void kev_intsetmap_bucket_free(KevIntSetMapBucket* bucket) {
   bucket->next = NULL;
 }
 
-inline static uint64_t pow_of_2_above(uint64_t num) {
-  uint64_t pow = 8;
+inline static size_t pow_of_2_above(size_t num) {
+  size_t pow = 8;
   while (pow < num)
     pow <<= 1;
 
   return pow;
 }
 
-bool kev_intsetmap_init(KevIntSetMap* map, uint64_t capacity) {
+bool kev_intsetmap_init(KevIntSetMap* map, size_t capacity) {
   if (!map) return false;
 
   map->bucket_head = NULL;
@@ -80,7 +80,7 @@ bool kev_intsetmap_init(KevIntSetMap* map, uint64_t capacity) {
     return false;
   }
 
-  for (uint64_t i = 0; i < capacity; ++i) {
+  for (size_t i = 0; i < capacity; ++i) {
     array[i].map_node_list = NULL;
   }
   
@@ -106,14 +106,14 @@ void kev_intsetmap_destroy(KevIntSetMap* map) {
   }
 }
 
-bool kev_intsetmap_insert(KevIntSetMap* map, uint64_t key, KevBitSet* value) {
+bool kev_intsetmap_insert(KevIntSetMap* map, size_t key, KevBitSet* value) {
   if (map->size >= map->capacity && !kev_intsetmap_expand(map))
     return false;
 
   KevIntSetMapNode* new_node = kev_intsetmap_node_pool_allocate();
   if (!new_node) return false;
 
-  uint64_t index = (map->capacity - 1) & kev_intsetmap_hashing(key);
+  size_t index = (map->capacity - 1) & kev_intsetmap_hashing(key);
   new_node->key = key;
   new_node->value = value;
   new_node->next = map->array[index].map_node_list;
@@ -126,8 +126,8 @@ bool kev_intsetmap_insert(KevIntSetMap* map, uint64_t key, KevBitSet* value) {
   return true;
 }
 
-KevIntSetMapNode* kev_intsetmap_search(KevIntSetMap* map, uint64_t key) {
-  uint64_t index = (map->capacity - 1) & kev_intsetmap_hashing(key);
+KevIntSetMapNode* kev_intsetmap_search(KevIntSetMap* map, size_t key) {
+  size_t index = (map->capacity - 1) & kev_intsetmap_hashing(key);
   KevIntSetMapNode* node = map->array[index].map_node_list;
   while (node) {
     if (node->key == key)
@@ -151,7 +151,7 @@ void kev_intsetmap_make_empty(KevIntSetMap* map) {
 
 KevIntSetMapNode* kev_intsetmap_iterate_next(KevIntSetMap* map, KevIntSetMapNode* current) {
   if (current->next) return current->next;
-  uint64_t index = (map->capacity - 1) & kev_intsetmap_hashing(current->key);
+  size_t index = (map->capacity - 1) & kev_intsetmap_hashing(current->key);
   KevIntSetMapBucket* current_bucket = &map->array[index];
   if (current_bucket->next)
     return current_bucket->next->map_node_list;
