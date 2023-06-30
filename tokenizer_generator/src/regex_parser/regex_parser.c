@@ -393,9 +393,9 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
       return false;
     }
   }
-  kev_fa_delete(nfa);
+  kev_fa_destroy(nfa);
   kev_fa_init_move(nfa, &result);
-  return false;
+  return true;
 }
 
 static KevFA* kev_regex_charset(KevParser* parser) {
