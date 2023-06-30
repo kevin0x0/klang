@@ -23,4 +23,4 @@ all :
 .PHONY: clean
 
 clean :
-	rm $(BIN_PATH)*.o $(BIN_PATH)*.a $(BIN_PATH)*.exe
+	-rm $(BIN_PATH)*.o $(BIN_PATH)*.a
