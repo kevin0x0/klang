@@ -30,7 +30,7 @@ typedef struct tagKevLexGenToken {
   int kind;
 } KevLexGenToken;
 
-bool kev_lexgenlexer_init(KevLexGenLexer* lex, const char* filepath);
+bool kev_lexgenlexer_init(KevLexGenLexer* lex,FILE* infile);
 void kev_lexgenlexer_destroy(KevLexGenLexer* lex);
  
 bool kev_lexgenlexer_next(KevLexGenLexer* lex, KevLexGenToken* token);

@@ -13,10 +13,8 @@ uint8_t (*kev_lexgenlexer_get_table(void))[256];
 int* kev_lexgenlexer_get_acc_array(void);
 size_t kev_lexgenlexer_get_start_state(void);
 
-bool kev_lexgenlexer_init(KevLexGenLexer* lex, const char* filepath) {
+bool kev_lexgenlexer_init(KevLexGenLexer* lex, FILE* infile) {
   if (!lex) return false;
-  FILE* infile = fopen(filepath, "r");
-  if (!infile) return false;
   lex->infile = infile;
   lex->position = 0;
   lex->table = kev_lexgenlexer_get_table();
