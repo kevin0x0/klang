@@ -7,5 +7,6 @@
 int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevPatternList* list, KevStringFaMap* nfa_map);
 int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* token, KevPatternList* list, KevStringFaMap* nfa_map);
 int kev_lexgenparser_lex_src(KevLexGenLexer* lex, KevLexGenToken* token, KevPatternList* list, KevStringFaMap* nfa_map);
+bool kev_lexgenparser_init_nfa(KevPatternList* list, KevStringFaMap* nfa_map);
 
 #endif

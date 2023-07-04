@@ -524,87 +524,25 @@ uint8_t* kev_regex_ref_name(KevParser* parser) {
 
 KevFA* kev_get_named_nfa(uint8_t* name, KevStringFaMap* nfa_map) {
   char* nfa_name = (char*)name;
-  KevFA* nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
-  if (!nfa) {
-    error_type = KEV_REGEX_ERR_GENERATE;
-    kev_regex_set_error_info("failed to create nfa in kev_get_named_nfa");
+  if (!nfa_map) {
+    error_type = KEV_REGEX_ERR_SYNTAX;
+    kev_regex_set_error_info("no such NFA");
     return NULL;
   }
-  if (strcmp(nfa_name, "print") == 0) {
-    if (!kev_char_range(nfa, 32, 127)) {
-      kev_fa_delete(nfa);
+  KevStringFaMapNode* itr = kev_strfamap_search(nfa_map, nfa_name);
+  if (itr) {
+    KevFA* nfa = kev_fa_create_copy(itr->value);
+    if (!nfa) {
       error_type = KEV_REGEX_ERR_GENERATE;
-      kev_regex_set_error_info("failed to create charset \'print\' in kev_get_named_nfa");
+      kev_regex_set_error_info("failed to copy NFA in kev_get_named_nfa");
       return NULL;
     }
-  } else if (strcmp(nfa_name, "graph") == 0) {
-    if (!kev_char_range(nfa, 33, 127)) {
-      kev_fa_delete(nfa);
-      error_type = KEV_REGEX_ERR_GENERATE;
-      kev_regex_set_error_info("failed to create charset \'graph\' in kev_get_named_nfa");
-      return NULL;
-    }
-  } else if (strcmp(nfa_name, "alnum") == 0) {
-    if (!kev_char_range(nfa, 'a', 'z' + 1) ||
-        !kev_char_range(nfa, 'A', 'Z' + 1) ||
-        !kev_char_range(nfa, '0', '9' + 1)) {
-      kev_fa_delete(nfa);
-      error_type = KEV_REGEX_ERR_GENERATE;
-      kev_regex_set_error_info("failed to create charset \'alnum\' in kev_get_named_nfa");
-      return NULL;
-    }
-  } else if (strcmp(nfa_name, "alpha") == 0) {
-    if (!kev_char_range(nfa, 'a', 'z' + 1) ||
-        !kev_char_range(nfa, 'A', 'Z' + 1)) {
-      kev_fa_delete(nfa);
-      error_type = KEV_REGEX_ERR_GENERATE;
-      kev_regex_set_error_info("failed to create charset \'alpha\' in kev_get_named_nfa");
-      return NULL;
-    }
-  } else if (strcmp(nfa_name, "digit") == 0) {
-    if (!kev_char_range(nfa, '0', '9' + 1)) {
-      kev_fa_delete(nfa);
-      error_type = KEV_REGEX_ERR_GENERATE;
-      kev_regex_set_error_info("failed to create charset \'digit\' in kev_get_named_nfa");
-      return NULL;
-    }
-  } else if (strcmp(nfa_name, "lower") == 0) {
-    if (!kev_char_range(nfa, 'a', 'z' + 1)) {
-      kev_fa_delete(nfa);
-      error_type = KEV_REGEX_ERR_GENERATE;
-      kev_regex_set_error_info("failed to create charset \'lower\' in kev_get_named_nfa");
-      return NULL;
-    }
-  } else if (strcmp(nfa_name, "upper") == 0) {
-    if (!kev_char_range(nfa, 'A', 'Z' + 1)) {
-      kev_fa_delete(nfa);
-      error_type = KEV_REGEX_ERR_GENERATE;
-      kev_regex_set_error_info("failed to create charset \'upper\' in kev_get_named_nfa");
-      return NULL;
-    }
+    return nfa;
   } else {
-    if (!nfa_map) {
-      error_type = KEV_REGEX_ERR_SYNTAX;
-      kev_regex_set_error_info("no such NFA");
-      return NULL;
-    }
-    KevStringFaMapNode* itr = kev_strfamap_search(nfa_map, nfa_name);
-    if (itr) {
-      kev_fa_destroy(nfa);
-      if (!kev_fa_init_copy(nfa, itr->value)) {
-        kev_fa_delete(nfa);
-        error_type = KEV_REGEX_ERR_GENERATE;
-        kev_regex_set_error_info("failed to copy NFA in kev_get_named_nfa");
-        return NULL;
-      }
-    } else {
-      kev_fa_delete(nfa);
-      error_type = KEV_REGEX_ERR_SYNTAX;
-      kev_regex_set_error_info("unknown NFA name");
-      return NULL;
-    }
+    error_type = KEV_REGEX_ERR_SYNTAX;
+    kev_regex_set_error_info("unknown NFA name");
+    return NULL;
   }
-  return nfa;
 } 
 
 uint64_t kev_regex_get_error(void) {

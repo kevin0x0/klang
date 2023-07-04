@@ -20,6 +20,8 @@ static int kev_lexgenparser_next_nonblank(KevLexGenLexer* lex, KevLexGenToken* t
 static int kev_lexgenparser_match(KevLexGenLexer* lex, KevLexGenToken* token, int kind);
 static int kev_lexgenparser_guarantee(KevLexGenLexer* lex, KevLexGenToken* token, int kind);
 static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* token, char** p_name);
+static inline bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end);
+static char* kev_get_string(char* str);
 
 int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevPatternList* list, KevStringFaMap* nfa_map) {
   int err_count = 0;
@@ -158,4 +160,112 @@ static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* 
     *p_name = NULL;
   }
   return err_count;
+}
+
+bool kev_lexgenparser_init_nfa(KevPatternList* list, KevStringFaMap* nfa_map) {
+  KevFA* nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
+  char* name = kev_get_string("print");
+  if (!kev_char_range(nfa, 32, 127) ||
+      !kev_pattern_insert(list->head, name, nfa)) {
+    kev_fa_delete(nfa);
+    free(name);
+    return false;
+  }
+  if (!kev_strfamap_update(nfa_map, name, nfa)) {
+    return false;
+  }
+
+  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
+  name = kev_get_string("graph");
+  if (!kev_char_range(nfa, 33, 127) ||
+      !kev_pattern_insert(list->head, name, nfa)) {
+    kev_fa_delete(nfa);
+    free(name);
+    return false;
+  }
+  if (!kev_strfamap_update(nfa_map, name, nfa)) {
+    return false;
+  }
+
+  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
+  name = kev_get_string("alnum");
+  if (!kev_char_range(nfa, 'a', 'z' + 1) ||
+      !kev_char_range(nfa, 'A', 'Z' + 1) ||
+      !kev_char_range(nfa, '0', '9' + 1) ||
+      !kev_pattern_insert(list->head, name, nfa)) {
+    kev_fa_delete(nfa);
+    free(name);
+    return false;
+  }
+  if (!kev_strfamap_update(nfa_map, name, nfa)) {
+    return false;
+  }
+
+  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
+  name = kev_get_string("alpha");
+  if (!kev_char_range(nfa, 'a', 'z' + 1) ||
+      !kev_char_range(nfa, 'A', 'Z' + 1) ||
+      !kev_pattern_insert(list->head, name, nfa)) {
+    kev_fa_delete(nfa);
+    free(name);
+    return false;
+  }
+  if (!kev_strfamap_update(nfa_map, name, nfa)) {
+    return false;
+  }
+
+  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
+  name = kev_get_string("digit");
+  if (!kev_char_range(nfa, '0', '9' + 1) ||
+      !kev_pattern_insert(list->head, name, nfa)) {
+    kev_fa_delete(nfa);
+    free(name);
+    return false;
+  }
+  if (!kev_strfamap_update(nfa_map, name, nfa)) {
+    return false;
+  }
+
+  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
+  name = kev_get_string("lower");
+  if (!kev_char_range(nfa, 'a', 'z' + 1) ||
+      !kev_pattern_insert(list->head, name, nfa)) {
+    kev_fa_delete(nfa);
+    free(name);
+    return false;
+  }
+  if (!kev_strfamap_update(nfa_map, name, nfa)) {
+    return false;
+  }
+
+  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
+  name = kev_get_string("upper");
+  if (!kev_char_range(nfa, 'A', 'Z' + 1) ||
+      !kev_pattern_insert(list->head, name, nfa)) {
+    kev_fa_delete(nfa);
+    free(name);
+    return false;
+  }
+  if (!kev_strfamap_update(nfa_map, name, nfa)) {
+    return false;
+  }
+
+  return true;
+}
+
+static inline bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end) {
+  if (begin < 0 || end < 0) return false;
+  for (int64_t c = begin; c < end; ++c) {
+    if (!kev_nfa_add_transition(nfa, c)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static char* kev_get_string(char* str) {
+  char* ret = (char*)malloc(sizeof (char) * (strlen(str) + 1));
+  if (!ret) return NULL;
+  strcpy(ret, str);
+  return ret;
 }
