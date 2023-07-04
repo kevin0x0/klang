@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     }
     KevLexGenToken token;
     kev_lexgenlexer_next(&lex, &token);
-    //kev_lexgenparser_lex_src(&lex, &token, &list, nfa_map);
+    kev_lexgenparser_lex_src(&lex, &token, &list, nfa_map);
     kev_strfamap_delete(nfa_map);
     kev_patternlist_free_content(&list);
     kev_patternlist_destroy(&list);

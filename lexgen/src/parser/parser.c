@@ -34,7 +34,7 @@ void kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* toke
     kev_parser_error_report(stderr, lex->infile, kev_regex_get_info(), token->begin + kev_regex_get_pos());
     free(name);
   } else {
-    if (!kev_patterninfo_insert(list->tail, name, nfa) ||
+    if (!kev_pattern_insert(list->tail, name, nfa) ||
         !kev_strfamap_update(nfa_map, name, nfa)) {
       kev_parser_error_report(stderr, lex->infile, "failed to register NFA", token->begin);
     }
@@ -66,7 +66,7 @@ void kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* to
       kev_parser_error_report(stderr, lex->infile, kev_regex_get_info(), token->begin + kev_regex_get_pos());
       free(proc_name);
     } else {
-      if (!kev_patterninfo_insert(list->tail, proc_name, nfa)) {
+      if (!kev_pattern_insert(list->tail, proc_name, nfa)) {
         kev_parser_error_report(stderr, lex->infile, "failed to register NFA", token->begin);
       }
     }
