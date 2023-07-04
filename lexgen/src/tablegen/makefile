@@ -9,14 +9,19 @@ GEN_INC_PATH = $(INC_PATH)general/
 #finite_automaton path
 FA_INC_PATH = $(INC_PATH)finite_automaton/
 FA_PATH = $(SRC_PATH)finite_automaton/
-#table_driven_dfa path
-TD_INC_PATH = $(INC_PATH)table_driven_dfa/
-TD_PATH = $(SRC_PATH)table_driven_dfa/
+#tablegen path
+TG_INC_PATH = $(INC_PATH)tablegen/
+TG_PATH = $(SRC_PATH)tablegen/
 
 FA_DEPS = $(FA_INC_PATH)finite_automaton.h $(FA_INC_PATH)graph.h
 
+$(BIN_PATH)tablegen.a : $(BIN_PATH)trans_table.o $(BIN_PATH)acc_mapping.o
+	$(AR) $(AR_OPTION) $@ $^
 
-$(BIN_PATH)table_driven_dfa.o : $(TD_PATH)table_driven_dfa.c $(TD_INC_PATH)table_driven_dfa.h $(FA_DEPS) $(GEN_INC_PATH)global_def.h
+$(BIN_PATH)trans_table.o : $(TG_PATH)trans_table.c $(TG_INC_PATH)trans_table.h $(FA_DEPS) $(GEN_INC_PATH)global_def.h
+	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
+
+$(BIN_PATH)acc_mapping.o : $(TG_PATH)acc_mapping.c $(TG_INC_PATH)acc_mapping.h $(FA_DEPS) $(GEN_INC_PATH)global_def.h
 	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 .PHONY: clean

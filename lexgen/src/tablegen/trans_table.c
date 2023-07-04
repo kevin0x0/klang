@@ -1,9 +1,9 @@
-#include "lexgen/include/table_driven_dfa/table_driven_dfa.h"
+#include "lexgen/include/tablegen/trans_table.h"
 #include "lexgen/include/finite_automaton/finite_automaton.h"
 #include "lexgen/include/finite_automaton/graph.h"
 #include <stdlib.h>
 
-uint8_t (*kev_get_table_256_u8(KevFA* dfa))[256] {
+uint8_t (*kev_get_trans_256_u8(KevFA* dfa))[256] {
   size_t state_number = kev_fa_state_assign_id(dfa, 0);
   if (state_number >= 256) return NULL;
   uint8_t (*table)[256] = (uint8_t(*)[256])malloc(sizeof (*table) * state_number);
@@ -27,7 +27,7 @@ uint8_t (*kev_get_table_256_u8(KevFA* dfa))[256] {
   return table;
 }
 
-uint8_t (*kev_get_table_128_u8(KevFA* dfa))[128] {
+uint8_t (*kev_get_trans_128_u8(KevFA* dfa))[128] {
   size_t state_number = kev_fa_state_assign_id(dfa, 0);
   if (state_number >= 256) return NULL;
   uint8_t (*table)[128] = (uint8_t(*)[128])malloc(sizeof (*table) * state_number);
@@ -51,7 +51,7 @@ uint8_t (*kev_get_table_128_u8(KevFA* dfa))[128] {
   return table;
 }
 
-uint16_t (*kev_get_table_256_u16(KevFA* dfa))[256] {
+uint16_t (*kev_get_trans_256_u16(KevFA* dfa))[256] {
   size_t state_number = kev_fa_state_assign_id(dfa, 0);
   if (state_number >= 65536) return NULL;
   uint16_t (*table)[256] = (uint16_t(*)[256])malloc(sizeof (*table) * state_number);
@@ -75,7 +75,7 @@ uint16_t (*kev_get_table_256_u16(KevFA* dfa))[256] {
   return table;
 }
 
-uint16_t (*kev_get_table_128_u16(KevFA* dfa))[128] {
+uint16_t (*kev_get_trans_128_u16(KevFA* dfa))[128] {
   size_t state_number = kev_fa_state_assign_id(dfa, 0);
   if (state_number >= 65536) return NULL;
   uint16_t (*table)[128] = (uint16_t(*)[128])malloc(sizeof (*table) * state_number);

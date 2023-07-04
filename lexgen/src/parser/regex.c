@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 static uint64_t error_type = KEV_REGEX_ERR_NONE;
 static char* error_info = NULL;
 static size_t error_pos = 0;
@@ -38,13 +37,9 @@ static KevFA* kev_regex_escape_nfa(KevParser* parser);
 /* do not modify 'src' */
 static bool kev_nfa_append(KevFA* dest, KevFA* src);
 static bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end);
-
 uint8_t* kev_regex_ref_name(KevParser* parser);
 KevFA* kev_get_named_nfa(uint8_t* name, KevStringFaMap* nfa_map);
-
 static void kev_regex_set_error_info(char* info);
-
-
 
 KevFA* kev_regex_parse(uint8_t* regex, KevStringFaMap* nfa_map) {
   error_type = KEV_REGEX_ERR_NONE;

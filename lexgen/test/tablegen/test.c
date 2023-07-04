@@ -1,7 +1,7 @@
 
 #include "lexgen/include/finite_automaton/finite_automaton.h"
 #include "lexgen/include/parser/regex.h"
-#include "lexgen/include/table_driven_dfa/table_driven_dfa.h"
+#include "lexgen/include/tablegen/trans_table.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
   size_t* mapping = NULL;
   KevFA* dfa = kev_nfa_to_dfa(nfa_array, &mapping);
   KevFA* min_dfa = kev_dfa_minimization(dfa, mapping);
-  uint8_t (*table)[256] = kev_get_table_256_u8(min_dfa);
+  uint8_t (*table)[256] = kev_get_trans_256_u8(min_dfa);
   output_table(table, min_dfa, mapping);
   kev_fa_delete(name);
   kev_fa_delete(regex);

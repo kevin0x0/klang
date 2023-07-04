@@ -22,10 +22,10 @@ FA_PATH = $(SRC_PATH)finite_automaton/
 RP_INC_PATH = $(INC_PATH)parser/
 RP_PATH = $(SRC_PATH)parser/
 
-TD_INC_PATH = $(INC_PATH)table_driven_dfa/
-TD_PATH = $(SRC_PATH)table_driven_dfa/
+TD_INC_PATH = $(INC_PATH)tablegen/
+TD_PATH = $(SRC_PATH)tablegen/
 
-test.exe : test.c $(RP_PATH)regex.c $(BIN_PATH)libfa.a $(RP_PATH)hashmap/strfa_map.c $(TD_PATH)table_driven_dfa.c
+test.exe : test.c $(RP_PATH)regex.c $(BIN_PATH)libfa.a $(RP_PATH)hashmap/strfa_map.c $(TD_PATH)trans_table.c
 	$(CC) -o $@ $^ $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 

@@ -15,12 +15,12 @@ FA_PATH = $(SRC_PATH)finite_automaton/
 #regex_parser path
 RP_PATH = $(SRC_PATH)parser/
 #table_driven_dfa path
-TD_PATH = $(SRC_PATH)table_driven_dfa/
+TG_PATH = $(SRC_PATH)tablegen/
 
 all : 
 	$(MAKE) -C $(FA_PATH)
 	$(MAKE) -C $(RP_PATH)
-	$(MAKE) -C $(TD_PATH)
+	$(MAKE) -C $(TG_PATH)
 
 
 .PHONY: clean
