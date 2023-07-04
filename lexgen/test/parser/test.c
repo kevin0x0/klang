@@ -58,20 +58,23 @@ void print_acc_mapping_array(FILE* out, KevFA* dfa, uint64_t* array) {
 }
 
 int main(int argc, char** argv) {
-  KevStringFaMap* nfa_map = kev_strfamap_create(8);
-  KevPatternList list;
-  kev_patternlist_init(&list);
-  KevLexGenLexer lex;
-  if (!kev_lexgenlexer_init(&lex, "test.txt")) {
-    fprintf(stderr, "failed to open file\n");
-    return EXIT_FAILURE;
+  while (true) {
+    KevStringFaMap* nfa_map = kev_strfamap_create(8);
+    KevPatternList list;
+    kev_patternlist_init(&list);
+    KevLexGenLexer lex;
+    if (!kev_lexgenlexer_init(&lex, "test.txt")) {
+      fprintf(stderr, "failed to open file\n");
+      return EXIT_FAILURE;
+    }
+    KevLexGenToken token;
+    kev_lexgenlexer_next(&lex, &token);
+    //kev_lexgenparser_lex_src(&lex, &token, &list, nfa_map);
+    kev_strfamap_delete(nfa_map);
+    kev_patternlist_free_content(&list);
+    kev_patternlist_destroy(&list);
+    kev_lexgenlexer_destroy(&lex);
   }
-  KevLexGenToken token;
-  kev_lexgenlexer_next(&lex, &token);
-  kev_lexgenparser_lex_src(&lex, &token, &list, nfa_map);
-  kev_strfamap_delete(nfa_map);
-  kev_patternlist_destroy(&list);
-  kev_lexgenlexer_destroy(&lex);
   return 0;
 
   while (true) {

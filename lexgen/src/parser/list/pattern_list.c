@@ -27,11 +27,13 @@ void kev_patternlist_destroy(KevPatternList* list) {
 }
 
 bool kev_patternlist_insert(KevPatternList* list, char* pattern_name) {
-  list->tail = (KevPatternInfo*)malloc(sizeof (KevPatternInfo));
-  if (!list->tail) return false;
-  list->tail->name = pattern_name;
-  list->tail->fa_info = NULL;
-  list->tail->next = NULL;
+  KevPatternInfo* tail = (KevPatternInfo*)malloc(sizeof (KevPatternInfo));
+  if (!tail) return false;
+  tail->name = pattern_name;
+  tail->fa_info = NULL;
+  tail->next = NULL;
+  list->tail->next = tail;
+  list->tail = tail;
   return true;
 }
 
