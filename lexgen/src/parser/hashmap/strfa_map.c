@@ -4,6 +4,7 @@
 #include <string.h>
 
 inline static size_t kev_strfamap_hashing(char* key) {
+  if (!key) return 0;
   size_t hash_val = 0;
   size_t count = 0;
   while (*key != '\0' && count++ < 8) {
@@ -176,7 +177,7 @@ KevStringFaMapNode* kev_strfamap_iterate_next(KevStringFaMap* map, KevStringFaMa
   return NULL;
 }
 
-bool kev_regex_insert_named_nfa(KevStringFaMap* map, char* key, KevFA* value) {
+bool kev_strfamap_update(KevStringFaMap* map, char* key, KevFA* value) {
   if (!map && !(map = kev_strfamap_create(8)))
     return false;
   KevStringFaMapNode* node = kev_strfamap_search(map, key);

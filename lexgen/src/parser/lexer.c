@@ -39,12 +39,12 @@ bool kev_lexgenlexer_next(KevLexGenLexer* lex, KevLexGenToken* token) {
   uint8_t next_state = 0;
   FILE* infile = lex->infile;
   uint8_t ch = (uint8_t)fgetc(infile);
-  lex_attr_buffer[position++] = ch;
   while ((next_state = table[state][ch]) != KEV_LEXGENLEXER_DEAD) {
     state = next_state;
-    ch = (uint8_t)fgetc(infile);
     lex_attr_buffer[position++] = ch;
+    ch = (uint8_t)fgetc(infile);
   }
+  ungetc(ch, infile);
   lex_attr_buffer[position] = '\0';
   token->begin = lex->position;
   token->end = lex->position + position;

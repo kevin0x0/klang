@@ -35,10 +35,10 @@ bool kev_patternlist_insert(KevPatternList* list, char* pattern_name) {
   return true;
 }
 
-bool kev_patterninfo_insert(KevPatternInfo* info, char* proc_name, KevFA* fa) {
+bool kev_patterninfo_insert(KevPatternInfo* info, char* name, KevFA* fa) {
   KevFAInfo* new_fa_info = (KevFAInfo*)malloc(sizeof (KevFAInfo));
   if (!new_fa_info) return false;
-  new_fa_info->proc_name = proc_name;
+  new_fa_info->name = name;
   new_fa_info->fa = fa;
   new_fa_info->next = info->fa_info;
   info->fa_info = new_fa_info;
@@ -65,8 +65,8 @@ static void kev_patterninfo_destroy(KevPatternInfo* info) {
 static void kev_patterninfo_free_content(KevPatternInfo* info) {
   KevFAInfo* fa_info = info->fa_info;
   while (fa_info) {
-    free(fa_info->proc_name);
-    fa_info->proc_name = NULL;
+    free(fa_info->name);
+    fa_info->name = NULL;
     kev_fa_delete(fa_info->fa);
     fa_info->fa = NULL;
     fa_info = fa_info->next;

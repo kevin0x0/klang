@@ -1,6 +1,11 @@
 #include "lexgen/include/finite_automaton/finite_automaton.h"
+#include "lexgen/include/parser/hashmap/strfa_map.h"
+#include "lexgen/include/parser/lexer.h"
+#include "lexgen/include/parser/list/pattern_list.h"
 #include "lexgen/include/parser/regex.h"
+#include "lexgen/include/parser/parser.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 void print_graph(FILE* out, KevGraph* graph) {
   if (graph->head == NULL) return;
@@ -53,10 +58,27 @@ void print_acc_mapping_array(FILE* out, KevFA* dfa, uint64_t* array) {
 }
 
 int main(int argc, char** argv) {
+  KevStringFaMap* nfa_map = kev_strfamap_create(8);
+  KevPatternList list;
+  kev_patternlist_init(&list);
+  KevLexGenLexer lex;
+  if (!kev_lexgenlexer_init(&lex, "test.txt")) {
+    fprintf(stderr, "failed to open file\n");
+    return EXIT_FAILURE;
+  }
+  KevLexGenToken token;
+  kev_lexgenlexer_next(&lex, &token);
+  kev_lexgenparser_lex_src(&lex, &token, &list, nfa_map);
+  kev_strfamap_delete(nfa_map);
+  kev_patternlist_destroy(&list);
+  kev_lexgenlexer_destroy(&lex);
+  return 0;
+
   while (true) {
+    KevStringFaMap* map = kev_strfamap_create(8);
     KevFA* nfa_a = kev_nfa_create('a');
-    kev_strfamap_update("mynfa", nfa_a);
-    KevFA* nfa = kev_regex_parse(argv[1]);
+    kev_strfamap_update(map, "mynfa", nfa_a);
+    KevFA* nfa = kev_regex_parse(argv[1], map);
     if (nfa) {
       kev_fa_state_assign_id(nfa, 0);
       print_nfa(stdout, nfa);
@@ -72,7 +94,7 @@ int main(int argc, char** argv) {
       printf("%s\n", kev_regex_get_info());
     }
     kev_fa_delete(nfa_a);
-    kev_regex_destroy_named_nfa();
+    kev_strfamap_delete(map);
   }
   return 0;
   

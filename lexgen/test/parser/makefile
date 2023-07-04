@@ -3,7 +3,7 @@ CC = gcc
 AR = ar
 
 
-ROOT_PATH = C:/Users/flamm/work/kevcc/
+ROOT_PATH = $(abspath ../../../)/
 
 CC_GLOBAL_PARAM = -Wall -I $(ROOT_PATH)
 
@@ -19,10 +19,7 @@ GEN_INC_PATH = $(INC_PATH)general/
 FA_INC_PATH = $(INC_PATH)finite_automaton/
 FA_PATH = $(SRC_PATH)finite_automaton/
 
-RP_INC_PATH = $(INC_PATH)parser/
-RP_PATH = $(SRC_PATH)parser/
-
-test.exe : test.c $(RP_PATH)regex.c $(BIN_PATH)libfa.a $(RP_PATH)hashmap/strfa_map.c
+test.exe : test.c $(BIN_PATH)libparser.a $(BIN_PATH)libfa.a
 	$(CC) -o $@ $^ $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 

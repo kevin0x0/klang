@@ -3,7 +3,7 @@ CC = gcc
 AR = ar
 
 
-ROOT_PATH = C:/Users/flamm/work/kevcc/
+ROOT_PATH = $(abspath ../../../)/
 
 CC_GLOBAL_PARAM = -Wall -I $(ROOT_PATH)
 

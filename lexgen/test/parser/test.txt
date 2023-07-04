@@ -1,0 +1,7 @@
+def name:
+  $ [A-Za-z_][A-Za-z0-9_]*
+
+def number:
+  (lx_dec) $ [1-9][0-9]*
+  (lx_oct) $ 0[0-7]*
+  (lx_hex) $ 0x[A-Za-z0-9]+

@@ -1,8 +1,10 @@
 #include "lexgen/include/parser/error.h"
-#include "lexgen/include/parser/lexer.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 void kev_parser_error_report(FILE* err_stream, FILE* infile, char* info, size_t position) {
+  size_t original_position = ftell(infile);
+  fseek(infile, 0, SEEK_SET);
   size_t count = 0;
   size_t line_begin = 0;
   size_t line_no = 1;
@@ -27,18 +29,23 @@ void kev_parser_error_report(FILE* err_stream, FILE* infile, char* info, size_t 
   count = line_begin;
   while (count++ < position) {
     ch = fgetc(infile);
-    if (ch == '\t') fputc(ch, err_stream);
+    if (ch == '\t')
+      fputc('\t', err_stream);
+    else
+      fputc(' ', err_stream);
+
   }
   fputc('^', err_stream);
   fputc('\n', err_stream);
+  fseek(infile, original_position, SEEK_SET);
 }
 
-void kev_parser_error_handling(FILE* err_stream, KevLexGenLexer* lex, int kind) {
+void kev_parser_error_handling(FILE* err_stream, KevLexGenLexer* lex, int kind, bool complement) {
   KevLexGenToken token;
   do {
     kev_lexgenlexer_next(lex, &token);
-  } while (token.kind != kind && token.kind != KEV_LEXGEN_TOKEN_END);
-  if (token.kind != kind) {
+  } while ((token.kind == kind) == complement && token.kind != KEV_LEXGEN_TOKEN_END);
+  if ((token.kind == kind) == complement) {
     fputs("fatal: can not recovery from last error, terminated\n", err_stream);
     exit(EXIT_FAILURE);
   }

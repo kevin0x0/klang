@@ -4,7 +4,7 @@
 
 typedef struct tagKevFAInfo {
   KevFA* fa;
-  char* proc_name;
+  char* name;
   struct tagKevFAInfo* next;
 } KevFAInfo;
 
@@ -22,7 +22,7 @@ typedef struct tagKevPatternList {
 bool kev_patternlist_init(KevPatternList* list);
 void kev_patternlist_destroy(KevPatternList* list);
 bool kev_patternlist_insert(KevPatternList* list, char* pattern_name);
-bool kev_patterninfo_insert(KevPatternInfo* info, char* proc_name, KevFA* fa);
+bool kev_patterninfo_insert(KevPatternInfo* info, char* name, KevFA* fa);
 
 void kev_patternlist_free_content(KevPatternList* list);
 

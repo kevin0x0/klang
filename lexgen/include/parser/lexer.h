@@ -4,13 +4,16 @@
 #include "lexgen/include/general/global_def.h"
 #include <stdio.h>
 
-#define KEV_LEXGEN_TOKEN_ERR    (-1)
-#define KEV_LEXGEN_TOKEN_NAME   (0)
-#define KEV_LEXGEN_TOKEN_REGEX  (1)
-#define KEV_LEXGEN_TOKEN_ASSIGN (2)
-#define KEV_LEXGEN_TOKEN_COLON  (3)
-#define KEV_LEXGEN_TOkEN_BLANKS (4)
-#define KEV_LEXGEN_TOKEN_END    (5)
+#define KEV_LEXGEN_TOKEN_ERR          (-1)
+#define KEV_LEXGEN_TOKEN_DEF          (0)
+#define KEV_LEXGEN_TOKEN_NAME         (1)
+#define KEV_LEXGEN_TOKEN_REGEX        (2)
+#define KEV_LEXGEN_TOKEN_ASSIGN       (3)
+#define KEV_LEXGEN_TOKEN_COLON        (4)
+#define KEV_LEXGEN_TOKEN_BLANKS       (5)
+#define KEV_LEXGEN_TOKEN_OPEN_PAREN   (6)
+#define KEV_LEXGEN_TOKEN_CLOSE_PAREN  (7)
+#define KEV_LEXGEN_TOKEN_END          (8)
 
 typedef struct tagKevLexGenLexer {
   FILE* infile;

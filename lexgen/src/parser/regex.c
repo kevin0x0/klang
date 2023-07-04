@@ -6,10 +6,9 @@
 #include <string.h>
 
 
-static uint64_t parser_error = KEV_REGEX_ERR_NONE;
+static uint64_t error_type = KEV_REGEX_ERR_NONE;
 static char* error_info = NULL;
-
-static KevStringFaMap* named_nfa = NULL;
+static size_t error_pos = 0;
 
 typedef struct tagKevParser {
   uint8_t* regex;
@@ -27,13 +26,13 @@ static inline void kev_regex_clear_blank(KevParser* parser) {
   }
 }
 
-static KevFA* kev_regex(KevParser* parser);
-static KevFA* kev_regex_alternation(KevParser* parser);
-static KevFA* kev_regex_concatenation(KevParser* parser);
-static KevFA* kev_regex_unit(KevParser* parser);
+static KevFA* kev_regex(KevParser* parser, KevStringFaMap* nfa_map);
+static KevFA* kev_regex_alternation(KevParser* parser, KevStringFaMap* nfa_map);
+static KevFA* kev_regex_concatenation(KevParser* parser, KevStringFaMap* nfa_map);
+static KevFA* kev_regex_unit(KevParser* parser, KevStringFaMap* nfa_map);
 static bool kev_regex_post(KevParser* parser, KevFA* nfa);
 static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa);
-static KevFA* kev_regex_charset(KevParser* parser);
+static KevFA* kev_regex_charset(KevParser* parser, KevStringFaMap* nfa_map);
 static int kev_regex_escape(KevParser* parser);
 static KevFA* kev_regex_escape_nfa(KevParser* parser);
 /* do not modify 'src' */
@@ -41,16 +40,16 @@ static bool kev_nfa_append(KevFA* dest, KevFA* src);
 static bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end);
 
 uint8_t* kev_regex_ref_name(KevParser* parser);
-KevFA* kev_get_named_nfa(uint8_t* name);
+KevFA* kev_get_named_nfa(uint8_t* name, KevStringFaMap* nfa_map);
 
 static void kev_regex_set_error_info(char* info);
 
 
 
 KevFA* kev_regex_parse(uint8_t* regex, KevStringFaMap* nfa_map) {
-  parser_error = KEV_REGEX_ERR_NONE;
+  error_type = KEV_REGEX_ERR_NONE;
   if (!regex) {
-    parser_error = KEV_REGEX_ERR_INVALID_INPUT;
+    error_type = KEV_REGEX_ERR_INVALID_INPUT;
     kev_regex_set_error_info("empty input");
     return NULL;
   }
@@ -58,24 +57,26 @@ KevFA* kev_regex_parse(uint8_t* regex, KevStringFaMap* nfa_map) {
   parser.regex = regex;
   parser.current = regex;
   kev_regex_clear_blank(&parser);
-  named_nfa = nfa_map;
-  KevFA* nfa = kev_regex(&parser);
-  named_nfa = NULL;
-  if (!nfa) return nfa;
+  KevFA* nfa = kev_regex(&parser, nfa_map);
+  if (!nfa) {
+    error_pos = parser.current - parser.regex;
+    return NULL;
+  }
   if (*parser.current != '\0') {
-    parser_error = KEV_REGEX_ERR_SYNTAX;
+    error_type = KEV_REGEX_ERR_SYNTAX;
     kev_regex_set_error_info("expected \'\\0\'");
     kev_fa_delete(nfa);
+    error_pos = parser.current - parser.regex;
     return NULL;
   }
   return nfa;
 }
 
-static KevFA* kev_regex(KevParser* parser) {
-  KevFA* nfa = kev_regex_alternation(parser);
+static KevFA* kev_regex(KevParser* parser, KevStringFaMap* nfa_map) {
+  KevFA* nfa = kev_regex_alternation(parser, nfa_map);
   if (!nfa) return NULL;
   if (*parser->current != '\0') {
-    parser_error = KEV_REGEX_ERR_SYNTAX;
+    error_type = KEV_REGEX_ERR_SYNTAX;
     kev_regex_set_error_info("expected end of the expression");
     kev_fa_delete(nfa);
     return NULL;
@@ -83,18 +84,18 @@ static KevFA* kev_regex(KevParser* parser) {
   return nfa;
 }
 
-static KevFA* kev_regex_alternation(KevParser* parser) {
-  KevFA* nfa = kev_regex_concatenation(parser);
+static KevFA* kev_regex_alternation(KevParser* parser, KevStringFaMap* nfa_map) {
+  KevFA* nfa = kev_regex_concatenation(parser, nfa_map);
   if (!nfa) return NULL;
   while (*parser->current == '|') {
     kev_regex_next_char(parser);
-    KevFA* nfa1 = kev_regex_concatenation(parser);
+    KevFA* nfa1 = kev_regex_concatenation(parser, nfa_map);
     if (!nfa1) {
       kev_fa_delete(nfa);
       return NULL;
     }
     if (!kev_nfa_alternation(nfa, nfa1)) {
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to do alternation");
       kev_fa_delete(nfa);
       kev_fa_delete(nfa1);
@@ -105,18 +106,18 @@ static KevFA* kev_regex_alternation(KevParser* parser) {
   return nfa;
 }
 
-static KevFA* kev_regex_concatenation(KevParser* parser) {
-  KevFA* nfa = kev_regex_unit(parser);
+static KevFA* kev_regex_concatenation(KevParser* parser, KevStringFaMap* nfa_map) {
+  KevFA* nfa = kev_regex_unit(parser, nfa_map);
   if (!nfa) return NULL;
   uint8_t ch = *parser->current;
   while (ch != '|' && ch != '\0' && ch != ')') {
-    KevFA* nfa1 = kev_regex_unit(parser);
+    KevFA* nfa1 = kev_regex_unit(parser, nfa_map);
     if (!nfa1) {
       kev_fa_delete(nfa);
       return NULL;
     }
     if (!kev_nfa_concatenation(nfa, nfa1)) {
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to do concatenation");
       kev_fa_delete(nfa);
       kev_fa_delete(nfa1);
@@ -129,7 +130,7 @@ static KevFA* kev_regex_concatenation(KevParser* parser) {
 }
 
 
-static KevFA* kev_regex_unit(KevParser* parser) {
+static KevFA* kev_regex_unit(KevParser* parser, KevStringFaMap* nfa_map) {
   static uint8_t illegal[256] = {
     ['{'] = 1, ['}'] = 1, [')'] = 1, [']'] = 1,
     ['|'] = 1, ['+'] = 1, ['?'] = 1, ['*'] = 1,
@@ -139,30 +140,30 @@ static KevFA* kev_regex_unit(KevParser* parser) {
   KevFA* nfa = NULL;
   if (ch == '(') {
     kev_regex_next_char(parser);
-    nfa = kev_regex_alternation(parser);
+    nfa = kev_regex_alternation(parser, nfa_map);
     if (!nfa) return NULL;
     if (*parser->current != ')') {
-      parser_error = KEV_REGEX_ERR_SYNTAX;
+      error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("expected \')\'");
       kev_fa_delete(nfa);
       return NULL;
     }
     kev_regex_next_char(parser);
   } else if (ch == '[') {
-    nfa = kev_regex_charset(parser);
+    nfa = kev_regex_charset(parser, nfa_map);
     if (!nfa) return NULL;
   } else if (ch == '.') {
     nfa = kev_nfa_create(ch);
     if (!nfa ||
         !kev_char_range(nfa, 0, 256)) {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create NFA");
       return NULL;
     }
     kev_regex_next_char(parser);
   } else if (illegal[ch]) {
-    parser_error = KEV_REGEX_ERR_SYNTAX;
+    error_type = KEV_REGEX_ERR_SYNTAX;
     kev_regex_set_error_info("expected character");
     return NULL;
   } else if (ch == '\\') {
@@ -171,7 +172,7 @@ static KevFA* kev_regex_unit(KevParser* parser) {
   } else {
     nfa = kev_nfa_create(ch);
     if (!nfa) {
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create NFA");
       return NULL;
     }
@@ -186,7 +187,7 @@ static int kev_regex_escape(KevParser* parser) {
   int64_t number = 0;
   switch (ch) {
     case '\0': {
-      parser_error = KEV_REGEX_ERR_SYNTAX;
+      error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("unexpected \'\\0\'");
       number = -1;
     }
@@ -252,7 +253,7 @@ static inline KevFA* kev_regex_escape_nfa(KevParser* parser) {
   if (number < 0) return NULL;
   KevFA* nfa = kev_nfa_create(number);
   if (!nfa) {
-    parser_error = KEV_REGEX_ERR_GENERATE;
+    error_type = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("failed to create NFA");
     return NULL;
   }
@@ -270,7 +271,7 @@ static bool kev_regex_post(KevParser* parser, KevFA* nfa) {
       case '*': {
         if (!kev_nfa_kleene(nfa)) {
           kev_fa_delete(nfa);
-          parser_error = KEV_REGEX_ERR_GENERATE;
+          error_type = KEV_REGEX_ERR_GENERATE;
           kev_regex_set_error_info("failed to do kleene closure");
           return false;
         }
@@ -280,7 +281,7 @@ static bool kev_regex_post(KevParser* parser, KevFA* nfa) {
       case '+': {
         if (!kev_nfa_positive(nfa)) {
           kev_fa_delete(nfa);
-          parser_error = KEV_REGEX_ERR_GENERATE;
+          error_type = KEV_REGEX_ERR_GENERATE;
           kev_regex_set_error_info("failed to do positive closure");
           return false;
         }
@@ -290,7 +291,7 @@ static bool kev_regex_post(KevParser* parser, KevFA* nfa) {
       case '?': {
         if (!kev_nfa_add_transition(nfa, KEV_NFA_SYMBOL_EPSILON)) {
           kev_fa_delete(nfa);
-          parser_error = KEV_REGEX_ERR_GENERATE;
+          error_type = KEV_REGEX_ERR_GENERATE;
           kev_regex_set_error_info("failed to do ? operation");
           return false;
         }
@@ -320,7 +321,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
     parser->current = pos;
   } else {
     kev_fa_delete(nfa);
-    parser_error = KEV_REGEX_ERR_SYNTAX;
+    error_type = KEV_REGEX_ERR_SYNTAX;
     kev_regex_set_error_info("expected decimal integer");
     return false;
   }
@@ -336,28 +337,28 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
       parser->current = pos;
     } else {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_SYNTAX;
+      error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("expected decimal integer");
       return false;
     }
     kev_regex_clear_blank(parser);
     if (*parser->current != '}') {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_SYNTAX;
+      error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("expected \'}\'");
       return false;
     }
     kev_regex_next_char(parser);
   } else {
     kev_fa_delete(nfa);
-    parser_error = KEV_REGEX_ERR_SYNTAX;
+    error_type = KEV_REGEX_ERR_SYNTAX;
     kev_regex_set_error_info("expected \'}\' or \',\'");
     return false;
   }
 
   if (m > n) {
     kev_fa_delete(nfa);
-    parser_error = KEV_REGEX_ERR_SYNTAX;
+    error_type = KEV_REGEX_ERR_SYNTAX;
     kev_regex_set_error_info("left number should not be larger than right number");
     return false;
   }
@@ -365,7 +366,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
   KevFA result;
   if (!kev_nfa_init(&result, KEV_NFA_SYMBOL_EPSILON)) {
     kev_fa_delete(nfa);
-    parser_error = KEV_REGEX_ERR_GENERATE;
+    error_type = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("failed to repeat");
     return false;
   }
@@ -374,7 +375,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
     if (!kev_nfa_append(&result, nfa)) {
       kev_fa_destroy(&result);
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to repeat");
       return false;
     }
@@ -382,7 +383,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
   if (!kev_nfa_add_transition(nfa, KEV_NFA_SYMBOL_EPSILON)) {
       kev_fa_destroy(&result);
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to repeat");
       return false;
   }
@@ -390,7 +391,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
     if (!kev_nfa_append(&result, nfa)) {
       kev_fa_destroy(&result);
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to repeat");
       return false;
     }
@@ -400,7 +401,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
   return true;
 }
 
-static KevFA* kev_regex_charset(KevParser* parser) {
+static KevFA* kev_regex_charset(KevParser* parser, KevStringFaMap* nfa_map) {
   bool in_charset[256];
   bool mark = true;
   kev_regex_next_char(parser);
@@ -413,19 +414,19 @@ static KevFA* kev_regex_charset(KevParser* parser) {
     if (!name) return NULL;
     if (*parser->current != ':') {
       free(name);
-      parser_error = KEV_REGEX_ERR_SYNTAX;
+      error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("expected \':\'");
       return NULL;
     }
     kev_regex_next_char(parser);
     if (*parser->current != ']') {
       free(name);
-      parser_error = KEV_REGEX_ERR_SYNTAX;
+      error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("expected \']\'");
       return NULL;
     }
     kev_regex_next_char(parser);
-    KevFA* nfa = kev_get_named_nfa(name);
+    KevFA* nfa = kev_get_named_nfa(name, nfa_map);
     free(name);
     return nfa;
   }
@@ -442,7 +443,7 @@ static KevFA* kev_regex_charset(KevParser* parser) {
       if (number < 0) return NULL;
       begin = (uint8_t)number;
     } else if (*parser->current == '\0' || *parser->current == '-') {
-      parser_error = KEV_REGEX_ERR_SYNTAX;
+      error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("expected \']\'");
       return NULL;
     } else {
@@ -456,7 +457,7 @@ static KevFA* kev_regex_charset(KevParser* parser) {
         if (number < 0) return NULL;
         end = (uint8_t)number;
       } else if (*parser->current == ']' || *parser->current == '\0' || *parser->current == '-') {
-        parser_error = KEV_REGEX_ERR_SYNTAX;
+        error_type = KEV_REGEX_ERR_SYNTAX;
         kev_regex_set_error_info("expected character");
         return NULL;
       } else {
@@ -472,13 +473,13 @@ static KevFA* kev_regex_charset(KevParser* parser) {
   KevFA* nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
   if (!nfa) {
     kev_fa_delete(nfa);
-    parser_error = KEV_REGEX_ERR_GENERATE;
+    error_type = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("failed to create charset");
   }
   for (int i = 0; i < 256; ++i) {
     if (in_charset[i] && !kev_nfa_add_transition(nfa, i)) {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create charset");
     }
   }
@@ -515,7 +516,7 @@ uint8_t* kev_regex_ref_name(KevParser* parser) {
   }
   uint8_t* name = (uint8_t*)malloc(sizeof (uint8_t) * (name_end - parser->current + 1));
   if (!name) {
-    parser_error = KEV_REGEX_ERR_GENERATE;
+    error_type = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("out of memory");
     return NULL;
   }
@@ -526,25 +527,25 @@ uint8_t* kev_regex_ref_name(KevParser* parser) {
   return name;
 }
 
-KevFA* kev_get_named_nfa(uint8_t* name) {
+KevFA* kev_get_named_nfa(uint8_t* name, KevStringFaMap* nfa_map) {
   char* nfa_name = (char*)name;
   KevFA* nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
   if (!nfa) {
-    parser_error = KEV_REGEX_ERR_GENERATE;
+    error_type = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("failed to create nfa in kev_get_named_nfa");
     return NULL;
   }
   if (strcmp(nfa_name, "print") == 0) {
     if (!kev_char_range(nfa, 32, 127)) {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create charset \'print\' in kev_get_named_nfa");
       return NULL;
     }
   } else if (strcmp(nfa_name, "graph") == 0) {
     if (!kev_char_range(nfa, 33, 127)) {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create charset \'graph\' in kev_get_named_nfa");
       return NULL;
     }
@@ -553,7 +554,7 @@ KevFA* kev_get_named_nfa(uint8_t* name) {
         !kev_char_range(nfa, 'A', 'Z' + 1) ||
         !kev_char_range(nfa, '0', '9' + 1)) {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create charset \'alnum\' in kev_get_named_nfa");
       return NULL;
     }
@@ -561,49 +562,49 @@ KevFA* kev_get_named_nfa(uint8_t* name) {
     if (!kev_char_range(nfa, 'a', 'z' + 1) ||
         !kev_char_range(nfa, 'A', 'Z' + 1)) {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create charset \'alpha\' in kev_get_named_nfa");
       return NULL;
     }
   } else if (strcmp(nfa_name, "digit") == 0) {
     if (!kev_char_range(nfa, '0', '9' + 1)) {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create charset \'digit\' in kev_get_named_nfa");
       return NULL;
     }
   } else if (strcmp(nfa_name, "lower") == 0) {
     if (!kev_char_range(nfa, 'a', 'z' + 1)) {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create charset \'lower\' in kev_get_named_nfa");
       return NULL;
     }
   } else if (strcmp(nfa_name, "upper") == 0) {
     if (!kev_char_range(nfa, 'A', 'Z' + 1)) {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_GENERATE;
+      error_type = KEV_REGEX_ERR_GENERATE;
       kev_regex_set_error_info("failed to create charset \'upper\' in kev_get_named_nfa");
       return NULL;
     }
   } else {
-    if (!named_nfa) {
-      parser_error = KEV_REGEX_ERR_SYNTAX;
+    if (!nfa_map) {
+      error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("no such NFA");
       return NULL;
     }
-    KevStringFaMapNode* itr = kev_strfamap_search(named_nfa, nfa_name);
+    KevStringFaMapNode* itr = kev_strfamap_search(nfa_map, nfa_name);
     if (itr) {
       kev_fa_destroy(nfa);
       if (!kev_fa_init_copy(nfa, itr->value)) {
         kev_fa_delete(nfa);
-        parser_error = KEV_REGEX_ERR_GENERATE;
+        error_type = KEV_REGEX_ERR_GENERATE;
         kev_regex_set_error_info("failed to copy NFA in kev_get_named_nfa");
         return NULL;
       }
     } else {
       kev_fa_delete(nfa);
-      parser_error = KEV_REGEX_ERR_SYNTAX;
+      error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("unknown NFA name");
       return NULL;
     }
@@ -612,9 +613,13 @@ KevFA* kev_get_named_nfa(uint8_t* name) {
 } 
 
 uint64_t kev_regex_get_error(void) {
-  return parser_error;
+  return error_type;
 }
 
 char* kev_regex_get_info(void) {
   return error_info;
+}
+
+size_t kev_regex_get_pos(void) {
+  return error_pos;
 }

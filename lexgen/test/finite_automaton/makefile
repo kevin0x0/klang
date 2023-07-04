@@ -4,7 +4,7 @@ CC = gcc
 AR = ar
 
 
-ROOT_PATH = ~/project/kevcc/
+ROOT_PATH = $(abspath ../../../)/
 
 CC_GLOBAL_PARAM = -Wall -I $(ROOT_PATH)
 
