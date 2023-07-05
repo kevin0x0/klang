@@ -162,7 +162,7 @@ static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* 
   return err_count;
 }
 
-bool kev_lexgenparser_init_nfa(KevPatternList* list, KevStringFaMap* nfa_map) {
+bool kev_lexgenparser_posix_charset(KevPatternList* list, KevStringFaMap* nfa_map) {
   KevFA* nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
   char* name = kev_get_string("print");
   if (!kev_char_range(nfa, 32, 127) ||
