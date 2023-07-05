@@ -9,7 +9,7 @@ GEN_INC_PATH = $(INC_PATH)general/
 #finite_automaton path
 FA_INC_PATH = $(INC_PATH)finite_automaton/
 FA_PATH = $(SRC_PATH)finite_automaton/
-#regex_parser path
+#parser path
 PS_INC_PATH = $(INC_PATH)parser/
 PS_PATH = $(SRC_PATH)parser/
 
