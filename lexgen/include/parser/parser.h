@@ -4,9 +4,16 @@
 #include "lexgen/include/parser/hashmap/strfa_map.h"
 #include "lexgen/include/parser/list/pattern_list.h"
 
-int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevPatternList* list, KevStringFaMap* nfa_map);
-int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* token, KevPatternList* list, KevStringFaMap* nfa_map);
-int kev_lexgenparser_lex_src(KevLexGenLexer* lex, KevLexGenToken* token, KevPatternList* list, KevStringFaMap* nfa_map);
-bool kev_lexgenparser_posix_charset(KevPatternList* list, KevStringFaMap* nfa_map);
+typedef struct tagKevParserState {
+  KevPatternList list;
+  KevStringFaMap nfa_map;
+} KevParserState;
+
+int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);
+int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);
+int kev_lexgenparser_lex_src(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);
+bool kev_lexgenparser_posix_charset(KevParserState* parser_state);
+bool kev_lexgenparser_init(KevParserState* parser_state);
+void kev_lexgenparser_destroy(KevParserState* parser_state);
 
 #endif

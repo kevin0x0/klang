@@ -1,11 +1,3 @@
-export OPTIMIZE = -g
-export CC = gcc
-export AR = ar
-export AR_OPTION = rcs
-export ROOT_PATH = $(abspath $(shell pwd)/..)/
-export CC_GLOBAL_PARAM = -Wall -I $(ROOT_PATH)
-
-EXEC_NAME = lexgen
 LEXGEN_PATH = $(ROOT_PATH)lexgen/
 INC_PATH = $(LEXGEN_PATH)include/
 SRC_PATH = $(LEXGEN_PATH)src/
@@ -22,17 +14,18 @@ TG_PATH = $(SRC_PATH)tablegen/
 LG_PATH = $(SRC_PATH)lexgen/
 
 all: $(BIN_PATH)main.o 
+	mkdir -p $(BIN_PATH)
 	$(MAKE) -C $(FA_PATH)
 	$(MAKE) -C $(PS_PATH)
 	$(MAKE) -C $(TG_PATH)
 	$(MAKE) -C $(LG_PATH)
-	$(CC) -o $(EXEC_NAME) $(BIN_PATH)main.o $(BIN_PATH)lexgen.a $(BIN_PATH)tablegen.a $(BIN_PATH)parser.a $(BIN_PATH)finite_automaton.a
+	$(CC) -o $(BIN_PATH)$(TARGET_LEXGEN_NAME) $(BIN_PATH)main.o $(BIN_PATH)liblexgen.a $(BIN_PATH)libtablegen.a $(BIN_PATH)libparser.a $(BIN_PATH)libfa.a
 
 $(BIN_PATH)main.o : $(SRC_PATH)main.c
-	$(CC) -c -o $@ $< $(OPTIMIZE) $(CC_GLOBAL_PARAM) 
+	mkdir -p $(BIN_PATH)
+	$(CC) -c -o $@ $< $(CFLAGS) 
 
 
 .PHONY: clean
-
 clean :
-	-rm $(BIN_PATH)*.o $(BIN_PATH)*.a
+	rm $(BIN_PATH)*.o $(BIN_PATH)*.a $(BIN_PATH)$(TARGET_LEXGEN_NAME)
