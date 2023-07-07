@@ -31,12 +31,15 @@ bool kev_lexgenparser_init(KevParserState* parser_state) {
     kev_patternlist_destroy(&parser_state->list);
     return false;
   }
+  /* TODO: initialize tmpl_map */
   return true;
 }
 
 void kev_lexgenparser_destroy(KevParserState* parser_state) {
+  kev_patternlist_free_content(&parser_state->list);
   kev_patternlist_destroy(&parser_state->list);
   kev_strfamap_destroy(&parser_state->nfa_map);
+  /* TODO: destroy tmpl_map */
 }
 
 int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {

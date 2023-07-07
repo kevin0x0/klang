@@ -2,6 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include "lexgen/include/lexgen/control.h"
+#include "lexgen/include/lexgen/template.h"
 #include "lexgen/include/parser/parser.h"
 #include "lexgen/include/parser/hashmap/strfa_map.h"
 #include "lexgen/include/parser/list/pattern_list.h"
@@ -16,62 +17,82 @@ static void fatal_error(char* info, char* info2);
 static int kev_lexgen_parse(FILE* input, KevParserState* parser_state);
 /* return number of NFAs */
 static size_t kev_lexgen_generate(KevPatternList* list, KevStringFaMap* map, KevFA** p_min_dfa, size_t** p_acc_mapping);
-/* output transition table, acc_mapping array and start_state. */
-static void kev_lexgen_output_dfa(FILE* output, KevFA* dfa, uint64_t* acc_mapping, int* options);
+/* output transition table, pattern_mapping array and start_state. */
+static void kev_lexgen_output_table(FILE* output, KevFA* dfa, uint64_t* pattern_mapping, KevOptions* options);
 static void kev_lexgen_output_callback(FILE* output, KevFA* dfa, KevPatternList* list, size_t* acc_mapping, int* options);
 static void kev_lexgen_output_info(FILE* output, KevPatternList* list, size_t* pattern_mapping, int* options);
 
 static void kev_lexgen_regularize_mapping(KevFA* dfa, size_t nfa_no, KevPatternList* list, size_t* acc_mapping, size_t** p_pattern_mapping);
 
-static void kev_lexgen_print_table_128_u8(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint8_t (*table)[128]);
-static void kev_lexgen_print_table_128_u16(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint16_t (*table)[128]);
-static void kev_lexgen_print_table_256_u8(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint8_t (*table)[256]);
-static void kev_lexgen_print_table_256_u16(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint16_t (*table)[256]);
+static void kev_lexgen_print_table_128_u8(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint8_t (*table)[128], char* language);
+static void kev_lexgen_print_table_128_u16(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint16_t (*table)[128], char* language);
+static void kev_lexgen_print_table_256_u8(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint8_t (*table)[256], char* language);
+static void kev_lexgen_print_table_256_u16(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint16_t (*table)[256], char* language);
 
-static void kev_lexgen_gen_src(char* language, KevOptions* options);
+static void kev_lexgen_output_src(char* language, KevOptions* options, KevStringMap* tmpl_map);
+static void kev_lexgen_output_arc(char* compiler, KevOptions* options);
+static void kev_lexgen_output_sha(char* compiler, KevOptions* options);
 
 static void kev_output_escape_string(FILE* output, char* str);
 static void kev_lexgen_help(void);
 
 void kev_lexgen_control(KevOptions* options) {
+  /* show help */
   if (options->opts[KEV_LEXGEN_OPT_HELP]) {
     kev_lexgen_help();
     return;
   }
-  FILE* input = fopen(options->strs[KEV_LEXGEN_INPUT_PATH], "r");
-  if (!input) {
-    fatal_error("can not open file:", options->strs[KEV_LEXGEN_INPUT_PATH]);
-  }
-  FILE* output = fopen(options->strs[KEV_LEXGEN_OUT_TAB_PATH], "w");
-  if (!output) {
-    fclose(input);
-    fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_TAB_PATH]);
-  }
+
   KevParserState parser_state;
   if (!kev_lexgenparser_init(&parser_state)) {
-    fclose(input);
-    fclose(output);
     fatal_error("failed to initialize parser", NULL);
+  }
+  /* read lexical description file */
+  FILE* input = fopen(options->strs[KEV_LEXGEN_INPUT_PATH], "r");
+  if (!input) {
+    kev_lexgenparser_destroy(&parser_state);
+    fatal_error("can not open file:", options->strs[KEV_LEXGEN_INPUT_PATH]);
   }
   int error_number = kev_lexgen_parse(input, &parser_state);
   if (error_number != 0) {
     fprintf(stderr, "%d error(s) detected.\n", error_number);
-    exit(EXIT_SUCCESS);
+    exit(EXIT_FAILURE);
   }
+  fclose(input);
+  /* generate minimized DFA */
   KevFA* dfa;
   size_t* acc_mapping;
   size_t nfa_no = kev_lexgen_generate(&parser_state.list, &parser_state.nfa_map, &dfa, &acc_mapping);
-  kev_lexgen_output_dfa(output, dfa, acc_mapping, options->opts);
+  /* output transition table */
+  FILE* output_table = fopen(options->strs[KEV_LEXGEN_OUT_TAB_PATH], "w");
+  if (!output_table) {
+    fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_TAB_PATH]);
+  }
+  kev_lexgen_output_table(output_table, dfa, acc_mapping, options);
+  /* output optional infomation */
   if (options->opts[KEV_LEXGEN_OPT_PUT_CALLBACK])
-    kev_lexgen_output_callback(output, dfa, &parser_state.list, acc_mapping, options->opts);
+    kev_lexgen_output_callback(output_table, dfa, &parser_state.list, acc_mapping, options->opts);
   size_t* pattern_mapping = NULL;
   kev_lexgen_regularize_mapping(dfa, nfa_no, &parser_state.list, acc_mapping, &pattern_mapping);
   if (options->opts[KEV_LEXGEN_OPT_PUT_INFO]) {
-    kev_lexgen_output_info(output, &parser_state.list, pattern_mapping, options->opts);
+    kev_lexgen_output_info(output_table, &parser_state.list, pattern_mapping, options->opts);
   }
+  fclose(output_table);
+  free(acc_mapping);
+  free(pattern_mapping);
+  kev_fa_delete(dfa);
+  /* output source if specified */
   if (options->opts[KEV_LEXGEN_OPT_STAGE] >= KEV_LEXGEN_OPT_STA_SRC) {
-    options->strs[KEV_LEXGEN_LANG_NAME];
+    kev_lexgen_output_src(options->strs[KEV_LEXGEN_LANG_NAME], options, &parser_state.tmpl_map);
   }
+  /* compile source to archive file or shared object file if specified */
+  if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_ARC) {
+    kev_lexgen_output_arc(options->strs[KEV_LEXGEN_BUILD_TOOL_NAME], options);
+  } else if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_SHA) {
+    kev_lexgen_output_sha(options->strs[KEV_LEXGEN_BUILD_TOOL_NAME], options);
+  }
+  /* free resources */
+  kev_lexgenparser_destroy(&parser_state);
 }
 
 static void fatal_error(char* info, char* info2) {
@@ -159,54 +180,63 @@ static void kev_lexgen_regularize_mapping(KevFA* dfa, size_t nfa_no, KevPatternL
   free(nfa_to_pattern);
 }
 
-static void kev_lexgen_output_dfa(FILE* output, KevFA* dfa, size_t* pattern_mapping, int* options) {
-  if (options[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_ASCII &&
-      options[KEV_LEXGEN_OPT_WIDTH] == 8) {
+static void kev_lexgen_output_table(FILE* output, KevFA* dfa, size_t* pattern_mapping, KevOptions* options) {
+  if (options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_ASCII &&
+      options->opts[KEV_LEXGEN_OPT_WIDTH] == 8) {
     uint8_t (*trans)[128] = kev_get_trans_128_u8(dfa);
     if (!trans)
       fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8", NULL);
-    kev_lexgen_print_table_128_u8(output, dfa, pattern_mapping, trans);
+    kev_lexgen_print_table_128_u8(output, dfa, pattern_mapping, trans, options->strs[KEV_LEXGEN_LANG_NAME]);
     free(trans);
-  } else if (options[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_ASCII &&
-             options[KEV_LEXGEN_OPT_WIDTH] == 16) {
+  } else if (options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_ASCII &&
+             options->opts[KEV_LEXGEN_OPT_WIDTH] == 16) {
     uint16_t (*trans)[128] = kev_get_trans_128_u16(dfa);
     if (!trans)
-      fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8");
-    kev_lexgen_print_table_128_u16(output, dfa, pattern_mapping, trans);
+      fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8", NULL);
+    kev_lexgen_print_table_128_u16(output, dfa, pattern_mapping, trans, options->strs[KEV_LEXGEN_LANG_NAME]);
     free(trans);
-  } else if (options[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_UTF8 &&
-             options[KEV_LEXGEN_OPT_WIDTH] == 8) {
+  } else if (options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_UTF8 &&
+             options->opts[KEV_LEXGEN_OPT_WIDTH] == 8) {
     uint8_t (*trans)[256] = kev_get_trans_256_u8(dfa);
     if (!trans)
-      fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8");
-    kev_lexgen_print_table_256_u8(output, dfa, pattern_mapping, trans);
+      fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8", NULL);
+    kev_lexgen_print_table_256_u8(output, dfa, pattern_mapping, trans, options->strs[KEV_LEXGEN_LANG_NAME]);
     free(trans);
-  } else if (options[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_UTF8 &&
-             options[KEV_LEXGEN_OPT_WIDTH] == 16) {
+  } else if (options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_UTF8 &&
+             options->opts[KEV_LEXGEN_OPT_WIDTH] == 16) {
     uint16_t (*trans)[256] = kev_get_trans_256_u16(dfa);
     if (!trans)
-      fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8");
-    kev_lexgen_print_table_256_u16(output, dfa, pattern_mapping, trans);
+      fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8", NULL);
+    kev_lexgen_print_table_256_u16(output, dfa, pattern_mapping, trans, options->strs[KEV_LEXGEN_LANG_NAME]);
     free(trans);
   }
 }
 
-static void kev_lexgen_print_table_128_u8(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint8_t (*table)[128]) {
+static void kev_lexgen_print_table_128_u8(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint8_t (*table)[128], char* language) {
   size_t non_acc_number = kev_dfa_non_accept_state_number(dfa);
   size_t state_number = kev_dfa_accept_state_number(dfa) + non_acc_number;
   /* output transition table */
-  fprintf(output, "static uint8_t transition[%d][128] = {\n", (int)state_number);
+  bool is_rust = (strcmp(language, "rust") == 0);
+  char left_arr = is_rust ? '[' : '{';
+  char right_arr = is_rust ? ']' : '}';
+  char* array2d_fmt = is_rust ? "static TRANSITION : [ [ u8 ; 128 ] ; %d ] = %c\n" :
+                              "static uint8_t transition[%d][128] = %c\n";
+  char* array1d_fmt = is_rust ? "static PATTERN_MAPPING : [i32 ; %d] = %c" :
+                                "static int pattern_mapping[%d] = %c";
+  char* start_fmt = is_rust ? "static START : usize = %d;" :
+                              "static size_t start = %d;";
+  fprintf(output, array2d_fmt, (int)state_number, left_arr);
   for (size_t i = 0; i < state_number; ++i) {
-    fprintf(output, "  {");
+    fprintf(output, "  %c", left_arr);
     for (size_t j = 0; j < 128; ++j) {
       if (j % 16 == 0) fprintf(output, "\n    ");
       fprintf(output, "%4d,", (int)table[i][j]);
     }
-    fprintf(output, "\n  },\n");
+    fprintf(output, "\n  %c,\n", right_arr);
   }
-  fprintf(output, "};\n");
+  fprintf(output, "%c;\n", right_arr);
   /* output accepting state mapping array */
-  fprintf(output, "static int pattern_mapping[%d] = {", (int)state_number);
+  fprintf(output, array1d_fmt, (int)state_number,left_arr);
   for (size_t i = 0; i < non_acc_number; ++i) {
     if (i % 16 == 0) fprintf(output, "\n  ");
     fprintf(output, "  -1,");
@@ -215,37 +245,51 @@ static void kev_lexgen_print_table_128_u8(FILE* output, KevFA* dfa, size_t* patt
     if (i % 16 == 0) fprintf(output, "\n  ");
     fprintf(output, "%4d,", (int)pattern_mapping[i - non_acc_number]);
   }
-  fprintf(output, "\n};\n");
+  fprintf(output, "\n%c;\n", right_arr);
   /* start state */
-  fprintf(output, "static size_t start = %d;\n", (int)dfa->start_state->id);
+  fprintf(output, start_fmt, (int)dfa->start_state->id);
   /* interface function */
-  fprintf(output, "uint8_t (*kev_lexgen_get_transition_table(void))[128] {\n");
-  fprintf(output, "  return transition;\n");
-  fprintf(output, "}\n");
-  fprintf(output, "int* kev_lexgen_get_pattern_mapping(void) {\n");
-  fprintf(output, "  return pattern_mapping;\n");
-  fprintf(output, "}\n");
-  fprintf(output, "size_t kev_lexgen_get_start_state(void) {\n");
-  fprintf(output, "  return start;\n");
-  fprintf(output, "}\n");
+  if (is_rust) {
+    /* TODO: support rust */
+    fatal_error("rust is not supported currently",NULL);
+  } else {
+    fprintf(output, "uint8_t (*kev_lexgen_get_transition_table(void))[128] {\n");
+    fprintf(output, "  return transition;\n");
+    fprintf(output, "}\n");
+    fprintf(output, "int* kev_lexgen_get_pattern_mapping(void) {\n");
+    fprintf(output, "  return pattern_mapping;\n");
+    fprintf(output, "}\n");
+    fprintf(output, "size_t kev_lexgen_get_start_state(void) {\n");
+    fprintf(output, "  return start;\n");
+    fprintf(output, "}\n");
+  }
 }
 
-static void kev_lexgen_print_table_128_u16(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint16_t (*table)[128]) {
+static void kev_lexgen_print_table_128_u16(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint16_t (*table)[128], char* language) {
   size_t non_acc_number = kev_dfa_non_accept_state_number(dfa);
   size_t state_number = kev_dfa_accept_state_number(dfa) + non_acc_number;
   /* output transition table */
-  fprintf(output, "static uint16_t transition[%d][128] = {\n", (int)state_number);
+  bool is_rust = (strcmp(language, "rust") == 0);
+  char left_arr = is_rust ? '[' : '{';
+  char right_arr = is_rust ? ']' : '}';
+  char* array2d_fmt = is_rust ? "static TRANSITION : [ [ u16 ; 128 ] ; %d ] = %c\n" :
+                              "static uint16_t transition[%d][128] = %c\n";
+  char* array1d_fmt = is_rust ? "static PATTERN_MAPPING : [i32 ; %d] = %c" :
+                                "static int pattern_mapping[%d] = %c";
+  char* start_fmt = is_rust ? "static START : usize = %d;" :
+                              "static size_t start = %d;";
+  fprintf(output, array2d_fmt, (int)state_number, left_arr);
   for (size_t i = 0; i < state_number; ++i) {
-    fprintf(output, "  {");
+    fprintf(output, "  %c", left_arr);
     for (size_t j = 0; j < 128; ++j) {
       if (j % 16 == 0) fprintf(output, "\n    ");
       fprintf(output, "%4d,", (int)table[i][j]);
     }
-    fprintf(output, "\n  },\n");
+    fprintf(output, "\n  %c,\n", right_arr);
   }
-  fprintf(output, "};\n");
+  fprintf(output, "%c;\n", right_arr);
   /* output accepting state mapping array */
-  fprintf(output, "static int pattern_mapping[%d] = {", (int)state_number);
+  fprintf(output, array1d_fmt, (int)state_number,left_arr);
   for (size_t i = 0; i < non_acc_number; ++i) {
     if (i % 16 == 0) fprintf(output, "\n  ");
     fprintf(output, "  -1,");
@@ -254,37 +298,51 @@ static void kev_lexgen_print_table_128_u16(FILE* output, KevFA* dfa, size_t* pat
     if (i % 16 == 0) fprintf(output, "\n  ");
     fprintf(output, "%4d,", (int)pattern_mapping[i - non_acc_number]);
   }
-  fprintf(output, "\n};\n");
+  fprintf(output, "\n%c;\n", right_arr);
   /* start state */
-  fprintf(output, "static size_t start = %d;\n", (int)dfa->start_state->id);
+  fprintf(output, start_fmt, (int)dfa->start_state->id);
   /* interface function */
-  fprintf(output, "uint16_t (*kev_lexgen_get_transition_table(void))[128] {\n");
-  fprintf(output, "  return transition;\n");
-  fprintf(output, "}\n");
-  fprintf(output, "int* kev_lexgen_get_pattern_mapping(void) {\n");
-  fprintf(output, "  return pattern_mapping;\n");
-  fprintf(output, "}\n");
-  fprintf(output, "size_t kev_lexgen_get_start_state(void) {\n");
-  fprintf(output, "  return start;\n");
-  fprintf(output, "}\n");
+  if (is_rust) {
+    /* TODO: support rust */
+    fatal_error("rust is not supported currently",NULL);
+  } else {
+    fprintf(output, "uint16_t (*kev_lexgen_get_transition_table(void))[128] {\n");
+    fprintf(output, "  return transition;\n");
+    fprintf(output, "}\n");
+    fprintf(output, "int* kev_lexgen_get_pattern_mapping(void) {\n");
+    fprintf(output, "  return pattern_mapping;\n");
+    fprintf(output, "}\n");
+    fprintf(output, "size_t kev_lexgen_get_start_state(void) {\n");
+    fprintf(output, "  return start;\n");
+    fprintf(output, "}\n");
+  }
 }
 
-static void kev_lexgen_print_table_256_u8(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint8_t (*table)[256]) {
+static void kev_lexgen_print_table_256_u8(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint8_t (*table)[256], char* language) {
   size_t non_acc_number = kev_dfa_non_accept_state_number(dfa);
   size_t state_number = kev_dfa_accept_state_number(dfa) + non_acc_number;
   /* output transition table */
-  fprintf(output, "static uint8_t transition[%d][256] = {\n", (int)state_number);
+  bool is_rust = (strcmp(language, "rust") == 0);
+  char left_arr = is_rust ? '[' : '{';
+  char right_arr = is_rust ? ']' : '}';
+  char* array2d_fmt = is_rust ? "static TRANSITION : [ [ u8 ; 256 ] ; %d ] = %c\n" :
+                              "static uint8_t transition[%d][256] = %c\n";
+  char* array1d_fmt = is_rust ? "static PATTERN_MAPPING : [i32 ; %d] = %c" :
+                                "static int pattern_mapping[%d] = %c";
+  char* start_fmt = is_rust ? "static START : usize = %d;" :
+                              "static size_t start = %d;";
+  fprintf(output, array2d_fmt, (int)state_number, left_arr);
   for (size_t i = 0; i < state_number; ++i) {
-    fprintf(output, "  {");
+    fprintf(output, "  %c", left_arr);
     for (size_t j = 0; j < 256; ++j) {
       if (j % 16 == 0) fprintf(output, "\n    ");
       fprintf(output, "%4d,", (int)table[i][j]);
     }
-    fprintf(output, "\n  },\n");
+    fprintf(output, "\n  %c,\n", right_arr);
   }
-  fprintf(output, "};\n");
+  fprintf(output, "%c;\n", right_arr);
   /* output accepting state mapping array */
-  fprintf(output, "static int pattern_mapping[%d] = {", (int)state_number);
+  fprintf(output, array1d_fmt, (int)state_number,left_arr);
   for (size_t i = 0; i < non_acc_number; ++i) {
     if (i % 16 == 0) fprintf(output, "\n  ");
     fprintf(output, "  -1,");
@@ -293,37 +351,51 @@ static void kev_lexgen_print_table_256_u8(FILE* output, KevFA* dfa, size_t* patt
     if (i % 16 == 0) fprintf(output, "\n  ");
     fprintf(output, "%4d,", (int)pattern_mapping[i - non_acc_number]);
   }
-  fprintf(output, "\n};\n");
+  fprintf(output, "\n%c;\n", right_arr);
   /* start state */
-  fprintf(output, "static size_t start = %d;\n", (int)dfa->start_state->id);
+  fprintf(output, start_fmt, (int)dfa->start_state->id);
   /* interface function */
-  fprintf(output, "uint8_t (*kev_lexgen_get_transition_table(void))[256] {\n");
-  fprintf(output, "  return transition;\n");
-  fprintf(output, "}\n");
-  fprintf(output, "int* kev_lexgen_get_pattern_mapping(void) {\n");
-  fprintf(output, "  return pattern_mapping;\n");
-  fprintf(output, "}\n");
-  fprintf(output, "size_t kev_lexgen_get_start_state(void) {\n");
-  fprintf(output, "  return start;\n");
-  fprintf(output, "}\n");
+  if (is_rust) {
+    /* TODO: support rust */
+    fatal_error("rust is not supported currently",NULL);
+  } else {
+    fprintf(output, "uint8_t (*kev_lexgen_get_transition_table(void))[256] {\n");
+    fprintf(output, "  return transition;\n");
+    fprintf(output, "}\n");
+    fprintf(output, "int* kev_lexgen_get_pattern_mapping(void) {\n");
+    fprintf(output, "  return pattern_mapping;\n");
+    fprintf(output, "}\n");
+    fprintf(output, "size_t kev_lexgen_get_start_state(void) {\n");
+    fprintf(output, "  return start;\n");
+    fprintf(output, "}\n");
+  }
 }
 
-static void kev_lexgen_print_table_256_u16(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint16_t (*table)[256]) {
+static void kev_lexgen_print_table_256_u16(FILE* output, KevFA* dfa, size_t* pattern_mapping, uint16_t (*table)[256], char* language) {
   size_t non_acc_number = kev_dfa_non_accept_state_number(dfa);
   size_t state_number = kev_dfa_accept_state_number(dfa) + non_acc_number;
   /* output transition table */
-  fprintf(output, "static uint16_t transition[%d][256] = {\n", (int)state_number);
+  bool is_rust = (strcmp(language, "rust") == 0);
+  char left_arr = is_rust ? '[' : '{';
+  char right_arr = is_rust ? ']' : '}';
+  char* array2d_fmt = is_rust ? "static TRANSITION : [ [ u16 ; 256 ] ; %d ] = %c\n" :
+                              "static uint16_t transition[%d][256] = %c\n";
+  char* array1d_fmt = is_rust ? "static PATTERN_MAPPING : [i32 ; %d] = %c" :
+                                "static int pattern_mapping[%d] = %c";
+  char* start_fmt = is_rust ? "static START : usize = %d;" :
+                              "static size_t start = %d;";
+  fprintf(output, array2d_fmt, (int)state_number, left_arr);
   for (size_t i = 0; i < state_number; ++i) {
-    fprintf(output, "  {");
+    fprintf(output, "  %c", left_arr);
     for (size_t j = 0; j < 256; ++j) {
       if (j % 16 == 0) fprintf(output, "\n    ");
       fprintf(output, "%4d,", (int)table[i][j]);
     }
-    fprintf(output, "\n  },\n");
+    fprintf(output, "\n  %c,\n", right_arr);
   }
-  fprintf(output, "};\n");
+  fprintf(output, "%c;\n", right_arr);
   /* output accepting state mapping array */
-  fprintf(output, "static int pattern_mapping[%d] = {", (int)state_number);
+  fprintf(output, array1d_fmt, (int)state_number,left_arr);
   for (size_t i = 0; i < non_acc_number; ++i) {
     if (i % 16 == 0) fprintf(output, "\n  ");
     fprintf(output, "  -1,");
@@ -332,22 +404,28 @@ static void kev_lexgen_print_table_256_u16(FILE* output, KevFA* dfa, size_t* pat
     if (i % 16 == 0) fprintf(output, "\n  ");
     fprintf(output, "%4d,", (int)pattern_mapping[i - non_acc_number]);
   }
-  fprintf(output, "\n};\n");
+  fprintf(output, "\n%c;\n", right_arr);
   /* start state */
-  fprintf(output, "static size_t start = %d;\n", (int)dfa->start_state->id);
+  fprintf(output, start_fmt, (int)dfa->start_state->id);
   /* interface function */
-  fprintf(output, "uint16_t (*kev_lexgen_get_transition_table(void))[256] {\n");
-  fprintf(output, "  return transition;\n");
-  fprintf(output, "}\n");
-  fprintf(output, "int* kev_lexgen_get_pattern_mapping(void) {\n");
-  fprintf(output, "  return pattern_mapping;\n");
-  fprintf(output, "}\n");
-  fprintf(output, "size_t kev_lexgen_get_start_state(void) {\n");
-  fprintf(output, "  return start;\n");
-  fprintf(output, "}\n");
+  if (is_rust) {
+    /* TODO: support rust */
+    fatal_error("rust is not supported currently",NULL);
+  } else {
+    fprintf(output, "uint16_t (*kev_lexgen_get_transition_table(void))[256] {\n");
+    fprintf(output, "  return transition;\n");
+    fprintf(output, "}\n");
+    fprintf(output, "int* kev_lexgen_get_pattern_mapping(void) {\n");
+    fprintf(output, "  return pattern_mapping;\n");
+    fprintf(output, "}\n");
+    fprintf(output, "size_t kev_lexgen_get_start_state(void) {\n");
+    fprintf(output, "  return start;\n");
+    fprintf(output, "}\n");
+  }
 }
 
 static void kev_lexgen_output_callback(FILE* output, KevFA* dfa, KevPatternList* list, size_t* acc_mapping, int* options) {
+  /* TODO: support rust */
   size_t non_acc_number = kev_dfa_non_accept_state_number(dfa);
   size_t state_number = kev_dfa_accept_state_number(dfa) + non_acc_number;
   size_t i = 0;
@@ -380,7 +458,7 @@ static void kev_lexgen_output_callback(FILE* output, KevFA* dfa, KevPatternList*
 }
 
 static void kev_lexgen_output_info(FILE* output, KevPatternList* list, size_t* pattern_mapping, int* options) {
-  /* TODO: output information about token's name */
+  /* TODO: support rust */
   size_t pattern_number = 0;
   KevPattern* pattern = list->head->next;
   while (pattern) {
@@ -419,22 +497,24 @@ static void kev_lexgen_help(void) {
   printf("  lexgen [ opt [opt-value]]...\n");
   printf("options:\n");
   printf("  -h --help                        Show this message.\n");
-  printf("  -i --in[put]                     Input file path.\n");
-  printf("  -o <path> --out[put] <path>      Output file path.\n");
-  printf("  --out-src <path>                 Output source file path.\n");
-  printf("  --out-inc <path>                 Output include file path.\n");
+  printf("  -i --in                          Input file path.\n");
+  printf("  -o <path> --out <path>           Output file path.\n");
+  printf("  --out-inc <path>                 Output include file path. This option works\n");
+  printf("                                   only when option -s=s, -s=a or -s=sh is\n");
+  printf("                                   specified and the language has header file,\n");
+  printf("                                   such as C/C++.\n");
+  printf("  --out-info                       Output token name array.\n");
+  printf("  --out-callback                   Output callback function array.\n");
   printf("  -s=<value> --stage=<value>       Specify generation stage.\n");
-  printf("    -p value:\n");
-  printf("      trans[ition]                 Generate the transition table only. This is\n");
+  printf("    -s value:\n");
+  printf("      t[rans[ition]]               Generate the transition table only. This is\n");
   printf("                                   the default value.\n");
   printf("      s[ource]                     Generate the source of lexer.\n");
   printf("      a[rchive]                    Generate the archive of lexer.\n");
   printf("      sh[ared]                     Generate the shared object file of lexer.\n");
-  printf("  --out[put]-info                  Output token name array.\n");
-  printf("  --out[put]-callback              Output callback function array.\n");
-  printf("  -l=<value> --lang[uage]=<value>  Specify language. Ignore the case of <value>.\n");
+  printf("  -l=<value> --lang[uage]=<value>  Specify language.\n");
   printf("    -l value:\n");
-  printf("      c\n");
+  printf("      c                            This is the default value.\n");
   printf("      cpp | cxx | cc | cx | c++\n");
   printf("      ru[st]                       Currently not supported.\n");
   printf("  --build-tool=<value>             Specify compiler when generate archive or\n");
@@ -449,18 +529,19 @@ static void kev_lexgen_help(void) {
   printf("                                   uses.");
   printf("    --length value:\n");
   printf("      8                            Use uint8_t. This means the state number of\n");
-  printf("                                   DFA can not exceed 255.\n");
+  printf("                                   DFA can not exceed 255, This is the default\n");
+  printf("                                   value.\n");
   printf("      16                           Use uint16_t. This means the state number of\n");
   printf("                                   DFA can not exceed 65535.\n");
   printf("  --charset=<value>                Specify charset, This only affect the\n");
   printf("                                   transtion table.\n");
   printf("    --charset value:\n");
   printf("      utf-8                        Transition table will accept all 256 input\n");
-  printf("                                   characters.\n");
+  printf("                                   characters. This is the default value.\n");
   printf("      ascii                        Transition table only accept 0-127.\n");
 }
 
-static void kev_lexgen_gen_src(char* language, KevOptions* options) {
+static void kev_lexgen_output_src(char* language, KevOptions* options, KevStringMap* tmpl_map) {
   char* resources_dir = kev_get_lexgen_resources_dir();
   if (!resources_dir)
     fatal_error("can not get resources directory", NULL);
@@ -473,5 +554,39 @@ static void kev_lexgen_gen_src(char* language, KevOptions* options) {
   strcat(src_path, "/src.tmpl");
   FILE* tmpl = fopen(src_path, "r");
   if (!tmpl)
+    fatal_error("can not open file(maybe this language is not supported): ", src_path);
   FILE* output = fopen(options->strs[KEV_LEXGEN_OUT_SRC_PATH], "w");
+  if (!output)
+    fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
+  kev_template_convert(output, tmpl, tmpl_map);
+  fclose(output);
+  fclose(tmpl);
+  /* some languages like C/C++ need header */
+  if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
+    strcpy(src_path, resources_dir);
+    strcat(src_path, "lexer/");
+    strcat(src_path, options->strs[KEV_LEXGEN_LANG_NAME]);
+    strcat(src_path, "/inc.tmpl");
+    tmpl = fopen(src_path, "r");
+    if (!tmpl)
+      fatal_error("can not open file: ", src_path);
+    output = fopen(options->strs[KEV_LEXGEN_OUT_INC_PATH], "w");
+    if (!output)
+      fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
+    kev_template_convert(output, tmpl, tmpl_map);
+    fclose(output);
+    fclose(tmpl);
+  }
+  free(src_path);
+  free(resources_dir);
+}
+
+static void kev_lexgen_output_arc(char* compiler, KevOptions* options) {
+  /* TODO: output archive file */
+  fatal_error("generating archive file currently is not supported", NULL);
+}
+
+static void kev_lexgen_output_sha(char* compiler, KevOptions* options) {
+  /* TODO: output shared object file */
+  fatal_error("generating shared object file currently is not supported", NULL);
 }

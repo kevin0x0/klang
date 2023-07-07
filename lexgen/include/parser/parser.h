@@ -2,11 +2,13 @@
 #define KEVCC_LEXGEN_INCLUDE_PARSER_PARSER_H
 #include "lexgen/include/parser/lexer.h"
 #include "lexgen/include/parser/hashmap/strfa_map.h"
+#include "lexgen/include/parser/hashmap/str_map.h"
 #include "lexgen/include/parser/list/pattern_list.h"
 
 typedef struct tagKevParserState {
   KevPatternList list;
   KevStringFaMap nfa_map;
+  KevStringMap tmpl_map;
 } KevParserState;
 
 int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);

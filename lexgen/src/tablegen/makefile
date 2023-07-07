@@ -1,4 +1,3 @@
-LEXGEN_PATH = $(ROOT_PATH)lexgen/
 INC_PATH = $(LEXGEN_PATH)include/
 SRC_PATH = $(LEXGEN_PATH)src/
 BIN_PATH = $(LEXGEN_PATH)bin/
@@ -23,8 +22,3 @@ $(BIN_PATH)trans_table.o : $(TG_PATH)trans_table.c $(TG_INC_PATH)trans_table.h $
 
 $(BIN_PATH)acc_mapping.o : $(TG_PATH)acc_mapping.c $(TG_INC_PATH)acc_mapping.h $(FA_DEPS) $(GEN_INC_PATH)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
-
-.PHONY: clean
-
-clean :
-	rm $(BIN_PATH)*.o $(BIN_PATH)*.a $(BIN_PATH)*.exe

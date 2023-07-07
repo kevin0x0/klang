@@ -1,4 +1,3 @@
-LEXGEN_PATH = $(ROOT_PATH)lexgen/
 INC_PATH = $(LEXGEN_PATH)include/
 SRC_PATH = $(LEXGEN_PATH)src/
 BIN_PATH = $(LEXGEN_PATH)bin/
@@ -98,10 +97,3 @@ $(BIN_PATH)set_cross_list.o : $(LIST_PATH)set_cross_list.c $(LIST_INC_PATH)set_c
 
 $(BIN_PATH)node_list.o : $(LIST_PATH)node_list.c $(LIST_INC_PATH)node_list.h $(FA_INC_PATH)graph.h $(GEN_INC_PATH)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
-
-
-
-.PHONY: clean
-
-clean :
-	rm $(BIN_PATH)*.o $(BIN_PATH)*.a $(BIN_PATH)*.exe

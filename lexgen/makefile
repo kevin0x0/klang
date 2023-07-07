@@ -1,4 +1,3 @@
-LEXGEN_PATH = $(ROOT_PATH)lexgen/
 INC_PATH = $(LEXGEN_PATH)include/
 SRC_PATH = $(LEXGEN_PATH)src/
 BIN_PATH = $(LEXGEN_PATH)bin/
@@ -19,13 +18,12 @@ all: $(BIN_PATH)main.o
 	$(MAKE) -C $(PS_PATH)
 	$(MAKE) -C $(TG_PATH)
 	$(MAKE) -C $(LG_PATH)
-	$(CC) -o $(BIN_PATH)$(TARGET_LEXGEN_NAME) $(BIN_PATH)main.o $(BIN_PATH)liblexgen.a $(BIN_PATH)libtablegen.a $(BIN_PATH)libparser.a $(BIN_PATH)libfa.a
+	$(CC) -o $(BIN_PATH)$(TARGET_LEXGEN_NAME) $(BIN_PATH)main.o $(BIN_PATH)liblexgen.a $(BIN_PATH)libtablegen.a $(BIN_PATH)libparser.a $(BIN_PATH)libfa.a $(UTILS_PATH)bin/utils.a
 
 $(BIN_PATH)main.o : $(SRC_PATH)main.c
 	mkdir -p $(BIN_PATH)
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-
 .PHONY: clean
 clean :
-	rm $(BIN_PATH)*.o $(BIN_PATH)*.a $(BIN_PATH)$(TARGET_LEXGEN_NAME)
+	rm $(BIN_PATH)*

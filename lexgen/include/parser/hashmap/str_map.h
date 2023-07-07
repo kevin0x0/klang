@@ -1,10 +1,10 @@
-#ifndef KEVCC_LEXGEN_INCLUDE_LEXGEN_HASHMAP_STRMAP_H
-#define KEVCC_LEXGEN_INCLUDE_LEXGEN_HASHMAP_STRMAP_H
+#ifndef KEVCC_LEXGEN_INCLUDE_PARSER_HASHMAP_STRMAP_H
+#define KEVCC_LEXGEN_INCLUDE_PARSER_HASHMAP_STRMAP_H
 #include "lexgen/include/finite_automaton/finite_automaton.h"
 
 typedef struct tagKevStringMapNode {
   char* key;
-  KevFA* value;
+  char* value;
   struct tagKevStringMapNode* next;
 } KevStringMapNode;
 
@@ -26,9 +26,9 @@ KevStringMap* kev_strmap_create(size_t capacity);
 void kev_strmap_destroy(KevStringMap* map);
 void kev_strmap_delete(KevStringMap* map);
 
-bool kev_strmap_insert(KevStringMap* map, char* key, KevFA* value);
+bool kev_strmap_insert(KevStringMap* map, char* key, char* value);
 KevStringMapNode* kev_strmap_search(KevStringMap* map, char* key);
-bool kev_strmap_update(KevStringMap* map, char* key, KevFA* value);
+bool kev_strmap_update(KevStringMap* map, char* key, char* value);
 void kev_strmap_make_empty(KevStringMap* map);
 
 static inline KevStringMapNode* kev_strmap_iterate_begin(KevStringMap* map);

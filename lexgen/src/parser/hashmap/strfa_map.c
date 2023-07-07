@@ -178,8 +178,7 @@ KevStringFaMapNode* kev_strfamap_iterate_next(KevStringFaMap* map, KevStringFaMa
 }
 
 bool kev_strfamap_update(KevStringFaMap* map, char* key, KevFA* value) {
-  if (!map && !(map = kev_strfamap_create(8)))
-    return false;
+  if (!map) return false;
   KevStringFaMapNode* node = kev_strfamap_search(map, key);
   if (node) {
     node->value = value;

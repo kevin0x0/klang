@@ -1,0 +1,45 @@
+Usage:
+  lexgen [ opt [opt-value]]...
+options:
+  -h --help                        Show this message.
+  -i --in                          Input file path.
+  -o <path> --out <path>           Output file path.
+  --out-inc <path>                 Output include file path. This option works
+                                   only when option -s=s, -s=a or -s=sh is
+                                   specified and the language has header file,
+                                   such as C/C++.
+  --out-info                       Output token name array.
+  --out-callback                   Output callback function array.
+  -s=<value> --stage=<value>       Specify generation stage.
+    -s value:
+      t[rans[ition]]               Generate the transition table only. This is
+                                   the default value.
+      s[ource]                     Generate the source of lexer.
+      a[rchive]                    Generate the archive of lexer.
+      sh[ared]                     Generate the shared object file of lexer.
+  -l=<value> --lang[uage]=<value>  Specify language.
+    -l value:
+      c                            This is the default value.
+      cpp | cxx | cc | cx | c++
+      ru[st]                       Currently not supported.
+  --build-tool=<value>             Specify compiler when generate archive or
+                                   shared object file.
+    --build-tool value:
+      gcc
+      g++
+      clang
+      clang++
+      cl
+  --length=<value>                 Specify integer length that transition table
+                                   uses.    --length value:
+      8                            Use uint8_t. This means the state number of
+                                   DFA can not exceed 255, This is the default
+                                   value.
+      16                           Use uint16_t. This means the state number of
+                                   DFA can not exceed 65535.
+  --charset=<value>                Specify charset, This only affect the
+                                   transtion table.
+    --charset value:
+      utf-8                        Transition table will accept all 256 input
+                                   characters. This is the default value.
+      ascii                        Transition table only accept 0-127.

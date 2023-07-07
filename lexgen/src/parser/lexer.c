@@ -52,6 +52,8 @@ bool kev_lexgenlexer_next(KevLexGenLexer* lex, KevLexGenToken* token) {
   lex->position += position;
   if (lex->acc_mapping[state] == KEV_LEXGENLEXER_NONACC) {
     token->kind = KEV_LEXGEN_TOKEN_ERR;
+    lex->position++;
+    fgetc(infile);
     return false;
   }
   token->attr = lex_attr_buffer;

@@ -1,4 +1,4 @@
-#include "lexgen/include/lexgen/hashmap/strmap.h"
+#include "lexgen/include/parser/hashmap/str_map.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -125,7 +125,7 @@ void kev_strmap_delete(KevStringMap* map) {
   free(map);
 }
 
-bool kev_strmap_insert(KevStringMap* map, char* key, KevFA* value) {
+bool kev_strmap_insert(KevStringMap* map, char* key, char* value) {
   if (map->size >= map->capacity && !kev_strmap_expand(map))
     return false;
 
@@ -177,7 +177,7 @@ KevStringMapNode* kev_strmap_iterate_next(KevStringMap* map, KevStringMapNode* c
   return NULL;
 }
 
-bool kev_strmap_update(KevStringMap* map, char* key, KevFA* value) {
+bool kev_strmap_update(KevStringMap* map, char* key, char* value) {
   if (!map && !(map = kev_strmap_create(8)))
     return false;
   KevStringMapNode* node = kev_strmap_search(map, key);

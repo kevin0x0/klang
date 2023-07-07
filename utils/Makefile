@@ -1,4 +1,3 @@
-UTILS_PATH = $(ROOT_PATH)utils/
 INC_PATH = $(UTILS_PATH)include/
 SRC_PATH = $(UTILS_PATH)src/
 BIN_PATH = $(UTILS_PATH)bin/
@@ -18,4 +17,4 @@ $(BIN_PATH)exec.o : $(SRC_PATH)exec.c $(INC_PATH)exec.h
 
 .PHONY: clean
 clean :
-	rm $(BIN_PATH)*.o $(BIN_PATH)*.a
+	rm $(BIN_PATH)*
