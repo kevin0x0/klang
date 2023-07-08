@@ -291,7 +291,7 @@ static uint8_t table[16][256] = {
 
 };
 static int acc_array[16] = {
-    -1,  -1,  -1,  -1,   8,   5,   3,   6,   7,   4,   1,   1,   2,   1,   9,   0,
+    -1,  -1,  -1,  -1,   9,   5,   3,   6,   7,   4,   1,   1,   2,   1,   8,   0,
 };
 static size_t start = 3;
 uint8_t (*kev_lexgenlexer_get_table(void))[256] {

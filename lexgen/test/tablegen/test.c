@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
   KevFA* close_paren = kev_regex_parse_ascii("\\)", NULL);
   KevFA* tmpl_id = kev_regex_parse_ascii("%[A-Za-z_][A-Za-z0-9_]*", NULL);
   KevFA* end = kev_regex_parse_ascii("\xFF", NULL);
-  KevFA* nfa_array[] = { def, id, regex, assign, colon, blanks, open_paren, close_paren, end, tmpl_id, NULL };
+  KevFA* nfa_array[] = { def, id, regex, assign, colon, blanks, open_paren, close_paren, tmpl_id, end, NULL };
   size_t* mapping = NULL;
   KevFA* dfa = kev_nfa_to_dfa(nfa_array, &mapping);
   KevFA* min_dfa = kev_dfa_minimization(dfa, mapping);

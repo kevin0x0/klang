@@ -1,0 +1,7 @@
+def id:
+  (lx_id) $([:alpha:] | _)([:alnum:] | _)*
+
+def number:
+  (lx_oct) $0[0-7]*
+  (lx_dec) $[1-9][0-9]*
+  (lx_hex) $0x[A-Fa-f0-9]+
