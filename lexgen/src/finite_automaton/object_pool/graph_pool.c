@@ -7,7 +7,6 @@ union KevGraphPool {
   union KevGraphPool* next;
 };
 
-
 static union KevGraphPool* graph_pool = NULL;
 
 inline KevGraph* kev_graph_pool_acquire(void) {

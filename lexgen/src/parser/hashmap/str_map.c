@@ -1,7 +1,12 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include "lexgen/include/parser/hashmap/str_map.h"
 
 #include <stdlib.h>
 #include <string.h>
+
+static inline char* copy_string(char* str);
 
 inline static size_t kev_strmap_hashing(char* key) {
   if (!key) return 0;
@@ -57,6 +62,8 @@ static void kev_strmap_bucket_free(KevStringMapBucket* bucket) {
   KevStringMapNode* node = bucket->map_node_list;
   while (node) {
     KevStringMapNode* tmp = node->next;
+    free(node->key);
+    free(node->value);
     free(node);
     node = tmp;
   }
@@ -133,8 +140,13 @@ bool kev_strmap_insert(KevStringMap* map, char* key, char* value) {
   if (!new_node) return false;
 
   size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
-  new_node->key = key;
-  new_node->value = value;
+  new_node->key = copy_string(key);
+  new_node->value = copy_string(value);
+  if (!new_node->key || !new_node->value) {
+    free(new_node->key);
+    free(new_node->value);
+    return false;
+  }
   new_node->next = map->array[index].map_node_list;
   map->array[index].map_node_list = new_node;
   map->size++;
@@ -156,18 +168,6 @@ KevStringMapNode* kev_strmap_search(KevStringMap* map, char* key) {
   return node;
 }
 
-void kev_strmap_make_empty(KevStringMap* map) {
-  KevStringMapBucket* bucket = map->bucket_head;
-  while (bucket) {
-    KevStringMapBucket* tmp = bucket->next;
-    kev_strmap_bucket_free(bucket);
-    bucket = tmp;
-  }
-  
-  map->bucket_head = NULL;
-  map->size = 0;
-}
-
 KevStringMapNode* kev_strmap_iterate_next(KevStringMap* map, KevStringMapNode* current) {
   if (current->next) return current->next;
   size_t index = (map->capacity - 1) & kev_strmap_hashing(current->key);
@@ -178,15 +178,24 @@ KevStringMapNode* kev_strmap_iterate_next(KevStringMap* map, KevStringMapNode* c
 }
 
 bool kev_strmap_update(KevStringMap* map, char* key, char* value) {
-  if (!map && !(map = kev_strmap_create(8)))
+  if (!map)
     return false;
   KevStringMapNode* node = kev_strmap_search(map, key);
   if (node) {
-    node->value = value;
-    return true;
+    free(node->value);
+    node->value = copy_string(value);
+    return node->value != NULL;
   }
   else if (!kev_strmap_insert(map, key, value)) {
     return false;
   }
   return true;
+}
+
+static inline char* copy_string(char* str) {
+  if (!str) return NULL;
+  char* ret = (char*)malloc(sizeof (char) * (strlen(str) + 1));
+  if (!ret) return NULL;
+  strcpy(ret, str);
+  return ret;
 }

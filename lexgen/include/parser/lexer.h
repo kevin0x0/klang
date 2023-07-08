@@ -2,18 +2,20 @@
 #define KEVCC_LEXGEN_INCLUDE_PARSER_LEXER_H
 
 #include "lexgen/include/general/global_def.h"
+
 #include <stdio.h>
 
 #define KEV_LEXGEN_TOKEN_ERR          (-1)
 #define KEV_LEXGEN_TOKEN_DEF          (0)
-#define KEV_LEXGEN_TOKEN_NAME         (1)
+#define KEV_LEXGEN_TOKEN_ID           (1)
 #define KEV_LEXGEN_TOKEN_REGEX        (2)
 #define KEV_LEXGEN_TOKEN_ASSIGN       (3)
 #define KEV_LEXGEN_TOKEN_COLON        (4)
 #define KEV_LEXGEN_TOKEN_BLANKS       (5)
 #define KEV_LEXGEN_TOKEN_OPEN_PAREN   (6)
 #define KEV_LEXGEN_TOKEN_CLOSE_PAREN  (7)
-#define KEV_LEXGEN_TOKEN_END          (8)
+#define KEV_LEXGEN_TOKEN_TMPL_ID      (8)
+#define KEV_LEXGEN_TOKEN_END          (9)
 
 typedef struct tagKevLexGenLexer {
   FILE* infile;
@@ -34,6 +36,5 @@ bool kev_lexgenlexer_init(KevLexGenLexer* lex,FILE* infile);
 void kev_lexgenlexer_destroy(KevLexGenLexer* lex);
  
 bool kev_lexgenlexer_next(KevLexGenLexer* lex, KevLexGenToken* token);
-
 
 #endif

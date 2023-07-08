@@ -1,5 +1,6 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_OBJECT_POOL_INTSETMAP_NODE_POOL_H
 #define KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_OBJECT_POOL_INTSETMAP_NODE_POOL_H
+
 #include "lexgen/include/finite_automaton/hashmap/intset_map.h"
 
 KevIntSetMapNode* kev_intsetmap_node_pool_acquire(void);

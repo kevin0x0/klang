@@ -7,7 +7,6 @@ union KevNodeListNodePool {
   union KevNodeListNodePool* next;
 };
 
-
 static union KevNodeListNodePool* nodelist_node_pool = NULL;
 
 inline KevNodeListNode* kev_nodelist_node_pool_acquire(void) {

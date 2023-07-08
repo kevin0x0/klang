@@ -1,7 +1,6 @@
 #include "lexgen/include/finite_automaton/hashmap/intlist_map.h"
 #include "lexgen/include/finite_automaton/object_pool/intlistmap_node_pool.h"
 
-
 #include <stdlib.h>
 
 inline static size_t kev_intlistmap_hashing(size_t key) {

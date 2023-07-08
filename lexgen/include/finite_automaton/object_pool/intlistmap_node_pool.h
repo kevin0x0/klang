@@ -1,5 +1,6 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_OBJECT_POOL_INTLISTMAP_NODE_POOL_H
 #define KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_OBJECT_POOL_INTLISTMAP_NODE_POOL_H
+
 #include "lexgen/include/finite_automaton/hashmap/intlist_map.h"
 
 KevIntListMapNode* kev_intlistmap_node_pool_acquire(void);

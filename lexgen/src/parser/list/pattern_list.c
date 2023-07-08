@@ -1,5 +1,6 @@
 #include "lexgen/include/parser/list/pattern_list.h"
 #include "lexgen/include/finite_automaton/finite_automaton.h"
+
 #include <stdlib.h>
 
 static void kev_patterninfo_destroy(KevPattern* info);

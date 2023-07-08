@@ -6,7 +6,6 @@
 
 #include <stdlib.h>
 
-
 static void kev_graph_edgelist_delete(KevGraphEdgeList* edges) {
   KevGraphEdgeList* curr_edge = edges;
   while (curr_edge) {

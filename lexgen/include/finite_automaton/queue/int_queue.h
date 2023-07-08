@@ -29,7 +29,6 @@ static inline bool kev_intqueue_insert(KevIntQueue* queue, size_t element) {
       return false;
     new_tail = (queue->tail + 1) & (queue->capacity - 1);
   }
-  
   queue->array[queue->tail] = element;
   queue->tail = new_tail;
   return true;

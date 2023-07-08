@@ -10,8 +10,6 @@
 #define KEV_REGEX_ERR_SYNTAX            (2)
 #define KEV_REGEX_ERR_GENERATE          (3)
 
-
-
 KevFA* kev_regex_parse(uint8_t* regex, KevStringFaMap* map);
 static inline KevFA* kev_regex_parse_ascii(char* regex, KevStringFaMap* map);
 uint64_t kev_regex_get_error(void);

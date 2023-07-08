@@ -4,6 +4,7 @@
 
 #include "lexgen/include/lexgen/cmdline.h"
 #include "utils/include/dir.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,7 +99,7 @@ static void kev_lexgen_set_value(char* arg, KevOptions* options) {
                strcmp(value, "cc") == 0 || strcmp(value, "cx") == 0 ||
                strcmp(value, "c++") == 0) {
       options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("cpp");
-    } else if (strcmp(value, "ru") == 0 || strcmp(value, "rust") == 0) {
+    } else if (strcmp(value, "rs") == 0 || strcmp(value, "rust") == 0) {
       options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("rust");
     } else {
       error("unsupported language: ", value);
@@ -200,7 +201,7 @@ static char* kev_get_value(char* arg, char* prefix) {
 
 static void kev_add_lang_postfix(char* str, char* language) {
   if (strcmp(language, "rust") == 0)
-    strcat(str, ".ru");
+    strcat(str, ".rs");
   else if (strcmp(language, "c") == 0)
     strcat(str, ".c");
   else if (strcmp(str, "cpp") == 0)

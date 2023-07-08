@@ -17,7 +17,6 @@ void kev_nodelist_delete(KevNodeList* list);
 
 KevNodeList* kev_nodelist_insert(KevNodeList* list, KevGraphNode* element);
 
-
 static inline KevNodeList* kev_nodelist_create(void) {
   return NULL;
 }

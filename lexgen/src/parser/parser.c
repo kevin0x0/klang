@@ -1,9 +1,11 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
+
 #include "lexgen/include/parser/parser.h"
 #include "lexgen/include/parser/error.h"
 #include "lexgen/include/parser/regex.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,9 +13,9 @@
 static char* token_description[] = {
   [KEV_LEXGEN_TOKEN_ASSIGN] = "\'=\'", [KEV_LEXGEN_TOKEN_END] = "EOF",
   [KEV_LEXGEN_TOKEN_BLANKS] = "blanks", [KEV_LEXGEN_TOKEN_COLON] = "\':\'",
-  [KEV_LEXGEN_TOKEN_NAME] = "identifier", [KEV_LEXGEN_TOKEN_REGEX] = "regular expression",
+  [KEV_LEXGEN_TOKEN_ID] = "identifier", [KEV_LEXGEN_TOKEN_REGEX] = "regular expression",
   [KEV_LEXGEN_TOKEN_OPEN_PAREN] = "\'(\'", [KEV_LEXGEN_TOKEN_CLOSE_PAREN] = "\')\'",
-  [KEV_LEXGEN_TOKEN_DEF] = "def",
+  [KEV_LEXGEN_TOKEN_DEF] = "def", [KEV_LEXGEN_TOKEN_TMPL_ID] = "template identifier",
 };
 
 static int kev_lexgenparser_next_nonblank(KevLexGenLexer* lex, KevLexGenToken* token);
@@ -31,7 +33,11 @@ bool kev_lexgenparser_init(KevParserState* parser_state) {
     kev_patternlist_destroy(&parser_state->list);
     return false;
   }
-  /* TODO: initialize tmpl_map */
+  if (!kev_strmap_init(&parser_state->tmpl_map, 8)) {
+    kev_patternlist_destroy(&parser_state->list);
+    kev_strfamap_destroy(&parser_state->nfa_map);
+    return false;
+  }
   return true;
 }
 
@@ -39,7 +45,7 @@ void kev_lexgenparser_destroy(KevParserState* parser_state) {
   kev_patternlist_free_content(&parser_state->list);
   kev_patternlist_destroy(&parser_state->list);
   kev_strfamap_destroy(&parser_state->nfa_map);
-  /* TODO: destroy tmpl_map */
+  kev_strmap_destroy(&parser_state->tmpl_map);
 }
 
 int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
@@ -78,7 +84,7 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
   KevStringFaMap* nfa_map = &parser_state->nfa_map;
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
-  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_NAME);
+  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
   size_t len = strlen(token->attr);
   char* name = (char*)malloc(sizeof(char) * (len + 1));
   if (!name) {
@@ -114,14 +120,45 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
   return err_count;
 }
 
+int kev_lexgenparser_statement_tmpl_def(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
+  int err_count = 0;
+  size_t len = strlen(token->attr + 1);
+  char* tmpl_name = (char*)malloc(sizeof(char) * (len + 1));
+  if (!tmpl_name) {
+    kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
+    err_count++;
+  } else {
+    strcpy(tmpl_name, token->attr + 1);
+  }
+  err_count += kev_lexgenparser_next_nonblank(lex, token);
+  err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ASSIGN);
+  if (!tmpl_name) {
+    err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ID);
+    return err_count;
+  } else {
+    err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
+    char* name = token->attr;
+    if (!kev_strmap_update(&parser_state->tmpl_map, tmpl_name, name)) {
+      kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
+      err_count++;
+    }
+    free(tmpl_name);
+    err_count += kev_lexgenparser_next_nonblank(lex, token);
+    return err_count;
+  }
+}
+
 int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevParserState* parser_state) {
   int err_count = 0;
   do {
-    if (token->kind == KEV_LEXGEN_TOKEN_NAME) {
+    if (token->kind == KEV_LEXGEN_TOKEN_ID) {
       err_count += kev_lexgenparser_statement_assign(lex, token, parser_state);
     }
     else if (token->kind == KEV_LEXGEN_TOKEN_DEF) {
       err_count += kev_lexgenparser_statement_deftoken(lex, token, parser_state);
+    }
+    else if (token->kind == KEV_LEXGEN_TOKEN_TMPL_ID) {
+      err_count += kev_lexgenparser_statement_tmpl_def(lex, token, parser_state);
     }
     else {
       kev_parser_error_report(stderr, lex->infile, "expected \'def\' or identifer", token->begin);
@@ -172,7 +209,7 @@ static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* 
   int err_count = 0;
   if (token->kind == KEV_LEXGEN_TOKEN_OPEN_PAREN) {
     err_count += kev_lexgenparser_next_nonblank(lex, token);
-    err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_NAME);
+    err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
     size_t len = strlen(token->attr);
     char* name = (char*)malloc(sizeof(char) * (len + 1));
     strcpy(name, token->attr);

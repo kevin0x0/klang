@@ -2,9 +2,7 @@
 #include "lexgen/include/finite_automaton/graph.h"
 #include "lexgen/include/finite_automaton/object_pool/fa_pool.h"
 
-
 #define KEV_NFA_STATE_NAME_PLACE_HOLDER   (0)
-
 
 bool kev_nfa_init(KevFA* fa, KevNFAChar character) {
   if (!fa) return false;

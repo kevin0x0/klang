@@ -16,7 +16,6 @@ typedef struct tagKevFA {
   KevGraphNodeList* accept_states;
 } KevFA;
 
-
 bool kev_nfa_init(KevFA* fa, KevNFAChar character);
 bool kev_fa_init_copy(KevFA* fa, KevFA* src);
 bool kev_fa_init_move(KevFA* fa, KevFA* src);
@@ -30,7 +29,6 @@ void kev_fa_delete(KevFA* fa);
 
 static inline bool kev_nfa_add_transition(KevFA* nfa, KevNFAChar character);
 size_t kev_fa_state_assign_id(KevFA* fa, KevStateId start_id);
-
 /* Do concatenation between 'dest' and 'src'. 
  * The result is in 'dest', 'src' would be set to empty */
 bool kev_nfa_concatenation(KevFA* dest, KevFA* src);
@@ -54,10 +52,6 @@ static inline KevGraphNode* kev_fa_get_start_state(KevFA* fa);
 static inline KevGraphNode* kev_fa_get_accept_state(KevFA* fa);
 static inline KevGraphNode* kev_fa_get_states(KevFA* fa);
 
-
-
-/*begin the inline function definition */
-
 static inline bool kev_nfa_add_transition(KevFA* nfa, KevNFAChar character) {
   if (character == KEV_NFA_SYMBOL_EMPTY) return true;
   return kev_graphnode_connect(nfa->start_state, nfa->accept_states, character);
@@ -71,6 +65,7 @@ static inline bool kev_nfa_kleene(KevFA* nfa) {
 static inline KevGraphNode* kev_fa_get_start_state(KevFA* fa) {
   return fa->start_state;
 }
+
 static inline KevGraphNode* kev_fa_get_accept_state(KevFA* fa) {
   return fa->accept_states;
 }

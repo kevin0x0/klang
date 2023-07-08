@@ -1,6 +1,7 @@
 #include "lexgen/include/tablegen/trans_table.h"
 #include "lexgen/include/finite_automaton/finite_automaton.h"
 #include "lexgen/include/finite_automaton/graph.h"
+
 #include <stdlib.h>
 
 uint8_t (*kev_get_trans_256_u8(KevFA* dfa))[256] {

@@ -15,7 +15,6 @@ typedef struct tagKevAddressMap {
   size_t size;
 } KevAddressMap;
 
-
 bool kev_addressmap_init(KevAddressMap* map, size_t capacity);
 void kev_addressmap_destroy(KevAddressMap* map);
 

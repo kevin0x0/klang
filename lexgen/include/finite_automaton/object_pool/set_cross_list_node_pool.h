@@ -3,11 +3,9 @@
 
 #include "lexgen/include/finite_automaton/list/set_cross_list.h"
 
-
 KevSetCrossListNode* kev_set_cross_list_node_pool_acquire(void);
 KevSetCrossListNode* kev_set_cross_list_node_pool_allocate(void);
 void kev_set_cross_list_node_pool_deallocate(KevSetCrossListNode* node);
 void kev_set_cross_list_node_pool_free(void);
-
 
 #endif

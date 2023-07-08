@@ -16,7 +16,6 @@ typedef struct tagKevSetIntMap {
   size_t size;
 } KevSetIntMap;
 
-
 bool kev_setintmap_init(KevSetIntMap* map, size_t capacity);
 void kev_setintmap_destroy(KevSetIntMap* map);
 

@@ -7,7 +7,6 @@ union KevIntListMapNodePool {
   union KevIntListMapNodePool* next;
 };
 
-
 static union KevIntListMapNodePool* intlistmap_node_pool = NULL;
 
 inline KevIntListMapNode* kev_intlistmap_node_pool_acquire(void) {

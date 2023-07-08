@@ -29,7 +29,6 @@ typedef struct tagKevGraph {
   KevGraphNodeList* tail;
 } KevGraph;
 
-
 bool kev_graph_init(KevGraph* graph, KevGraphNodeList* nodelist);
 bool kev_graph_init_copy(KevGraph* graph, KevGraph* src);
 static inline bool kev_graph_init_move(KevGraph* graph, KevGraph* src);
@@ -46,7 +45,6 @@ KevGraphNode* kev_graphnode_create(KevGraphNodeId id);
 void kev_graphnode_delete(KevGraphNode* node);
 bool kev_graphnode_connect(KevGraphNode* from, KevGraphNode* to, KevGraphEdgeAttr attr);
 static inline KevGraphEdgeList* kev_graphnode_get_edges(KevGraphNode* node);
-
 
 static inline bool kev_graph_init_move(KevGraph* graph, KevGraph* src) {
   if (!graph || !src) return false;
@@ -81,9 +79,5 @@ static inline KevGraphNodeList* kev_graph_get_nodes(KevGraph* graph) {
 static inline KevGraphEdgeList* kev_graphnode_get_edges(KevGraphNode* node) {
   return node->edges;
 }
-
-
-
-
 
 #endif

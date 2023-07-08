@@ -1,6 +1,5 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_LEXGEN_OPTIONS_H
 #define KEVCC_LEXGEN_INCLUDE_LEXGEN_OPTIONS_H
-
 /* options */
 #define KEV_LEXGEN_OPT_STAGE          (0)
 #define KEV_LEXGEN_OPT_WIDTH          (1)

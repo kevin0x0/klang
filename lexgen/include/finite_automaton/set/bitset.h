@@ -3,10 +3,8 @@
 
 #include "lexgen/include/general/global_def.h"
 
-
 #define KEV_BITSET_MASK       (0x3F)
 #define KEV_BITSET_SHIFT      (6)
-
 
 typedef struct tagKevBitSet {
   uint64_t* bits;
@@ -37,7 +35,6 @@ bool kev_bitset_equal(KevBitSet* set1, KevBitSet* set2);
 static inline bool kev_bitset_empty(KevBitSet* set);
 size_t kev_bitset_size(KevBitSet* bitset);
 static inline size_t kev_bitset_capacity(KevBitSet* bitset);
-
 
 static inline bool kev_bitset_set(KevBitSet* bitset, size_t bit) {
   uint64_t i = bit >> KEV_BITSET_SHIFT;
@@ -76,4 +73,5 @@ static inline bool kev_bitset_empty(KevBitSet* set) {
 static inline size_t kev_bitset_capacity(KevBitSet* bitset) {
   return bitset->length << KEV_BITSET_SHIFT;
 }
+
 #endif

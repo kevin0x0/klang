@@ -1,5 +1,6 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_PARSER_HASHMAP_STRNFA_MAP_H
 #define KEVCC_LEXGEN_INCLUDE_PARSER_HASHMAP_STRNFA_MAP_H
+
 #include "lexgen/include/finite_automaton/finite_automaton.h"
 
 typedef struct tagKevStringFaMapNode {
@@ -20,7 +21,6 @@ typedef struct tagKevStringFaMap {
   size_t size;
 } KevStringFaMap;
 
-
 bool kev_strfamap_init(KevStringFaMap* map, size_t capacity);
 KevStringFaMap* kev_strfamap_create(size_t capacity);
 void kev_strfamap_destroy(KevStringFaMap* map);
@@ -37,4 +37,5 @@ KevStringFaMapNode* kev_strfamap_iterate_next(KevStringFaMap* map, KevStringFaMa
 static inline KevStringFaMapNode* kev_strfamap_iterate_begin(KevStringFaMap* map) {
     return map->bucket_head ? map->bucket_head->map_node_list : NULL;
 }
+
 #endif

@@ -1,4 +1,5 @@
 #include "lexgen/include/parser/error.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 

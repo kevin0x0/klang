@@ -30,7 +30,6 @@ static inline KevSetCrossListNode* kev_setcrosslist_iterate_begin(KevSetCrossLis
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_end(KevSetCrossList* crosslist);
 static inline KevSetCrossListNode* kev_setcrosslist_iterate_next(KevSetCrossListNode* current);
 
-
 static inline bool kev_setcrosslist_init(KevSetCrossList* crosslist) {
   if (!crosslist) return false;
   crosslist->head_sentinel.p_prev = NULL;

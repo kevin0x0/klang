@@ -22,7 +22,6 @@ typedef struct tagKevIntListMap {
   size_t size;
 } KevIntListMap;
 
-
 bool kev_intlistmap_init(KevIntListMap* map, size_t capacity);
 void kev_intlistmap_destroy(KevIntListMap* map);
 
@@ -36,6 +35,5 @@ KevIntListMapNode* kev_intlistmap_iterate_next(KevIntListMap* map, KevIntListMap
 static inline KevIntListMapNode* kev_intlistmap_iterate_begin(KevIntListMap* map) {
     return map->bucket_head ? map->bucket_head->map_node_list : NULL;
 }
-
 
 #endif

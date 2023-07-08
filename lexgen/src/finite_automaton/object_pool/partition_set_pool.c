@@ -7,7 +7,6 @@ union KevPartitionSetPool {
   union KevPartitionSetPool* next;
 };
 
-
 static union KevPartitionSetPool* partition_set_pool = NULL;
 
 inline KevPartitionSet* kev_partition_set_pool_acquire(void) {

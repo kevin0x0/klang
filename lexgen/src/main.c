@@ -2,7 +2,6 @@
 #include "lexgen/include/lexgen/control.h"
 #include "lexgen/include/lexgen/cmdline.h"
 
-
 int main(int argc, char** argv) {
   KevOptions options;
   kev_lexgen_get_options(argc, argv, &options);

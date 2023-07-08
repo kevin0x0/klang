@@ -2,6 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include "lexgen/include/parser/lexer.h"
+
 #include <stdio.h>
 
 #define KEV_LEXGENLEXER_DEAD    ((uint8_t)255)

@@ -7,7 +7,6 @@ union KevGraphEdgePool {
   union KevGraphEdgePool* next;
 };
 
-
 static union KevGraphEdgePool* graph_edge_pool = NULL;
 
 inline KevGraphEdge* kev_graph_edge_pool_acquire(void) {
