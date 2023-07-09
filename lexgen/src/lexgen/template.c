@@ -153,6 +153,6 @@ static void kev_template_convert_plain_no_output(FILE* tmpl) {
 
 static void fatal_error(char* info, char* info2) {
   if (info) fputs(info, stderr);
-  if (info2) fputs(info, stderr);
+  if (info2) fputs(info2, stderr);
   fputs("\nterminated\n", stderr);
 }

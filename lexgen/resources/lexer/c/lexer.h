@@ -9,16 +9,20 @@ typedef struct tagLex {
   size_t curpos;  /* current position */
 } Lex;
 
+typedef union tagTokenAttr {
+  int64_t ival;
+  double fval;
+  char* sval;
+} TokenAttr;
+
+typedef struct tagToken {
+  size_t begin;
+  size_t end;
+  int kind;
+} Token;
+
 bool lex_init(Lex* lex, char* filepath);
 void lex_destroy(Lex* lex);
+void lex_next(Lex* lex, Token* token);
 
 #endif
-
-// $ 
-// $r varname $;
-// $r varname $: template $;
-// $e template file path $;
-// $c text file path $;
-// $b varname $: template $| template $;
-// $s varname $= value1 $: template1 $| value2 $: template2 $| value3 $: template3 $;
-// $a varname $= value $;

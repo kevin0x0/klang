@@ -1,7 +1,14 @@
-def id:
-  (lx_id) $([:alpha:] | _)([:alnum:] | _)*
+%class_name = tokenizer
 
-def number:
+unichar = $[\xF0-\xF7][\x80-\xBF]{3} | [\xE0-\xEF][\x80-\xBF]{2} | [\xC0-\xDF][\x80-\xBF]{1} | [\x00-\x7F]
+
+def Int:
+  $int
+
+def Num:
   (lx_oct) $0[0-7]*
   (lx_dec) $[1-9][0-9]*
   (lx_hex) $0x[A-Fa-f0-9]+
+
+def Id:
+  (lx_id) $[:unichar:]*
