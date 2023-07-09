@@ -1,10 +1,31 @@
-
 #include "lexgen/include/finite_automaton/finite_automaton.h"
 #include "lexgen/include/parser/regex.h"
-#include "lexgen/include/tablegen/trans_table.h"
 #include <stdio.h>
 #include <stdlib.h>
 
+uint8_t (*kev_lexgen_output_get_trans_256_u8(KevFA* dfa))[256] {
+  size_t state_number = kev_fa_state_assign_id(dfa, 0);
+  if (state_number >= 256) return NULL;
+  uint8_t (*table)[256] = (uint8_t(*)[256])malloc(sizeof (*table) * state_number);
+  if (!table) return NULL;
+  for (size_t i = 0; i < state_number; ++i) {
+    for (size_t j = 0; j < 256; ++j) {
+      table[i][j] = 255;
+    }
+  }
+  KevGraphNode* node = kev_fa_get_states(dfa);
+  while (node) {
+    KevGraphEdge* edge = kev_graphnode_get_edges(node);
+    uint64_t id = node->id;
+    while (edge) {
+      if ((uint64_t)edge->attr <= 255)
+        table[id][(uint8_t)edge->attr] = (uint8_t)edge->node->id;
+      edge = edge->next;
+    }
+    node = node->next;
+  }
+  return table;
+}
 
 void output_table(uint8_t (*table)[256], KevFA* dfa, size_t* acc_mapping);
 
@@ -18,12 +39,13 @@ int main(int argc, char** argv) {
   KevFA* open_paren = kev_regex_parse_ascii("\\(", NULL);
   KevFA* close_paren = kev_regex_parse_ascii("\\)", NULL);
   KevFA* tmpl_id = kev_regex_parse_ascii("%[A-Za-z_][A-Za-z0-9_]*", NULL);
-  KevFA* end = kev_regex_parse_ascii("\xFF", NULL);
-  KevFA* nfa_array[] = { def, id, regex, assign, colon, blanks, open_paren, close_paren, tmpl_id, end, NULL };
+  KevFA* long_id = kev_regex_parse_ascii("!([^\\n] | \\n[^\\n])*\\n\\n", NULL);
+  KevFA* end = kev_regex_parse_ascii("\\xFF", NULL);
+  KevFA* nfa_array[] = { def, id, regex, assign, colon, blanks, open_paren, close_paren, tmpl_id, end, long_id, NULL };
   size_t* mapping = NULL;
   KevFA* dfa = kev_nfa_to_dfa(nfa_array, &mapping);
   KevFA* min_dfa = kev_dfa_minimization(dfa, mapping);
-  uint8_t (*table)[256] = kev_get_trans_256_u8(min_dfa);
+  uint8_t (*table)[256] = kev_lexgen_output_get_trans_256_u8(min_dfa);
   output_table(table, min_dfa, mapping);
   kev_fa_delete(id);
   kev_fa_delete(regex);
@@ -34,6 +56,7 @@ int main(int argc, char** argv) {
   kev_fa_delete(close_paren);
   kev_fa_delete(tmpl_id);
   kev_fa_delete(end);
+  kev_fa_delete(long_id);
   kev_fa_delete(dfa);
   kev_fa_delete(min_dfa);
   free(table);
@@ -50,7 +73,7 @@ void output_table(uint8_t (*table)[256], KevFA* dfa, size_t* acc_mapping) {
   /* transition table */
   fprintf(cfile, "static uint8_t table[%d][256] = {\n", (int)state_number);
   for (size_t i = 0; i < state_number; ++i) {
-    fprintf(cfile, "  {");
+    fprintf(cfile, "  { /* %d */", (int)i);
     for (size_t j = 0; j < 256; ++j) {
       if (j % 16 == 0) fprintf(cfile, "\n    ");
       fprintf(cfile, "%4d,", table[i][j]);

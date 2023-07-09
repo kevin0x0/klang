@@ -16,6 +16,7 @@
 #define KEV_LEXGEN_TOKEN_CLOSE_PAREN  (7)
 #define KEV_LEXGEN_TOKEN_TMPL_ID      (8)
 #define KEV_LEXGEN_TOKEN_END          (9)
+#define KEV_LEXGEN_TOKEN_LONG_ID      (10)
 
 typedef struct tagKevLexGenLexer {
   FILE* infile;

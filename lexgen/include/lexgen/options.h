@@ -4,10 +4,8 @@
 #define KEV_LEXGEN_OPT_STAGE          (0)
 #define KEV_LEXGEN_OPT_WIDTH          (1)
 #define KEV_LEXGEN_OPT_CHARSET        (2)
-#define KEV_LEXGEN_OPT_PUT_CALLBACK   (3)
-#define KEV_LEXGEN_OPT_PUT_INFO       (4)
-#define KEV_LEXGEN_OPT_HELP           (5)
-#define KEV_LEXGEN_OPT_NO             (6)
+#define KEV_LEXGEN_OPT_HELP           (3)
+#define KEV_LEXGEN_OPT_NO             (4)
 
 /* values */
 #define KEV_LEXGEN_OPT_LANG_C_CPP     (0)

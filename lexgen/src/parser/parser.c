@@ -16,6 +16,7 @@ static char* token_description[] = {
   [KEV_LEXGEN_TOKEN_ID] = "identifier", [KEV_LEXGEN_TOKEN_REGEX] = "regular expression",
   [KEV_LEXGEN_TOKEN_OPEN_PAREN] = "\'(\'", [KEV_LEXGEN_TOKEN_CLOSE_PAREN] = "\')\'",
   [KEV_LEXGEN_TOKEN_DEF] = "def", [KEV_LEXGEN_TOKEN_TMPL_ID] = "template identifier",
+  [KEV_LEXGEN_TOKEN_LONG_ID] = "long identifier",
 };
 
 static int kev_lexgenparser_next_nonblank(KevLexGenLexer* lex, KevLexGenToken* token);
@@ -132,12 +133,16 @@ int kev_lexgenparser_statement_tmpl_def(KevLexGenLexer* lex, KevLexGenToken* tok
   }
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ASSIGN);
-  if (!tmpl_name) {
+  if (token->kind != KEV_LEXGEN_TOKEN_LONG_ID && token->kind != KEV_LEXGEN_TOKEN_ID) {
     err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ID);
+    free(tmpl_name);
     return err_count;
+  }
+  if (!tmpl_name) {
+    return err_count + kev_lexgenparser_next_nonblank(lex, token);
   } else {
-    err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
-    char* name = token->attr;
+    size_t offset = token->kind == KEV_LEXGEN_TOKEN_LONG_ID ? 1 : 0;
+    char* name = token->attr + offset;
     if (!kev_strmap_update(&parser_state->tmpl_map, tmpl_name, name)) {
       kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
       err_count++;

@@ -39,10 +39,6 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
         error("missing output path: ", "-out-inc <path>");
       free(options->strs[KEV_LEXGEN_OUT_INC_PATH]);
       options->strs[KEV_LEXGEN_OUT_INC_PATH] = copy_string(argv[i]);
-    } else if (strcmp(arg, "--out-info") == 0) {
-      options->opts[KEV_LEXGEN_OPT_PUT_INFO] = KEV_LEXGEN_OPT_TRUE;
-    } else if (strcmp(arg, "--out-callback") == 0) {
-      options->opts[KEV_LEXGEN_OPT_PUT_CALLBACK] = KEV_LEXGEN_OPT_TRUE;
     } else {
       kev_lexgen_set_value(arg, options);
     }
@@ -129,9 +125,7 @@ static void kev_lexgen_set_value(char* arg, KevOptions* options) {
 static void kev_lexgen_set_default(KevOptions* options) {
   for (size_t i = 0; i < KEV_LEXGEN_STR_NO; ++i)
     options->strs[i] = NULL;
-  options->opts[KEV_LEXGEN_OPT_PUT_CALLBACK] = KEV_LEXGEN_OPT_FALSE;
   options->opts[KEV_LEXGEN_OPT_HELP] = KEV_LEXGEN_OPT_FALSE;
-  options->opts[KEV_LEXGEN_OPT_PUT_INFO] = KEV_LEXGEN_OPT_FALSE;
   options->opts[KEV_LEXGEN_OPT_CHARSET] = KEV_LEXGEN_OPT_CHARSET_UTF8;
   options->opts[KEV_LEXGEN_OPT_WIDTH] = 8;
   options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_TAB;
@@ -143,12 +137,8 @@ static void kev_lexgen_set_out_path(char* out, KevOptions* options) {
     options->strs[KEV_LEXGEN_OUT_TAB_PATH] = out;
   } else if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_SRC) {
     options->strs[KEV_LEXGEN_OUT_TAB_PATH] = out;
-    options->opts[KEV_LEXGEN_OPT_PUT_INFO] = KEV_LEXGEN_OPT_TRUE;
-    options->opts[KEV_LEXGEN_OPT_PUT_CALLBACK] = KEV_LEXGEN_OPT_TRUE;
   } else if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_ARC ||
              options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_SHA) {
-    options->opts[KEV_LEXGEN_OPT_PUT_INFO] = KEV_LEXGEN_OPT_TRUE;
-    options->opts[KEV_LEXGEN_OPT_PUT_CALLBACK] = KEV_LEXGEN_OPT_TRUE;
     free(options->strs[KEV_LEXGEN_OUT_INC_PATH]);
     free(options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
     char* tmp_path = kev_get_lexgen_tmp_dir();
@@ -175,7 +165,10 @@ static void kev_lexgen_set_out_path(char* out, KevOptions* options) {
 }
 
 static void kev_lexgen_set_build_tool(KevOptions* options) {
-  if ( options->strs[KEV_LEXGEN_BUILD_TOOL_NAME]) return;
+  if (options->strs[KEV_LEXGEN_BUILD_TOOL_NAME]) return;
+  if (options->opts[KEV_LEXGEN_OPT_STAGE] != KEV_LEXGEN_OPT_STA_SHA &&
+      options->opts[KEV_LEXGEN_OPT_STAGE] != KEV_LEXGEN_OPT_STA_ARC)
+    return;
   if (strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "rust") == 0)
     error("rust currently not supported", NULL);  /* TODO: support rust */
   else if (strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "cpp") == 0)
