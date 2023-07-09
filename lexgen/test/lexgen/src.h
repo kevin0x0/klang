@@ -2,6 +2,7 @@
 #define __KEVCC_LEXGEN_LEXER_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
 
 typedef struct tagLex {

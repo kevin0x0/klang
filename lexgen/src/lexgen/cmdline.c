@@ -39,6 +39,11 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
         error("missing output path: ", "-out-inc <path>");
       free(options->strs[KEV_LEXGEN_OUT_INC_PATH]);
       options->strs[KEV_LEXGEN_OUT_INC_PATH] = copy_string(argv[i]);
+    } else if (strcmp(arg, "--out-src") == 0) {
+      if (++i >= argc)
+        error("missing output path: ", "-out-src <path>");
+      free(options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
+      options->strs[KEV_LEXGEN_OUT_SRC_PATH] = copy_string(argv[i]);
     } else {
       kev_lexgen_set_value(arg, options);
     }

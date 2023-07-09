@@ -276,6 +276,9 @@ void kev_lexgen_output_help(void) {
   printf("  -h --help                        Show this message.\n");
   printf("  -i --in                          Input file path.\n");
   printf("  -o <path> --out <path>           Output file path.\n");
+  printf("  --out-src <path>                 Output include file path. This option works\n");
+  printf("                                   only when option -s=s, -s=a or -s=sh is\n");
+  printf("                                   specified.\n");
   printf("  --out-inc <path>                 Output include file path. This option works\n");
   printf("                                   only when option -s=s, -s=a or -s=sh is\n");
   printf("                                   specified and the language has header file,\n");
@@ -320,23 +323,28 @@ void kev_lexgen_output_src(KevOptions* options, KevStringMap* tmpl_map, char** c
   char* resources_dir = kev_get_lexgen_resources_dir();
   if (!resources_dir)
     fatal_error("can not get resources directory", NULL);
-  char* src_path = (char*)malloc(sizeof (char) * (strlen(resources_dir) + strlen("lexer/") + strlen("lexer.") + 32 + 1));
+  char* src_path = (char*)malloc(sizeof (char) * (strlen(resources_dir) + strlen("lexer/") + strlen("src.tmpl") + 32 + 1));
   if (!src_path)
     fatal_error("out of memory", NULL);
-  strcpy(src_path, resources_dir);
-  strcat(src_path, "lexer/");
-  strcat(src_path, options->strs[KEV_LEXGEN_LANG_NAME]);
-  strcat(src_path, "/src.tmpl");
-  FILE* tmpl = fopen(src_path, "r");
-  if (!tmpl)
-    fatal_error("can not open file(maybe this language is not supported): ", src_path);
-  FILE* output = fopen(options->strs[KEV_LEXGEN_OUT_SRC_PATH], "w");
-  if (!output)
-    fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
-  kev_template_convert(output, tmpl, tmpl_map);
-  kev_lexgen_output_callback(output, callbacks, options, arrlen);
-  fclose(output);
-  fclose(tmpl);
+
+  FILE* tmpl = NULL;
+  FILE* output = NULL;
+  if (options->strs[KEV_LEXGEN_OUT_SRC_PATH]) {
+    strcpy(src_path, resources_dir);
+    strcat(src_path, "lexer/");
+    strcat(src_path, options->strs[KEV_LEXGEN_LANG_NAME]);
+    strcat(src_path, "/src.tmpl");
+    tmpl = fopen(src_path, "r");
+    if (!tmpl)
+      fatal_error("can not open file(maybe this language is not supported): ", src_path);
+    output = fopen(options->strs[KEV_LEXGEN_OUT_SRC_PATH], "w");
+    if (!output)
+      fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
+    kev_template_convert(output, tmpl, tmpl_map);
+    kev_lexgen_output_callback(output, callbacks, options, arrlen);
+    fclose(output);
+    fclose(tmpl);
+  }
   /* some languages like C/C++ need header */
   if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
     strcpy(src_path, resources_dir);
