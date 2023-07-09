@@ -1,7 +1,7 @@
 #include "utils/include/dir.h"
 #include <stdlib.h>
 #include <string.h>
-#ifdef WINDOWS
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <unistd.h>
@@ -16,7 +16,7 @@ char* kev_getcwd(void) {
 char* kev_get_exe_dir(void) {
   char* buf = NULL;
 
-#ifdef WINDOWS
+#ifdef _WIN32
   exit(EXIT_FAILURE);
 #else
   size_t size = 128;
