@@ -58,7 +58,8 @@ static void error(char* info, char* info2) {
   if (info)
     fprintf(stderr, "%s", info);
   if (info2)
-    fprintf(stderr, "%s\n", info2);
+    fprintf(stderr, "%s", info2);
+  fputc('\n', stderr);
   exit(EXIT_FAILURE);
 }
 

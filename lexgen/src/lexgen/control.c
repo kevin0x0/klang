@@ -34,11 +34,11 @@ void kev_lexgen_control(KevOptions* options) {
     fatal_error("can not open file:", options->strs[KEV_LEXGEN_INPUT_PATH]);
   }
   int error_number = kev_lexgen_control_parse(input, &parser_state);
+  fclose(input);
   if (error_number != 0) {
     fprintf(stderr, "%d error(s) detected.\n", error_number);
     exit(EXIT_FAILURE);
   }
-  fclose(input);
   /* generate minimized DFA */
   KevFA* dfa;
   size_t* acc_mapping;

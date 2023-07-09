@@ -16,10 +16,10 @@ static void kev_lexgen_output_info_rust(FILE* output, KevPatternList* list, size
 static void kev_lexgen_output_info_c_cpp(FILE* output, KevPatternList* list, size_t* pattern_mapping, int* options);
 
 static void kev_lexgen_output_escape_string(FILE* output, char* str);
-uint8_t (*kev_lexgen_output_get_trans_256_u8(KevFA* dfa))[256];
-uint8_t (*kev_lexgen_output_get_trans_128_u8(KevFA* dfa))[128];
-uint16_t (*kev_lexgen_output_get_trans_256_u16(KevFA* dfa))[256];
-uint16_t (*kev_lexgen_output_get_trans_128_u16(KevFA* dfa))[128];
+static uint8_t (*kev_lexgen_output_get_trans_256_u8(KevFA* dfa))[256];
+static uint8_t (*kev_lexgen_output_get_trans_128_u8(KevFA* dfa))[128];
+static uint16_t (*kev_lexgen_output_get_trans_256_u16(KevFA* dfa))[256];
+static uint16_t (*kev_lexgen_output_get_trans_128_u16(KevFA* dfa))[128];
 
 static void fatal_error(char* info, char* info2);
 
@@ -128,6 +128,7 @@ static void kev_lexgen_output_table_c_cpp(FILE* output, KevFA* dfa, size_t* patt
   char* type = options->opts[KEV_LEXGEN_OPT_WIDTH] == 8 ? "uint8_t" : "uint16_t";
   size_t arrlen = options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_ASCII ? 128 : 256;
   fputs( "#include <stdint.h>\n", output);
+  fputs( "#include <stddef.h>\n", output);
   /* output transition table */
   fprintf(output, "static %s transition[%d][%d] = {\n", type, (int)state_number, (int)arrlen);
   if (arrlen == 128 && options->opts[KEV_LEXGEN_OPT_WIDTH] == 8) {

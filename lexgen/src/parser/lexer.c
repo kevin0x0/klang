@@ -26,7 +26,6 @@ bool kev_lexgenlexer_init(KevLexGenLexer* lex, FILE* infile) {
 
 void kev_lexgenlexer_destroy(KevLexGenLexer* lex) {
   if (lex) {
-    fclose(lex->infile);
     lex->infile = NULL;
     lex->position = 0;
     lex->acc_mapping = NULL;
