@@ -243,7 +243,7 @@ static void kev_lexgen_output_info_c_cpp(FILE* output, KevPatternList* list, siz
     pattern = pattern->next;
   }
   fprintf(output, "};\n");
-  fprintf(output, "char** kev_lexgen_get_callback_array(void) {\n");
+  fprintf(output, "char** kev_lexgen_get_info(void) {\n");
   fprintf(output, "  return info;\n");
   fprintf(output, "}\n");
 }
