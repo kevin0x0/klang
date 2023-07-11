@@ -1,5 +1,6 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#include "lexgen/include/finite_automaton/finite_automaton.h"
 #endif
 #include "lexgen/include/lexgen/control.h"
 #include "lexgen/include/parser/parser.h"
@@ -7,14 +8,24 @@
 
 #include <stdlib.h>
 
-static void fatal_error(char* info, char* info2);
+typedef struct tagKevNDFAInfo {
+  size_t nfa_no;
+  size_t dfa_non_acc_no;
+  size_t dfa_state_no;
+  size_t dfa_start;
+} KevNDFAInfo;
 
 static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state);
 /* return the number of NFAs */
-static size_t kev_lexgen_control_generate(KevPatternList* list, KevStringFaMap* map, KevFA** p_min_dfa, size_t** p_acc_mapping);
-static void kev_lexgen_control_regularize_mapping(KevFA* dfa, size_t nfa_no, KevPatternList* list, size_t* acc_mapping, size_t** p_pattern_mapping);
+static void kev_lexgen_control_generate(KevPatternList* list, KevStringFaMap* map, KevFA** p_min_dfa,
+                                        size_t** p_acc_mapping, KevNDFAInfo* ndfa_info);
+static void kev_lexgen_control_regularize_mapping(size_t acc_state_no, size_t nfa_no, KevPatternList* list,
+                                                  size_t* acc_mapping, size_t** p_pattern_mapping);
 /* return NULL-terminated function name array */
-static char** kev_lexgen_construct_callback_array(KevFA* dfa, KevPatternList* list, size_t* acc_mapping, size_t nfa_no, size_t* p_arrlen);
+static char** kev_lexgen_construct_callback_array(size_t non_acc_no, size_t state_no, size_t nfa_no,
+                                                  KevPatternList* list, size_t* acc_mapping, size_t* p_arrlen);
+
+static void fatal_error(char* info, char* info2);
 
 void kev_lexgen_control(KevOptions* options) {
   /* show help */
@@ -42,28 +53,30 @@ void kev_lexgen_control(KevOptions* options) {
   /* generate minimized DFA */
   KevFA* dfa;
   size_t* acc_mapping;
-  size_t nfa_no = kev_lexgen_control_generate(&parser_state.list, &parser_state.nfa_map, &dfa, &acc_mapping);
+  KevNDFAInfo ndfa_info;
+  kev_lexgen_control_generate(&parser_state.list, &parser_state.nfa_map, &dfa, &acc_mapping, &ndfa_info);
   /* output transition table */
-  FILE* output_table = fopen(options->strs[KEV_LEXGEN_OUT_TAB_PATH], "w");
-  if (!output_table) {
-    fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_TAB_PATH]);
+  FILE* output_src_and_tab = fopen(options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH], "w");
+  if (!output_src_and_tab) {
+    fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH]);
   }
-  kev_lexgen_output_table(output_table, dfa, acc_mapping, options);
-  /* output optional infomation */
+  kev_lexgen_output_table(output_src_and_tab, dfa, acc_mapping, options, ndfa_info.dfa_non_acc_no, ndfa_info.dfa_state_no);
+  kev_fa_delete(dfa);
   size_t* pattern_mapping = NULL;
-  kev_lexgen_control_regularize_mapping(dfa, nfa_no, &parser_state.list, acc_mapping, &pattern_mapping);
-  kev_lexgen_output_info(output_table, &parser_state.list, pattern_mapping, options);
+  kev_lexgen_control_regularize_mapping(ndfa_info.dfa_state_no - ndfa_info.dfa_non_acc_no,
+                                        ndfa_info.nfa_no, &parser_state.list, acc_mapping, &pattern_mapping);
+  kev_lexgen_output_info(output_src_and_tab, &parser_state.list, pattern_mapping, options);
   free(pattern_mapping);
-  fclose(output_table);
   /* output source if specified */
   if (options->opts[KEV_LEXGEN_OPT_STAGE] >= KEV_LEXGEN_OPT_STA_SRC) {
     size_t arrlen = 0;
-    char** callbacks = kev_lexgen_construct_callback_array(dfa, &parser_state.list, acc_mapping, nfa_no, &arrlen);
-    kev_lexgen_output_src(options, &parser_state.tmpl_map, callbacks, arrlen);
+    char** callbacks = kev_lexgen_construct_callback_array(ndfa_info.dfa_non_acc_no, ndfa_info.dfa_state_no,
+                                                           ndfa_info.nfa_no, &parser_state.list, acc_mapping, &arrlen);
+    kev_lexgen_output_src(output_src_and_tab, options, &parser_state.tmpl_map, callbacks, arrlen);
     free(callbacks);
   }
   free(acc_mapping);
-  kev_fa_delete(dfa);
+  fclose(output_src_and_tab);
   /* compile source to archive file or shared object file if specified */
   if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_ARC) {
     kev_lexgen_output_arc(options->strs[KEV_LEXGEN_BUILD_TOOL_NAME], options);
@@ -98,7 +111,8 @@ static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state) {
   return error_number;
 }
 
-static size_t kev_lexgen_control_generate(KevPatternList* list, KevStringFaMap* map, KevFA** p_min_dfa, size_t** p_acc_mapping) {
+static void kev_lexgen_control_generate(KevPatternList* list, KevStringFaMap* map, KevFA** p_min_dfa,
+                                        size_t** p_acc_mapping, KevNDFAInfo* ndfa_info) {
   size_t nfa_no = 0;
   KevPattern* pattern = list->head->next; /* fisrt pattern is POSIX charset, so custom pattern begin at second pattern */
   while (pattern) {
@@ -132,10 +146,14 @@ static size_t kev_lexgen_control_generate(KevPatternList* list, KevStringFaMap* 
   kev_fa_delete(dfa);
   if (!*p_min_dfa)
     fatal_error("failed to minimize dfa", NULL);
-  return nfa_no;
+  ndfa_info->nfa_no = nfa_no;
+  ndfa_info->dfa_state_no = kev_fa_state_assign_id(*p_min_dfa, 0);
+  ndfa_info->dfa_non_acc_no = kev_dfa_non_accept_state_number(*p_min_dfa);
+  ndfa_info->dfa_start = (*p_min_dfa)->start_state->id;
 }
 
-static void kev_lexgen_control_regularize_mapping(KevFA* dfa, size_t nfa_no, KevPatternList* list, size_t* acc_mapping, size_t** p_pattern_mapping) {
+static void kev_lexgen_control_regularize_mapping(size_t acc_state_no, size_t nfa_no, KevPatternList* list,
+                                                  size_t* acc_mapping, size_t** p_pattern_mapping) {
   /* regularize pattern_mapping */
   size_t* nfa_to_pattern = (size_t*)malloc(sizeof (size_t) * nfa_no);
   if (!nfa_to_pattern) fatal_error("out of memory", NULL);
@@ -151,17 +169,15 @@ static void kev_lexgen_control_regularize_mapping(KevFA* dfa, size_t nfa_no, Kev
     pattern_id++;
     pattern = pattern->next;
   }
-  size_t acc_state_number = kev_dfa_accept_state_number(dfa);
-  size_t* pattern_mapping = (size_t*)malloc(sizeof (size_t) * acc_state_number);
-  for (size_t i = 0; i < acc_state_number; ++i)
+  size_t* pattern_mapping = (size_t*)malloc(sizeof (size_t) * acc_state_no);
+  for (size_t i = 0; i < acc_state_no; ++i)
     pattern_mapping[i] = nfa_to_pattern[(acc_mapping)[i]];
   *p_pattern_mapping = pattern_mapping;
   free(nfa_to_pattern);
 }
 
-static char** kev_lexgen_construct_callback_array(KevFA* dfa, KevPatternList* list, size_t* acc_mapping, size_t nfa_no, size_t* p_arrlen) {
-  size_t non_acc_number = kev_dfa_non_accept_state_number(dfa);
-  size_t state_number = kev_dfa_accept_state_number(dfa) + non_acc_number;
+static char** kev_lexgen_construct_callback_array(size_t non_acc_no, size_t state_no, size_t nfa_no,
+                                                  KevPatternList* list, size_t* acc_mapping, size_t* p_arrlen) {
   size_t i = 0;
   KevPattern* pattern = list->head->next;
   char** func_names = (char**)malloc(sizeof (char*) * nfa_no);
@@ -174,16 +190,15 @@ static char** kev_lexgen_construct_callback_array(KevFA* dfa, KevPatternList* li
     }
     pattern = pattern->next;
   }
-  char** callbacks = (char**)malloc(sizeof (char*) * state_number);
+  char** callbacks = (char**)malloc(sizeof (char*) * state_no);
   if (!callbacks) fatal_error("out of meory", NULL);
-  for (size_t i = 0; i < non_acc_number; ++i) {
+  for (size_t i = 0; i < non_acc_no; ++i) {
     callbacks[i] = NULL;
   }
-  for(size_t i = non_acc_number; i < state_number; ++i) {
-    char* funcname = func_names[acc_mapping[i - non_acc_number]];
-    callbacks[i] = funcname ? funcname : "NULL";
+  for(size_t i = non_acc_no; i < state_no; ++i) {
+    callbacks[i] = func_names[acc_mapping[i - non_acc_no]];;
   }
   free(func_names);
-  *p_arrlen = state_number;
+  *p_arrlen = state_no;
   return callbacks;
 }

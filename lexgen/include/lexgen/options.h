@@ -21,14 +21,13 @@
 
 /* string parameters */
 #define KEV_LEXGEN_INPUT_PATH         (0)
-#define KEV_LEXGEN_OUT_TAB_PATH       (1)
-#define KEV_LEXGEN_LANG_NAME          (2)
-#define KEV_LEXGEN_BUILD_TOOL_NAME    (3)
-#define KEV_LEXGEN_OUT_SRC_PATH       (4)
-#define KEV_LEXGEN_OUT_INC_PATH       (5)
-#define KEV_LEXGEN_OUT_ARC_PATH       (6)
-#define KEV_LEXGEN_OUT_SHA_PATH       (7)
-#define KEV_LEXGEN_STR_NO             (8)
+#define KEV_LEXGEN_LANG_NAME          (1)
+#define KEV_LEXGEN_BUILD_TOOL_NAME    (2)
+#define KEV_LEXGEN_OUT_SRC_TAB_PATH   (3)
+#define KEV_LEXGEN_OUT_INC_PATH       (4)
+#define KEV_LEXGEN_OUT_ARC_PATH       (5)
+#define KEV_LEXGEN_OUT_SHA_PATH       (6)
+#define KEV_LEXGEN_STR_NO             (7)
 
 typedef struct tagKevOptions {
   int opts[KEV_LEXGEN_OPT_NO];

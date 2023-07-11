@@ -39,11 +39,6 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
         error("missing output path: ", "-out-inc <path>");
       free(options->strs[KEV_LEXGEN_OUT_INC_PATH]);
       options->strs[KEV_LEXGEN_OUT_INC_PATH] = copy_string(argv[i]);
-    } else if (strcmp(arg, "--out-src") == 0) {
-      if (++i >= argc)
-        error("missing output path: ", "-out-src <path>");
-      free(options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
-      options->strs[KEV_LEXGEN_OUT_SRC_PATH] = copy_string(argv[i]);
     } else {
       kev_lexgen_set_value(arg, options);
     }
@@ -80,14 +75,13 @@ static void kev_lexgen_set_value(char* arg, KevOptions* options) {
     error("not an option: ", arg);
   char* value = NULL;
   if ((value = kev_get_value(arg, "-s=")) || (value = kev_get_value(arg, "--stage="))) {
-    if (strcmp(value, "t") == 0 || strcmp(value, "trans") == 0 ||
-        strcmp(value, "transition") == 0) {
+    if (strcmp(value, "tab") == 0 || strcmp(value, "table") == 0) {
       options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_TAB;
-    } else if (strcmp(value, "s") == 0 || strcmp(value, "source") == 0) {
+    } else if (strcmp(value, "src") == 0 || strcmp(value, "source") == 0) {
       options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_SRC;
-    } else if (strcmp(value, "a") == 0 || strcmp(value, "archive") == 0) {
+    } else if (strcmp(value, "arc") == 0 || strcmp(value, "archive") == 0) {
       options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_ARC;
-    } else if (strcmp(value, "sh") == 0 || strcmp(value, "shared") == 0) {
+    } else if (strcmp(value, "sha") == 0 || strcmp(value, "shared") == 0) {
       options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_SHA;
     } else {
       error("unknown --stage value: ", value);
@@ -140,33 +134,32 @@ static void kev_lexgen_set_default(KevOptions* options) {
 
 static void kev_lexgen_set_out_path(char* out, KevOptions* options) {
   if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_TAB) {
-    options->strs[KEV_LEXGEN_OUT_TAB_PATH] = out;
+    options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH] = out;
   } else if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_SRC) {
-    options->strs[KEV_LEXGEN_OUT_TAB_PATH] = out;
+    options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH] = out;
   } else if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_ARC ||
              options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_SHA) {
     free(options->strs[KEV_LEXGEN_OUT_INC_PATH]);
-    free(options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
+    free(options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH]);
     char* tmp_path = kev_get_lexgen_tmp_dir();
     char* out_path = (char*)malloc(sizeof (char) * (strlen(tmp_path) + 17));
     if (!out_path) error("out of memory", NULL);
     strcpy(out_path, tmp_path);
-    strcat(out_path, "table");
+    strcat(out_path, "src");
     kev_add_lang_postfix(out_path, options->strs[KEV_LEXGEN_LANG_NAME]);
-    options->strs[KEV_LEXGEN_OUT_TAB_PATH] = out_path;
-    out_path = (char*)malloc(sizeof (char) * (strlen(tmp_path) + 17));
-    if (!out_path) error("out of memory", NULL);
-    strcpy(out_path, tmp_path);
-    strcat(out_path, "lexer");
-    kev_add_lang_postfix(out_path, options->strs[KEV_LEXGEN_LANG_NAME]);
-    options->strs[KEV_LEXGEN_OUT_SRC_PATH] = out_path;
+    options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH] = out_path;
     if (strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "c") == 0 ||
         strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "cpp") == 0) {
       out_path = (char*)malloc(sizeof (char) * (strlen(tmp_path) + 17));
       if (!out_path) error("out of memory", NULL);
       strcpy(out_path, tmp_path);
-      strcat(out_path, "lexer.h");
+      strcat(out_path, "inc.h");
+      options->strs[KEV_LEXGEN_OUT_INC_PATH] = out_path;
     }
+    if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_ARC)
+      options->strs[KEV_LEXGEN_OUT_ARC_PATH] = out;
+    else
+      options->strs[KEV_LEXGEN_OUT_SHA_PATH] = out;
   }
 }
 

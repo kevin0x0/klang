@@ -17,7 +17,9 @@ char* kev_get_exe_dir(void) {
   char* buf = NULL;
 
 #ifdef _WIN32
-  exit(EXIT_FAILURE);
+  buf = (char*)malloc((strlen("C:/Users/flamm/work/kevcc/lexgen/bin/") + 1) * sizeof (char));
+  if (!buf) return NULL;
+  strcpy(buf, "C:/Users/flamm/work/kevcc/lexgen/bin/");
 #else
   size_t size = 128;
   size_t len = 0;

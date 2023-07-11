@@ -290,6 +290,100 @@ static char* info[3] = {
   "Num",
   "Id",
 };
-char** kev_lexgen_get_callback_array(void) {
+char** kev_lexgen_get_info(void) {
   return info;
 }
+#include "lex.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
+uint8_t (*kev_lexgen_get_transition_table(void))[256];
+int* kev_lexgen_get_pattern_mapping(void);
+size_t kev_lexgen_get_start_state(void);
+char** kev_lexgen_get_info(void);
+
+extern Callback** callbacks;
+
+bool lex_init(Lex* lex, char* filepath) {
+  if (!lex) return false;
+  lex->buffer = NULL;
+  lex->curpos = NULL;
+  lex->table = kev_lexgen_get_transition_table();
+  lex->patterns = kev_lexgen_get_pattern_mapping();
+  lex->start_state = kev_lexgen_get_start_state();
+  lex->callbacks = callbacks;
+  if (!filepath) return false;
+  FILE* file = fopen(filepath, "rb");
+  if (!file) return false;
+  size_t filesize = fseek(file, 0, SEEK_END);
+  uint8_t* buffer = (uint8_t*)malloc(sizeof (uint8_t) * (filesize + 2));
+  if (!buffer) {
+    fclose(file);
+    return false;
+  }
+  if (fread(buffer, sizeof (uint8_t), filesize, file) == 0) {
+    free(buffer);
+    fclose(file);
+    return false;
+  }
+  fclose(file);
+  buffer[filesize] = '\0';
+  buffer[filesize + 1] = '\0';
+  lex->buffer = buffer;
+  lex->curpos = buffer;
+  return true;
+}
+
+void lex_destroy(Lex* lex) {
+  if (lex) {
+    free(lex->buffer);
+    lex->buffer = NULL;
+    lex->curpos = NULL;
+  }
+}
+
+void lex_next(Lex* lex, Token* token) {
+  uint8_t (*table)[256] = lex->table;
+  uint8_t state = lex->start_state;
+  uint8_t next_state = 0;
+  uint8_t* curpos = lex->curpos;
+  uint8_t ch = *curpos;
+  while ((next_state = table[state][ch]) != LEX_DEAD) {
+    ch = *++curpos;
+    state = next_state;
+  }
+  token->begin = lex->curpos - lex->buffer;
+  token->end = curpos - lex->buffer;
+  token->kind = lex->patterns[state];
+  if (lex->callbacks[state])
+    lex->callbacks[state](token, lex->curpos, curpos);
+  lex->curpos = curpos;
+}
+Callback lx_id;
+Callback lx_id;
+Callback lx_oct;
+Callback lx_id;
+Callback lx_id;
+Callback lx_dec;
+Callback lx_oct;
+Callback lx_id;
+Callback lx_hex;
+Callback lx_id;
+static Callback* callback[15] = {
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  lx_id,
+  lx_id,
+  lx_oct,
+  lx_id,
+  lx_id,
+  lx_dec,
+  lx_oct,
+  lx_id,
+  NULL,
+  lx_hex,
+  lx_id,
+};

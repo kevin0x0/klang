@@ -178,8 +178,7 @@ KevStringMapNode* kev_strmap_iterate_next(KevStringMap* map, KevStringMapNode* c
 }
 
 bool kev_strmap_update(KevStringMap* map, char* key, char* value) {
-  if (!map)
-    return false;
+  if (!map) return false;
   KevStringMapNode* node = kev_strmap_search(map, key);
   if (node) {
     free(node->value);
