@@ -9,7 +9,7 @@
 typedef struct tagKevParserState {
   KevPatternList list;
   KevStringFaMap nfa_map;
-  KevStringMap tmpl_map;
+  KevStringMap env_var;
 } KevParserState;
 
 int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);

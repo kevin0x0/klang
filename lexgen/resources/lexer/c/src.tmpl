@@ -3,12 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-uint8_t (*kev_lexgen_get_transition_table(void))[256];
+TransTab kev_lexgen_get_transition_table(void);
 int* kev_lexgen_get_pattern_mapping(void);
 size_t kev_lexgen_get_start_state(void);
 char** kev_lexgen_get_info(void);
-
-extern Callback** callbacks;
+Callback** kev_lexgen_get_callbacks(void);
 
 bool lex_init(Lex* lex, char* filepath) {
   if (!lex) return false;
@@ -17,7 +16,7 @@ bool lex_init(Lex* lex, char* filepath) {
   lex->table = kev_lexgen_get_transition_table();
   lex->patterns = kev_lexgen_get_pattern_mapping();
   lex->start_state = kev_lexgen_get_start_state();
-  lex->callbacks = callbacks;
+  lex->callbacks = kev_lexgen_get_callbacks();
   if (!filepath) return false;
   FILE* file = fopen(filepath, "rb");
   if (!file) return false;

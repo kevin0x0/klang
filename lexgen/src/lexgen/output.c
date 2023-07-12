@@ -9,9 +9,9 @@
 #include <string.h>
 
 static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* pattern_mapping, void* table,
-                                         KevOptions* options, size_t non_acc_no, size_t state_no);
+                                         int charset, int length, size_t non_acc_no, size_t state_no);
 static void kev_lexgen_output_table_c_cpp(FILE* output, KevFA* dfa, size_t* pattern_mapping, void* table,
-                                          KevOptions* options, size_t non_acc_no, size_t state_no);
+                                          int charset, int length, size_t non_acc_no, size_t state_no);
 static void kev_lexgen_output_callback_rust(FILE* output, char** callbacks, size_t arrlen);
 static void kev_lexgen_output_callback_c_cpp(FILE* output, char** callbacks, size_t arrlen);
 static void kev_lexgen_output_info_rust(FILE* output, KevPatternList* list, size_t* pattern_mapping, int* options);
@@ -25,42 +25,39 @@ static uint16_t (*kev_lexgen_output_get_trans_128_u16(KevFA* dfa))[128];
 
 static void fatal_error(char* info, char* info2);
 
-void kev_lexgen_output_table(FILE* output, KevFA* dfa, size_t* pattern_mapping, KevOptions* options, size_t non_acc_no, size_t state_no) {
+void kev_lexgen_output_table(FILE* output, KevFA* dfa, size_t* pattern_mapping, char* language,
+                             int charset, int length, size_t non_acc_no, size_t state_no) {
   void* trans = NULL;
-  if (options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_ASCII &&
-      options->opts[KEV_LEXGEN_OPT_WIDTH] == 8) {
+  if (charset == KEV_LEXGEN_OPT_CHARSET_ASCII && length == 8) {
     trans = kev_lexgen_output_get_trans_128_u8(dfa);
-  } else if (options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_ASCII &&
-             options->opts[KEV_LEXGEN_OPT_WIDTH] == 16) {
+  } else if (charset == KEV_LEXGEN_OPT_CHARSET_ASCII && length == 16) {
     trans = kev_lexgen_output_get_trans_128_u16(dfa);
-  } else if (options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_UTF8 &&
-             options->opts[KEV_LEXGEN_OPT_WIDTH] == 8) {
+  } else if (charset == KEV_LEXGEN_OPT_CHARSET_UTF8 && length == 8) {
     trans = kev_lexgen_output_get_trans_256_u8(dfa);
-  } else if (options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_UTF8 &&
-             options->opts[KEV_LEXGEN_OPT_WIDTH] == 16) {
+  } else if (charset == KEV_LEXGEN_OPT_CHARSET_UTF8 && length == 16) {
     trans = kev_lexgen_output_get_trans_256_u16(dfa);
   } else {
     fatal_error("internal error occurred in kev_lexgen_output_table()", NULL);
   }
   if (!trans)
     fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8", NULL);
-  if (strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "rust") == 0)
-    kev_lexgen_output_table_rust(output, dfa, pattern_mapping, trans, options, non_acc_no, state_no);
-  else if (strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "c") == 0 ||
-           strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "cpp") == 0)
-    kev_lexgen_output_table_c_cpp(output, dfa, pattern_mapping, trans, options, non_acc_no, state_no);
+  if (strcmp(language, "rust") == 0)
+    kev_lexgen_output_table_rust(output, dfa, pattern_mapping, trans, charset, length, non_acc_no, state_no);
+  else if (strcmp(language, "c") == 0 ||
+           strcmp(language, "cpp") == 0)
+    kev_lexgen_output_table_c_cpp(output, dfa, pattern_mapping, trans, charset, length, non_acc_no, state_no);
   else
-    fatal_error("unsupported language: ", options->strs[KEV_LEXGEN_LANG_NAME]);
+    fatal_error("unsupported language: ", language);
   free(trans);
 }
 
 static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* pattern_mapping, void* table,
-                                         KevOptions* options, size_t non_acc_no, size_t state_no) {
-  char* type = options->opts[KEV_LEXGEN_OPT_WIDTH] == 8 ? "u8" : "u16";
-  size_t arrlen = options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_ASCII ? 128 : 256;
+                                         int charset, int length, size_t non_acc_no, size_t state_no) {
+  char* type = length == 8 ? "uint8_t" : "uint16_t";
+  size_t arrlen = charset == KEV_LEXGEN_OPT_CHARSET_ASCII ? 128 : 256;
   /* output transition table */
   fprintf(output, "static TRANSITION : [[%s;%d];%d] = [\n", type, (int)arrlen, (int)state_no);
-  if (arrlen == 128 && options->opts[KEV_LEXGEN_OPT_WIDTH] == 8) {
+  if (arrlen == 128 && length == 8) {
     for (size_t i = 0; i < state_no; ++i) {
       fputs("  [", output);
       for (size_t j = 0; j < 128; ++j) {
@@ -69,7 +66,7 @@ static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* patte
       }
       fputs("\n  ],\n", output);
     }
-  } else if (arrlen == 128 && options->opts[KEV_LEXGEN_OPT_WIDTH] == 16) {
+  } else if (arrlen == 128 && length == 16) {
     for (size_t i = 0; i < state_no; ++i) {
       fputs("  [", output);
       for (size_t j = 0; j < 128; ++j) {
@@ -78,7 +75,7 @@ static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* patte
       }
       fputs("\n  ],\n", output);
     }
-  } else if (arrlen == 256 && options->opts[KEV_LEXGEN_OPT_WIDTH] == 8) {
+  } else if (arrlen == 256 && length == 8) {
     for (size_t i = 0; i < state_no; ++i) {
       fputs("  [", output);
       for (size_t j = 0; j < 256; ++j) {
@@ -87,7 +84,7 @@ static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* patte
       }
       fputs("\n  ],\n", output);
     }
-  } else if (arrlen == 256 && options->opts[KEV_LEXGEN_OPT_WIDTH] == 16) {
+  } else if (arrlen == 256 && length == 16) {
     for (size_t i = 0; i < state_no; ++i) {
       fputs("  [", output);
       for (size_t j = 0; j < 256; ++j) {
@@ -124,14 +121,14 @@ static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* patte
 }
 
 static void kev_lexgen_output_table_c_cpp(FILE* output, KevFA* dfa, size_t* pattern_mapping, void* table,
-                                          KevOptions* options, size_t non_acc_no, size_t state_no) {
-  char* type = options->opts[KEV_LEXGEN_OPT_WIDTH] == 8 ? "uint8_t" : "uint16_t";
-  size_t arrlen = options->opts[KEV_LEXGEN_OPT_CHARSET] == KEV_LEXGEN_OPT_CHARSET_ASCII ? 128 : 256;
+                                          int charset, int length, size_t non_acc_no, size_t state_no) {
+  char* type = length == 8 ? "uint8_t" : "uint16_t";
+  size_t arrlen = charset == KEV_LEXGEN_OPT_CHARSET_ASCII ? 128 : 256;
   fputs( "#include <stdint.h>\n", output);
   fputs( "#include <stddef.h>\n", output);
   /* output transition table */
   fprintf(output, "static %s transition[%d][%d] = {\n", type, (int)state_no, (int)arrlen);
-  if (arrlen == 128 && options->opts[KEV_LEXGEN_OPT_WIDTH] == 8) {
+  if (arrlen == 128 && length == 8) {
     for (size_t i = 0; i < state_no; ++i) {
       fputs("  {", output);
       for (size_t j = 0; j < 128; ++j) {
@@ -140,7 +137,7 @@ static void kev_lexgen_output_table_c_cpp(FILE* output, KevFA* dfa, size_t* patt
       }
       fputs("\n  },\n", output);
     }
-  } else if (arrlen == 128 && options->opts[KEV_LEXGEN_OPT_WIDTH] == 16) {
+  } else if (arrlen == 128 && length == 16) {
     for (size_t i = 0; i < state_no; ++i) {
       fputs("  {", output);
       for (size_t j = 0; j < 128; ++j) {
@@ -149,7 +146,7 @@ static void kev_lexgen_output_table_c_cpp(FILE* output, KevFA* dfa, size_t* patt
       }
       fputs("\n  },\n", output);
     }
-  } else if (arrlen == 256 && options->opts[KEV_LEXGEN_OPT_WIDTH] == 8) {
+  } else if (arrlen == 256 && length == 8) {
     for (size_t i = 0; i < state_no; ++i) {
       fputs("  {", output);
       for (size_t j = 0; j < 256; ++j) {
@@ -158,7 +155,7 @@ static void kev_lexgen_output_table_c_cpp(FILE* output, KevFA* dfa, size_t* patt
       }
       fputs("\n  },\n", output);
     }
-  } else if (arrlen == 256 && options->opts[KEV_LEXGEN_OPT_WIDTH] == 16) {
+  } else if (arrlen == 256 && length == 16) {
     for (size_t i = 0; i < state_no; ++i) {
       fputs("  {", output);
       for (size_t j = 0; j < 256; ++j) {
@@ -220,11 +217,14 @@ static void kev_lexgen_output_callback_c_cpp(FILE* output, char** callbacks, siz
       fprintf(output, "Callback %s;\n", callbacks[i]);
   }
 
-  fprintf(output, "static Callback* callback[%d] = {", (int)arrlen);
+  fprintf(output, "static Callback* callbacks[%d] = {", (int)arrlen);
   for(size_t i = 0; i < arrlen; ++i) {
     fprintf(output, "\n  %s,", callbacks[i] ? callbacks[i] : "NULL");
   }
   fprintf(output, "\n};\n");
+  fprintf(output, "Callback** kev_lexgen_get_callbacks(void) {\n");
+  fprintf(output, "  return callbacks;\n");
+  fprintf(output, "}\n");
 }
 
 static void kev_lexgen_output_info_c_cpp(FILE* output, KevPatternList* list, size_t* pattern_mapping, int* options) {

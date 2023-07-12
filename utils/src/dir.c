@@ -7,20 +7,13 @@
 #include <unistd.h>
 #endif
 
-
 char* kev_getcwd(void) {
   exit(EXIT_FAILURE);
   return NULL;
 }
 
-char* kev_get_exe_dir(void) {
+char* kev_get_bin_dir(void) {
   char* buf = NULL;
-
-#ifdef _WIN32
-  buf = (char*)malloc((strlen("C:/Users/flamm/work/kevcc/lexgen/bin/") + 1) * sizeof (char));
-  if (!buf) return NULL;
-  strcpy(buf, "C:/Users/flamm/work/kevcc/lexgen/bin/");
-#else
   size_t size = 128;
   size_t len = 0;
   do {
@@ -28,12 +21,18 @@ char* kev_get_exe_dir(void) {
     buf = (char*)malloc(sizeof (char) * size);
     if (!buf) return NULL;
     size = size + size / 2;
+#ifdef _WIN32
+  } while ((len = GetModuleFileNameA(NULL, buf, size)) == -1);
+#else
   } while ((len = readlink("/proc/self/exe",buf, size)) == -1);
+#endif
   len--;
+#ifdef _WIN32
+  for (char* p = buf; *p != '\0'; ++p)
+    if (*p == '\\') *p = '/';
+#endif
   while (buf[--len] != '/') continue;
   buf[len + 1] = '\0';
-#endif
-
   return buf;
 }
 
@@ -43,7 +42,7 @@ char* kev_get_kevcc_dir(void) {
 }
 
 char* kev_get_lexgen_resources_dir(void) {
-  char* dir = kev_get_exe_dir();
+  char* dir = kev_get_bin_dir();
   if (!dir) return NULL;
   size_t len = strlen(dir);
   char* res_dir = (char*)realloc(dir, sizeof (char) * (len + 20));
@@ -57,7 +56,16 @@ char* kev_get_lexgen_resources_dir(void) {
 }
 
 char* kev_get_lexgen_tmp_dir(void) {
-  exit(EXIT_FAILURE);
-  return NULL;
+  char* dir = kev_get_bin_dir();
+  if (!dir) return NULL;
+  size_t len = strlen(dir);
+  char* res_dir = (char*)realloc(dir, sizeof (char) * (len + 20));
+  if (!res_dir) {
+    free(dir);
+    return NULL;
+  }
+  res_dir[len - 4] = '\0';
+  strcat(res_dir, "tmp/");
+  return res_dir;
 }
 

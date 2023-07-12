@@ -410,7 +410,7 @@ static KevFA* kev_regex_charset(KevParser* parser, KevStringFaMap* nfa_map) {
     if (*parser->current != ':') {
       free(name);
       error_type = KEV_REGEX_ERR_SYNTAX;
-      kev_regex_set_error_info("expected \':\'");
+      kev_regex_set_error_info("expected \':\' after charset name");
       return NULL;
     }
     kev_regex_next_char(parser);
@@ -505,9 +505,17 @@ static inline bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end) {
 
 uint8_t* kev_regex_ref_name(KevParser* parser) {
   uint8_t* name_end = parser->current;
-  while ((*name_end <= 'z' && *name_end >= 'a') ||
-         (*name_end <= 'Z' && *name_end >= 'A')) {
+  if (((*name_end | 0x20) <= 'z' && (*name_end | 0x20) >= 'a') ||
+      *name_end == '_' || *name_end == '-')
     ++name_end;
+  while (((*name_end | 0x20) <= 'z' && (*name_end | 0x20) >= 'a') ||
+         *name_end == '_' || (*name_end <= '9' && *name_end >= '0') || *name_end == '-') {
+    ++name_end;
+  }
+  if (name_end == parser->current) {
+    error_type = KEV_REGEX_ERR_SYNTAX;
+    kev_regex_set_error_info("identifier can not be empty string");
+    return NULL;
   }
   uint8_t* name = (uint8_t*)malloc(sizeof (uint8_t) * (name_end - parser->current + 1));
   if (!name) {

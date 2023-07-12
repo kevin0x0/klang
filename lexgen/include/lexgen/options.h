@@ -2,10 +2,13 @@
 #define KEVCC_LEXGEN_INCLUDE_LEXGEN_OPTIONS_H
 /* options */
 #define KEV_LEXGEN_OPT_STAGE          (0)
-#define KEV_LEXGEN_OPT_WIDTH          (1)
-#define KEV_LEXGEN_OPT_CHARSET        (2)
 #define KEV_LEXGEN_OPT_HELP           (3)
 #define KEV_LEXGEN_OPT_NO             (4)
+
+/* options from environment variable */
+#define KEV_LEXGEN_OPT_WIDTH          (0)
+#define KEV_LEXGEN_OPT_CHARSET        (1)
+#define KEV_LEXGEN_ENV_OPT_NO         (2)
 
 /* values */
 #define KEV_LEXGEN_OPT_LANG_C_CPP     (0)
@@ -32,6 +35,7 @@
 typedef struct tagKevOptions {
   int opts[KEV_LEXGEN_OPT_NO];
   char* strs[KEV_LEXGEN_STR_NO];
+  int env_opts[KEV_LEXGEN_ENV_OPT_NO];
 } KevOptions;
 
 #endif

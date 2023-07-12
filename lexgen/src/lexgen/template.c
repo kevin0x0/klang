@@ -149,7 +149,7 @@ static int kev_template_read_id(FILE* tmpl, char* buf, size_t buf_size) {
   do {
     buf[i++] = ch;
   } while (((((ch = fgetc(tmpl)) | 0x20) <= 'z' && (ch | 0x20) >= 'a') ||
-           (ch <= '9' && ch >= '0') || ch == '_') && i < buf_size);
+           (ch <= '9' && ch >= '0') || ch == '_' || ch == '-') && i < buf_size);
   if (i == buf_size) {
     buf[buf_size - 1] = '\0';
     fatal_error("template: identifier too long: ", buf);

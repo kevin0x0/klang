@@ -15,8 +15,8 @@ static char* token_description[] = {
   [KEV_LEXGEN_TOKEN_BLANKS] = "blanks", [KEV_LEXGEN_TOKEN_COLON] = "\':\'",
   [KEV_LEXGEN_TOKEN_ID] = "identifier", [KEV_LEXGEN_TOKEN_REGEX] = "regular expression",
   [KEV_LEXGEN_TOKEN_OPEN_PAREN] = "\'(\'", [KEV_LEXGEN_TOKEN_CLOSE_PAREN] = "\')\'",
-  [KEV_LEXGEN_TOKEN_DEF] = "def", [KEV_LEXGEN_TOKEN_TMPL_ID] = "template identifier",
-  [KEV_LEXGEN_TOKEN_LONG_ID] = "long identifier",
+  [KEV_LEXGEN_TOKEN_DEF] = "def", [KEV_LEXGEN_TOKEN_ENV_VAR] = "environment variable identifier",
+  [KEV_LEXGEN_TOKEN_LONG_STR] = "long string", [KEV_LEXGEN_TOKEN_STR] = "string",
 };
 
 static int kev_lexgenparser_next_nonblank(KevLexGenLexer* lex, KevLexGenToken* token);
@@ -34,7 +34,7 @@ bool kev_lexgenparser_init(KevParserState* parser_state) {
     kev_patternlist_destroy(&parser_state->list);
     return false;
   }
-  if (!kev_strmap_init(&parser_state->tmpl_map, 8)) {
+  if (!kev_strmap_init(&parser_state->env_var, 8)) {
     kev_patternlist_destroy(&parser_state->list);
     kev_strfamap_destroy(&parser_state->nfa_map);
     return false;
@@ -46,7 +46,7 @@ void kev_lexgenparser_destroy(KevParserState* parser_state) {
   kev_patternlist_free_content(&parser_state->list);
   kev_patternlist_destroy(&parser_state->list);
   kev_strfamap_destroy(&parser_state->nfa_map);
-  kev_strmap_destroy(&parser_state->tmpl_map);
+  kev_strmap_destroy(&parser_state->env_var);
 }
 
 int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
@@ -64,7 +64,7 @@ int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ASSIGN);
   err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_REGEX);
-  KevFA* nfa = kev_regex_parse((uint8_t*)token->attr, nfa_map);
+  KevFA* nfa = kev_regex_parse((uint8_t*)token->attr + 1, nfa_map);
   if (!nfa) {
     kev_parser_error_report(stderr, lex->infile, kev_regex_get_info(), token->begin + kev_regex_get_pos());
     free(name);
@@ -104,7 +104,7 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
     char* proc_name = NULL;
     err_count += kev_lexgenparser_proc_func_name(lex, token, &proc_name);
     err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_REGEX);
-    uint8_t* regex = (uint8_t*)token->attr;
+    uint8_t* regex = (uint8_t*)token->attr + 1;
     KevFA* nfa = kev_regex_parse(regex, nfa_map);
     if (!nfa) {
       kev_parser_error_report(stderr, lex->infile, kev_regex_get_info(), token->begin + kev_regex_get_pos());
@@ -124,30 +124,34 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
 int kev_lexgenparser_statement_tmpl_def(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
   int err_count = 0;
   size_t len = strlen(token->attr + 1);
-  char* tmpl_name = (char*)malloc(sizeof(char) * (len + 1));
-  if (!tmpl_name) {
+  char* env_var = (char*)malloc(sizeof(char) * (len + 1));
+  if (!env_var) {
     kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
     err_count++;
   } else {
-    strcpy(tmpl_name, token->attr + 1);
+    strcpy(env_var, token->attr + 1);
   }
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ASSIGN);
-  if (token->kind != KEV_LEXGEN_TOKEN_LONG_ID && token->kind != KEV_LEXGEN_TOKEN_ID) {
-    err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ID);
-    free(tmpl_name);
+  if (token->kind != KEV_LEXGEN_TOKEN_LONG_STR && token->kind != KEV_LEXGEN_TOKEN_STR) {
+    err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_STR);
+    free(env_var);
     return err_count;
   }
-  if (!tmpl_name) {
+  if (!env_var) {
     return err_count + kev_lexgenparser_next_nonblank(lex, token);
   } else {
-    size_t offset = token->kind == KEV_LEXGEN_TOKEN_LONG_ID ? 1 : 0;
-    char* name = token->attr + offset;
-    if (!kev_strmap_update(&parser_state->tmpl_map, tmpl_name, name)) {
+    char* env_value = NULL;
+    if (token->kind == KEV_LEXGEN_TOKEN_LONG_STR) {
+      size_t len = token->end - token->begin;
+      token->attr[len - 2] = '\0';  /* long string ends with two '\n', eliminate them */
+    }
+    env_value = token->attr + 1;
+    if (!kev_strmap_update(&parser_state->env_var, env_var, env_value)) {
       kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
       err_count++;
     }
-    free(tmpl_name);
+    free(env_var);
     err_count += kev_lexgenparser_next_nonblank(lex, token);
     return err_count;
   }
@@ -162,7 +166,7 @@ int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevPars
     else if (token->kind == KEV_LEXGEN_TOKEN_DEF) {
       err_count += kev_lexgenparser_statement_deftoken(lex, token, parser_state);
     }
-    else if (token->kind == KEV_LEXGEN_TOKEN_TMPL_ID) {
+    else if (token->kind == KEV_LEXGEN_TOKEN_ENV_VAR) {
       err_count += kev_lexgenparser_statement_tmpl_def(lex, token, parser_state);
     }
     else {

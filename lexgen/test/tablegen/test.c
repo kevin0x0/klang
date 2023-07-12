@@ -31,17 +31,18 @@ void output_table(uint8_t (*table)[256], KevFA* dfa, size_t* acc_mapping);
 
 int main(int argc, char** argv) {
   KevFA* def = kev_regex_parse_ascii("def", NULL);
-  KevFA* id = kev_regex_parse_ascii("[A-Za-z_][A-Za-z0-9_]*", NULL);
-  KevFA* regex = kev_regex_parse_ascii("$\\ *[^\\n]*", NULL);
+  KevFA* id = kev_regex_parse_ascii("[A-Za-z_][A-Za-z0-9_\\-]*", NULL);
+  KevFA* regex = kev_regex_parse_ascii("$\\ *[^\\n\\xFF]*", NULL);
   KevFA* assign = kev_regex_parse_ascii("=", NULL);
   KevFA* colon = kev_regex_parse_ascii(":", NULL);
-  KevFA* blanks = kev_regex_parse_ascii("([\\ \\t\\n]*#[^\\n]*\\n)*[\\ \\t\\n]+", NULL);
+  KevFA* blanks = kev_regex_parse_ascii("([\\ \\t\\n]*#[^\\n\\xFF]*)+[\\ \\t\\n]* | [\\ \\t\\n]+", NULL);
   KevFA* open_paren = kev_regex_parse_ascii("\\(", NULL);
   KevFA* close_paren = kev_regex_parse_ascii("\\)", NULL);
-  KevFA* tmpl_id = kev_regex_parse_ascii("%[A-Za-z_][A-Za-z0-9_]*", NULL);
-  KevFA* long_id = kev_regex_parse_ascii("!([^\\n] | \\n[^\\n])*\\n\\n", NULL);
+  KevFA* env_var = kev_regex_parse_ascii("%\\ *[A-Za-z_][A-Za-z0-9_\\-]*", NULL);
   KevFA* end = kev_regex_parse_ascii("\\xFF", NULL);
-  KevFA* nfa_array[] = { def, id, regex, assign, colon, blanks, open_paren, close_paren, tmpl_id, end, long_id, NULL };
+  KevFA* long_str = kev_regex_parse_ascii("!([^\\n\\xFF] | \\n[^\\n\\xFF])*(\\n\\n)?", NULL);
+  KevFA* str = kev_regex_parse_ascii("\"[^\\n\\xFF]*", NULL);
+  KevFA* nfa_array[] = { def, id, regex, assign, colon, blanks, open_paren, close_paren, env_var, end, long_str, str, NULL };
   size_t* mapping = NULL;
   KevFA* dfa = kev_nfa_to_dfa(nfa_array, &mapping);
   KevFA* min_dfa = kev_dfa_minimization(dfa, mapping);
@@ -54,9 +55,10 @@ int main(int argc, char** argv) {
   kev_fa_delete(blanks);
   kev_fa_delete(open_paren);
   kev_fa_delete(close_paren);
-  kev_fa_delete(tmpl_id);
+  kev_fa_delete(env_var);
   kev_fa_delete(end);
-  kev_fa_delete(long_id);
+  kev_fa_delete(long_str);
+  kev_fa_delete(str);
   kev_fa_delete(dfa);
   kev_fa_delete(min_dfa);
   free(table);
