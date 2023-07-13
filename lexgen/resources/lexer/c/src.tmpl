@@ -1,4 +1,4 @@
-#include "inc.h"
+#include "$r include-path $:inc.h$;"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +20,9 @@ bool lex_init(Lex* lex, char* filepath) {
   if (!filepath) return false;
   FILE* file = fopen(filepath, "rb");
   if (!file) return false;
-  size_t filesize = fseek(file, 0, SEEK_END);
+  fseek(file, 0, SEEK_END);
+  size_t filesize = ftell(file);
+  fseek(file, 0, SEEK_SET);
   uint8_t* buffer = (uint8_t*)malloc(sizeof (uint8_t) * (filesize + 2));
   if (!buffer) {
     fclose(file);
@@ -63,4 +65,8 @@ void lex_next(Lex* lex, Token* token) {
   if (lex->callbacks[state])
     lex->callbacks[state](token, lex->curpos, curpos);
   lex->curpos = curpos;
+}
+
+char* lex_get_info(Lex* lex, int kind) {
+  return kev_lexgen_get_info()[kind];
 }

@@ -35,5 +35,6 @@ typedef struct tagLex {
 bool lex_init(Lex* lex, char* filepath);
 void lex_destroy(Lex* lex);
 void lex_next(Lex* lex, Token* token);
+char* lex_get_info(Lex* lex, int kind);
 
 #endif

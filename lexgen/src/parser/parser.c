@@ -49,7 +49,7 @@ void kev_lexgenparser_destroy(KevParserState* parser_state) {
   kev_strmap_destroy(&parser_state->env_var);
 }
 
-int kev_lexgenparser_statement_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
+int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
   KevPatternList* list = &parser_state->list;
   KevStringFaMap* nfa_map = &parser_state->nfa_map;
   int err_count = 0;
@@ -121,7 +121,7 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
   return err_count;
 }
 
-int kev_lexgenparser_statement_tmpl_def(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
+int kev_lexgenparser_statement_env_var_assgn(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
   int err_count = 0;
   size_t len = strlen(token->attr + 1);
   char* env_var = (char*)malloc(sizeof(char) * (len + 1));
@@ -161,13 +161,13 @@ int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevPars
   int err_count = 0;
   do {
     if (token->kind == KEV_LEXGEN_TOKEN_ID) {
-      err_count += kev_lexgenparser_statement_assign(lex, token, parser_state);
+      err_count += kev_lexgenparser_statement_nfa_assign(lex, token, parser_state);
     }
     else if (token->kind == KEV_LEXGEN_TOKEN_DEF) {
       err_count += kev_lexgenparser_statement_deftoken(lex, token, parser_state);
     }
     else if (token->kind == KEV_LEXGEN_TOKEN_ENV_VAR) {
-      err_count += kev_lexgenparser_statement_tmpl_def(lex, token, parser_state);
+      err_count += kev_lexgenparser_statement_env_var_assgn(lex, token, parser_state);
     }
     else {
       kev_parser_error_report(stderr, lex->infile, "expected \'def\' or identifer", token->begin);

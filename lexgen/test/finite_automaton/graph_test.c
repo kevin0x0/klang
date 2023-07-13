@@ -6,6 +6,8 @@
 #include "lexgen/include/finite_automaton/set/bitset.h"
 #include "lexgen/include/finite_automaton/array/node_array.h"
 #include "lexgen/include/finite_automaton/queue/int_queue.h"
+#include "lexgen/include/parser/parser.h"
+#include "lexgen/include/parser/regex.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -25,6 +27,12 @@ void print_graph(FILE* out, KevGraph* graph) {
         fprintf(out, " -- -> %llu ", edge->node->id);
       else if (ch == KEV_NFA_SYMBOL_EPSILON)
         fprintf(out, " ----> %llu ", edge->node->id);
+      else if (ch == '\n')
+        fprintf(out, " -\\n-> %llu ", edge->node->id);
+      else if (ch == '\t')
+        fprintf(out, " -\\t-> %llu ", edge->node->id);
+      else if ((uint8_t)ch == '\e')
+        fprintf(out, " -\\e-> %llu ", edge->node->id);
       else
         fprintf(out, " --%c-> %llu ", ch, edge->node->id);
       edge = edge->next;
@@ -36,6 +44,7 @@ void print_graph(FILE* out, KevGraph* graph) {
 
 void print_nfa(FILE* out, KevFA* nfa) {
   if (!nfa || !nfa->start_state || !nfa->accept_states) return;
+  kev_fa_state_assign_id(nfa, 0);
   fprintf(out, "start: %llu\n", nfa->start_state->id);
   fprintf(out, "accept: %llu\n", nfa->accept_states->id);
   print_graph(out, &nfa->transition);
@@ -92,7 +101,17 @@ int main(void) {
     kev_fa_delete(min_dfa);
   }
 
+  KevFA* nfa = kev_regex_parse_ascii("[a][b]", NULL);
+  kev_fa_state_assign_id(nfa, 0);
+  print_nfa(stderr, nfa);
+  //KevFA* nfa_array[] = { nfa, NULL };
+  //KevFA* dfa = kev_nfa_to_dfa(nfa_array, NULL);
+  //kev_fa_state_assign_id(dfa, 0);
+  //print_dfa(stderr, dfa);
+  return 0;
 
+
+  while (false) {
     KevFA* nfa1 = kev_nfa_create('a');
     KevFA* nfa2 = kev_nfa_create('b');
     KevFA* nfa3 = kev_nfa_create('c');
@@ -130,7 +149,7 @@ int main(void) {
     kev_fa_delete(nfa7);
     free(acc_map);
     return 0;
-
+  }
 
   while (true) {
     KevSetIntMap map;

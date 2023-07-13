@@ -8,7 +8,12 @@ def Num:
   $0x[A-Fa-f0-9]+
 def Id:
   $([:non-ascii-char:] | [A-Za-z_])([:non-ascii-char:] | [A-Za-z0-9_])*
-%state-length = "fuck you
+def End:
+  $\0
+def Blank:
+  $\ +
+%state-length = "8
 %charset = "utf-8
-%error-handling = "lex_err
-%default-callback = "lx_default
+%include-path = "lex.h
+#%error-handling = "lex_err
+#%default-callback = "lx_default

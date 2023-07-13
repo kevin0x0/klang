@@ -21,8 +21,8 @@ bool kev_nfa_init(KevFA* fa, KevNFAChar character) {
 
   fa->start_state = start;
   fa->accept_states = accept;
-  start = kev_graphnodelist_insert(start, accept);
-  return kev_graph_init(&fa->transition, start);
+  start->next = accept;
+  return kev_graph_init_set(&fa->transition, start, accept);
 }
 
 bool kev_fa_init_copy(KevFA* fa, KevFA* src) {
@@ -134,14 +134,16 @@ void kev_fa_delete(KevFA* fa) {
 }
 
 bool kev_nfa_concatenation(KevFA* dest, KevFA* src) {
-  kev_graph_merge(&dest->transition, &src->transition);
-  KevGraphNode* src_start = src->start_state;
-  KevGraphNode* src_accept = src->accept_states;
+  dest->accept_states->edges = src->start_state->edges;
+  src->start_state->edges = NULL;
+  dest->accept_states = src->accept_states;
   src->start_state = NULL;
   src->accept_states = NULL;
-  KevGraphNode* dest_accept = dest->accept_states;
-  dest->accept_states = src_accept;
-  return kev_graphnode_connect(dest_accept, src_start, KEV_NFA_SYMBOL_EPSILON);
+  /* the head state is starting state, remove starting state */
+  KevGraphNode* tmp = src->transition.head;
+  src->transition.head = src->transition.head->next;
+  kev_graphnode_delete(tmp);
+  return kev_graph_merge(&dest->transition, &src->transition);
 }
 
 bool kev_nfa_alternation(KevFA* dest, KevFA* src) {
@@ -154,8 +156,8 @@ bool kev_nfa_alternation(KevFA* dest, KevFA* src) {
   }
 
   kev_graph_merge(&dest->transition, &src->transition);
-  kev_graph_add_node(&dest->transition, new_start);
-  kev_graph_add_node(&dest->transition, new_accept);
+  kev_graph_insert_node(&dest->transition, new_accept);
+  kev_graph_insert_node(&dest->transition, new_start);  /* start state should be at the start of the node list */
   KevGraphNode* src_start = src->start_state;
   KevGraphNode* src_accept = src->accept_states;
   src->start_state = NULL;
@@ -182,8 +184,8 @@ bool kev_nfa_positive(KevFA* nfa) {
     return false;
   }
 
-  kev_graph_add_node(&nfa->transition, new_start);
-  kev_graph_add_node(&nfa->transition, new_accept);
+  kev_graph_insert_node(&nfa->transition, new_accept);
+  kev_graph_insert_node(&nfa->transition, new_start); /* start state should be at the start of the node list */
   if (!kev_graphnode_connect(new_start, nfa->start_state, KEV_NFA_SYMBOL_EPSILON)   ||
       !kev_graphnode_connect(nfa->accept_states, new_accept, KEV_NFA_SYMBOL_EPSILON) ||
       !kev_graphnode_connect(nfa->accept_states, nfa->start_state, KEV_NFA_SYMBOL_EPSILON)) {
