@@ -69,3 +69,26 @@ char* kev_get_lexgen_tmp_dir(void) {
   return res_dir;
 }
 
+char* kev_get_relpath(char* from, char* to) {
+  int i = 0;
+  while (from[i] == to[i] && from[i] != '\0')
+    i++;
+  while (i != 0 && from[--i] != '/' && from[i] != '\\')
+    continue;
+  if (i != 0) ++i;
+  int dir_depth = 0;
+  for (int j = i; from[j] != '\0'; ++j) {
+    if (from[j] == '/' || from[j] == '\\')
+      dir_depth++;
+  }
+  char* relpath = (char*)malloc(sizeof (char) * (dir_depth * 3 + strlen(to) + 1));
+  if (!relpath) return NULL;
+  for (int j = 0; j < dir_depth; ++j) {
+    relpath[j * 3] = '.';
+    relpath[j * 3 + 1] = '.';
+    relpath[j * 3 + 2] = '/';
+  }
+  relpath[dir_depth * 3] = '\0';
+  strcat(relpath, to + i);
+  return relpath;
+}

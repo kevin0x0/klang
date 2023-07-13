@@ -9,10 +9,9 @@ size_t kev_lexgen_get_start_state(void);
 char** kev_lexgen_get_info(void);
 Callback** kev_lexgen_get_callbacks(void);
 
-bool lex_init(Lex* lex, char* filepath) {
+bool $r function-prefix $:lex$;_init($r lexer-name $:Lex$;* lex, char* filepath) {
   if (!lex) return false;
   lex->buffer = NULL;
-  lex->curpos = NULL;
   lex->table = kev_lexgen_get_transition_table();
   lex->patterns = kev_lexgen_get_pattern_mapping();
   lex->start_state = kev_lexgen_get_start_state();
@@ -37,36 +36,34 @@ bool lex_init(Lex* lex, char* filepath) {
   buffer[filesize] = '\0';
   buffer[filesize + 1] = '\0';
   lex->buffer = buffer;
-  lex->curpos = buffer;
   return true;
 }
 
-void lex_destroy(Lex* lex) {
+void $r function-prefix $:lex$;_destroy($r lexer-name $:Lex$;* lex) {
   if (lex) {
     free(lex->buffer);
     lex->buffer = NULL;
-    lex->curpos = NULL;
   }
 }
 
-void lex_next(Lex* lex, Token* token) {
+void $r function-prefix $:lex$;_next($r lexer-name $:Lex$;* lex, Token* token) {
   uint8_t (*table)[256] = lex->table;
   uint8_t state = lex->start_state;
   uint8_t next_state = 0;
-  uint8_t* curpos = lex->curpos;
+  uint8_t* curpos = lex->buffer + token->end;
   uint8_t ch = *curpos;
   while ((next_state = table[state][ch]) != LEX_DEAD) {
     ch = *++curpos;
     state = next_state;
   }
-  token->begin = lex->curpos - lex->buffer;
+  token->begin = token->end;
   token->end = curpos - lex->buffer;
   token->kind = lex->patterns[state];
   if (lex->callbacks[state])
-    lex->callbacks[state](token, lex->curpos, curpos);
-  lex->curpos = curpos;
+    lex->callbacks[state](token, lex->buffer);
 }
 
-char* lex_get_info(Lex* lex, int kind) {
+char* $r function-prefix $:lex$;_get_info($r lexer-name $:Lex$;* lex, int kind) {
   return kev_lexgen_get_info()[kind];
 }
+
