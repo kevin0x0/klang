@@ -242,7 +242,7 @@ static void kev_lexgen_output_info_c_cpp(FILE* output, KevPatternList* list, int
     pattern_number++;
     pattern = pattern->next;
   }
-  fprintf(output, "static char* info[%d] = {\n", (int)pattern_number);
+  fprintf(output, "static const char* info[%d] = {\n", (int)pattern_number);
   pattern = list->head->next;
   while (pattern) {
     fputs("  \"", output);
@@ -251,7 +251,7 @@ static void kev_lexgen_output_info_c_cpp(FILE* output, KevPatternList* list, int
     pattern = pattern->next;
   }
   fprintf(output, "};\n\n");
-  fprintf(output, "char** kev_lexgen_get_info(void) {\n");
+  fprintf(output, "const char** kev_lexgen_get_info(void) {\n");
   fprintf(output, "  return info;\n");
   fprintf(output, "}\n\n");
 }

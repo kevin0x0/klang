@@ -1,1 +1,1 @@
-int hello 1243 fuck
+这应该是一个ID
