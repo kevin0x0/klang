@@ -14,13 +14,13 @@ char* kev_getcwd(void) {
 
 char* kev_get_bin_dir(void) {
   char* buf = NULL;
-  size_t size = 128;
+  size_t size = 64;
   size_t len = 0;
   do {
     free(buf);
+    size = size + size / 2;
     buf = (char*)malloc(sizeof (char) * size);
     if (!buf) return NULL;
-    size = size + size / 2;
 #ifdef _WIN32
   } while ((len = GetModuleFileNameA(NULL, buf, size)) == -1);
 #else
