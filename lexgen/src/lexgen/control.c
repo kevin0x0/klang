@@ -118,6 +118,7 @@ static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state) {
   if (!kev_strmap_update(&parser_state->env_var, "import-path", resources_dir)) {
     fatal_error("failed to initialize environment variable \"import-path\"", NULL);
   }
+  free(resources_dir);
   while (!kev_lexgenlexer_next(&lex, &token))
     continue;
   int error_number = kev_lexgenparser_lex_src(&lex, &token, parser_state);
