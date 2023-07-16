@@ -1,11 +1,12 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#include "lexgen/include/lexgen/options.h"
 #include "lexgen/include/parser/hashmap/str_map.h"
-#include "utils/include/dir.h"
 #endif
 #include "lexgen/include/lexgen/control.h"
 #include "lexgen/include/parser/parser.h"
 #include "lexgen/include/lexgen/output.h"
+#include "utils/include/dir.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -21,8 +22,8 @@ static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state);
 /* return the number of NFAs */
 static void kev_lexgen_control_generate(KevPatternList* list, KevStringFaMap* map, KevFA** p_min_dfa,
                                         size_t** p_acc_mapping, KevNDFAInfo* ndfa_info);
-static void kev_lexgen_control_regularize_mapping(size_t acc_state_no, size_t nfa_no, KevPatternList* list,
-                                                  size_t* acc_mapping, size_t** p_pattern_mapping);
+static void kev_lexgen_control_regularize_mapping(size_t non_acc_state_no, size_t state_no, size_t nfa_no, KevPatternList* list,
+                                                  size_t* acc_mapping, size_t** p_pattern_mapping, int error_id);
 /* return NULL-terminated function name array */
 static char** kev_lexgen_construct_callback_array(size_t non_acc_no, size_t state_no, size_t nfa_no,
                                                   KevParserState* parser_state, size_t* acc_mapping, size_t* p_arrlen);
@@ -68,11 +69,11 @@ void kev_lexgen_control(KevOptions* options) {
   }
 
   size_t* pattern_mapping = NULL;
-  kev_lexgen_control_regularize_mapping(ndfa_info.dfa_state_no - ndfa_info.dfa_non_acc_no,
-                                        ndfa_info.nfa_no, &parser_state.list, acc_mapping, &pattern_mapping);
+  kev_lexgen_control_regularize_mapping(ndfa_info.dfa_non_acc_no, ndfa_info.dfa_state_no, ndfa_info.nfa_no, &parser_state.list,
+                                        acc_mapping, &pattern_mapping, options->env_opts[KEV_LEXGEN_OPT_ERROR_ID]);
   kev_lexgen_output_table(output_src_and_tab, dfa, pattern_mapping, options->strs[KEV_LEXGEN_LANG_NAME],
                           options->env_opts[KEV_LEXGEN_OPT_CHARSET], options->env_opts[KEV_LEXGEN_OPT_WIDTH],
-                          ndfa_info.dfa_non_acc_no, ndfa_info.dfa_state_no);
+                          ndfa_info.dfa_state_no);
   free(pattern_mapping);
   kev_fa_delete(dfa);
   kev_lexgen_output_info(output_src_and_tab, &parser_state.list, options);
@@ -111,8 +112,12 @@ static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state) {
   KevLexGenToken token;
   if (!kev_lexgenlexer_init(&lex, input))
     fatal_error("kev_lexgenlexer_init() failed", NULL);
-  if (!kev_lexgenparser_posix_charset(parser_state))
-    fatal_error("failed to initialize POSIX charset", NULL);
+  char* resources_dir = kev_get_lexgen_resources_dir();
+  if (!resources_dir)
+    fatal_error("out of memory", NULL);
+  if (!kev_strmap_update(&parser_state->env_var, "import-path", resources_dir)) {
+    fatal_error("failed to initialize environment variable \"import-path\"", NULL);
+  }
   while (!kev_lexgenlexer_next(&lex, &token))
     continue;
   int error_number = kev_lexgenparser_lex_src(&lex, &token, parser_state);
@@ -161,8 +166,8 @@ static void kev_lexgen_control_generate(KevPatternList* list, KevStringFaMap* ma
   ndfa_info->dfa_start = (*p_min_dfa)->start_state->id;
 }
 
-static void kev_lexgen_control_regularize_mapping(size_t acc_state_no, size_t nfa_no, KevPatternList* list,
-                                                  size_t* acc_mapping, size_t** p_pattern_mapping) {
+static void kev_lexgen_control_regularize_mapping(size_t non_acc_state_no, size_t state_no, size_t nfa_no, KevPatternList* list,
+                                                  size_t* acc_mapping, size_t** p_pattern_mapping, int error_id) {
   /* regularize pattern_mapping */
   size_t* nfa_to_pattern = (size_t*)malloc(sizeof (size_t) * nfa_no);
   if (!nfa_to_pattern) fatal_error("out of memory", NULL);
@@ -178,9 +183,11 @@ static void kev_lexgen_control_regularize_mapping(size_t acc_state_no, size_t nf
     pattern_id++;
     pattern = pattern->next;
   }
-  size_t* pattern_mapping = (size_t*)malloc(sizeof (size_t) * acc_state_no);
-  for (size_t i = 0; i < acc_state_no; ++i)
-    pattern_mapping[i] = nfa_to_pattern[acc_mapping[i]];
+  size_t* pattern_mapping = (size_t*)malloc(sizeof (size_t) * state_no);
+  for (size_t i = 0; i < non_acc_state_no; ++i)
+    pattern_mapping[i] = error_id;
+  for (size_t i = non_acc_state_no; i < state_no; ++i)
+    pattern_mapping[i] = nfa_to_pattern[acc_mapping[i - non_acc_state_no]];
   *p_pattern_mapping = pattern_mapping;
   free(nfa_to_pattern);
 }
@@ -225,7 +232,7 @@ static char** kev_lexgen_construct_callback_array(size_t non_acc_no, size_t stat
 static void kev_lexgen_set_opt_from_env(KevOptions* options, KevStringMap* env_var) {
   KevStringMapNode* node = kev_strmap_search(env_var, "state-length");
   if (node) {
-    int len = _strtol_l(node->value, NULL, 10, NULL);
+    int len = atoi(node->value);
     if (len != 16 && len != 8)
       fatal_error("state-length can not be: ", node->value);
     options->env_opts[KEV_LEXGEN_OPT_WIDTH] = len;
@@ -251,6 +258,15 @@ static void kev_lexgen_set_opt_from_env(KevOptions* options, KevStringMap* env_v
     if (!kev_strmap_update(env_var, "charset-size", "256")) {
       fatal_error("out of memory", NULL);
     }
+  }
+
+  node = kev_strmap_search(env_var, "error-id");
+  if (node) {
+    if ((options->env_opts[KEV_LEXGEN_OPT_ERROR_ID] = atoi(node->value)) == 0) {
+      fatal_error("invalid integer value for error-id", NULL);
+    }
+  } else {
+    options->env_opts[KEV_LEXGEN_OPT_ERROR_ID] = -1;
   }
 }
 

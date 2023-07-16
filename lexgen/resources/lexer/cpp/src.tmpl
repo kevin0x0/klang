@@ -59,7 +59,7 @@ void $r lexer-name $:Lex$;::next(Token& token) {
     callbacks[state](token, buffer);
 }
 
-std::string $r lexer-name $:Lex$;get_info(int kind) {
+std::string $r lexer-name $:Lex$;::get_info(int kind) {
   return std::string(kev_lexgen_get_info()[kind]);
 }
 

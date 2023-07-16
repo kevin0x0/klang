@@ -289,7 +289,7 @@ static uint8_t transition[15][256] = {
 };
 
 static int pattern_mapping[15] = {
-    -1,  -1,  -1,  -1,  -1,   4,   3,   1,   2,   1,   1,   2,   1,   0,   2,
+   -34, -34, -34, -34, -34,   4,   3,   1,   2,   1,   1,   2,   1,   0,   2,
 };
 
 static size_t start = 4;
@@ -323,15 +323,15 @@ const char** kev_lexgen_get_info(void) {
 #include <stdio.h>
 #include <stdlib.h>
 
-using TransTab = Lex::TransTab;
-using Callback = Lex::Callback;
+using TransTab = tokenizer::TransTab;
+using Callback = tokenizer::Callback;
 TransTab kev_lexgen_get_transition_table(void);
 int* kev_lexgen_get_pattern_mapping(void);
 size_t kev_lexgen_get_start_state(void);
 const char** kev_lexgen_get_info(void);
 Callback** kev_lexgen_get_callbacks(void);
 
-Lex::Lex(const std::string& filepath) {
+tokenizer::tokenizer(const std::string& filepath) {
   buffer = NULL;
   table = kev_lexgen_get_transition_table();
   patterns = kev_lexgen_get_pattern_mapping();
@@ -354,12 +354,12 @@ Lex::Lex(const std::string& filepath) {
   buffer[filesize + 1] = '\0';
 }
 
-Lex::~Lex() {
+tokenizer::~tokenizer() {
   delete[] buffer;
   buffer = NULL;
 }
 
-void Lex::next(Token& token) {
+void tokenizer::next(Token& token) {
   uint8_t state = start_state;
   uint8_t next_state = 0;
   uint8_t* curpos = buffer + token.end;
@@ -379,7 +379,7 @@ void Lex::next(Token& token) {
     callbacks[state](token, buffer);
 }
 
-std::string Lexget_info(int kind) {
+std::string tokenizer::get_info(int kind) {
   return std::string(kev_lexgen_get_info()[kind]);
 }
 

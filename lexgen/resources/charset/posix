@@ -1,0 +1,7 @@
+upper = $[A-Z]
+lower = $[a-z]
+alpha = $[A-Za-z]
+digit = $[0-9]
+alnum = $[A-Za-z0-9]
+print = $[\x20-\x7F]
+graph = $[\x21-\x7F]

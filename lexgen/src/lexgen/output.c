@@ -9,9 +9,9 @@
 #include <string.h>
 
 static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* pattern_mapping, void* table,
-                                         int charset, int length, size_t non_acc_no, size_t state_no);
+                                         int charset, int length, size_t state_no);
 static void kev_lexgen_output_table_c_cpp(FILE* output, KevFA* dfa, size_t* pattern_mapping, void* table,
-                                          int charset, int length, size_t non_acc_no, size_t state_no);
+                                          int charset, int length, size_t state_no);
 static void kev_lexgen_output_callback_rust(FILE* output, char** callbacks, size_t arrlen);
 static void kev_lexgen_output_callback_c_cpp(FILE* output, char** callbacks, size_t arrlen);
 static void kev_lexgen_output_info_rust(FILE* output, KevPatternList* list, int* options);
@@ -26,7 +26,7 @@ static uint16_t (*kev_lexgen_output_get_trans_128_u16(KevFA* dfa))[128];
 static void fatal_error(char* info, char* info2);
 
 void kev_lexgen_output_table(FILE* output, KevFA* dfa, size_t* pattern_mapping, char* language,
-                             int charset, int length, size_t non_acc_no, size_t state_no) {
+                             int charset, int length,  size_t state_no) {
   void* trans = NULL;
   if (charset == KEV_LEXGEN_OPT_CHARSET_ASCII && length == 8) {
     trans = kev_lexgen_output_get_trans_128_u8(dfa);
@@ -42,17 +42,17 @@ void kev_lexgen_output_table(FILE* output, KevFA* dfa, size_t* pattern_mapping, 
   if (!trans)
     fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8", NULL);
   if (strcmp(language, "rust") == 0)
-    kev_lexgen_output_table_rust(output, dfa, pattern_mapping, trans, charset, length, non_acc_no, state_no);
+    kev_lexgen_output_table_rust(output, dfa, pattern_mapping, trans, charset, length, state_no);
   else if (strcmp(language, "c") == 0 ||
            strcmp(language, "cpp") == 0)
-    kev_lexgen_output_table_c_cpp(output, dfa, pattern_mapping, trans, charset, length, non_acc_no, state_no);
+    kev_lexgen_output_table_c_cpp(output, dfa, pattern_mapping, trans, charset, length, state_no);
   else
     fatal_error("unsupported language: ", language);
   free(trans);
 }
 
 static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* pattern_mapping, void* table,
-                                         int charset, int length, size_t non_acc_no, size_t state_no) {
+                                         int charset, int length, size_t state_no) {
   char* type = length == 8 ? "uint8_t" : "uint16_t";
   size_t arrlen = charset == KEV_LEXGEN_OPT_CHARSET_ASCII ? 128 : 256;
   /* output transition table */
@@ -101,13 +101,9 @@ static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* patte
   fputs("];\n\n", output);
   /* output accepting state mapping array */
   fprintf(output, "static PATTERN_MAPPING : [i32;%d] = [", (int)state_no);
-  for (size_t i = 0; i < non_acc_no; ++i) {
+  for(size_t i = 0; i < state_no; ++i) {
     if (i % 16 == 0) fputs("\n  ", output);
-    fputs("  -1,", output);
-  }
-  for(size_t i = non_acc_no; i < state_no; ++i) {
-    if (i % 16 == 0) fputs("\n  ", output);
-    fprintf(output, "%4d,", (int)pattern_mapping[i - non_acc_no]);
+    fprintf(output, "%4d,", (int)pattern_mapping[i]);
   }
   fputs("\n];\n\n", output);
   /* start state */
@@ -125,7 +121,7 @@ static void kev_lexgen_output_table_rust(FILE* output, KevFA* dfa, size_t* patte
 }
 
 static void kev_lexgen_output_table_c_cpp(FILE* output, KevFA* dfa, size_t* pattern_mapping, void* table,
-                                          int charset, int length, size_t non_acc_no, size_t state_no) {
+                                          int charset, int length, size_t state_no) {
   char* type = length == 8 ? "uint8_t" : "uint16_t";
   size_t arrlen = charset == KEV_LEXGEN_OPT_CHARSET_ASCII ? 128 : 256;
   fputs( "#include <stdint.h>\n", output);
@@ -176,13 +172,9 @@ static void kev_lexgen_output_table_c_cpp(FILE* output, KevFA* dfa, size_t* patt
   fputs("};\n\n", output);
   /* output pattern mapping array */
   fprintf(output, "static int pattern_mapping[%d] = {", (int)state_no);
-  for (size_t i = 0; i < non_acc_no; ++i) {
+  for(size_t i = 0; i < state_no; ++i) {
     if (i % 16 == 0) fputs("\n  ", output);
-    fputs("  -1,", output);
-  }
-  for(size_t i = non_acc_no; i < state_no; ++i) {
-    if (i % 16 == 0) fputs("\n  ", output);
-    fprintf(output, "%4d,", (int)pattern_mapping[i - non_acc_no]);
+    fprintf(output, "%4d,", (int)pattern_mapping[i]);
   }
   fputs("\n};\n\n", output);
   /* start state */

@@ -1,12 +1,18 @@
+import "charset/posix
+
 non-ascii-char = $[\xF0-\xF7][\x80-\xBF]{3} | [\xE0-\xEF][\x80-\xBF]{2} | [\xC0-\xDF][\x80-\xBF]{1}
+
 def Int: $int
 def Num:
   $0[0-7]*
-  $[1-9][0-9]*
+  $[1-9][:digit:]*
   $0x[A-Fa-f0-9]+
 def Id: $([:non-ascii-char:] | [A-Za-z_])([:non-ascii-char:] | [A-Za-z0-9_])*
 def End: $\0
 def Blank: $\ +
+
 %state-length = "8
 %charset = "utf-8
 %auto-clear-blank = "enable
+%lexer-name = "tokenizer
+%error-id = "-34

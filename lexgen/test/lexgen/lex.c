@@ -289,7 +289,7 @@ static uint8_t transition[15][256] = {
 };
 
 static int pattern_mapping[15] = {
-    -1,  -1,  -1,  -1,  -1,   4,   3,   1,   2,   1,   1,   2,   1,   0,   2,
+   -34, -34, -34, -34, -34,   4,   3,   1,   2,   1,   1,   2,   1,   0,   2,
 };
 
 static size_t start = 4;
@@ -306,7 +306,7 @@ size_t kev_lexgen_get_start_state(void) {
   return start;
 }
 
-static char* info[5] = {
+static const char* info[5] = {
   "Int",
   "Num",
   "Id",
@@ -314,7 +314,7 @@ static char* info[5] = {
   "Blank",
 };
 
-char** kev_lexgen_get_info(void) {
+const char** kev_lexgen_get_info(void) {
   return info;
 }
 
@@ -326,10 +326,10 @@ char** kev_lexgen_get_info(void) {
 TransTab kev_lexgen_get_transition_table(void);
 int* kev_lexgen_get_pattern_mapping(void);
 size_t kev_lexgen_get_start_state(void);
-char** kev_lexgen_get_info(void);
+const char** kev_lexgen_get_info(void);
 Callback** kev_lexgen_get_callbacks(void);
 
-bool lex_init(Lex* lex, char* filepath) {
+bool lex_init(tokenizer* lex, char* filepath) {
   if (!lex) return false;
   lex->buffer = NULL;
   lex->table = kev_lexgen_get_transition_table();
@@ -359,19 +359,23 @@ bool lex_init(Lex* lex, char* filepath) {
   return true;
 }
 
-void lex_destroy(Lex* lex) {
+void lex_destroy(tokenizer* lex) {
   if (lex) {
     free(lex->buffer);
     lex->buffer = NULL;
   }
 }
 
-void lex_next(Lex* lex, Token* token) {
+void lex_next(tokenizer* lex, Token* token) {
   uint8_t (*table)[256] = lex->table;
   uint8_t state = lex->start_state;
   uint8_t next_state = 0;
   uint8_t* curpos = lex->buffer + token->end;
   uint8_t ch = *curpos;
+  
+  while (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r')
+    ch = *++curpos;
+  
   while ((next_state = table[state][ch]) != LEX_DEAD) {
     ch = *++curpos;
     state = next_state;
@@ -383,7 +387,7 @@ void lex_next(Lex* lex, Token* token) {
     lex->callbacks[state](token, lex->buffer);
 }
 
-char* lex_get_info(Lex* lex, int kind) {
+char* lex_get_info(tokenizer* lex, int kind) {
   return kev_lexgen_get_info()[kind];
 }
 

@@ -6,18 +6,20 @@
 #include <stdio.h>
 
 #define KEV_LEXGEN_TOKEN_ERR          (-1)
+
 #define KEV_LEXGEN_TOKEN_DEF          (0)
-#define KEV_LEXGEN_TOKEN_ID           (1)
-#define KEV_LEXGEN_TOKEN_REGEX        (2)
-#define KEV_LEXGEN_TOKEN_ASSIGN       (3)
-#define KEV_LEXGEN_TOKEN_COLON        (4)
-#define KEV_LEXGEN_TOKEN_BLANKS       (5)
-#define KEV_LEXGEN_TOKEN_OPEN_PAREN   (6)
-#define KEV_LEXGEN_TOKEN_CLOSE_PAREN  (7)
-#define KEV_LEXGEN_TOKEN_ENV_VAR      (8)
-#define KEV_LEXGEN_TOKEN_END          (9)
-#define KEV_LEXGEN_TOKEN_LONG_STR     (10)
-#define KEV_LEXGEN_TOKEN_STR          (11)
+#define KEV_LEXGEN_TOKEN_IMPORT       (1)
+#define KEV_LEXGEN_TOKEN_ID           (2)
+#define KEV_LEXGEN_TOKEN_REGEX        (3)
+#define KEV_LEXGEN_TOKEN_ASSIGN       (4)
+#define KEV_LEXGEN_TOKEN_COLON        (5)
+#define KEV_LEXGEN_TOKEN_BLANKS       (6)
+#define KEV_LEXGEN_TOKEN_OPEN_PAREN   (7)
+#define KEV_LEXGEN_TOKEN_CLOSE_PAREN  (8)
+#define KEV_LEXGEN_TOKEN_ENV_VAR      (9)
+#define KEV_LEXGEN_TOKEN_END          (10)
+#define KEV_LEXGEN_TOKEN_LONG_STR     (11)
+#define KEV_LEXGEN_TOKEN_STR          (12)
 
 typedef struct tagKevLexGenLexer {
   FILE* infile;
@@ -38,5 +40,6 @@ bool kev_lexgenlexer_init(KevLexGenLexer* lex,FILE* infile);
 void kev_lexgenlexer_destroy(KevLexGenLexer* lex);
  
 bool kev_lexgenlexer_next(KevLexGenLexer* lex, KevLexGenToken* token);
+char* kev_lexgenlexer_info(int kind);
 
 #endif

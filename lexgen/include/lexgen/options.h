@@ -8,7 +8,8 @@
 /* options from environment variable */
 #define KEV_LEXGEN_OPT_WIDTH          (0)
 #define KEV_LEXGEN_OPT_CHARSET        (1)
-#define KEV_LEXGEN_ENV_OPT_NO         (2)
+#define KEV_LEXGEN_OPT_ERROR_ID       (2)
+#define KEV_LEXGEN_ENV_OPT_NO         (3)
 
 /* values */
 #define KEV_LEXGEN_OPT_LANG_C_CPP     (0)

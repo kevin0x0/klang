@@ -8,6 +8,16 @@
 #define KEV_LEXGENLEXER_DEAD    ((uint8_t)255)
 #define KEV_LEXGENLEXER_NONACC  (-1)
 
+static char* token_info[] = {
+  [KEV_LEXGEN_TOKEN_ASSIGN] = "\'=\'", [KEV_LEXGEN_TOKEN_END] = "EOF",
+  [KEV_LEXGEN_TOKEN_BLANKS] = "blanks", [KEV_LEXGEN_TOKEN_COLON] = "\':\'",
+  [KEV_LEXGEN_TOKEN_ID] = "identifier", [KEV_LEXGEN_TOKEN_REGEX] = "regular expression",
+  [KEV_LEXGEN_TOKEN_OPEN_PAREN] = "\'(\'", [KEV_LEXGEN_TOKEN_CLOSE_PAREN] = "\')\'",
+  [KEV_LEXGEN_TOKEN_DEF] = "def", [KEV_LEXGEN_TOKEN_ENV_VAR] = "environment variable identifier",
+  [KEV_LEXGEN_TOKEN_LONG_STR] = "long string", [KEV_LEXGEN_TOKEN_STR] = "string",
+  [KEV_LEXGEN_TOKEN_IMPORT] = "import", 
+};
+
 static char lex_attr_buffer[1024];
 
 uint8_t (*kev_lexgenlexer_get_table(void))[256];
@@ -60,4 +70,8 @@ bool kev_lexgenlexer_next(KevLexGenLexer* lex, KevLexGenToken* token) {
   token->attr = lex_attr_buffer;
   token->kind = lex->acc_mapping[state];
   return true;
+}
+
+char* kev_lexgenlexer_info(int kind) {
+  return token_info[kind];
 }

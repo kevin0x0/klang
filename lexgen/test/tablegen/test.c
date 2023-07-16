@@ -31,6 +31,7 @@ void output_table(uint8_t (*table)[256], KevFA* dfa, size_t* acc_mapping);
 
 int main(int argc, char** argv) {
   KevFA* def = kev_regex_parse_ascii("def", NULL);
+  KevFA* import = kev_regex_parse_ascii("import", NULL);
   KevFA* id = kev_regex_parse_ascii("[A-Za-z_][A-Za-z0-9_\\-]*", NULL);
   KevFA* regex = kev_regex_parse_ascii("$\\ *[^\\n\\xFF]*", NULL);
   KevFA* assign = kev_regex_parse_ascii("=", NULL);
@@ -42,13 +43,14 @@ int main(int argc, char** argv) {
   KevFA* end = kev_regex_parse_ascii("\\xFF", NULL);
   KevFA* long_str = kev_regex_parse_ascii("!([^\\n\\xFF] | \\n[^\\n\\xFF])*(\\n\\n)?", NULL);
   KevFA* str = kev_regex_parse_ascii("\"[^\\n\\xFF]*", NULL);
-  KevFA* nfa_array[] = { def, id, regex, assign, colon, blanks, open_paren, close_paren, env_var, end, long_str, str, NULL };
+  KevFA* nfa_array[] = { def, import, id, regex, assign, colon, blanks, open_paren, close_paren, env_var, end, long_str, str, NULL };
   size_t* mapping = NULL;
   KevFA* dfa = kev_nfa_to_dfa(nfa_array, &mapping);
   KevFA* min_dfa = kev_dfa_minimization(dfa, mapping);
   uint8_t (*table)[256] = kev_lexgen_output_get_trans_256_u8(min_dfa);
   output_table(table, min_dfa, mapping);
   kev_fa_delete(id);
+  kev_fa_delete(import);
   kev_fa_delete(regex);
   kev_fa_delete(assign);
   kev_fa_delete(colon);

@@ -70,13 +70,13 @@ char* kev_get_lexgen_tmp_dir(void) {
 }
 
 char* kev_get_relpath(char* from, char* to) {
-  int i = 0;
+  size_t i = 0;
   while (from[i] == to[i] && from[i] != '\0')
     i++;
   while (i != 0 && from[--i] != '/' && from[i] != '\\')
     continue;
   if (i != 0) ++i;
-  int dir_depth = 0;
+  size_t dir_depth = 0;
   for (int j = i; from[j] != '\0'; ++j) {
     if (from[j] == '/' || from[j] == '\\')
       dir_depth++;
@@ -91,4 +91,15 @@ char* kev_get_relpath(char* from, char* to) {
   relpath[dir_depth * 3] = '\0';
   strcat(relpath, to + i);
   return relpath;
+}
+
+char* kev_trunc_leaf(char* path) {
+  int i = 0;
+  char* p = path - 1;
+  while (*++p != '\0') {
+    if (*p == '/' || *p == '\\')
+      i = p - path;
+  }
+  path[i + 1] = '\0';
+  return path;
 }

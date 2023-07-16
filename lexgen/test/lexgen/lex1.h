@@ -6,7 +6,7 @@
 #include <string>
 
 
-class Lex {
+class tokenizer {
 public:
   
   struct TokenAttr {
@@ -35,10 +35,10 @@ private:
   size_t start_state;
   Callback** callbacks;
 public:
-  Lex(const std::string& filepath);
-  ~Lex();
+  tokenizer(const std::string& filepath);
+  ~tokenizer();
   void next(Token& token);
-  std::string get_info(int kind);
+  static std::string get_info(int kind);
 };
 
 

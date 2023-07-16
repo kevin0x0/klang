@@ -4,6 +4,11 @@
 #include <stdlib.h>
 
 void kev_parser_error_report(FILE* err_stream, FILE* infile, char* info, size_t position) {
+  if (!infile) {
+    fprintf(err_stream, "%s", info);
+    return;
+  }
+
   size_t original_position = ftell(infile);
   fseek(infile, 0, SEEK_SET);
   size_t count = 0;

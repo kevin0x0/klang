@@ -5,26 +5,18 @@
 #include "lexgen/include/parser/parser.h"
 #include "lexgen/include/parser/error.h"
 #include "lexgen/include/parser/regex.h"
+#include "utils/include/dir.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-static char* token_description[] = {
-  [KEV_LEXGEN_TOKEN_ASSIGN] = "\'=\'", [KEV_LEXGEN_TOKEN_END] = "EOF",
-  [KEV_LEXGEN_TOKEN_BLANKS] = "blanks", [KEV_LEXGEN_TOKEN_COLON] = "\':\'",
-  [KEV_LEXGEN_TOKEN_ID] = "identifier", [KEV_LEXGEN_TOKEN_REGEX] = "regular expression",
-  [KEV_LEXGEN_TOKEN_OPEN_PAREN] = "\'(\'", [KEV_LEXGEN_TOKEN_CLOSE_PAREN] = "\')\'",
-  [KEV_LEXGEN_TOKEN_DEF] = "def", [KEV_LEXGEN_TOKEN_ENV_VAR] = "environment variable identifier",
-  [KEV_LEXGEN_TOKEN_LONG_STR] = "long string", [KEV_LEXGEN_TOKEN_STR] = "string",
-};
-
 static int kev_lexgenparser_next_nonblank(KevLexGenLexer* lex, KevLexGenToken* token);
 static int kev_lexgenparser_match(KevLexGenLexer* lex, KevLexGenToken* token, int kind);
 static int kev_lexgenparser_guarantee(KevLexGenLexer* lex, KevLexGenToken* token, int kind);
 static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* token, char** p_name);
-static inline bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end);
-static char* kev_get_string(char* str);
+static int kev_lexgenparser_macro_name(KevLexGenLexer* lex, KevLexGenToken* token, char** p_name);
+static char* kev_copy_string(char* str);
 
 bool kev_lexgenparser_init(KevParserState* parser_state) {
   if (!parser_state) return false;
@@ -86,19 +78,18 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
-  size_t len = strlen(token->attr);
-  char* name = (char*)malloc(sizeof(char) * (len + 1));
+  char* name = kev_copy_string(token->attr);
   if (!name) {
     kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
     err_count++;
-  } else {
-    strcpy(name, token->attr);
   }
-  if (!kev_patternlist_insert(list, name)) {
+  err_count += kev_lexgenparser_next_nonblank(lex, token);
+  char* macro = NULL;
+  err_count += kev_lexgenparser_macro_name(lex, token, &macro);
+  if (!kev_patternlist_insert(list, name, macro)) {
     kev_parser_error_report(stderr, lex->infile, "failed to add new pattern", token->begin);
     err_count++;
   }
-  err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_COLON);
   do {
     char* proc_name = NULL;
@@ -157,6 +148,75 @@ int kev_lexgenparser_statement_env_var_assgn(KevLexGenLexer* lex, KevLexGenToken
   }
 }
 
+int kev_lexgenparser_parse(char* filepath, KevParserState* parser_state) {
+  int err_count = 0;
+  FILE* input = fopen(filepath, "r");
+  if (!input) {
+    fprintf(stderr, "error: faied to open file: %s\n", filepath);
+    return err_count + 1;
+  }
+  KevLexGenLexer lex;
+  if (!kev_lexgenlexer_init(&lex, input)) {
+    fclose(input);
+    kev_parser_error_report(stderr, input, "failed to initialize lexer", 0);
+    return err_count + 1;
+  }
+
+  if (!kev_strmap_update(&parser_state->env_var, "import-path", kev_trunc_leaf(filepath))) {
+    fclose(input);
+    kev_lexgenlexer_destroy(&lex);
+    kev_parser_error_report(stderr, lex.infile, "failed to initialize import-path", 0);
+    return err_count + 1;
+  }
+
+  KevLexGenToken token;
+  while (!kev_lexgenlexer_next(&lex, &token))
+    continue;
+  err_count += kev_lexgenparser_lex_src(&lex, &token, parser_state);
+
+  kev_lexgenlexer_destroy(&lex);
+  fclose(input);
+  return err_count;
+}
+
+int kev_lexgenparser_statement_import(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
+  int err_count = 0;
+  err_count += kev_lexgenparser_next_nonblank(lex, token);
+  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_STR);
+
+  char* relpath = kev_copy_string(token->attr + 1);
+  if (!relpath) {
+    kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
+    return err_count + 1;
+  }
+  char* base = NULL;
+  KevStringMapNode* node = kev_strmap_search(&parser_state->env_var, "import-path");
+  if (node)
+    base = kev_copy_string(node->value);
+  else
+    base = kev_copy_string("./");
+  char* path = (char*)malloc(sizeof (char) * (strlen(base) + strlen(relpath) + 1));
+  if (!path) {
+    kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
+    free(base);
+    free(relpath);
+    return err_count + 1;
+  }
+  strcpy(path, base);
+  strcat(path, relpath);
+
+  err_count += kev_lexgenparser_parse(path, parser_state);
+  if (!kev_strmap_update(&parser_state->env_var, "import-path", base)) {
+    err_count++;
+    kev_parser_error_report(stderr, lex->infile, "failed to recovery base path", token->begin);
+  };
+  free(base);
+  free(relpath);
+  free(path);
+  err_count += kev_lexgenparser_next_nonblank(lex, token);
+  return err_count;
+}
+
 int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevParserState* parser_state) {
   int err_count = 0;
   do {
@@ -168,6 +228,9 @@ int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevPars
     }
     else if (token->kind == KEV_LEXGEN_TOKEN_ENV_VAR) {
       err_count += kev_lexgenparser_statement_env_var_assgn(lex, token, parser_state);
+    }
+    else if (token->kind == KEV_LEXGEN_TOKEN_IMPORT) {
+      err_count += kev_lexgenparser_statement_import(lex, token, parser_state);
     }
     else {
       kev_parser_error_report(stderr, lex->infile, "expected \'def\' or identifer", token->begin);
@@ -194,7 +257,7 @@ static int kev_lexgenparser_match(KevLexGenLexer* lex, KevLexGenToken* token, in
   int err_count = 0;
   if (token->kind != kind) {
     static char err_info_buf[1024];
-    sprintf(err_info_buf, "expected %s", token_description[kind]);
+    sprintf(err_info_buf, "expected %s", kev_lexgenlexer_info(kind));
     kev_parser_error_report(stderr, lex->infile, err_info_buf, token->begin);
     kev_parser_error_handling(stderr, lex, kind, false);
     err_count = 1;
@@ -206,7 +269,7 @@ static int kev_lexgenparser_match(KevLexGenLexer* lex, KevLexGenToken* token, in
 static int kev_lexgenparser_guarantee(KevLexGenLexer* lex, KevLexGenToken* token, int kind) {
   if (token->kind != kind) {
     static char err_info_buf[1024];
-    sprintf(err_info_buf, "expected %s", token_description[kind]);
+    sprintf(err_info_buf, "expected %s", kev_lexgenlexer_info(kind));
     kev_parser_error_report(stderr, lex->infile, err_info_buf, token->begin);
     kev_parser_error_handling(stderr, lex, kind, false);
     return 1;
@@ -231,110 +294,24 @@ static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* 
   return err_count;
 }
 
-bool kev_lexgenparser_posix_charset(KevParserState* parser_state) {
-  KevPatternList* list = &parser_state->list;
-  KevStringFaMap* nfa_map = &parser_state->nfa_map;
-  KevFA* nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
-  char* name = kev_get_string("print");
-  if (!kev_char_range(nfa, 32, 127) ||
-      !kev_pattern_insert(list->head, name, nfa)) {
-    kev_fa_delete(nfa);
-    free(name);
-    return false;
+static int kev_lexgenparser_macro_name(KevLexGenLexer* lex, KevLexGenToken* token, char** p_name) {
+  int err_count = 0;
+  if (token->kind == KEV_LEXGEN_TOKEN_OPEN_PAREN) {
+    err_count += kev_lexgenparser_next_nonblank(lex, token);
+    err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
+    size_t len = strlen(token->attr);
+    char* name = (char*)malloc(sizeof(char) * (len + 1));
+    strcpy(name, token->attr);
+    err_count += kev_lexgenparser_next_nonblank(lex, token);
+    err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_CLOSE_PAREN);
+    *p_name = name;
+  } else {
+    *p_name = NULL;
   }
-  if (!kev_strfamap_update(nfa_map, name, nfa)) {
-    return false;
-  }
-
-  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
-  name = kev_get_string("graph");
-  if (!kev_char_range(nfa, 33, 127) ||
-      !kev_pattern_insert(list->head, name, nfa)) {
-    kev_fa_delete(nfa);
-    free(name);
-    return false;
-  }
-  if (!kev_strfamap_update(nfa_map, name, nfa)) {
-    return false;
-  }
-
-  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
-  name = kev_get_string("alnum");
-  if (!kev_char_range(nfa, 'a', 'z' + 1) ||
-      !kev_char_range(nfa, 'A', 'Z' + 1) ||
-      !kev_char_range(nfa, '0', '9' + 1) ||
-      !kev_pattern_insert(list->head, name, nfa)) {
-    kev_fa_delete(nfa);
-    free(name);
-    return false;
-  }
-  if (!kev_strfamap_update(nfa_map, name, nfa)) {
-    return false;
-  }
-
-  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
-  name = kev_get_string("alpha");
-  if (!kev_char_range(nfa, 'a', 'z' + 1) ||
-      !kev_char_range(nfa, 'A', 'Z' + 1) ||
-      !kev_pattern_insert(list->head, name, nfa)) {
-    kev_fa_delete(nfa);
-    free(name);
-    return false;
-  }
-  if (!kev_strfamap_update(nfa_map, name, nfa)) {
-    return false;
-  }
-
-  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
-  name = kev_get_string("digit");
-  if (!kev_char_range(nfa, '0', '9' + 1) ||
-      !kev_pattern_insert(list->head, name, nfa)) {
-    kev_fa_delete(nfa);
-    free(name);
-    return false;
-  }
-  if (!kev_strfamap_update(nfa_map, name, nfa)) {
-    return false;
-  }
-
-  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
-  name = kev_get_string("lower");
-  if (!kev_char_range(nfa, 'a', 'z' + 1) ||
-      !kev_pattern_insert(list->head, name, nfa)) {
-    kev_fa_delete(nfa);
-    free(name);
-    return false;
-  }
-  if (!kev_strfamap_update(nfa_map, name, nfa)) {
-    return false;
-  }
-
-  nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
-  name = kev_get_string("upper");
-  if (!kev_char_range(nfa, 'A', 'Z' + 1) ||
-      !kev_pattern_insert(list->head, name, nfa)) {
-    kev_fa_delete(nfa);
-    free(name);
-    return false;
-  }
-  if (!kev_strfamap_update(nfa_map, name, nfa)) {
-    return false;
-  }
-
-  return true;
+  return err_count;
 }
 
-static inline bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end) {
-  if (begin < 0 || end < 0) return false;
-  for (int64_t c = begin; c < end; ++c) {
-    if (!kev_nfa_add_transition(nfa, c)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static char* kev_get_string(char* str) {
+static char* kev_copy_string(char* str) {
   char* ret = (char*)malloc(sizeof (char) * (strlen(str) + 1));
   if (!ret) return NULL;
   strcpy(ret, str);
