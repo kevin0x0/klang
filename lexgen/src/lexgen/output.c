@@ -1,6 +1,7 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
+
 #include "lexgen/include/lexgen/output.h"
 #include "lexgen/include/lexgen/template.h"
 #include "utils/include/dir.h"

@@ -1,8 +1,7 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-#include "lexgen/include/lexgen/options.h"
-#include "lexgen/include/parser/hashmap/str_map.h"
 #endif
+
 #include "lexgen/include/lexgen/control.h"
 #include "lexgen/include/parser/parser.h"
 #include "lexgen/include/lexgen/output.h"
