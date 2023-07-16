@@ -39,7 +39,7 @@ typedef struct tagLex {
 bool $r function-prefix $:lex$;_init($r lexer-name $:Lex$;* lex, char* filepath);
 void $r function-prefix $:lex$;_destroy($r lexer-name $:Lex$;* lex);
 void $r function-prefix $:lex$;_next($r lexer-name $:Lex$;* lex, Token* token);
-char* $r function-prefix $:lex$;_get_info($r lexer-name $:Lex$;* lex, int kind);
+const char* $r function-prefix $:lex$;_get_info($r lexer-name $:Lex$;* lex, int kind);
 
 static inline void $r function-prefix $:lex$;_token_init(Token* token) {
   token->end = 0;

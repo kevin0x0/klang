@@ -67,7 +67,7 @@ void $r function-prefix $:lex$;_next($r lexer-name $:Lex$;* lex, Token* token) {
     lex->callbacks[state](token, lex->buffer);
 }
 
-char* $r function-prefix $:lex$;_get_info($r lexer-name $:Lex$;* lex, int kind) {
+const char* $r function-prefix $:lex$;_get_info($r lexer-name $:Lex$;* lex, int kind) {
   return kev_lexgen_get_info()[kind];
 }
 
