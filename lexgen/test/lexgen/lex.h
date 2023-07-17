@@ -1,3 +1,4 @@
+
 #ifndef __KEVCC_LEXGEN_LEXER_H
 #define __KEVCC_LEXGEN_LEXER_H
 
@@ -6,6 +7,8 @@
 #include <stdbool.h>
 
 #define LEX_DEAD    (255)
+
+
 
 
 typedef union tagTokenAttr {
@@ -33,16 +36,17 @@ typedef struct tagLex {
   int* patterns;
   size_t start_state;
   Callback** callbacks;
-} tokenizer;
+} Lex;
 
 
-bool lex_init(tokenizer* lex, char* filepath);
-void lex_destroy(tokenizer* lex);
-void lex_next(tokenizer* lex, Token* token);
-char* lex_get_info(tokenizer* lex, int kind);
+bool lex_init(Lex* lex, char* filepath);
+void lex_destroy(Lex* lex);
+void lex_next(Lex* lex, Token* token);
+const char* lex_get_info(Lex* lex, int kind);
 
 static inline void lex_token_init(Token* token) {
   token->end = 0;
 }
 
 #endif
+

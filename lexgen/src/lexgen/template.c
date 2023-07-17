@@ -1,5 +1,4 @@
 #include "lexgen/include/lexgen/template.h"
-#include "lexgen/include/parser/hashmap/str_map.h"
 
 static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* tmpl_map);
 static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* tmpl_map);

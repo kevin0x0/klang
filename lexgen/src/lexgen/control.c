@@ -3,32 +3,19 @@
 #endif
 
 #include "lexgen/include/lexgen/control.h"
-#include "lexgen/include/parser/parser.h"
+#include "lexgen/include/lexgen/convert.h"
 #include "lexgen/include/lexgen/output.h"
 #include "utils/include/dir.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct tagKevNDFAInfo {
-  size_t nfa_no;
-  size_t dfa_non_acc_no;
-  size_t dfa_state_no;
-  size_t dfa_start;
-} KevNDFAInfo;
-
 static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state);
-/* return the number of NFAs */
-static void kev_lexgen_control_generate(KevPatternList* list, KevStringFaMap* map, KevFA** p_min_dfa,
-                                        size_t** p_acc_mapping, KevNDFAInfo* ndfa_info);
-static void kev_lexgen_control_regularize_mapping(size_t non_acc_state_no, size_t state_no, size_t nfa_no, KevPatternList* list,
-                                                  size_t* acc_mapping, size_t** p_pattern_mapping, int error_id);
-/* return NULL-terminated function name array */
-static char** kev_lexgen_construct_callback_array(size_t non_acc_no, size_t state_no, size_t nfa_no,
-                                                  KevParserState* parser_state, size_t* acc_mapping, size_t* p_arrlen);
 
 static void kev_lexgen_set_opt_from_env(KevOptions* options, KevStringMap* env_var);
-static void kev_lexgen_preset_env_var(KevOptions* options, KevStringMap* env_var);
+static void kev_lexgen_set_env_var_after(KevOptions* options, KevStringMap* env_var);
+static void kev_lexgen_set_env_var_before(KevOptions* options, KevStringMap* env_var);
+static void kev_lexgen_set_env_var_for_output(KevPatternBinary* binary_info, KevOutputFunc* func_group, KevStringMap* env_var);
 static void fatal_error(char* info, char* info2);
 
 void kev_lexgen_control(KevOptions* options) {
@@ -42,6 +29,8 @@ void kev_lexgen_control(KevOptions* options) {
   if (!kev_lexgenparser_init(&parser_state)) {
     fatal_error("failed to initialize parser", NULL);
   }
+  kev_lexgen_set_env_var_before(options, &parser_state.env_var);
+
   /* read lexical description file */
   FILE* input = fopen(options->strs[KEV_LEXGEN_INPUT_PATH], "r");
   if (!input) {
@@ -55,45 +44,35 @@ void kev_lexgen_control(KevOptions* options) {
     exit(EXIT_FAILURE);
   }
   kev_lexgen_set_opt_from_env(options, &parser_state.env_var);
-  kev_lexgen_preset_env_var(options, &parser_state.env_var);
-  /* generate minimized DFA */
-  KevFA* dfa;
-  size_t* acc_mapping;
-  KevNDFAInfo ndfa_info;
-  kev_lexgen_control_generate(&parser_state.list, &parser_state.nfa_map, &dfa, &acc_mapping, &ndfa_info);
+  kev_lexgen_set_env_var_after(options, &parser_state.env_var);
+
+  /* convert */
+  KevPatternBinary binary_info;
+  kev_lexgen_convert(&binary_info, &parser_state);
+
   /* output transition table */
   FILE* output_src_and_tab = fopen(options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH], "w");
   if (!output_src_and_tab) {
     fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH]);
   }
-
-  size_t* pattern_mapping = NULL;
-  kev_lexgen_control_regularize_mapping(ndfa_info.dfa_non_acc_no, ndfa_info.dfa_state_no, ndfa_info.nfa_no, &parser_state.list,
-                                        acc_mapping, &pattern_mapping, options->env_opts[KEV_LEXGEN_OPT_ERROR_ID]);
-  kev_lexgen_output_table(output_src_and_tab, dfa, pattern_mapping, options->strs[KEV_LEXGEN_LANG_NAME],
-                          options->env_opts[KEV_LEXGEN_OPT_CHARSET], options->env_opts[KEV_LEXGEN_OPT_WIDTH],
-                          ndfa_info.dfa_state_no);
-  free(pattern_mapping);
-  kev_fa_delete(dfa);
-  kev_lexgen_output_info(output_src_and_tab, &parser_state.list, options);
-  /* output source if specified */
-  if (options->opts[KEV_LEXGEN_OPT_STAGE] >= KEV_LEXGEN_OPT_STA_SRC) {
-    size_t arrlen = 0;
-    char** callbacks = kev_lexgen_construct_callback_array(ndfa_info.dfa_non_acc_no, ndfa_info.dfa_state_no,
-                                                           ndfa_info.nfa_no, &parser_state, acc_mapping, &arrlen);
-    kev_lexgen_output_src(output_src_and_tab, options, &parser_state.env_var, callbacks, arrlen);
-    free(callbacks);
-  }
-  free(acc_mapping);
+  KevOutputFunc func_group;
+  kev_lexgen_output_set_func(&func_group, options->strs[KEV_LEXGEN_LANG_NAME]);
+  kev_lexgen_set_env_var_for_output(&binary_info, &func_group, &parser_state.env_var);
+  func_group.output_table(output_src_and_tab, &binary_info);
+  func_group.output_pattern_mapping(output_src_and_tab, &binary_info);
+  func_group.output_start(output_src_and_tab, &binary_info);
+  kev_lexgen_output_src(output_src_and_tab, options, &parser_state.env_var);
   fclose(output_src_and_tab);
+
   /* compile source to archive file or shared object file if specified */
   if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_ARC) {
-    kev_lexgen_output_arc(options->strs[KEV_LEXGEN_BUILD_TOOL_NAME], options);
+    kev_lexgen_output_arc(options);
   } else if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_SHA) {
-    kev_lexgen_output_sha(options->strs[KEV_LEXGEN_BUILD_TOOL_NAME], options);
+    kev_lexgen_output_sha(options);
   }
   /* free resources */
   kev_lexgenparser_destroy(&parser_state);
+  kev_lexgen_convert_destroy(&binary_info);
 }
 
 static void fatal_error(char* info, char* info2) {
@@ -106,18 +85,27 @@ static void fatal_error(char* info, char* info2) {
   exit(EXIT_FAILURE);
 }
 
+static void kev_lexgen_set_env_var_for_output(KevPatternBinary* binary_info,
+                                              KevOutputFunc* func_group, KevStringMap* env_var) {
+  if (!kev_strmap_update_move(env_var, "callback-array",
+      func_group->output_callback(binary_info))) {
+    fatal_error("out of memory", NULL);
+  }
+  if (!kev_strmap_update_move(env_var, "info-array",
+      func_group->output_info(binary_info))) {
+    fatal_error("out of memory", NULL);
+  }
+  if (!kev_strmap_update_move(env_var, "macro-definition",
+      func_group->output_macro(binary_info))) {
+    fatal_error("out of memory", NULL);
+  }
+}
+
 static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state) {
   KevLexGenLexer lex;
   KevLexGenToken token;
   if (!kev_lexgenlexer_init(&lex, input))
     fatal_error("kev_lexgenlexer_init() failed", NULL);
-  char* resources_dir = kev_get_lexgen_resources_dir();
-  if (!resources_dir)
-    fatal_error("out of memory", NULL);
-  if (!kev_strmap_update(&parser_state->env_var, "import-path", resources_dir)) {
-    fatal_error("failed to initialize environment variable \"import-path\"", NULL);
-  }
-  free(resources_dir);
   while (!kev_lexgenlexer_next(&lex, &token))
     continue;
   int error_number = kev_lexgenparser_lex_src(&lex, &token, parser_state);
@@ -125,109 +113,6 @@ static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state) {
   return error_number;
 }
 
-static void kev_lexgen_control_generate(KevPatternList* list, KevStringFaMap* map, KevFA** p_min_dfa,
-                                        size_t** p_acc_mapping, KevNDFAInfo* ndfa_info) {
-  size_t nfa_no = 0;
-  KevPattern* pattern = list->head->next; /* fisrt pattern is POSIX charset, so custom pattern begin at second pattern */
-  while (pattern) {
-    KevFAInfo* nfa_info = pattern->fa_info;
-    while (nfa_info) {
-      nfa_no++;
-      nfa_info = nfa_info->next;
-    }
-    pattern = pattern->next;
-  }
-
-  KevFA** nfa_array = (KevFA**)malloc(sizeof (KevFA*) * (nfa_no + 1));
-  if (!nfa_array) fatal_error("out of memory", NULL);
-  pattern = list->head->next;
-  size_t i = 0;
-  while (pattern) {
-    KevFAInfo* nfa_info = pattern->fa_info;
-    while (nfa_info) {
-      nfa_array[i++] = nfa_info->fa;
-      nfa_info = nfa_info->next;
-    }
-    pattern = pattern->next;
-  }
-  nfa_array[i] = NULL;  /* nfa_array must terminate with NULL */
-
-  KevFA* dfa = kev_nfa_to_dfa(nfa_array, p_acc_mapping);
-  free(nfa_array);
-  if (!dfa)
-    fatal_error("failed to construct dfa", NULL);
-  *p_min_dfa = kev_dfa_minimization(dfa, *p_acc_mapping);
-  kev_fa_delete(dfa);
-  if (!*p_min_dfa)
-    fatal_error("failed to minimize dfa", NULL);
-  ndfa_info->nfa_no = nfa_no;
-  ndfa_info->dfa_state_no = kev_fa_state_assign_id(*p_min_dfa, 0);
-  ndfa_info->dfa_non_acc_no = kev_dfa_non_accept_state_number(*p_min_dfa);
-  ndfa_info->dfa_start = (*p_min_dfa)->start_state->id;
-}
-
-static void kev_lexgen_control_regularize_mapping(size_t non_acc_state_no, size_t state_no, size_t nfa_no, KevPatternList* list,
-                                                  size_t* acc_mapping, size_t** p_pattern_mapping, int error_id) {
-  /* regularize pattern_mapping */
-  size_t* nfa_to_pattern = (size_t*)malloc(sizeof (size_t) * nfa_no);
-  if (!nfa_to_pattern) fatal_error("out of memory", NULL);
-  KevPattern* pattern = list->head->next;
-  size_t i = 0;
-  size_t pattern_id = 0;
-  while (pattern) {
-    KevFAInfo* nfa_info = pattern->fa_info;
-    while (nfa_info) {
-      nfa_to_pattern[i++] = pattern_id;
-      nfa_info = nfa_info->next;
-    }
-    pattern_id++;
-    pattern = pattern->next;
-  }
-  size_t* pattern_mapping = (size_t*)malloc(sizeof (size_t) * state_no);
-  for (size_t i = 0; i < non_acc_state_no; ++i)
-    pattern_mapping[i] = error_id;
-  for (size_t i = non_acc_state_no; i < state_no; ++i)
-    pattern_mapping[i] = nfa_to_pattern[acc_mapping[i - non_acc_state_no]];
-  *p_pattern_mapping = pattern_mapping;
-  free(nfa_to_pattern);
-}
-
-static char** kev_lexgen_construct_callback_array(size_t non_acc_no, size_t state_no, size_t nfa_no,
-                                                  KevParserState* parser_state, size_t* acc_mapping, size_t* p_arrlen) {
-  KevPatternList* list = &parser_state->list;
-  KevStringMap* env_var = &parser_state->env_var;
-
-  char* error_handling = NULL;
-  char* default_callback = NULL;
-  KevStringMapNode* node = kev_strmap_search(env_var, "error-handling");
-  error_handling = node ? node->value : NULL;
-  node = kev_strmap_search(env_var, "default-callback");
-  default_callback = node ? node->value : NULL;
-
-  size_t i = 0;
-  KevPattern* pattern = list->head->next;
-  char** func_names = (char**)malloc(sizeof (char*) * nfa_no);
-  if (!func_names) fatal_error("out of meory", NULL);
-  while (pattern) {
-    KevFAInfo* nfa_info = pattern->fa_info;
-    while (nfa_info) {
-      func_names[i++] = nfa_info->name ? nfa_info->name : default_callback;
-      nfa_info = nfa_info->next;
-    }
-    pattern = pattern->next;
-  }
-  char** callbacks = (char**)malloc(sizeof (char*) * state_no);
-  if (!callbacks) fatal_error("out of meory", NULL);
-  for (size_t i = 0; i < non_acc_no; ++i) {
-    callbacks[i] = error_handling;
-  }
-  for(size_t i = non_acc_no; i < state_no; ++i) {
-    callbacks[i] = func_names[acc_mapping[i - non_acc_no]];;
-  }
-  free(func_names);
-  *p_arrlen = state_no;
-  return callbacks;
-}
 
 static void kev_lexgen_set_opt_from_env(KevOptions* options, KevStringMap* env_var) {
   KevStringMapNode* node = kev_strmap_search(env_var, "state-length");
@@ -237,6 +122,9 @@ static void kev_lexgen_set_opt_from_env(KevOptions* options, KevStringMap* env_v
       fatal_error("state-length can not be: ", node->value);
     options->env_opts[KEV_LEXGEN_OPT_WIDTH] = len;
   } else {
+    if (!kev_strmap_update(env_var, "state-length", "8")) {
+      fatal_error("out of memory", NULL);
+    }
     options->env_opts[KEV_LEXGEN_OPT_WIDTH] = 8;
   }
 
@@ -255,22 +143,14 @@ static void kev_lexgen_set_opt_from_env(KevOptions* options, KevStringMap* env_v
     }
   } else {
     options->env_opts[KEV_LEXGEN_OPT_CHARSET] = KEV_LEXGEN_OPT_CHARSET_UTF8;
-    if (!kev_strmap_update(env_var, "charset-size", "256")) {
+    if (!kev_strmap_update(env_var, "charset", "utf-8") ||
+        !kev_strmap_update(env_var, "charset-size", "256")) {
       fatal_error("out of memory", NULL);
     }
   }
-
-  node = kev_strmap_search(env_var, "error-id");
-  if (node) {
-    if ((options->env_opts[KEV_LEXGEN_OPT_ERROR_ID] = atoi(node->value)) == 0) {
-      fatal_error("invalid integer value for error-id", NULL);
-    }
-  } else {
-    options->env_opts[KEV_LEXGEN_OPT_ERROR_ID] = -1;
-  }
 }
 
-static void kev_lexgen_preset_env_var(KevOptions* options, KevStringMap* env_var) {
+static void kev_lexgen_set_env_var_after(KevOptions* options, KevStringMap* env_var) {
   KevStringMapNode* node = kev_strmap_search(env_var, "state-length");
   node = kev_strmap_search(env_var, "charset");
   /* set charset-size */
@@ -289,13 +169,27 @@ static void kev_lexgen_preset_env_var(KevOptions* options, KevStringMap* env_var
       fatal_error("out of memory", NULL);
     }
   }
-  /* set include-path */
-  char* relpath = kev_get_relpath(options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH],
-                                  options->strs[KEV_LEXGEN_OUT_INC_PATH]);
-  if (!relpath)
-    fatal_error("out of memory", NULL);
-  if (!kev_strmap_update(env_var , "include-path", relpath))
-    fatal_error("out of memory", NULL);
-  free(relpath);
 }
 
+static void kev_lexgen_set_env_var_before(KevOptions* options, KevStringMap* env_var) {
+  if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
+    char* relpath = kev_get_relpath(options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH],
+                                    options->strs[KEV_LEXGEN_OUT_INC_PATH]);
+    if (!relpath)
+      fatal_error("out of memory", NULL);
+    if (!kev_strmap_update(env_var , "include-path", relpath))
+      fatal_error("out of memory", NULL);
+    free(relpath);
+  }
+  char* resources_dir = kev_get_lexgen_resources_dir();
+  if (!resources_dir)
+    fatal_error("out of memory", NULL);
+  if (!kev_strmap_update(env_var, "import-path", resources_dir)) {
+    fatal_error("failed to initialize environment variable \"import-path\"", NULL);
+  }
+  free(resources_dir);
+  if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_TAB) {
+    if (!kev_strmap_update(env_var , "no-source", "enable"))
+      fatal_error("out of memory", NULL);
+  }
+}

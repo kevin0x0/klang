@@ -58,7 +58,7 @@ int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* t
   err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_REGEX);
   KevFA* nfa = kev_regex_parse((uint8_t*)token->attr + 1, nfa_map);
   if (!nfa) {
-    kev_parser_error_report(stderr, lex->infile, kev_regex_get_info(), token->begin + kev_regex_get_pos());
+    kev_parser_error_report(stderr, lex->infile, kev_regex_get_info(), token->begin + kev_regex_get_pos() + 1);
     free(name);
     err_count++;
   } else {
@@ -98,7 +98,7 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
     uint8_t* regex = (uint8_t*)token->attr + 1;
     KevFA* nfa = kev_regex_parse(regex, nfa_map);
     if (!nfa) {
-      kev_parser_error_report(stderr, lex->infile, kev_regex_get_info(), token->begin + kev_regex_get_pos());
+      kev_parser_error_report(stderr, lex->infile, kev_regex_get_info(), token->begin + kev_regex_get_pos() + 1);
       free(proc_name);
       err_count++;
     } else {
@@ -112,9 +112,11 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
   return err_count;
 }
 
-int kev_lexgenparser_statement_env_var_assgn(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
+int kev_lexgenparser_statement_env_var_def(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
   int err_count = 0;
-  size_t len = strlen(token->attr + 1);
+  err_count += kev_lexgenparser_next_nonblank(lex, token);
+  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
+  size_t len = strlen(token->attr);
   char* env_var = (char*)malloc(sizeof(char) * (len + 1));
   if (!env_var) {
     kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
@@ -219,6 +221,8 @@ int kev_lexgenparser_statement_import(KevLexGenLexer* lex, KevLexGenToken* token
 
 int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevParserState* parser_state) {
   int err_count = 0;
+  while (token->kind == KEV_LEXGEN_TOKEN_BLANKS) 
+    err_count += kev_lexgenparser_next_nonblank(lex, token);
   do {
     if (token->kind == KEV_LEXGEN_TOKEN_ID) {
       err_count += kev_lexgenparser_statement_nfa_assign(lex, token, parser_state);
@@ -226,8 +230,8 @@ int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevPars
     else if (token->kind == KEV_LEXGEN_TOKEN_DEF) {
       err_count += kev_lexgenparser_statement_deftoken(lex, token, parser_state);
     }
-    else if (token->kind == KEV_LEXGEN_TOKEN_ENV_VAR) {
-      err_count += kev_lexgenparser_statement_env_var_assgn(lex, token, parser_state);
+    else if (token->kind == KEV_LEXGEN_TOKEN_ENV_VAR_DEF) {
+      err_count += kev_lexgenparser_statement_env_var_def(lex, token, parser_state);
     }
     else if (token->kind == KEV_LEXGEN_TOKEN_IMPORT) {
       err_count += kev_lexgenparser_statement_import(lex, token, parser_state);

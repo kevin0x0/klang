@@ -16,7 +16,7 @@
 #define KEV_LEXGEN_TOKEN_BLANKS       (6)
 #define KEV_LEXGEN_TOKEN_OPEN_PAREN   (7)
 #define KEV_LEXGEN_TOKEN_CLOSE_PAREN  (8)
-#define KEV_LEXGEN_TOKEN_ENV_VAR      (9)
+#define KEV_LEXGEN_TOKEN_ENV_VAR_DEF  (9)
 #define KEV_LEXGEN_TOKEN_END          (10)
 #define KEV_LEXGEN_TOKEN_LONG_STR     (11)
 #define KEV_LEXGEN_TOKEN_STR          (12)

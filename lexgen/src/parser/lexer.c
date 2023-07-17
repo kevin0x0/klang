@@ -14,7 +14,7 @@ static char* token_info[] = {
   [KEV_LEXGEN_TOKEN_BLANKS] = "blanks", [KEV_LEXGEN_TOKEN_COLON] = "\':\'",
   [KEV_LEXGEN_TOKEN_ID] = "identifier", [KEV_LEXGEN_TOKEN_REGEX] = "regular expression",
   [KEV_LEXGEN_TOKEN_OPEN_PAREN] = "\'(\'", [KEV_LEXGEN_TOKEN_CLOSE_PAREN] = "\')\'",
-  [KEV_LEXGEN_TOKEN_DEF] = "def", [KEV_LEXGEN_TOKEN_ENV_VAR] = "environment variable identifier",
+  [KEV_LEXGEN_TOKEN_DEF] = "def", [KEV_LEXGEN_TOKEN_ENV_VAR_DEF] = "environment variable definition header",
   [KEV_LEXGEN_TOKEN_LONG_STR] = "long string", [KEV_LEXGEN_TOKEN_STR] = "string",
   [KEV_LEXGEN_TOKEN_IMPORT] = "import", 
 };

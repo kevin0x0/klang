@@ -1,3 +1,4 @@
+$c !no-source $:
 #include "$r include-path $:inc.h$;"
 
 #include <stdio.h>
@@ -71,3 +72,9 @@ const char* $r function-prefix $:lex$;_get_info($r lexer-name $:Lex$;* lex, int 
   return kev_lexgen_get_info()[kind];
 }
 
+$r callback-array $:$;
+
+$r info-array $:$;
+
+$|
+$;

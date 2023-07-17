@@ -12,13 +12,14 @@ typedef struct tagKevParserState {
   KevStringMap env_var;
 } KevParserState;
 
+bool kev_lexgenparser_init(KevParserState* parser_state);
+void kev_lexgenparser_destroy(KevParserState* parser_state);
+
 int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);
 int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);
-int kev_lexgenparser_statement_env_var_assgn(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);
+int kev_lexgenparser_statement_env_var_def(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);
 int kev_lexgenparser_statement_import(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);
 int kev_lexgenparser_parse(char* filepath, KevParserState* parser_state);
 int kev_lexgenparser_lex_src(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state);
-bool kev_lexgenparser_init(KevParserState* parser_state);
-void kev_lexgenparser_destroy(KevParserState* parser_state);
 
 #endif

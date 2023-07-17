@@ -158,6 +158,30 @@ bool kev_strmap_insert(KevStringMap* map, char* key, char* value) {
   return true;
 }
 
+bool kev_strmap_insert_move(KevStringMap* map, char* key, char* value) {
+  if (map->size >= map->capacity && !kev_strmap_expand(map))
+    return false;
+
+  KevStringMapNode* new_node = (KevStringMapNode*)malloc(sizeof (KevStringMapNode));
+  if (!new_node) return false;
+
+  size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
+  new_node->key = copy_string(key);
+  new_node->value = value;
+  if (!new_node->key || !new_node->value) {
+    free(new_node->key);
+    return false;
+  }
+  new_node->next = map->array[index].map_node_list;
+  map->array[index].map_node_list = new_node;
+  map->size++;
+  if (new_node->next == NULL) {
+    map->array[index].next = map->bucket_head;
+    map->bucket_head = &map->array[index];
+  }
+  return true;
+}
+
 KevStringMapNode* kev_strmap_search(KevStringMap* map, char* key) {
   size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
   KevStringMapNode* node = map->array[index].map_node_list;
@@ -190,6 +214,19 @@ bool kev_strmap_update(KevStringMap* map, char* key, char* value) {
     return false;
   }
   return true;
+}
+
+bool kev_strmap_update_move(KevStringMap* map, char* key, char* value) {
+  if (!map) return false;
+  KevStringMapNode* node = kev_strmap_search(map, key);
+  if (node) {
+    free(node->value);
+    node->value = value;
+    return true;
+  }
+  else {
+    return kev_strmap_insert_move(map, key, value);
+  }
 }
 
 static inline char* copy_string(char* str) {

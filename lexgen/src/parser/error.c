@@ -13,6 +13,7 @@ void kev_parser_error_report(FILE* err_stream, FILE* infile, char* info, size_t 
   fseek(infile, 0, SEEK_SET);
   size_t count = 0;
   size_t line_begin = 0;
+  size_t line_begin_count = 0;
   size_t line_no = 1;
   while (count++ < position) {
     int ch = 0;
@@ -21,6 +22,7 @@ void kev_parser_error_report(FILE* err_stream, FILE* infile, char* info, size_t 
     }
     else if (ch == '\n') {
       line_begin = ftell(infile);
+      line_begin_count = count;
       line_no++;
     }
   }
@@ -33,6 +35,7 @@ void kev_parser_error_report(FILE* err_stream, FILE* infile, char* info, size_t 
   fputc('\n', err_stream);
   fseek(infile, line_begin, SEEK_SET);
   count = line_begin;
+  count = line_begin_count;
   while (count++ < position) {
     ch = fgetc(infile);
     if (ch == '\t')

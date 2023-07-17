@@ -1,3 +1,4 @@
+$c !no-source $:
 #ifndef __KEVCC_LEXGEN_LEXER_H
 #define __KEVCC_LEXGEN_LEXER_H
 
@@ -6,6 +7,8 @@
 #include <stdbool.h>
 
 #define LEX_DEAD    (255)
+
+$r macro-definition $:$;
 
 $r token-attribute-difinition $:
 typedef union tagTokenAttr {
@@ -46,3 +49,8 @@ static inline void $r function-prefix $:lex$;_token_init(Token* token) {
 }
 
 #endif
+$|
+
+$r macro-definition $:$;
+
+$;

@@ -27,8 +27,10 @@ void kev_strmap_destroy(KevStringMap* map);
 void kev_strmap_delete(KevStringMap* map);
 
 bool kev_strmap_insert(KevStringMap* map, char* key, char* value);
+bool kev_strmap_insert_move(KevStringMap* map, char* key, char* value);
 KevStringMapNode* kev_strmap_search(KevStringMap* map, char* key);
 bool kev_strmap_update(KevStringMap* map, char* key, char* value);
+bool kev_strmap_update_move(KevStringMap* map, char* key, char* value);
 
 static inline KevStringMapNode* kev_strmap_iterate_begin(KevStringMap* map);
 KevStringMapNode* kev_strmap_iterate_next(KevStringMap* map, KevStringMapNode* current);

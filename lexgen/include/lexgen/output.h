@@ -1,18 +1,24 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_LEXGEN_OUTPUT_H
 #define KEVCC_LEXGEN_INCLUDE_LEXGEN_OUTPUT_H
 
+#include "lexgen/include/lexgen/convert.h"
 #include "lexgen/include/lexgen/options.h"
-#include "lexgen/include/parser/parser.h"
 
 #include <stdio.h>
 
-void kev_lexgen_output_table(FILE* output, KevFA* dfa, size_t* pattern_mapping, char* language,
-                             int charset, int length, size_t state_no);
-void kev_lexgen_output_callback(FILE* output, char** callbacks, KevOptions* options, size_t arrlen);
-void kev_lexgen_output_info(FILE* output, KevPatternList* list, KevOptions* options);
-void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* tmpl_map, char** callbacks, size_t arrlen);
-void kev_lexgen_output_arc(char* compiler, KevOptions* options);
-void kev_lexgen_output_sha(char* compiler, KevOptions* options);
+typedef struct tagKevOutputFunc {
+  void (*output_table)(FILE*, KevPatternBinary*);
+  void (*output_pattern_mapping)(FILE*, KevPatternBinary*);
+  void (*output_start)(FILE*, KevPatternBinary*);
+  char* (*output_callback)(KevPatternBinary*);
+  char* (*output_info)(KevPatternBinary*);
+  char* (*output_macro)(KevPatternBinary*);
+} KevOutputFunc;
+
+void kev_lexgen_output_set_func(KevOutputFunc* func_group, char* language);
+void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_var);
+void kev_lexgen_output_arc(KevOptions* options);
+void kev_lexgen_output_sha(KevOptions* options);
 void kev_lexgen_output_help(void);
 
 #endif

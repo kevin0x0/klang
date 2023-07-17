@@ -1,0 +1,27 @@
+Usage:
+  lexgen [ opt [opt-value]]...
+
+options:
+  -h --help                        Show this message.
+  -i --in                          Input file path.
+  -o <path> --out <path>           Output file path.
+  --out-inc <path>                 Output include file path. This option works
+                                   only when the language needs header file,
+                                   such as C/C++.
+  -s=<value> --stage=<value>       Specify generation stage.
+    tab[le]                        Generate the transition table only. This is
+                                   the default value.
+    src | source                   Generate the source of lexer.
+    arc[hive]                      Generate the archive of lexer.
+    sha[red]                       Generate the shared object file of lexer.
+  -l=<value> --lang[uage]=<value>  Specify language.
+    c                              This is the default value.
+    cpp | cxx | cc | cx | c++
+    rust | rs                      Currently not supported.
+  --build-tool=<value>             Specify compiler when generate archive or
+                                   shared object file.
+    gcc
+    g++
+    clang
+    clang++
+    cl
