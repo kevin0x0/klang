@@ -279,7 +279,7 @@ static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info) {
   char** macros = binary_info->macros;
   for (size_t i = 0; i < binary_info->pattern_no; ++i) {
     if (macros[i])
-      buflen += strlen(macros[i]) + 20;
+      buflen += strlen(macros[i]) + 22;
   }
   char* output = (char*)malloc(sizeof (char) * buflen);
   char* bufpos = output;
@@ -289,7 +289,7 @@ static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info) {
   for (size_t i = 0; i < binary_info->pattern_no; ++i) {
     if (macros[i]) {
       bufpos += sprintf(bufpos, "#define ");
-      bufpos += sprintf(bufpos, "%s %d\n", macros[i], (int)i);
+      bufpos += sprintf(bufpos, "%s (%d)\n", macros[i], (int)i);
     }
   }
   return output;

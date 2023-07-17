@@ -120,29 +120,24 @@ static void kev_lexgen_set_opt_from_env(KevOptions* options, KevStringMap* env_v
     int len = atoi(node->value);
     if (len != 16 && len != 8)
       fatal_error("state-length can not be: ", node->value);
-    options->env_opts[KEV_LEXGEN_OPT_WIDTH] = len;
   } else {
     if (!kev_strmap_update(env_var, "state-length", "8")) {
       fatal_error("out of memory", NULL);
     }
-    options->env_opts[KEV_LEXGEN_OPT_WIDTH] = 8;
   }
 
   node = kev_strmap_search(env_var, "charset");
   if (node) {
     if (strcmp("ascii", node->value) == 0) {
-      options->env_opts[KEV_LEXGEN_OPT_CHARSET] = KEV_LEXGEN_OPT_CHARSET_ASCII;
       if (!kev_strmap_update(env_var, "charset-size", "128")) {
         fatal_error("out of memory", NULL);
       }
     } else if (strcmp("utf-8", node->value) == 0 || strcmp("UTF-8", node->value) == 0) {
-      options->env_opts[KEV_LEXGEN_OPT_CHARSET] = KEV_LEXGEN_OPT_CHARSET_UTF8;
       if (!kev_strmap_update(env_var, "charset-size", "256")) {
         fatal_error("out of memory", NULL);
       }
     }
   } else {
-    options->env_opts[KEV_LEXGEN_OPT_CHARSET] = KEV_LEXGEN_OPT_CHARSET_UTF8;
     if (!kev_strmap_update(env_var, "charset", "utf-8") ||
         !kev_strmap_update(env_var, "charset-size", "256")) {
       fatal_error("out of memory", NULL);

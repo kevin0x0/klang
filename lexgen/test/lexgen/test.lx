@@ -2,14 +2,14 @@ import "charset/posix
 
 non-ascii-char = $[\xF0-\xF7][\x80-\xBF]{3} | [\xE0-\xEF][\x80-\xBF]{2} | [\xC0-\xDF][\x80-\xBF]{1}
 
-def Int: $int
-def Num:
+def Int (TK_INT): $int
+def Num (TK_NUM):
   $0[0-7]*
   $[1-9][:digit:]*
   $0x[A-Fa-f0-9]+
-def Id: $([:non-ascii-char:] | [A-Za-z_])([:non-ascii-char:] | [A-Za-z0-9_])*
-def End: $\0
-def Blank: $\ +
+def Id (TK_ID): $([:non-ascii-char:] | [A-Za-z_])([:non-ascii-char:] | [A-Za-z0-9_])*
+def End (TK_END): $\0
+def Blank (TK_BLANK): $\ +
 
 %state-length = "8
 %charset = "utf-8

@@ -8,6 +8,11 @@
 
 #define LEX_DEAD    (255)
 
+#define TK_INT (0)
+#define TK_NUM (1)
+#define TK_ID (2)
+#define TK_END (3)
+#define TK_BLANK (4)
 
 
 
