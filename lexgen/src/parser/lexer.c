@@ -51,7 +51,7 @@ bool kev_lexgenlexer_next(KevLexGenLexer* lex, KevLexGenToken* token) {
   uint8_t next_state = 0;
   FILE* infile = lex->infile;
   uint8_t ch = (uint8_t)fgetc(infile);
-  while ((next_state = table[state][ch]) != KEV_LEXGENLEXER_DEAD) {
+  while ((next_state = table[state][ch]) != KEV_LEXGENLEXER_DEAD && position < sizeof (lex_attr_buffer) / sizeof (uint8_t)) {
     state = next_state;
     lex_attr_buffer[position++] = ch;
     ch = (uint8_t)fgetc(infile);

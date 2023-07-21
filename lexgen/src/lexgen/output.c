@@ -23,7 +23,6 @@ static char* kev_lexgen_output_info_c_cpp(KevPatternBinary* binary_info);
 static char* kev_lexgen_output_macro_rust(KevPatternBinary* binary_info);
 static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info);
 
-
 static char* kev_lexgen_output_escape_string(char* output, char* str);
 static void fatal_error(char* info, char* info2);
 

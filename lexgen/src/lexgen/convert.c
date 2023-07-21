@@ -54,10 +54,10 @@ static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
   KevPatternList* list = &parser_state->list;
   KevStringMap* env_var = &parser_state->env_var;
 
-  char* error_handling = NULL;
+  char* error_handler = NULL;
   char* default_callback = NULL;
-  KevStringMapNode* node = kev_strmap_search(env_var, "error-handling");
-  error_handling = node ? node->value : NULL;
+  KevStringMapNode* node = kev_strmap_search(env_var, "error-handler");
+  error_handler = node ? node->value : NULL;
   node = kev_strmap_search(env_var, "default-callback");
   default_callback = node ? node->value : NULL;
 
@@ -76,7 +76,7 @@ static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
   char** callbacks = (char**)malloc(sizeof (char*) * state_no);
   if (!callbacks) fatal_error("out of meory", NULL);
   for (size_t i = 0; i < non_acc_no; ++i) {
-    callbacks[i] = error_handling;
+    callbacks[i] = error_handler;
   }
   for(size_t i = non_acc_no; i < state_no; ++i) {
     callbacks[i] = func_names[acc_mapping[i - non_acc_no]];;

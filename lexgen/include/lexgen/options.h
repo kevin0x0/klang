@@ -5,12 +5,6 @@
 #define KEV_LEXGEN_OPT_HELP           (3)
 #define KEV_LEXGEN_OPT_NO             (4)
 
-/* options from environment variable */
-#define KEV_LEXGEN_OPT_WIDTH          (0)
-#define KEV_LEXGEN_OPT_CHARSET        (1)
-#define KEV_LEXGEN_OPT_ERROR_ID       (2)
-#define KEV_LEXGEN_ENV_OPT_NO         (3)
-
 /* values */
 #define KEV_LEXGEN_OPT_LANG_C_CPP     (0)
 #define KEV_LEXGEN_OPT_LANG_RUST      (1)
@@ -18,8 +12,6 @@
 #define KEV_LEXGEN_OPT_STA_SRC        (1)
 #define KEV_LEXGEN_OPT_STA_ARC        (2)
 #define KEV_LEXGEN_OPT_STA_SHA        (3)
-#define KEV_LEXGEN_OPT_CHARSET_ASCII  (0)
-#define KEV_LEXGEN_OPT_CHARSET_UTF8   (1)
 #define KEV_LEXGEN_OPT_FALSE          (0)
 #define KEV_LEXGEN_OPT_TRUE           (1)
 

@@ -45,13 +45,10 @@ int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* t
   KevPatternList* list = &parser_state->list;
   KevStringFaMap* nfa_map = &parser_state->nfa_map;
   int err_count = 0;
-  size_t len = strlen(token->attr);
-  char* name = (char*)malloc(sizeof(char) * (len + 1));
+  char* name = kev_copy_string(token->attr);
   if (!name) {
     kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
     err_count++;
-  } else {
-    strcpy(name, token->attr);
   }
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ASSIGN);
@@ -62,9 +59,15 @@ int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* t
     free(name);
     err_count++;
   } else {
-    if (!kev_pattern_insert(list->tail, name, nfa) ||
-        !kev_strfamap_update(nfa_map, name, nfa)) {
+    if (!kev_pattern_insert(list->tail, name, nfa)) {
       kev_parser_error_report(stderr, lex->infile, "failed to register NFA", token->begin);
+      err_count++;
+      free(name);
+      kev_fa_delete(nfa);
+    }
+    if (!kev_strfamap_update(nfa_map, name, nfa)) {
+      kev_parser_error_report(stderr, lex->infile, "failed to register NFA", token->begin);
+      /* name and nfa are stored in list, so there is no need to free them here */
       err_count++;
     }
   }
@@ -116,13 +119,10 @@ int kev_lexgenparser_statement_env_var_def(KevLexGenLexer* lex, KevLexGenToken* 
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
-  size_t len = strlen(token->attr);
-  char* env_var = (char*)malloc(sizeof(char) * (len + 1));
+  char* env_var = kev_copy_string(token->attr);
   if (!env_var) {
     kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
     err_count++;
-  } else {
-    strcpy(env_var, token->attr + 1);
   }
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ASSIGN);
@@ -286,9 +286,7 @@ static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* 
   if (token->kind == KEV_LEXGEN_TOKEN_OPEN_PAREN) {
     err_count += kev_lexgenparser_next_nonblank(lex, token);
     err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
-    size_t len = strlen(token->attr);
-    char* name = (char*)malloc(sizeof(char) * (len + 1));
-    strcpy(name, token->attr);
+    char* name = kev_copy_string(token->attr);
     err_count += kev_lexgenparser_next_nonblank(lex, token);
     err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_CLOSE_PAREN);
     *p_name = name;

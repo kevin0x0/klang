@@ -103,20 +103,6 @@ static void kev_lexgen_set_value(char* arg, KevOptions* options) {
   } else if ((value = kev_get_value(arg, "--build-tool="))) {
     free(options->strs[KEV_LEXGEN_BUILD_TOOL_NAME]);
     options->strs[KEV_LEXGEN_BUILD_TOOL_NAME] = copy_string(value);
-  } else if ((value = kev_get_value(arg, "--length="))) {
-    if (strcmp(value, "8") == 0)
-      options->opts[KEV_LEXGEN_OPT_WIDTH] = 8;
-    else if (strcmp(value, "16") == 0)
-      options->opts[KEV_LEXGEN_OPT_WIDTH] = 16;
-    else
-      error("--length can only be 8 or 16", NULL);
-  } else if ((value = kev_get_value(arg, "charset"))) {
-    if (strcmp(value, "utf-8") == 0)
-      options->opts[KEV_LEXGEN_OPT_CHARSET] = KEV_LEXGEN_OPT_CHARSET_UTF8;
-    else if (strcmp(value, "ascii") == 0)
-      options->opts[KEV_LEXGEN_OPT_CHARSET] = KEV_LEXGEN_OPT_CHARSET_ASCII;
-    else
-      error("--charset can only be utf-8 or ascii", NULL);
   } else {
     error("unknown option: ", arg);
   }
@@ -126,8 +112,6 @@ static void kev_lexgen_set_default(KevOptions* options) {
   for (size_t i = 0; i < KEV_LEXGEN_STR_NO; ++i)
     options->strs[i] = NULL;
   options->opts[KEV_LEXGEN_OPT_HELP] = KEV_LEXGEN_OPT_FALSE;
-  options->opts[KEV_LEXGEN_OPT_CHARSET] = KEV_LEXGEN_OPT_CHARSET_UTF8;
-  options->opts[KEV_LEXGEN_OPT_WIDTH] = 8;
   options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_TAB;
   options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("c");
 }
