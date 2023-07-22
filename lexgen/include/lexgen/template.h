@@ -6,6 +6,9 @@
 
 #include <stdio.h>
 
-void kev_template_convert(FILE* output, FILE* tmpl, KevStringMap* tmpl_map);
+/* parse template file 'tmpl' and output result to 'output'
+ * 'env_var' store the environment variables.
+ */
+void kev_template_convert(FILE* output, FILE* tmpl, KevStringMap* env_var);
 
 #endif

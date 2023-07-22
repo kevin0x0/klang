@@ -5,6 +5,9 @@
 
 #include <stdio.h>
 
+/* this structure store the meory representation of transition table and
+ * other infomation.
+ */
 typedef struct tagPatternBinary {
   size_t pattern_no;
   size_t nfa_no;
@@ -20,7 +23,9 @@ typedef struct tagPatternBinary {
   size_t state_length;
 } KevPatternBinary;
 
+/* fill structure 'binary_info' according to infomation in 'parser_state' */
 void kev_lexgen_convert(KevPatternBinary* binary_info, KevParserState* parser_state);
+/* free resources */
 void kev_lexgen_convert_destroy(KevPatternBinary* binary_info);
 
 #endif

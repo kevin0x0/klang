@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 
+/* control flow */
 void kev_lexgen_control(KevOptions* options);
 
 #endif

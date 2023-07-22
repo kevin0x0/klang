@@ -3,7 +3,6 @@
 
 static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, KevParserState* parser_state,
                                                     size_t* acc_mapping);
-/* return NULL-terminated function name array */
 static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
                                                   KevParserState* parser_state, size_t* acc_mapping);
 static void kev_lexgen_convert_generate(KevPatternBinary* binary_info, KevParserState* parser_state, KevFA** p_min_dfa,

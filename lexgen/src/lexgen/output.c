@@ -11,18 +11,22 @@
 #include <string.h>
 
 static void kev_lexgen_output_table_rust(FILE* output, KevPatternBinary* binary_info);
-static void kev_lexgen_output_table_c_cpp(FILE* output, KevPatternBinary* binary_info);
 static void kev_lexgen_output_pattern_mapping_rust(FILE* output, KevPatternBinary* binary_info);
-static void kev_lexgen_output_pattern_mapping_c_cpp(FILE* output, KevPatternBinary* binary_info);
 static void kev_lexgen_output_start_rust(FILE* output, KevPatternBinary* binary_info);
-static void kev_lexgen_output_start_c_cpp(FILE* output, KevPatternBinary* binary_info);
 static char* kev_lexgen_output_callback_rust(KevPatternBinary* binary_info);
-static char* kev_lexgen_output_callback_c_cpp(KevPatternBinary* binary_info);
 static char* kev_lexgen_output_info_rust(KevPatternBinary* binary_info);
-static char* kev_lexgen_output_info_c_cpp(KevPatternBinary* binary_info);
 static char* kev_lexgen_output_macro_rust(KevPatternBinary* binary_info);
+
+static void kev_lexgen_output_table_c_cpp(FILE* output, KevPatternBinary* binary_info);
+static void kev_lexgen_output_pattern_mapping_c_cpp(FILE* output, KevPatternBinary* binary_info);
+static void kev_lexgen_output_start_c_cpp(FILE* output, KevPatternBinary* binary_info);
+static char* kev_lexgen_output_callback_c_cpp(KevPatternBinary* binary_info);
+static char* kev_lexgen_output_info_c_cpp(KevPatternBinary* binary_info);
 static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info);
 
+/* convert 'str' to escape string to 'output' buffer,
+ * return pointer of next position in buffer
+ */
 static char* kev_lexgen_output_escape_string(char* output, char* str);
 static void fatal_error(char* info, char* info2);
 
@@ -47,14 +51,98 @@ void kev_lexgen_output_set_func(KevOutputFunc* func_group, char* language) {
   }
 }
 
-void kev_lexgen_output_table_to_file(FILE* output, KevPatternBinary* binary_info, char* language) {
-  if (strcmp(language, "rust") == 0)
-    kev_lexgen_output_table_rust(output, binary_info);
-  else if (strcmp(language, "c") == 0 ||
-           strcmp(language, "cpp") == 0)
-    kev_lexgen_output_table_c_cpp(output, binary_info);
-  else
-    fatal_error("unsupported language: ", language);
+static char* kev_lexgen_output_escape_string(char* output, char* str) {
+  if (!str) sprintf(output, "NULL");
+  char* bufpos = output;
+  while (*str != '\0')
+    *bufpos++ = *str++;
+  return bufpos;
+}
+
+void kev_lexgen_output_help(void) {
+  char* resources_dir = kev_get_lexgen_resources_dir();
+  if (!resources_dir)
+    fatal_error("can not get resources directory", NULL);
+  char* help_dir = (char*)malloc(sizeof (char) * (strlen(resources_dir) + 16));
+  if (!help_dir)
+    fatal_error("out of memory", NULL);
+  strcpy(help_dir, resources_dir);
+  strcat(help_dir, "doc/help.txt");
+  FILE* help = fopen(help_dir, "r");
+  char line[90];
+  while (fgets(line, 90, help))
+    fputs(line, stdout);
+  fclose(help);
+  free(help_dir);
+  free(resources_dir);
+}
+
+void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_var) {
+  char* resources_dir = kev_get_lexgen_resources_dir();
+  if (!resources_dir)
+    fatal_error("can not get resources directory", NULL);
+  char* src_path = (char*)malloc(sizeof (char) * (strlen(resources_dir) + strlen("lexer/") + strlen("src.tmpl") + 32 + 1));
+  if (!src_path)
+    fatal_error("out of memory", NULL);
+
+  FILE* tmpl = NULL;
+  if (options->strs[KEV_LEXGEN_OUT_SRC_PATH]) {
+    strcpy(src_path, resources_dir);
+    strcat(src_path, "lexer/");
+    strcat(src_path, options->strs[KEV_LEXGEN_LANG_NAME]);
+    strcat(src_path, "/src.tmpl");
+    tmpl = fopen(src_path, "r");
+    if (!tmpl)
+      fatal_error("can not open file(maybe this language is not supported): ", src_path);
+    kev_template_convert(output, tmpl, env_var);
+    fclose(tmpl);
+  }
+  /* some languages like C/C++ need a header */
+  if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
+    strcpy(src_path, resources_dir);
+    strcat(src_path, "lexer/");
+    strcat(src_path, options->strs[KEV_LEXGEN_LANG_NAME]);
+    strcat(src_path, "/inc.tmpl");
+    tmpl = fopen(src_path, "r");
+    if (!tmpl)
+      fatal_error("can not open file: ", src_path);
+    output = fopen(options->strs[KEV_LEXGEN_OUT_INC_PATH], "w");
+    if (!output)
+      fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_INC_PATH]);
+    kev_template_convert(output, tmpl, env_var);
+    fclose(output);
+    fclose(tmpl);
+  }
+  free(src_path);
+  free(resources_dir);
+}
+
+static void fatal_error(char* info, char* info2) {
+  fputs("fatal: ", stderr);
+  if (info)
+    fputs(info, stderr);
+  if (info2)
+    fputs(info2, stderr);
+  fputs("\nterminated\n", stderr);
+  exit(EXIT_FAILURE);
+}
+
+static char* kev_lexgen_output_macro_rust(KevPatternBinary* binary_info) {
+  /* TODO: support rust */
+  fatal_error("rust is currently not supported", NULL);
+  return NULL;
+}
+
+static char* kev_lexgen_output_info_rust(KevPatternBinary* binary_info) {
+  /* TODO: support rust */
+  fatal_error("rust is currently not supported", NULL);
+  return NULL;
+}
+
+static char* kev_lexgen_output_callback_rust(KevPatternBinary* binary_info) {
+  /* TODO: support rust */
+  fatal_error("rust is currently not supported", NULL);
+  return NULL;
 }
 
 static void kev_lexgen_output_table_rust(FILE* output, KevPatternBinary* binary_info) {
@@ -137,6 +225,7 @@ static void kev_lexgen_output_start_rust(FILE* output, KevPatternBinary* binary_
   fprintf(output, "  return START;\n");
   fprintf(output, "}\n\n");
 }
+
 
 static void kev_lexgen_output_table_c_cpp(FILE* output, KevPatternBinary* binary_info) {
   size_t state_length = binary_info->state_length;
@@ -292,109 +381,5 @@ static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info) {
     }
   }
   return output;
-}
-
-static char* kev_lexgen_output_macro_rust(KevPatternBinary* binary_info) {
-  /* TODO: support rust */
-  fatal_error("rust is currently not supported", NULL);
-  return NULL;
-}
-
-static char* kev_lexgen_output_info_rust(KevPatternBinary* binary_info) {
-  /* TODO: support rust */
-  fatal_error("rust is currently not supported", NULL);
-  return NULL;
-}
-
-static char* kev_lexgen_output_callback_rust(KevPatternBinary* binary_info) {
-  /* TODO: support rust */
-  fatal_error("rust is currently not supported", NULL);
-  return NULL;
-}
-
-static char* kev_lexgen_output_escape_string(char* output, char* str) {
-  if (!str) sprintf(output, "NULL");
-  char* bufpos = output;
-  while (*str != '\0')
-    *bufpos++ = *str++;
-  return bufpos;
-}
-
-void kev_lexgen_output_help(void) {
-  char* resources_dir = kev_get_lexgen_resources_dir();
-  if (!resources_dir)
-    fatal_error("can not get resources directory", NULL);
-  char* help_dir = (char*)malloc(sizeof (char) * (strlen(resources_dir) + 16));
-  if (!help_dir)
-    fatal_error("out of memory", NULL);
-  strcpy(help_dir, resources_dir);
-  strcat(help_dir, "doc/help.txt");
-  FILE* help = fopen(help_dir, "r");
-  char line[90];
-  while (fgets(line, 90, help))
-    fputs(line, stdout);
-  fclose(help);
-  free(help_dir);
-  free(resources_dir);
-}
-
-void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_var) {
-  char* resources_dir = kev_get_lexgen_resources_dir();
-  if (!resources_dir)
-    fatal_error("can not get resources directory", NULL);
-  char* src_path = (char*)malloc(sizeof (char) * (strlen(resources_dir) + strlen("lexer/") + strlen("src.tmpl") + 32 + 1));
-  if (!src_path)
-    fatal_error("out of memory", NULL);
-
-  FILE* tmpl = NULL;
-  if (options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH]) {
-    strcpy(src_path, resources_dir);
-    strcat(src_path, "lexer/");
-    strcat(src_path, options->strs[KEV_LEXGEN_LANG_NAME]);
-    strcat(src_path, "/src.tmpl");
-    tmpl = fopen(src_path, "r");
-    if (!tmpl)
-      fatal_error("can not open file(maybe this language is not supported): ", src_path);
-    kev_template_convert(output, tmpl, env_var);
-    fclose(tmpl);
-  }
-  /* some languages like C/C++ need header */
-  if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
-    strcpy(src_path, resources_dir);
-    strcat(src_path, "lexer/");
-    strcat(src_path, options->strs[KEV_LEXGEN_LANG_NAME]);
-    strcat(src_path, "/inc.tmpl");
-    tmpl = fopen(src_path, "r");
-    if (!tmpl)
-      fatal_error("can not open file: ", src_path);
-    output = fopen(options->strs[KEV_LEXGEN_OUT_INC_PATH], "w");
-    if (!output)
-      fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_INC_PATH]);
-    kev_template_convert(output, tmpl, env_var);
-    fclose(output);
-    fclose(tmpl);
-  }
-  free(src_path);
-  free(resources_dir);
-}
-
-void kev_lexgen_output_arc(KevOptions* options) {
-  /* TODO: output archive file */
-  fatal_error("generating archive file currently is not supported", NULL);
-}
-
-void kev_lexgen_output_sha(KevOptions* options) {
-  /* TODO: output shared object file */
-  fatal_error("generating shared object file currently is not supported", NULL);
-}
-
-static void fatal_error(char* info, char* info2) {
-  fputs("fatal: ", stderr);
-  if (info)
-    fputs(info, stderr);
-  if (info2)
-    fputs(info2, stderr);
-  fputs("\nterminated\n", stderr);
-  exit(EXIT_FAILURE);
 }
 

@@ -11,6 +11,7 @@
 
 #define KEV_DFA_UNKNOWN_STATE          (0)
 
+/* do pre partition */
 static bool kev_initialize_hopcroft(KevPartitionUniverse* universe, KevSetCrossList* setlist,
                                     KevFA* dfa, size_t* accept_state_mapping);
 static bool kev_do_hopcroft(KevSetCrossList* setlist, KevPartitionUniverse universe, KevFA* dfa);
@@ -61,6 +62,7 @@ static bool kev_initialize_hopcroft(KevPartitionUniverse* p_universe, KevSetCros
   size_t current_position = 0;
   KevGraphNode* state = kev_fa_get_states(dfa);
   KevGraphNode* acc_state = kev_fa_get_accept_state(dfa);
+  /* At the beginning, all non-accepting states should be in one set */
   KevPartitionSet* set = kev_partition_set_create_from_graphnode(universe, state, acc_state, current_position);
   if (!set) {
     kev_partition_universe_delete(universe);
@@ -74,6 +76,9 @@ static bool kev_initialize_hopcroft(KevPartitionUniverse* p_universe, KevSetCros
       return false;
     }
   } else {
+    /* Empty set means that all states are accepting states.
+     * It is illegal to do partition on a empty set,
+     * so delete it. */
     kev_partition_set_delete(set);
   }
 
@@ -192,13 +197,12 @@ static bool kev_hopcroft_do_partition_for_single_target(KevSetCrossList* setlist
     if (!intersection) return false;
     size_t int_size = kev_partition_set_size(intersection);
     size_t dif_size = kev_partition_set_size(itr->set);
-    if (int_size == 0 || dif_size == 0) {
-      if (dif_size == 0) {
-        kev_partition_set_delete(itr->set);
-        itr->set = intersection;
-      } else {
-        kev_partition_set_delete(intersection);
-      }
+    if (dif_size == 0) {
+      kev_partition_set_delete(itr->set);
+      itr->set = intersection;
+      continue;
+    } else if (int_size == 0) {
+      kev_partition_set_delete(intersection);
       continue;
     }
     KevSetCrossListNode* new_node = kev_setcrosslist_insert(itr, intersection);

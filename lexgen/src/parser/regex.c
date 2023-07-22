@@ -34,7 +34,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa);
 static KevFA* kev_regex_charset(KevParser* parser, KevStringFaMap* nfa_map);
 static int kev_regex_escape(KevParser* parser);
 static KevFA* kev_regex_escape_nfa(KevParser* parser);
-/* do not modify 'src' */
+/* do concatenation bnetween 'dest' and 'src', but do not modify 'src' */
 static bool kev_nfa_append(KevFA* dest, KevFA* src);
 static bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end);
 uint8_t* kev_regex_ref_name(KevParser* parser);

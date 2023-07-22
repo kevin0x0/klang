@@ -9,14 +9,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void kev_lexgen_set_value(char* arg, KevOptions* options);
+/* handle kev-value pair options */
+static void kev_lexgen_set_kv_pair(char* arg, KevOptions* options);
+/* set default value for options */
 static void kev_lexgen_set_default(KevOptions* options);
-static void kev_lexgen_set_out_path(char* out, KevOptions* options);
-static void kev_lexgen_set_build_tool(KevOptions* options);
 static void error(char* info, char* info2);
+/* get a copy of 'str' */
 static char* copy_string(char* str);
+/* get value in a key-value pair */
 static char* kev_get_value(char* arg, char* prefix);
-static void kev_add_lang_postfix(char* str, char* language);
 
 void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
   char* out = NULL; /* temperarily store the output path */
@@ -26,7 +27,8 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
     if (strcmp(arg, "-o") == 0 || strcmp(arg, "--out") == 0) {
       if (++i >= argc)
         error("missing output path: ", "-o <path>");
-      out = copy_string(argv[i]);
+      free(options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
+      options->strs[KEV_LEXGEN_OUT_SRC_PATH] = copy_string(argv[i]);
     } else if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
       options->opts[KEV_LEXGEN_OPT_HELP] = KEV_LEXGEN_OPT_TRUE;
     } else if (strcmp(arg, "-i") == 0 || strcmp(arg, "--in") == 0) {
@@ -36,11 +38,11 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
       options->strs[KEV_LEXGEN_INPUT_PATH] = copy_string(argv[i]);
     } else if (strcmp(arg, "--out-inc") == 0) {
       if (++i >= argc)
-        error("missing output path: ", "-out-inc <path>");
+        error("missing output path: ", "--out-inc <path>");
       free(options->strs[KEV_LEXGEN_OUT_INC_PATH]);
       options->strs[KEV_LEXGEN_OUT_INC_PATH] = copy_string(argv[i]);
     } else {
-      kev_lexgen_set_value(arg, options);
+      kev_lexgen_set_kv_pair(arg, options);
     }
   }
   if (options->opts[KEV_LEXGEN_OPT_HELP]) return;
@@ -50,8 +52,6 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
   if (!out) {
     error("output path is not specified", NULL);
   }
-  kev_lexgen_set_out_path(out, options);
-  kev_lexgen_set_build_tool(options);
 }
 
 static void error(char* info, char* info2) {
@@ -70,23 +70,11 @@ static char* copy_string(char* str) {
   return ret;
 }
 
-static void kev_lexgen_set_value(char* arg, KevOptions* options) {
+static void kev_lexgen_set_kv_pair(char* arg, KevOptions* options) {
   if (arg[0] != '-')
     error("not an option: ", arg);
   char* value = NULL;
-  if ((value = kev_get_value(arg, "-s=")) || (value = kev_get_value(arg, "--stage="))) {
-    if (strcmp(value, "tab") == 0 || strcmp(value, "table") == 0) {
-      options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_TAB;
-    } else if (strcmp(value, "src") == 0 || strcmp(value, "source") == 0) {
-      options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_SRC;
-    } else if (strcmp(value, "arc") == 0 || strcmp(value, "archive") == 0) {
-      options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_ARC;
-    } else if (strcmp(value, "sha") == 0 || strcmp(value, "shared") == 0) {
-      options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_SHA;
-    } else {
-      error("unknown --stage value: ", value);
-    }
-  } else if ((value = kev_get_value(arg, "-l=")) || (value = kev_get_value(arg, "--lang=")) ||
+  if ((value = kev_get_value(arg, "-l=")) || (value = kev_get_value(arg, "--lang=")) ||
              (value = kev_get_value(arg, "--language="))) {
     free(options->strs[KEV_LEXGEN_LANG_NAME]);
     if (strcmp(value, "c") == 0) {
@@ -100,9 +88,6 @@ static void kev_lexgen_set_value(char* arg, KevOptions* options) {
     } else {
       error("unsupported language: ", value);
     }
-  } else if ((value = kev_get_value(arg, "--build-tool="))) {
-    free(options->strs[KEV_LEXGEN_BUILD_TOOL_NAME]);
-    options->strs[KEV_LEXGEN_BUILD_TOOL_NAME] = copy_string(value);
   } else {
     error("unknown option: ", arg);
   }
@@ -112,54 +97,8 @@ static void kev_lexgen_set_default(KevOptions* options) {
   for (size_t i = 0; i < KEV_LEXGEN_STR_NO; ++i)
     options->strs[i] = NULL;
   options->opts[KEV_LEXGEN_OPT_HELP] = KEV_LEXGEN_OPT_FALSE;
-  options->opts[KEV_LEXGEN_OPT_STAGE] = KEV_LEXGEN_OPT_STA_TAB;
+  options->opts[KEV_LEXGEN_OPT_TAB_ONLY] = KEV_LEXGEN_OPT_FALSE;
   options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("c");
-}
-
-static void kev_lexgen_set_out_path(char* out, KevOptions* options) {
-  if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_TAB) {
-    options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH] = out;
-  } else if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_SRC) {
-    options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH] = out;
-  } else if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_ARC ||
-             options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_SHA) {
-    free(options->strs[KEV_LEXGEN_OUT_INC_PATH]);
-    free(options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH]);
-    char* tmp_path = kev_get_lexgen_tmp_dir();
-    char* out_path = (char*)malloc(sizeof (char) * (strlen(tmp_path) + 17));
-    if (!out_path) error("out of memory", NULL);
-    strcpy(out_path, tmp_path);
-    strcat(out_path, "src");
-    kev_add_lang_postfix(out_path, options->strs[KEV_LEXGEN_LANG_NAME]);
-    options->strs[KEV_LEXGEN_OUT_SRC_TAB_PATH] = out_path;
-    if (strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "c") == 0 ||
-        strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "cpp") == 0) {
-      out_path = (char*)malloc(sizeof (char) * (strlen(tmp_path) + 17));
-      if (!out_path) error("out of memory", NULL);
-      strcpy(out_path, tmp_path);
-      strcat(out_path, "inc.h");
-      options->strs[KEV_LEXGEN_OUT_INC_PATH] = out_path;
-    }
-    if (options->opts[KEV_LEXGEN_OPT_STAGE] == KEV_LEXGEN_OPT_STA_ARC)
-      options->strs[KEV_LEXGEN_OUT_ARC_PATH] = out;
-    else
-      options->strs[KEV_LEXGEN_OUT_SHA_PATH] = out;
-  }
-}
-
-static void kev_lexgen_set_build_tool(KevOptions* options) {
-  if (options->strs[KEV_LEXGEN_BUILD_TOOL_NAME]) return;
-  if (options->opts[KEV_LEXGEN_OPT_STAGE] != KEV_LEXGEN_OPT_STA_SHA &&
-      options->opts[KEV_LEXGEN_OPT_STAGE] != KEV_LEXGEN_OPT_STA_ARC)
-    return;
-  if (strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "rust") == 0)
-    error("rust currently not supported", NULL);  /* TODO: support rust */
-  else if (strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "cpp") == 0)
-    options->strs[KEV_LEXGEN_BUILD_TOOL_NAME] = copy_string("g++");
-  else if (strcmp(options->strs[KEV_LEXGEN_LANG_NAME], "c") == 0)
-    options->strs[KEV_LEXGEN_BUILD_TOOL_NAME] = copy_string("gcc");
-  else
-    error("not supported language: ", options->strs[KEV_LEXGEN_LANG_NAME]);
 }
 
 void kev_lexgen_destroy_options(KevOptions* options) {
@@ -173,15 +112,4 @@ static char* kev_get_value(char* arg, char* prefix) {
     return arg + len;
   else
     return NULL;
-}
-
-static void kev_add_lang_postfix(char* str, char* language) {
-  if (strcmp(language, "rust") == 0)
-    strcat(str, ".rs");
-  else if (strcmp(language, "c") == 0)
-    strcat(str, ".c");
-  else if (strcmp(str, "cpp") == 0)
-    strcat(str, ".cpp");
-  else
-    error("internal error in kev_add_lang_postfix(), wrong language name: ", language);
 }

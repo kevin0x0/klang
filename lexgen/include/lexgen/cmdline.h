@@ -3,7 +3,9 @@
 
 #include "lexgen/include/lexgen/options.h"
 
+/* set options from command line parameters */
 void kev_lexgen_get_options(int argc, char** argv, KevOptions* options);
+/* free resources */
 void kev_lexgen_destroy_options(KevOptions* options);
 
 #endif

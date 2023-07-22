@@ -1,38 +1,38 @@
 #include "lexgen/include/lexgen/template.h"
 
-static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* tmpl_map);
-static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* tmpl_map);
-static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* tmpl_map);
+static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* env_var);
+static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* env_var);
+static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* env_var);
 static void kev_template_replace_no_output(FILE* tmpl);
 static void kev_template_convert_plain_no_output(FILE* tmpl);
 static void kev_template_condition_no_output(FILE* tmpl);
 
-static bool kev_template_expr_or(FILE* tmpl, KevStringMap* tmpl_map);
-static bool kev_template_expr_and(FILE* tmpl, KevStringMap* tmpl_map);
-static bool kev_template_expr_unit(FILE* tmpl, KevStringMap* tmpl_map);
+static bool kev_template_expr_or(FILE* tmpl, KevStringMap* env_var);
+static bool kev_template_expr_and(FILE* tmpl, KevStringMap* env_var);
+static bool kev_template_expr_unit(FILE* tmpl, KevStringMap* env_var);
 
 static int kev_template_read_id(FILE* tmpl, char* buf, size_t buf_size);
 static int kev_template_next_non_blank(FILE* tmpl);
 static void fatal_error(char* info, char* info2);
 
-void kev_template_convert(FILE* output, FILE* tmpl, KevStringMap* tmpl_map) {
-  kev_template_convert_plain(output, tmpl, tmpl_map);
+void kev_template_convert(FILE* output, FILE* tmpl, KevStringMap* env_var) {
+  kev_template_convert_plain(output, tmpl, env_var);
   if (fgetc(tmpl) != EOF)
     fatal_error("template: trainling text", NULL);
 }
 
-static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* tmpl_map) {
+static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* env_var) {
   int ch = 0;
   while ((ch = fgetc(tmpl)) != EOF) {
     if (ch == '$') {
       ch = fgetc(tmpl);
       switch (ch) {
         case 'r': {
-          kev_template_replace(output, tmpl, tmpl_map);
+          kev_template_replace(output, tmpl, env_var);
           break;
         }
         case 'c': {
-          kev_template_condition(output, tmpl, tmpl_map);
+          kev_template_condition(output, tmpl, env_var);
           break;
         }
         case '$': {
@@ -55,10 +55,10 @@ static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* t
   }
 }
 
-static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* tmpl_map) {
+static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* env_var) {
   char buffer[1024];
   int ch = kev_template_read_id(tmpl, buffer, 1024);
-  KevStringMapNode* node = kev_strmap_search(tmpl_map, buffer);
+  KevStringMapNode* node = kev_strmap_search(env_var, buffer);
   if (node) {
     fputs(node->value, output);
   }
@@ -78,7 +78,7 @@ static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* tmpl_ma
   if (node)
     kev_template_convert_plain_no_output(tmpl);
   else
-    kev_template_convert_plain(output, tmpl, tmpl_map);
+    kev_template_convert_plain(output, tmpl, env_var);
   if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
     fatal_error("template: missing $;", NULL);
 }
@@ -157,13 +157,13 @@ static int kev_template_read_id(FILE* tmpl, char* buf, size_t buf_size) {
   return ch;
 }
 
-static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* tmpl_map) {
-  bool val = kev_template_expr_or(tmpl, tmpl_map);
+static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* env_var) {
+  bool val = kev_template_expr_or(tmpl, env_var);
   int ch = kev_template_next_non_blank(tmpl);
   if (ch != '$' || fgetc(tmpl) != ':')
     fatal_error("template: expected $:", NULL);
   if (val) {
-    kev_template_convert_plain(output, tmpl, tmpl_map);
+    kev_template_convert_plain(output, tmpl, env_var);
   } else {
     kev_template_convert_plain_no_output(tmpl);
   }
@@ -174,7 +174,7 @@ static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* tmpl_
     if (val) {
       kev_template_convert_plain_no_output(tmpl);
     } else {
-      kev_template_convert_plain(output, tmpl, tmpl_map);
+      kev_template_convert_plain(output, tmpl, env_var);
     }
     if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
       fatal_error("template: expected $;", NULL);
@@ -203,34 +203,34 @@ static void kev_template_condition_no_output(FILE* tmpl) {
   }
 }
 
-static bool kev_template_expr_or(FILE* tmpl, KevStringMap* tmpl_map) {
+static bool kev_template_expr_or(FILE* tmpl, KevStringMap* env_var) {
   bool value = false;
   int ch = '|';
   while (ch == '|') {
-    value = kev_template_expr_and(tmpl, tmpl_map) || value;
+    value = kev_template_expr_and(tmpl, env_var) || value;
     ch = kev_template_next_non_blank(tmpl);
   }
   ungetc(ch, tmpl);
   return value;
 }
 
-static bool kev_template_expr_and(FILE* tmpl, KevStringMap* tmpl_map) {
+static bool kev_template_expr_and(FILE* tmpl, KevStringMap* env_var) {
   bool value = true;
   int ch = '&';
   while (ch == '&') {
-    value = kev_template_expr_unit(tmpl, tmpl_map) && value;
+    value = kev_template_expr_unit(tmpl, env_var) && value;
     ch = kev_template_next_non_blank(tmpl);
   }
   ungetc(ch, tmpl);
   return value;
 }
 
-static bool kev_template_expr_unit(FILE* tmpl, KevStringMap* tmpl_map) {
+static bool kev_template_expr_unit(FILE* tmpl, KevStringMap* env_var) {
   int ch = kev_template_next_non_blank(tmpl);
   if (ch == '!') {
-    return !kev_template_expr_unit(tmpl, tmpl_map);
+    return !kev_template_expr_unit(tmpl, env_var);
   } else if (ch == '(') {
-    bool value = kev_template_expr_or(tmpl, tmpl_map);
+    bool value = kev_template_expr_or(tmpl, env_var);
     if (fgetc(tmpl) != ')')
       fatal_error("template: missing \')\'", NULL);
     return value;
@@ -239,8 +239,8 @@ static bool kev_template_expr_unit(FILE* tmpl, KevStringMap* tmpl_map) {
     ungetc(ch, tmpl);
     ch = kev_template_read_id(tmpl, buffer, 1024);
     ungetc(ch, tmpl);
-    if (!tmpl_map) return false;
-    return kev_strmap_search(tmpl_map, buffer) != NULL;
+    if (!env_var) return false;
+    return kev_strmap_search(env_var, buffer) != NULL;
   }
 }
 

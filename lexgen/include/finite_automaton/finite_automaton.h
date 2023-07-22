@@ -10,6 +10,19 @@
 typedef KevGraphNodeId KevStateId;
 typedef KevGraphEdgeAttr KevNFAChar;
 
+/* This structure is used to represent NFA and DFA.
+ * 'transition is a linked list of states.
+ *
+ * For NFA, there is only one starting state and accepting state,
+ * which are pointed by 'start_state' and 'accept_states' separately.
+ * The starting state only has outgoing edges, and the accepting states
+ * only have incoming edges. starting state must be the fisrt node in
+ * the 'transition'.
+ *
+ * For DFA, there is only one starting state, and zero or more accepting
+ * states. Starting state can alse be an accepting state. All the
+ * accepting states should be placed in the tail of 'transition'.
+ */
 typedef struct tagKevFA {
   KevGraph transition;
   KevGraphNode* start_state;
@@ -17,10 +30,9 @@ typedef struct tagKevFA {
 } KevFA;
 
 bool kev_nfa_init(KevFA* fa, KevNFAChar character);
-/* this remain validity of NFAs */
 bool kev_fa_init_copy(KevFA* fa, KevFA* src);
-/* this remain validity of NFAs */
 bool kev_fa_init_move(KevFA* fa, KevFA* src);
+/* Do not check parameters. You should aware of what you are doing. */
 bool kev_fa_init_set(KevFA* fa, KevGraphNodeList* state_list, KevGraphNode* start, KevGraphNode* accept);
 void kev_fa_destroy(KevFA* fa);
 KevFA* kev_nfa_create(KevNFAChar symbol);
@@ -28,6 +40,7 @@ KevFA* kev_nfa_create(KevNFAChar symbol);
 KevFA* kev_fa_create_copy(KevFA* src);
 /* this remain validity of NFAs */
 KevFA* kev_fa_create_move(KevFA* src);
+/* Do not check parameters. You should aware of what you are doing. */
 KevFA* kev_fa_create_set(KevGraphNodeList* state_list, KevGraphNode* start, KevGraphNode* accept);
 void kev_fa_delete(KevFA* fa);
 
@@ -36,8 +49,12 @@ size_t kev_fa_state_assign_id(KevFA* fa, KevStateId start_id);
 /* Do concatenation between 'dest' and 'src'. 
  * The result is in 'dest', 'src' would be set to empty */
 bool kev_nfa_concatenation(KevFA* dest, KevFA* src);
+/* Do alternation between 'dest' and 'src'. 
+ * The result is in 'dest', 'src' would be set to empty */
 bool kev_nfa_alternation(KevFA* dest, KevFA* src);
+/* Do kleene closure between 'dest' and 'src'. */
 static inline bool kev_nfa_kleene(KevFA* nfa);
+/* Do positive closure between 'dest' and 'src'. */
 bool kev_nfa_positive(KevFA* nfa);
 /* Given an array of pointers to NFAs, use the subset construction algorithm
  * to convert the union of these NFAs into a DFA and return a pointer to the
