@@ -4,7 +4,6 @@
 /* Due to platform-specificity, this file defines some wrapper functions
  * related to directory operations. */
 
-char* kev_getcwd(void);
 char* kev_get_bin_dir(void);
 char* kev_get_kevcc_dir(void);
 char* kev_get_lexgen_resources_dir(void);

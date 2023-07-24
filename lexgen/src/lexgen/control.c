@@ -121,15 +121,15 @@ static void kev_lexgen_control_set_env_var_after(KevOptions* options, KevStringM
   } else {
     fatal_error("internal error: ", "can not find variable state-length");
   }
-  /* set charset-size */
-  node = kev_strmap_search(env_var, "charset");
+  /* set alphabet-size */
+  node = kev_strmap_search(env_var, "encoding");
   if (node) {
     if (strcmp("ascii", node->value) == 0) {
-      if (!kev_strmap_update(env_var, "charset-size", "128")) {
+      if (!kev_strmap_update(env_var, "alphabet-size", "128")) {
         fatal_error("out of memory", NULL);
       }
     } else if (strcmp("utf-8", node->value) == 0 || strcmp("UTF-8", node->value) == 0) {
-      if (!kev_strmap_update(env_var, "charset-size", "256")) {
+      if (!kev_strmap_update(env_var, "alphabet-size", "256")) {
         fatal_error("out of memory", NULL);
       }
     }
@@ -171,7 +171,7 @@ static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevString
   }
 
   /* preset charset */
-  if (!kev_strmap_update(env_var, "charset", "utf-8")) {
+  if (!kev_strmap_update(env_var, "encoding", "utf-8")) {
     fatal_error("out of memory", NULL);
   }
 

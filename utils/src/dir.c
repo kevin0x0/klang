@@ -7,11 +7,6 @@
 #include <unistd.h>
 #endif
 
-char* kev_getcwd(void) {
-  exit(EXIT_FAILURE);
-  return NULL;
-}
-
 char* kev_get_bin_dir(void) {
   char* buf = NULL;
   size_t size = 64;
