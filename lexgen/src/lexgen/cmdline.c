@@ -20,7 +20,6 @@ static char* copy_string(char* str);
 static char* kev_get_value(char* arg, char* prefix);
 
 void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
-  char* out = NULL; /* temperarily store the output path */
   kev_lexgen_set_default(options);
   for (size_t i = 1; i < argc; ++i) {
     char* arg = argv[i];
@@ -49,9 +48,6 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
   if (!options->strs[KEV_LEXGEN_INPUT_PATH]) {
     error("input file is not specified", NULL);
   }
-  if (!out) {
-    error("output path is not specified", NULL);
-  }
 }
 
 static void error(char* info, char* info2) {
@@ -77,17 +73,7 @@ static void kev_lexgen_set_kv_pair(char* arg, KevOptions* options) {
   if ((value = kev_get_value(arg, "-l=")) || (value = kev_get_value(arg, "--lang=")) ||
              (value = kev_get_value(arg, "--language="))) {
     free(options->strs[KEV_LEXGEN_LANG_NAME]);
-    if (strcmp(value, "c") == 0) {
-      options->strs[KEV_LEXGEN_LANG_NAME] = copy_string(value);
-    } else if (strcmp(value, "cpp") == 0 || strcmp(value, "cxx") == 0 ||
-               strcmp(value, "cc") == 0 || strcmp(value, "cx") == 0 ||
-               strcmp(value, "c++") == 0) {
-      options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("cpp");
-    } else if (strcmp(value, "rs") == 0 || strcmp(value, "rust") == 0) {
-      options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("rust");
-    } else {
-      error("unsupported language: ", value);
-    }
+    options->strs[KEV_LEXGEN_LANG_NAME] = copy_string(value);
   } else {
     error("unknown option: ", arg);
   }

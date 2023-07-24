@@ -6,8 +6,7 @@
 #include <stdio.h>
 
 /* this structure store the meory representation of transition table and
- * other infomation.
- */
+ * other infomation. */
 typedef struct tagPatternBinary {
   size_t pattern_no;
   size_t nfa_no;

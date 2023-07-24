@@ -41,13 +41,13 @@ typedef struct tagLex {
   int* patterns;
   size_t start_state;
   Callback** callbacks;
-} Lex;
+} tokenizer;
 
 
-bool lex_init(Lex* lex, char* filepath);
-void lex_destroy(Lex* lex);
-void lex_next(Lex* lex, Token* token);
-const char* lex_get_info(Lex* lex, int kind);
+bool lex_init(tokenizer* lex, char* filepath);
+void lex_destroy(tokenizer* lex);
+void lex_next(tokenizer* lex, Token* token);
+const char* lex_get_info(tokenizer* lex, int kind);
 
 static inline void lex_token_init(Token* token) {
   token->end = 0;

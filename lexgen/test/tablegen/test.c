@@ -32,7 +32,7 @@ void output_table(uint8_t (*table)[256], KevFA* dfa, size_t* acc_mapping);
 int main(int argc, char** argv) {
   KevFA* def = kev_regex_parse_ascii("def", NULL);
   KevFA* import = kev_regex_parse_ascii("import", NULL);
-  KevFA* id = kev_regex_parse_ascii("[A-Za-z_\\-][A-Za-z0-9_\\-]*", NULL);
+  KevFA* id = kev_regex_parse_ascii("[A-Za-z_\\-][A-Za-z0-9_\\-]* | \'[^\']+\'", NULL);
   KevFA* regex = kev_regex_parse_ascii("$\\ *[^\\n\\xFF]*", NULL);
   KevFA* assign = kev_regex_parse_ascii("=", NULL);
   KevFA* colon = kev_regex_parse_ascii(":", NULL);

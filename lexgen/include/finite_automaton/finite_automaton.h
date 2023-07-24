@@ -21,8 +21,7 @@ typedef KevGraphEdgeAttr KevNFAChar;
  *
  * For DFA, there is only one starting state, and zero or more accepting
  * states. Starting state can alse be an accepting state. All the
- * accepting states should be placed in the tail of 'transition'.
- */
+ * accepting states should be placed in the tail of 'transition'. */
 typedef struct tagKevFA {
   KevGraph transition;
   KevGraphNode* start_state;
@@ -35,7 +34,7 @@ bool kev_fa_init_move(KevFA* fa, KevFA* src);
 /* Do not check parameters. You should aware of what you are doing. */
 bool kev_fa_init_set(KevFA* fa, KevGraphNodeList* state_list, KevGraphNode* start, KevGraphNode* accept);
 void kev_fa_destroy(KevFA* fa);
-KevFA* kev_nfa_create(KevNFAChar symbol);
+KevFA* kev_nfa_create(KevNFAChar character);
 /* this remain validity of NFAs */
 KevFA* kev_fa_create_copy(KevFA* src);
 /* this remain validity of NFAs */

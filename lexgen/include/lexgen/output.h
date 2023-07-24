@@ -8,8 +8,7 @@
 
 /* This structure is used to package a series of functions that are used to
  * convert the memory representation of transition tables and other information
- * into a text representation.
- */
+ * into a text representation. */
 typedef struct tagKevOutputFunc {
   void (*output_table)(FILE*, KevPatternBinary*);
   void (*output_pattern_mapping)(FILE*, KevPatternBinary*);

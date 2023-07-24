@@ -13,15 +13,13 @@
 
 static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state);
 /* Set environment variable after parsing the lexical description file.
- * It set some variables according to some other variables set in the file.
- */
+ * It set some variables according to some other variables set in the file. */
 static void kev_lexgen_control_set_env_var_after(KevOptions* options, KevStringMap* env_var);
 /* Set environment variable before parsing the lexical description file. */
 static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevStringMap* env_var);
 /* Set variables whose value is the transition table or token infos after
  * generating DFA and converting it to table. These variables used in the
- * template file.
- */
+ * template file. */
 static void kev_lexgen_control_set_env_var_for_output(KevPatternBinary* binary_info, KevOutputFunc* func_group, KevStringMap* env_var);
 static void fatal_error(char* info, char* info2);
 
@@ -153,8 +151,7 @@ static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevString
   }
 
   /* set import path, this is the base directory used by
-   * import statement in lexical description file.
-   */
+   * import statement in lexical description file. */
   char* resources_dir = kev_get_lexgen_resources_dir();
   if (!resources_dir)
     fatal_error("out of memory", NULL);
@@ -167,8 +164,7 @@ static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevString
   if (options->opts[KEV_LEXGEN_OPT_TAB_ONLY] == KEV_LEXGEN_OPT_TRUE) {
     /* "The values of these two variables are not important,
      * it is only necessary to ensure that these two variables
-     * have been defined.
-     */
+     * have been defined. */
     if (!kev_strmap_update(env_var , "no-source", "enable") ||
         !kev_strmap_update(env_var , "no-header", "enable"))
       fatal_error("out of memory", NULL);

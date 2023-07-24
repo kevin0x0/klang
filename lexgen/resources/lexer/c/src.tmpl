@@ -65,7 +65,7 @@ void $r function-prefix $:lex$;_next($r lexer-name $:Lex$;* lex, Token* token) {
   token->end = curpos - lex->buffer;
   token->kind = lex->patterns[state];
   if (lex->callbacks[state])
-    lex->callbacks[state](token, lex->buffer);
+    lex->callbacks[state](token, lex->buffer + token->begin);
 }
 
 const char* $r function-prefix $:lex$;_get_info($r lexer-name $:Lex$;* lex, int kind) {
