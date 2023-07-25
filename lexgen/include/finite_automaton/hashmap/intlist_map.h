@@ -2,7 +2,7 @@
 #define KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_HASHMAP_INTLIST_MAP_H
 
 #include "lexgen/include/finite_automaton/list/node_list.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 typedef struct tagKevIntListMapNode {
   size_t key;

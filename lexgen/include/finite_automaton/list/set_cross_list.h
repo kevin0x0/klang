@@ -3,7 +3,7 @@
 /* used in kev_dfa_minimization(hopcroft algorithm) */
 
 #include "lexgen/include/finite_automaton/set/partition.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 typedef struct tagKevSetCrossListNode {
   KevPartitionSet* set;

@@ -2,7 +2,7 @@
 #define KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_ARRAY_INT_ARRAY_H
 
 #include "lexgen/include/finite_automaton/graph.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 typedef struct tagKevNodeArray {
   KevGraphNode** begin;

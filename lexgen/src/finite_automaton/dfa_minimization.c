@@ -4,7 +4,7 @@
 #include "lexgen/include/finite_automaton/set/partition.h"
 #include "lexgen/include/finite_automaton/list/set_cross_list.h"
 #include "lexgen/include/finite_automaton/hashmap/intlist_map.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 #include <stdlib.h>
 #include <string.h>

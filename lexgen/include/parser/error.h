@@ -2,7 +2,7 @@
 #define KEVCC_LEXGEN_INCLUDE_PARSER_ERROR_H
 
 #include "lexgen/include/parser/lexer.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 #include <stdio.h>
 

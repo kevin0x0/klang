@@ -3,8 +3,6 @@ SRC_PATH = $(LEXGEN_PATH)src/
 BIN_PATH = $(LEXGEN_PATH)bin/
 LIB_PATH = $(LEXGEN_PATH)lib/
 
-GEN_INC_PATH = $(INC_PATH)general/
-
 #finite_automaton path
 FA_INC_PATH = $(INC_PATH)finite_automaton/
 FA_PATH = $(SRC_PATH)finite_automaton/
@@ -15,6 +13,7 @@ PS_PATH = $(SRC_PATH)parser/
 FA_DEPS = $(FA_INC_PATH)finite_automaton.h $(FA_INC_PATH)graph.h
 
 UTILS_INC = $(UTILS_PATH)include/
+GEN_INC_PATH = $(UTILS_INC)general/
 
 $(BIN_PATH)libparser.a : $(BIN_PATH)regex.o $(BIN_PATH)parser.o $(BIN_PATH)lexer.o $(BIN_PATH)par_error.o $(BIN_PATH)lexgenlexer_table.o $(BIN_PATH)strfa_map.o $(BIN_PATH)pattern_list.o
 	$(AR) $@ $^

@@ -4,7 +4,7 @@
 
 #include "lexgen/include/finite_automaton/graph.h"
 #include "lexgen/include/finite_automaton/list/node_list.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 typedef KevGraphNode* KevPartitionElementType;
 typedef KevPartitionElementType* KevPartitionUniverse;

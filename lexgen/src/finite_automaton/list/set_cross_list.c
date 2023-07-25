@@ -1,6 +1,6 @@
 #include "lexgen/include/finite_automaton/list/set_cross_list.h"
 #include "lexgen/include/finite_automaton/object_pool/set_cross_list_node_pool.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 void kev_setcrosslist_destroy(KevSetCrossList* crosslist) {
   if (!crosslist) return;

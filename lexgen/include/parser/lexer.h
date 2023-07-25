@@ -1,7 +1,7 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_PARSER_LEXER_H
 #define KEVCC_LEXGEN_INCLUDE_PARSER_LEXER_H
 
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 #include <stdio.h>
 

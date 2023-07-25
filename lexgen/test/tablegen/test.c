@@ -73,7 +73,7 @@ void output_table(uint8_t (*table)[256], KevFA* dfa, size_t* acc_mapping) {
   size_t non_acc_number = kev_dfa_non_accept_state_number(dfa);
   
   FILE* cfile = fopen("lexgenlexer_table.c", "w");
-  fprintf(cfile, "#include \"lexgen/include/general/global_def.h\"\n");
+  fprintf(cfile, "#include \"utils/include/general/global_def.h\"\n");
   /* transition table */
   fprintf(cfile, "static uint8_t table[%d][256] = {\n", (int)state_number);
   for (size_t i = 0; i < state_number; ++i) {

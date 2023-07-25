@@ -1,4 +1,4 @@
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 static uint8_t table[27][256] = {
   { /* 0 */
        1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,

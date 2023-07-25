@@ -3,8 +3,6 @@ SRC_PATH = $(LEXGEN_PATH)src/
 BIN_PATH = $(LEXGEN_PATH)bin/
 LIB_PATH = $(LEXGEN_PATH)lib/
 
-GEN_INC_PATH = $(INC_PATH)general/
-
 #finite_automaton path
 FA_INC_PATH = $(INC_PATH)finite_automaton/
 FA_PATH = $(SRC_PATH)finite_automaton/
@@ -20,7 +18,7 @@ LIST_INC_PATH = $(FA_INC_PATH)list/
 LIST_PATH = $(FA_PATH)list/
 
 UTILS_INC = $(UTILS_PATH)include/
-
+GEN_INC_PATH = $(UTILS_INC)general/
 
 
 $(BIN_PATH)libfa.a : $(BIN_PATH)graph.o $(BIN_PATH)fa.o $(BIN_PATH)nfa_to_dfa.o $(BIN_PATH)graph_pool.o $(BIN_PATH)node_pool.o $(BIN_PATH)edge_pool.o $(BIN_PATH)fa_pool.o $(BIN_PATH)node_array.o $(BIN_PATH)set_cross_list.o $(BIN_PATH)set_cross_list_node_pool.o $(BIN_PATH)dfa_minimization.o $(BIN_PATH)partition.o $(BIN_PATH)intlist_map.o $(BIN_PATH)intlistmap_node_pool.o $(BIN_PATH)nodelist_node_pool.o $(BIN_PATH)partition_set_pool.o $(BIN_PATH)node_list.o

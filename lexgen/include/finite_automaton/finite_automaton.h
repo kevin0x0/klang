@@ -2,7 +2,7 @@
 #define KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_FINITE_AUTOMATON_H
 
 #include "lexgen/include/finite_automaton/graph.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 #define KEV_NFA_SYMBOL_EPSILON        (-1)
 #define KEV_NFA_SYMBOL_EMPTY          (-2)
