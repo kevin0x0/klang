@@ -1,11 +1,11 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-#include "lexgen/include/parser/hashmap/str_map.h"
 #endif
 
 #include "lexgen/include/lexgen/control.h"
 #include "lexgen/include/lexgen/convert.h"
 #include "lexgen/include/lexgen/output.h"
+#include "lexgen/include/lexgen/error.h"
 #include "utils/include/dir.h"
 
 #include <stdlib.h>
@@ -21,7 +21,6 @@ static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevString
  * generating DFA and converting it to table. These variables used in the
  * template file. */
 static void kev_lexgen_control_set_env_var_for_output(KevPatternBinary* binary_info, KevOutputFunc* func_group, KevStringMap* env_var);
-static void fatal_error(char* info, char* info2);
 
 void kev_lexgen_control(KevOptions* options) {
   /* show help if specified */
@@ -32,7 +31,7 @@ void kev_lexgen_control(KevOptions* options) {
 
   KevParserState parser_state;
   if (!kev_lexgenparser_init(&parser_state)) {
-    fatal_error("failed to initialize parser", NULL);
+    kev_throw_error("control:", "failed to initialize parser", NULL);
   }
   kev_lexgen_control_set_env_var_before(options, &parser_state.env_var);
 
@@ -40,7 +39,7 @@ void kev_lexgen_control(KevOptions* options) {
   FILE* input = fopen(options->strs[KEV_LEXGEN_INPUT_PATH], "r");
   if (!input) {
     kev_lexgenparser_destroy(&parser_state);
-    fatal_error("can not open file: ", options->strs[KEV_LEXGEN_INPUT_PATH]);
+    kev_throw_error("control:", "can not open file: ", options->strs[KEV_LEXGEN_INPUT_PATH]);
   }
   int error_number = kev_lexgen_control_parse(input, &parser_state);
   fclose(input);
@@ -57,7 +56,7 @@ void kev_lexgen_control(KevOptions* options) {
   /* output transition table */
   FILE* output = fopen(options->strs[KEV_LEXGEN_OUT_SRC_PATH], "w");
   if (!output) {
-    fatal_error("can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
+    kev_throw_error("control:", "can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
   }
   KevOutputFunc func_group;
   kev_lexgen_output_set_func(&func_group, options->strs[KEV_LEXGEN_LANG_NAME]);
@@ -73,29 +72,19 @@ void kev_lexgen_control(KevOptions* options) {
   kev_lexgen_convert_destroy(&binary_info);
 }
 
-static void fatal_error(char* info, char* info2) {
-  fputs("fatal: ", stderr);
-  if (info)
-    fputs(info, stderr);
-  if (info2)
-    fputs(info2, stderr);
-  fputs("\nterminated\n", stderr);
-  exit(EXIT_FAILURE);
-}
-
 static void kev_lexgen_control_set_env_var_for_output(KevPatternBinary* binary_info,
                                               KevOutputFunc* func_group, KevStringMap* env_var) {
   if (!kev_strmap_update_move(env_var, "callback-array",
       func_group->output_callback(binary_info))) {
-    fatal_error("out of memory", NULL);
+    kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_strmap_update_move(env_var, "info-array",
       func_group->output_info(binary_info))) {
-    fatal_error("out of memory", NULL);
+    kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_strmap_update_move(env_var, "macro-definition",
       func_group->output_macro(binary_info))) {
-    fatal_error("out of memory", NULL);
+    kev_throw_error("control:", "out of memory", NULL);
   }
 }
 
@@ -103,7 +92,7 @@ static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state) {
   KevLexGenLexer lex;
   KevLexGenToken token;
   if (!kev_lexgenlexer_init(&lex, input))
-    fatal_error("kev_lexgenlexer_init() failed", NULL);
+    kev_throw_error("control:", "kev_lexgenlexer_init() failed", NULL);
   while (!kev_lexgenlexer_next(&lex, &token))
     continue;
   int error_number = kev_lexgenparser_lex_src(&lex, &token, parser_state);
@@ -117,24 +106,24 @@ static void kev_lexgen_control_set_env_var_after(KevOptions* options, KevStringM
   if (node) {
     int len = atoi(node->value);
     if (len != 16 && len != 8)
-      fatal_error("state-length can not be: ", node->value);
+      kev_throw_error("control:", "state-length can not be: ", node->value);
   } else {
-    fatal_error("internal error: ", "can not find variable state-length");
+    kev_throw_error("control:", "internal error: ", "can not find variable state-length");
   }
   /* set alphabet-size */
   node = kev_strmap_search(env_var, "encoding");
   if (node) {
     if (strcmp("ascii", node->value) == 0) {
       if (!kev_strmap_update(env_var, "alphabet-size", "128")) {
-        fatal_error("out of memory", NULL);
+        kev_throw_error("control:", "out of memory", NULL);
       }
     } else if (strcmp("utf-8", node->value) == 0 || strcmp("UTF-8", node->value) == 0) {
       if (!kev_strmap_update(env_var, "alphabet-size", "256")) {
-        fatal_error("out of memory", NULL);
+        kev_throw_error("control:", "out of memory", NULL);
       }
     }
   } else {
-    fatal_error("internal error: ", "can not find variable state-length");
+    kev_throw_error("control:", "internal error: ", "can not find variable state-length");
   }
 }
 
@@ -144,9 +133,9 @@ static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevString
     char* relpath = kev_get_relpath(options->strs[KEV_LEXGEN_OUT_SRC_PATH],
                                     options->strs[KEV_LEXGEN_OUT_INC_PATH]);
     if (!relpath)
-      fatal_error("out of memory", NULL);
+      kev_throw_error("control:", "out of memory", NULL);
     if (!kev_strmap_update(env_var , "include-path", relpath))
-      fatal_error("out of memory", NULL);
+      kev_throw_error("control:", "out of memory", NULL);
     free(relpath);
   }
 
@@ -154,9 +143,9 @@ static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevString
    * import statement in lexical description file. */
   char* resources_dir = kev_get_lexgen_resources_dir();
   if (!resources_dir)
-    fatal_error("out of memory", NULL);
+    kev_throw_error("control:", "out of memory", NULL);
   if (!kev_strmap_update(env_var, "import-path", resources_dir)) {
-    fatal_error("failed to initialize environment variable \"import-path\"", NULL);
+    kev_throw_error("control:", "failed to initialize environment variable \"import-path\"", NULL);
   }
   free(resources_dir);
 
@@ -167,16 +156,16 @@ static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevString
      * have been defined. */
     if (!kev_strmap_update(env_var , "no-source", "enable") ||
         !kev_strmap_update(env_var , "no-header", "enable"))
-      fatal_error("out of memory", NULL);
+      kev_throw_error("control:", "out of memory", NULL);
   }
 
   /* preset charset */
   if (!kev_strmap_update(env_var, "encoding", "utf-8")) {
-    fatal_error("out of memory", NULL);
+    kev_throw_error("control:", "out of memory", NULL);
   }
 
   /* preset state-length */
   if (!kev_strmap_update(env_var, "state-length", "8")) {
-    fatal_error("out of memory", NULL);
+    kev_throw_error("control:", "out of memory", NULL);
   }
 }

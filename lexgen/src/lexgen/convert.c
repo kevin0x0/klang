@@ -1,4 +1,5 @@
 #include "lexgen/include/lexgen/convert.h"
+#include "lexgen/include/lexgen/error.h"
 #include <stdlib.h>
 
 static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, KevParserState* parser_state,
@@ -15,8 +16,6 @@ static uint8_t (*kev_lexgen_convert_table_256_u8(KevFA* dfa))[256];
 static uint8_t (*kev_lexgen_convert_table_128_u8(KevFA* dfa))[128];
 static uint16_t (*kev_lexgen_convert_table_256_u16(KevFA* dfa))[256];
 static uint16_t (*kev_lexgen_convert_table_128_u16(KevFA* dfa))[128];
-
-static void fatal_error(char* info, char* info2);
 
 void kev_lexgen_convert(KevPatternBinary* binary_info, KevParserState* parser_state) {
   KevFA* dfa;
@@ -63,7 +62,7 @@ static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
   size_t i = 0;
   KevPattern* pattern = list->head->next;
   char** func_names = (char**)malloc(sizeof (char*) * nfa_no);
-  if (!func_names) fatal_error("out of meory", NULL);
+  if (!func_names) kev_throw_error("convert:", "out of meory", NULL);
   while (pattern) {
     KevFAInfo* nfa_info = pattern->fa_info;
     while (nfa_info) {
@@ -73,7 +72,7 @@ static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
     pattern = pattern->next;
   }
   char** callbacks = (char**)malloc(sizeof (char*) * state_no);
-  if (!callbacks) fatal_error("out of meory", NULL);
+  if (!callbacks) kev_throw_error("convert:", "out of meory", NULL);
   for (size_t i = 0; i < non_acc_no; ++i) {
     callbacks[i] = error_handler;
   }
@@ -95,12 +94,12 @@ static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, Ke
   KevStringMapNode* node = kev_strmap_search(env_var, "error-id");
   if (node) {
     if ((error_id = atoi(node->value)) == 0) {
-      fatal_error("invalid integer value for error-id", NULL);
+      kev_throw_error("convert:", "invalid integer value for error-id", NULL);
     }
   }
   /* convert pattern_mapping */
   size_t* nfa_to_pattern = (size_t*)malloc(sizeof (size_t) * nfa_no);
-  if (!nfa_to_pattern) fatal_error("out of memory", NULL);
+  if (!nfa_to_pattern) kev_throw_error("convert:", "out of memory", NULL);
   KevPattern* pattern = list->head->next;
   size_t i = 0;
   size_t pattern_id = 0;
@@ -126,7 +125,7 @@ static void kev_lexgen_convert_macro_array(KevPatternBinary* binary_info, KevPar
   KevPattern* pattern = parser_state->list.head->next;
   char** macros = (char**)malloc(sizeof (char*) * binary_info->pattern_no);
   if ( !macros)
-    fatal_error("out of memory", NULL);
+    kev_throw_error("convert:", "out of memory", NULL);
 
   size_t i = 0;
   while (pattern) {
@@ -151,7 +150,7 @@ static void kev_lexgen_convert_generate(KevPatternBinary* patterns_info, KevPars
   }
 
   KevFA** nfa_array = (KevFA**)malloc(sizeof (KevFA*) * (nfa_no + 1));
-  if (!nfa_array) fatal_error("out of memory", NULL);
+  if (!nfa_array) kev_throw_error("convert:", "out of memory", NULL);
   pattern = list->head->next;
   size_t i = 0;
   size_t pattern_no = 0;
@@ -169,11 +168,11 @@ static void kev_lexgen_convert_generate(KevPatternBinary* patterns_info, KevPars
   KevFA* dfa = kev_nfa_to_dfa(nfa_array, p_acc_mapping);
   free(nfa_array);
   if (!dfa)
-    fatal_error("failed to convert dfa", NULL);
+    kev_throw_error("convert:", "failed to convert dfa", NULL);
   *p_min_dfa = kev_dfa_minimization(dfa, *p_acc_mapping);
   kev_fa_delete(dfa);
   if (!*p_min_dfa)
-    fatal_error("failed to minimize dfa", NULL);
+    kev_throw_error("convert:", "failed to minimize dfa", NULL);
   patterns_info->nfa_no = nfa_no;
   patterns_info->dfa_state_no = kev_fa_state_assign_id(*p_min_dfa, 0);
   patterns_info->dfa_non_acc_no = kev_dfa_non_accept_state_number(*p_min_dfa);
@@ -193,10 +192,10 @@ static void kev_lexgen_convert_table(KevPatternBinary* binary_info, KevParserSta
   } else if (alphabet_size == 256 && length == 16) {
     binary_info->table = kev_lexgen_convert_table_256_u16(dfa);
   } else {
-    fatal_error("internal error occurred in kev_lexgen_output_table()", NULL);
+    kev_throw_error("convert:", "internal error occurred in kev_lexgen_output_table()", NULL);
   }
   if (!binary_info->table) {
-    fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8", NULL);
+    kev_throw_error("convert:", "failed to generate transition table, try --width=16 and --charset=utf-8", NULL);
   }
   binary_info->charset_size = alphabet_size;
   binary_info->state_length = length;
@@ -205,7 +204,7 @@ static void kev_lexgen_convert_table(KevPatternBinary* binary_info, KevParserSta
 static void kev_lexgen_convert_infos(KevPatternBinary* binary_info, KevParserState* parser_state) {
   char** infos = (char**)malloc(sizeof (char*) * binary_info->pattern_no);
   if (!infos)
-    fatal_error("out of memory", NULL);
+    kev_throw_error("convert:", "out of memory", NULL);
   KevPattern* pattern = parser_state->list.head->next;
   size_t i = 0;
   while (pattern) {
@@ -309,14 +308,4 @@ uint16_t (*kev_lexgen_convert_table_128_u16(KevFA* dfa))[128] {
     node = node->next;
   }
   return table;
-}
-
-static void fatal_error(char* info, char* info2) {
-  fputs("fatal: ", stderr);
-  if (info)
-    fputs(info, stderr);
-  if (info2)
-    fputs(info2, stderr);
-  fputs("\nterminated\n", stderr);
-  exit(EXIT_FAILURE);
 }

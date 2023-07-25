@@ -3,6 +3,7 @@
 #endif
 
 #include "lexgen/include/lexgen/cmdline.h"
+#include "lexgen/include/lexgen/error.h"
 #include "utils/include/dir.h"
 
 #include <stdio.h>
@@ -13,7 +14,6 @@
 static void kev_lexgen_set_kv_pair(char* arg, KevOptions* options);
 /* set default value for options */
 static void kev_lexgen_set_default(KevOptions* options);
-static void error(char* info, char* info2);
 /* get a copy of 'str' */
 static char* copy_string(char* str);
 /* get value in a key-value pair */
@@ -25,19 +25,19 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
     char* arg = argv[i];
     if (strcmp(arg, "-o") == 0 || strcmp(arg, "--out") == 0) {
       if (++i >= argc)
-        error("missing output path: ", "-o <path>");
+        kev_throw_error("command line parser:", "missing output path: ", "-o <path>");
       free(options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
       options->strs[KEV_LEXGEN_OUT_SRC_PATH] = copy_string(argv[i]);
     } else if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
       options->opts[KEV_LEXGEN_OPT_HELP] = KEV_LEXGEN_OPT_TRUE;
     } else if (strcmp(arg, "-i") == 0 || strcmp(arg, "--in") == 0) {
       if (++i >= argc)
-        error("missing input path: ", "-i <path>");
+        kev_throw_error("command line parser:", "missing input path: ", "-i <path>");
       free(options->strs[KEV_LEXGEN_INPUT_PATH]);
       options->strs[KEV_LEXGEN_INPUT_PATH] = copy_string(argv[i]);
     } else if (strcmp(arg, "--out-inc") == 0) {
       if (++i >= argc)
-        error("missing output path: ", "--out-inc <path>");
+        kev_throw_error("command line parser:", "missing output path: ", "--out-inc <path>");
       free(options->strs[KEV_LEXGEN_OUT_INC_PATH]);
       options->strs[KEV_LEXGEN_OUT_INC_PATH] = copy_string(argv[i]);
     } else {
@@ -46,36 +46,27 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
   }
   if (options->opts[KEV_LEXGEN_OPT_HELP]) return;
   if (!options->strs[KEV_LEXGEN_INPUT_PATH]) {
-    error("input file is not specified", NULL);
+    kev_throw_error("command line parser:", "input file is not specified", NULL);
   }
-}
-
-static void error(char* info, char* info2) {
-  if (info)
-    fprintf(stderr, "%s", info);
-  if (info2)
-    fprintf(stderr, "%s", info2);
-  fputc('\n', stderr);
-  exit(EXIT_FAILURE);
 }
 
 static char* copy_string(char* str) {
   char* ret = (char*)malloc(sizeof (char) * (strlen(str) + 1));
-  if (!ret) error("out of memory", NULL);
+  if (!ret) kev_throw_error("command line parser:", "out of memory", NULL);
   strcpy(ret, str);
   return ret;
 }
 
 static void kev_lexgen_set_kv_pair(char* arg, KevOptions* options) {
   if (arg[0] != '-')
-    error("not an option: ", arg);
+    kev_throw_error("command line parser:", "not an option: ", arg);
   char* value = NULL;
   if ((value = kev_get_value(arg, "-l=")) || (value = kev_get_value(arg, "--lang=")) ||
              (value = kev_get_value(arg, "--language="))) {
     free(options->strs[KEV_LEXGEN_LANG_NAME]);
     options->strs[KEV_LEXGEN_LANG_NAME] = copy_string(value);
   } else {
-    error("unknown option: ", arg);
+    kev_throw_error("command line parser", "unknown option: ", arg);
   }
 }
 

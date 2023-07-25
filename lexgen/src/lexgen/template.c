@@ -1,4 +1,5 @@
 #include "lexgen/include/lexgen/template.h"
+#include "lexgen/include/lexgen/error.h"
 
 static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* env_var);
 static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* env_var);
@@ -13,12 +14,11 @@ static bool kev_template_expr_unit(FILE* tmpl, KevStringMap* env_var);
 
 static int kev_template_read_id(FILE* tmpl, char* buf, size_t buf_size);
 static int kev_template_next_non_blank(FILE* tmpl);
-static void fatal_error(char* info, char* info2);
 
 void kev_template_convert(FILE* output, FILE* tmpl, KevStringMap* env_var) {
   kev_template_convert_plain(output, tmpl, env_var);
   if (fgetc(tmpl) != EOF)
-    fatal_error("template: trainling text", NULL);
+    kev_throw_error("template:", "template: trainling text", NULL);
 }
 
 static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* env_var) {
@@ -67,20 +67,20 @@ static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* env_var
   if (ch != '$') {
     buffer[0] = ch;
     buffer[1] = '\0';
-    fatal_error("template: unexpected ", buffer);
+    kev_throw_error("template:", "template: unexpected ", buffer);
   }
   if ((ch = fgetc(tmpl)) != ':') {
     buffer[0] = '$';
     buffer[1] = ch;
     buffer[2] = '\0';
-    fatal_error("template: unexpected ", buffer);
+    kev_throw_error("template:", "template: unexpected ", buffer);
   }
   if (node)
     kev_template_convert_plain_no_output(tmpl);
   else
     kev_template_convert_plain(output, tmpl, env_var);
   if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
-    fatal_error("template: missing $;", NULL);
+    kev_throw_error("template:", "template: missing $;", NULL);
 }
 
 static void kev_template_replace_no_output(FILE* tmpl) {
@@ -91,17 +91,17 @@ static void kev_template_replace_no_output(FILE* tmpl) {
   if (ch != '$') {
     buffer[0] = ch;
     buffer[1] = '\0';
-    fatal_error("template: unexpected ", buffer);
+    kev_throw_error("template:", "template: unexpected ", buffer);
   }
   if ((ch = fgetc(tmpl)) != ':') {
     buffer[0] = '$';
     buffer[1] = ch;
     buffer[2] = '\0';
-    fatal_error("template: unexpected ", buffer);
+    kev_throw_error("template:", "template: unexpected ", buffer);
   }
   kev_template_convert_plain_no_output(tmpl);
   if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
-    fatal_error("template: missing $;", NULL);
+    kev_throw_error("template:", "template: missing $;", NULL);
 }
 
 static void kev_template_convert_plain_no_output(FILE* tmpl) {
@@ -134,24 +134,18 @@ static void kev_template_convert_plain_no_output(FILE* tmpl) {
   }
 }
 
-static void fatal_error(char* info, char* info2) {
-  if (info) fputs(info, stderr);
-  if (info2) fputs(info2, stderr);
-  fputs("\nterminated\n", stderr);
-}
-
 static int kev_template_read_id(FILE* tmpl, char* buf, size_t buf_size) {
   int ch = kev_template_next_non_blank(tmpl);
   size_t i = 0;
   if (!(((ch | 0x20) <= 'z' && (ch | 0x20) >= 'a') || ch == '_'))
-    fatal_error("template: illegal identifier", NULL);
+    kev_throw_error("template:", "template: illegal identifier", NULL);
   do {
     buf[i++] = ch;
   } while (((((ch = fgetc(tmpl)) | 0x20) <= 'z' && (ch | 0x20) >= 'a') ||
            (ch <= '9' && ch >= '0') || ch == '_' || ch == '-') && i < buf_size);
   if (i == buf_size) {
     buf[buf_size - 1] = '\0';
-    fatal_error("template: identifier too long: ", buf);
+    kev_throw_error("template:", "template: identifier too long: ", buf);
   }
   buf[i] = '\0';
   return ch;
@@ -161,7 +155,7 @@ static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* env_v
   bool val = kev_template_expr_or(tmpl, env_var);
   int ch = kev_template_next_non_blank(tmpl);
   if (ch != '$' || fgetc(tmpl) != ':')
-    fatal_error("template: expected $:", NULL);
+    kev_throw_error("template:", "template: expected $:", NULL);
   if (val) {
     kev_template_convert_plain(output, tmpl, env_var);
   } else {
@@ -169,7 +163,7 @@ static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* env_v
   }
   ch = kev_template_next_non_blank(tmpl);
   if (ch != '$')
-    fatal_error("template: expected $; or expected $|", NULL);
+    kev_throw_error("template:", "template: expected $; or expected $|", NULL);
   if ((ch = fgetc(tmpl)) == '|') {
     if (val) {
       kev_template_convert_plain_no_output(tmpl);
@@ -177,10 +171,10 @@ static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* env_v
       kev_template_convert_plain(output, tmpl, env_var);
     }
     if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
-      fatal_error("template: expected $;", NULL);
+      kev_throw_error("template:", "template: expected $;", NULL);
   }
   else if (ch != ';') {
-    fatal_error("template: expected $;", NULL);
+    kev_throw_error("template:", "template: expected $;", NULL);
   }
 }
 
@@ -188,18 +182,18 @@ static void kev_template_condition_no_output(FILE* tmpl) {
   kev_template_expr_or(tmpl, NULL);
   int ch = kev_template_next_non_blank(tmpl);
   if (ch != '$' || fgetc(tmpl) != ':')
-    fatal_error("template: expected $:", NULL);
+    kev_throw_error("template:", "template: expected $:", NULL);
   kev_template_convert_plain_no_output(tmpl);
   ch = kev_template_next_non_blank(tmpl);
   if (ch != '$')
-    fatal_error("template: expected $; or expected $|", NULL);
+    kev_throw_error("template:", "template: expected $; or expected $|", NULL);
   if ((ch = fgetc(tmpl)) == '|') {
       kev_template_convert_plain_no_output(tmpl);
     if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
-      fatal_error("template: expected $;", NULL);
+      kev_throw_error("template:", "template: expected $;", NULL);
   }
   else if (ch != ';') {
-    fatal_error("template: expected $;", NULL);
+    kev_throw_error("template:", "template: expected $;", NULL);
   }
 }
 
@@ -232,7 +226,7 @@ static bool kev_template_expr_unit(FILE* tmpl, KevStringMap* env_var) {
   } else if (ch == '(') {
     bool value = kev_template_expr_or(tmpl, env_var);
     if (fgetc(tmpl) != ')')
-      fatal_error("template: missing \')\'", NULL);
+      kev_throw_error("template:", "template: missing \')\'", NULL);
     return value;
   } else {
     char buffer[1024];
