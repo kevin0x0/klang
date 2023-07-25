@@ -1,4 +1,4 @@
-#include "lexgen/include/finite_automaton/object_pool/intsetmap_node_pool.h"
+#include "utils/include/object_pool/intsetmap_node_pool.h"
 
 #include <stdlib.h>
 

@@ -1,7 +1,7 @@
-#ifndef KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_HASHMAP_ADDRESS_MAP_H
-#define KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_HASHMAP_ADDRESS_MAP_H
+#ifndef KEVCC_UTILS_INCLUDE_HASHMAP_ADDRESS_MAP_H
+#define KEVCC_UTILS_INCLUDE_HASHMAP_ADDRESS_MAP_H
 
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 typedef struct tagKevAddressMapNode {
   void* key;

@@ -1,4 +1,4 @@
-#include "lexgen/include/finite_automaton/hashmap/address_map.h"
+#include "utils/include/hashmap/address_map.h"
 
 #include <stdlib.h>
 

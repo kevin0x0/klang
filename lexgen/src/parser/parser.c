@@ -5,7 +5,7 @@
 #include "lexgen/include/parser/parser.h"
 #include "lexgen/include/parser/error.h"
 #include "lexgen/include/parser/regex.h"
-#include "utils/include/dir.h"
+#include "utils/include/os_spec/dir.h"
 
 #include <stdio.h>
 #include <stdlib.h>

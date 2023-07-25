@@ -2,7 +2,7 @@
 #include "lexgen/include/finite_automaton/object_pool/graph_pool.h"
 #include "lexgen/include/finite_automaton/object_pool/node_pool.h"
 #include "lexgen/include/finite_automaton/object_pool/edge_pool.h"
-#include "lexgen/include/finite_automaton/hashmap/address_map.h"
+#include "utils/include/hashmap/address_map.h"
 
 #include <stdlib.h>
 

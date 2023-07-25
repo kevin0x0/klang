@@ -3,8 +3,8 @@
 
 #include "lexgen/include/parser/lexer.h"
 #include "lexgen/include/parser/hashmap/strfa_map.h"
-#include "lexgen/include/parser/hashmap/str_map.h"
 #include "lexgen/include/parser/list/pattern_list.h"
+#include "utils/include/hashmap/str_map.h"
 
 typedef struct tagKevParserState {
   KevPatternList list;

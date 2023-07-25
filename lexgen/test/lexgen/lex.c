@@ -2022,68 +2022,250 @@ size_t kev_lexgen_get_start_state(void) {
   return start;
 }
 
+
 #include "lex.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-using TransTab = tokenizer::TransTab;
-using Callback = tokenizer::Callback;
 TransTab kev_lexgen_get_transition_table(void);
 int* kev_lexgen_get_pattern_mapping(void);
 size_t kev_lexgen_get_start_state(void);
 const char** kev_lexgen_get_info(void);
 Callback** kev_lexgen_get_callbacks(void);
 
-tokenizer::tokenizer(const std::string& filepath) {
-  buffer = NULL;
-  table = kev_lexgen_get_transition_table();
-  patterns = kev_lexgen_get_pattern_mapping();
-  start_state = kev_lexgen_get_start_state();
-  callbacks = kev_lexgen_get_callbacks();
-  FILE* file = fopen(filepath.c_str(), "rb");
-  if (!file) return;
+bool lex_init(tokenizer* lex, char* filepath) {
+  if (!lex) return false;
+  lex->buffer = NULL;
+  lex->table = kev_lexgen_get_transition_table();
+  lex->patterns = kev_lexgen_get_pattern_mapping();
+  lex->start_state = kev_lexgen_get_start_state();
+  lex->callbacks = kev_lexgen_get_callbacks();
+  if (!filepath) return false;
+  FILE* file = fopen(filepath, "rb");
+  if (!file) return false;
   fseek(file, 0, SEEK_END);
   size_t filesize = ftell(file);
   fseek(file, 0, SEEK_SET);
-  buffer = new uint8_t[filesize + 2];
+  uint8_t* buffer = (uint8_t*)malloc(sizeof (uint8_t) * (filesize + 2));
+  if (!buffer) {
+    fclose(file);
+    return false;
+  }
   if (fread(buffer, sizeof (uint8_t), filesize, file) == 0) {
     free(buffer);
     fclose(file);
-    buffer = NULL;
-    return;
+    return false;
   }
   fclose(file);
   buffer[filesize] = '\0';
   buffer[filesize + 1] = '\0';
+  lex->buffer = buffer;
+  return true;
 }
 
-tokenizer::~tokenizer() {
-  delete[] buffer;
-  buffer = NULL;
+void lex_destroy(tokenizer* lex) {
+  if (lex) {
+    free(lex->buffer);
+    lex->buffer = NULL;
+  }
 }
 
-void tokenizer::next(Token& token) {
-  uint8_t state = start_state;
+void lex_next(tokenizer* lex, Token* token) {
+  uint8_t (*table)[256] = lex->table;
+  uint8_t state = lex->start_state;
   uint8_t next_state = 0;
-  uint8_t* curpos = buffer + token.end;
+  uint8_t* curpos = lex->buffer + token->end;
   uint8_t ch = *curpos;
   
   while (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r')
     ch = *++curpos;
   
-  while ((next_state = table[state][ch]) != dead_state) {
+  while ((next_state = table[state][ch]) != LEX_DEAD) {
     ch = *++curpos;
     state = next_state;
   }
-  token.begin = token.end;
-  token.end = curpos - buffer;
-  token.kind = patterns[state];
-  if (callbacks[state])
-    callbacks[state](token, buffer);
+  token->begin = token->end;
+  token->end = curpos - lex->buffer;
+  token->kind = lex->patterns[state];
+  if (lex->callbacks[state])
+    lex->callbacks[state](token, lex->buffer + token->begin);
 }
 
-std::string tokenizer::get_info(int kind) {
-  return std::string(kev_lexgen_get_info()[kind]);
+const char* lex_get_info(tokenizer* lex, int kind) {
+  return kev_lexgen_get_info()[kind];
 }
+
+static Callback* callbacks[105] = {
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+};
+
+Callback** kev_lexgen_get_callbacks(void) {
+  return callbacks;
+}
+
+
+
+static const char* info[49] = {
+  "while",
+  "if",
+  "else",
+  "for",
+  "do",
+  "fn",
+  "lambda",
+  "let",
+  "break",
+  "continue",
+  "return",
+  "i32",
+  "i64",
+  "i16",
+  "i8",
+  "u32",
+  "u64",
+  "u16",
+  "u8",
+  "[",
+  "]",
+  "{",
+  "}",
+  "(",
+  ")",
+  "<",
+  ">",
+  "+",
+  "-",
+  "*",
+  "/",
+  "=",
+  ":",
+  ";",
+  ",",
+  ".",
+  "|",
+  "||",
+  "&",
+  "&&",
+  "==",
+  "!=",
+  "<=",
+  ">=",
+  "identifier",
+  "number",
+  "float",
+  "string",
+  "end",
+};
+
+const char** kev_lexgen_get_info(void) {
+  return info;
+}
+
+
+
 

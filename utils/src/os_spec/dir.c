@@ -1,6 +1,7 @@
-#include "utils/include/dir.h"
+#include "utils/include/os_spec/dir.h"
 #include <stdlib.h>
 #include <string.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #else

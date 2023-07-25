@@ -1,7 +1,7 @@
-#ifndef KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_SET_BITSET_H
-#define KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_SET_BITSET_H
+#ifndef KEVCC_UTILS_INCLUDE_SET_BITSET_H
+#define KEVCC_UTILS_INCLUDE_SET_BITSET_H
 
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/general/global_def.h"
 
 #define KEV_BITSET_MASK       (0x3F)
 #define KEV_BITSET_SHIFT      (6)

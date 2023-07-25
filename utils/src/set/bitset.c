@@ -1,4 +1,4 @@
-#include "lexgen/include/finite_automaton/set/bitset.h"
+#include "utils/include/set/bitset.h"
 
 #include <stdlib.h>
 

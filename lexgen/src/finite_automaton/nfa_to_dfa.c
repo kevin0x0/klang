@@ -1,12 +1,13 @@
 #include "lexgen/include/finite_automaton/finite_automaton.h"
-#include "lexgen/include/finite_automaton/set/bitset.h"
-#include "lexgen/include/finite_automaton/hashmap/intset_map.h"
-#include "lexgen/include/finite_automaton/hashmap/setint_map.h"
-#include "lexgen/include/finite_automaton/queue/int_queue.h"
-#include "lexgen/include/finite_automaton/array/set_array.h"
 #include "lexgen/include/finite_automaton/array/node_array.h"
+#include "utils/include/set/bitset.h"
+#include "utils/include/hashmap/intset_map.h"
+#include "utils/include/hashmap/setint_map.h"
+#include "utils/include/queue/int_queue.h"
+#include "utils/include/array/set_array.h"
 
 #include <stdlib.h>
+
 /* Package some objects that works collaboratively to maintain the generated DFA states */
 typedef struct tagKevStateSets {
   KevSetIntMap set_index_map;

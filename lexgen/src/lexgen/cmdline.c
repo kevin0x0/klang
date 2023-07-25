@@ -4,7 +4,7 @@
 
 #include "lexgen/include/lexgen/cmdline.h"
 #include "lexgen/include/lexgen/error.h"
-#include "utils/include/dir.h"
+#include "utils/include/os_spec/dir.h"
 
 #include <stdio.h>
 #include <stdlib.h>

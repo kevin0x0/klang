@@ -2,7 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "lexgen/include/parser/hashmap/str_map.h"
+#include "utils/include/hashmap/str_map.h"
 
 #include <stdlib.h>
 #include <string.h>

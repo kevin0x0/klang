@@ -1,4 +1,4 @@
-#include "lexgen/include/finite_automaton/hashmap/setint_map.h"
+#include "utils/include/hashmap/setint_map.h"
 
 #include <stdlib.h>
 

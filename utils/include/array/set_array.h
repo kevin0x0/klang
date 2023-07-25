@@ -1,8 +1,8 @@
-#ifndef KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_ARRAY_SET_ARRAY_H
-#define KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_ARRAY_SET_ARRAY_H
+#ifndef KEVCC_UTILS_INCLUDE_ARRAY_SET_ARRAY_H
+#define KEVCC_UTILS_INCLUDE_ARRAY_SET_ARRAY_H
 
-#include "lexgen/include/finite_automaton/set/bitset.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/set/bitset.h"
+#include "utils/include/general/global_def.h"
 
 typedef struct tagKevSetArray {
   KevBitSet** begin;

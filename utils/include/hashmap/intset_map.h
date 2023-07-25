@@ -1,8 +1,8 @@
-#ifndef KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_HASHMAP_INTSET_MAP_H
-#define KEVCC_LEXGEN_INCLUDE_FINITE_AUTOMATON_HASHMAP_INTSET_MAP_H
+#ifndef KEVCC_UTILS_INCLUDE_HASHMAP_INTSET_MAP_H
+#define KEVCC_UTILS_INCLUDE_HASHMAP_INTSET_MAP_H
 
-#include "lexgen/include/finite_automaton/set/bitset.h"
-#include "lexgen/include/general/global_def.h"
+#include "utils/include/set/bitset.h"
+#include "utils/include/general/global_def.h"
 
 typedef struct tagKevIntSetMapNode {
   size_t key;

@@ -1,4 +1,4 @@
-#include "lexgen/include/finite_automaton/array/set_array.h"
+#include "utils/include/array/set_array.h"
 
 #include <stdlib.h>
 

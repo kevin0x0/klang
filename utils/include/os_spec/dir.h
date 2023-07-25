@@ -1,5 +1,5 @@
-#ifndef KEVCC_UTILS_INCLUDE_DIR_H
-#define KEVCC_UTILS_INCLUDE_DIR_H
+#ifndef KEVCC_UTILS_INCLUDE_OS_SPEC_DIR_H
+#define KEVCC_UTILS_INCLUDE_OS_SPEC_DIR_H
 
 /* Due to platform-specificity, this file defines some wrapper functions
  * related to directory operations. */

@@ -1,4 +1,4 @@
-#include "lexgen/include/finite_automaton/queue/int_queue.h"
+#include "utils/include/queue/int_queue.h"
 
 #include <stdlib.h>
 #include <string.h>
