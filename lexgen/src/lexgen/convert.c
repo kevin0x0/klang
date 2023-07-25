@@ -182,15 +182,15 @@ static void kev_lexgen_convert_generate(KevPatternBinary* patterns_info, KevPars
 }
 
 static void kev_lexgen_convert_table(KevPatternBinary* binary_info, KevParserState* parser_state, KevFA* dfa) {
-  size_t charset_size = atoi(kev_strmap_search(&parser_state->env_var, "charset-size")->value);
+  size_t alphabet_size = atoi(kev_strmap_search(&parser_state->env_var, "alphabet-size")->value);
   size_t length = atoi(kev_strmap_search(&parser_state->env_var, "state-length")->value);
-  if (charset_size == 128 && length == 8) {
+  if (alphabet_size == 128 && length == 8) {
     binary_info->table = kev_lexgen_convert_table_128_u8(dfa);
-  } else if (charset_size == 128 && length == 16) {
+  } else if (alphabet_size == 128 && length == 16) {
     binary_info->table = kev_lexgen_convert_table_128_u16(dfa);
-  } else if (charset_size == 256 && length == 8) {
+  } else if (alphabet_size == 256 && length == 8) {
     binary_info->table = kev_lexgen_convert_table_256_u8(dfa);
-  } else if (charset_size == 256 && length == 16) {
+  } else if (alphabet_size == 256 && length == 16) {
     binary_info->table = kev_lexgen_convert_table_256_u16(dfa);
   } else {
     fatal_error("internal error occurred in kev_lexgen_output_table()", NULL);
@@ -198,7 +198,7 @@ static void kev_lexgen_convert_table(KevPatternBinary* binary_info, KevParserSta
   if (!binary_info->table) {
     fatal_error("failed to generate transition table, try --width=16 and --charset=utf-8", NULL);
   }
-  binary_info->charset_size = charset_size;
+  binary_info->charset_size = alphabet_size;
   binary_info->state_length = length;
 }
 

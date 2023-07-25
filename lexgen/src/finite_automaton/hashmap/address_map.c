@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 inline static size_t kev_addressmap_hashing(void* key) {
-  return (size_t)key;
+  return (size_t)key >> 3;
 }
 
 static void kev_addressmap_rehash(KevAddressMap* to, KevAddressMap* from) {
