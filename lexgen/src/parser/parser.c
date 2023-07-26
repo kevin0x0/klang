@@ -160,8 +160,8 @@ int kev_lexgenparser_parse(char* filepath, KevParserState* parser_state) {
   }
   KevLexGenLexer lex;
   if (!kev_lexgenlexer_init(&lex, input)) {
-    fclose(input);
     kev_parser_error_report(stderr, input, "failed to initialize lexer", 0);
+    fclose(input);
     return err_count + 1;
   }
 
