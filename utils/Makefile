@@ -19,10 +19,10 @@ OS_SPEC_PATH = $(SRC_PATH)os_spec/
 OS_SPEC_INC_PATH = $(INC_PATH)os_spec/
 GEN_INC_PATH = $(INC_PATH)general/
 
-all : $(BIN_PATH) $(BIN_PATH)utils.a
+all : $(BIN_PATH) $(BIN_PATH)libutils.a
 
 
-$(BIN_PATH)utils.a : $(BIN_PATH)dir.o $(BIN_PATH)intsetmap_node_pool.o $(BIN_PATH)intset_map.o $(BIN_PATH)setint_map.o $(BIN_PATH)str_map.o $(BIN_PATH)address_map.o $(BIN_PATH)bitset.o $(BIN_PATH)set_array.o $(BIN_PATH)int_queue.o
+$(BIN_PATH)libutils.a : $(BIN_PATH)dir.o $(BIN_PATH)intsetmap_node_pool.o $(BIN_PATH)intset_map.o $(BIN_PATH)setint_map.o $(BIN_PATH)str_map.o $(BIN_PATH)address_map.o $(BIN_PATH)bitset.o $(BIN_PATH)set_array.o $(BIN_PATH)int_queue.o
 	$(AR) $@ $^
 
 $(BIN_PATH) :
