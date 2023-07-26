@@ -17,7 +17,7 @@ typedef struct tagKevHashSet {
 bool kev_hashset_init(KevHashSet* set, size_t capacity);
 void kev_hashset_destroy(KevHashSet* set);
 
-bool kev_hashset_insert(KevHashSet* set, void* key);
-KevHashSetNode* kev_hashset_search(KevHashSet* set, void* key);
+bool kev_hashset_insert(KevHashSet* set, void* element);
+KevHashSetNode* kev_hashset_search(KevHashSet* set, void* element);
 
 #endif
