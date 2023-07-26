@@ -55,6 +55,7 @@ static inline bool kev_graph_init_set(KevGraph* graph, KevGraphNode* head, KevGr
   graph->tail = tail;
   return true;
 }
+
 static inline bool kev_graph_init_move(KevGraph* graph, KevGraph* src) {
   if (!graph || !src) return false;
   graph->head = src->head;
