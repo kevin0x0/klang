@@ -1,41 +1,41 @@
-INC_PATH = $(LEXGEN_PATH)include/
-SRC_PATH = $(LEXGEN_PATH)src/
-BIN_PATH = $(LEXGEN_PATH)bin/
-LIB_PATH = $(LEXGEN_PATH)lib/
+INC_DIR = $(LEXGEN_DIR)include/
+SRC_DIR = $(LEXGEN_DIR)src/
+BIN_DIR = $(LEXGEN_DIR)bin/
+LIB_DIR = $(LEXGEN_DIR)lib/
 
-GEN_INC_PATH = $(INC_PATH)general/
+GEN_INC_DIR = $(INC_DIR)general/
 
 #finite_automaton path
-FA_INC_PATH = $(INC_PATH)finite_automaton/
-FA_PATH = $(SRC_PATH)finite_automaton/
+FA_INC_DIR = $(INC_DIR)finite_automaton/
+FA_DIR = $(SRC_DIR)finite_automaton/
 #parser path
-PS_INC_PATH = $(INC_PATH)parser/
-PS_PATH = $(SRC_PATH)parser/
+PS_INC_DIR = $(INC_DIR)parser/
+PS_DIR = $(SRC_DIR)parser/
 #lexgen path
-LG_INC_PATH = $(INC_PATH)lexgen/
-LG_PATH = $(SRC_PATH)lexgen/
+LG_INC_DIR = $(INC_DIR)lexgen/
+LG_DIR = $(SRC_DIR)lexgen/
 
-UTILS_INC = $(UTILS_PATH)include/
+UTILS_INC = $(UTILS_DIR)include/
 
-FA_DEPS = $(FA_INC_PATH)finite_automaton.h $(FA_INC_PATH)graph.h
+FA_DEPS = $(FA_INC_DIR)finite_automaton.h $(FA_INC_DIR)graph.h
 
-$(BIN_PATH)liblexgen.a : $(BIN_PATH)cmdline.o $(BIN_PATH)control.o $(BIN_PATH)template.o $(BIN_PATH)output.o $(BIN_PATH)convert.o $(BIN_PATH)lg_error.o
+$(BIN_DIR)liblexgen.a : $(BIN_DIR)cmdline.o $(BIN_DIR)control.o $(BIN_DIR)template.o $(BIN_DIR)output.o $(BIN_DIR)convert.o $(BIN_DIR)lg_error.o
 	$(AR) $@ $^
 
-$(BIN_PATH)cmdline.o : $(LG_PATH)cmdline.c $(LG_INC_PATH)cmdline.h $(LG_INC_PATH)options.h $(LG_INC_PATH)error.h
+$(BIN_DIR)cmdline.o : $(LG_DIR)cmdline.c $(LG_INC_DIR)cmdline.h $(LG_INC_DIR)options.h $(LG_INC_DIR)error.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-$(BIN_PATH)control.o : $(LG_PATH)control.c $(LG_INC_PATH)control.h $(LG_INC_PATH)options.h $(PS_INC_PATH)parser.h $(PS_INC_PATH)hashmap/strfa_map.h $(PS_INC_PATH)list/pattern_list.h $(FA_DEPS) $(LG_INC_PATH)error.h
+$(BIN_DIR)control.o : $(LG_DIR)control.c $(LG_INC_DIR)control.h $(LG_INC_DIR)options.h $(PS_INC_DIR)parser.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)list/pattern_list.h $(FA_DEPS) $(LG_INC_DIR)error.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-$(BIN_PATH)output.o : $(LG_PATH)output.c $(LG_INC_PATH)output.h $(LG_INC_PATH)options.h $(PS_INC_PATH)hashmap/strfa_map.h $(PS_INC_PATH)parser.h $(PS_INC_PATH)hashmap/strfa_map.h $(PS_INC_PATH)list/pattern_list.h $(LG_INC_PATH)template.h $(FA_DEPS) $(LG_INC_PATH)error.h
+$(BIN_DIR)output.o : $(LG_DIR)output.c $(LG_INC_DIR)output.h $(LG_INC_DIR)options.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)parser.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)list/pattern_list.h $(LG_INC_DIR)template.h $(FA_DEPS) $(LG_INC_DIR)error.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-$(BIN_PATH)template.o : $(LG_PATH)template.c $(LG_INC_PATH)template.h $(UTILS_INC)hashmap/str_map.h $(LG_INC_PATH)options.h $(LG_INC_PATH)error.h
+$(BIN_DIR)template.o : $(LG_DIR)template.c $(LG_INC_DIR)template.h $(UTILS_INC)hashmap/str_map.h $(LG_INC_DIR)options.h $(LG_INC_DIR)error.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-$(BIN_PATH)convert.o : $(LG_PATH)convert.c $(LG_INC_PATH)convert.h $(PS_INC_PATH)hashmap/strfa_map.h $(PS_INC_PATH)parser.h $(PS_INC_PATH)list/pattern_list.h $(LG_INC_PATH)template.h $(FA_DEPS) $(LG_INC_PATH)error.h
+$(BIN_DIR)convert.o : $(LG_DIR)convert.c $(LG_INC_DIR)convert.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)parser.h $(PS_INC_DIR)list/pattern_list.h $(LG_INC_DIR)template.h $(FA_DEPS) $(LG_INC_DIR)error.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-$(BIN_PATH)lg_error.o : $(LG_PATH)error.c $(LG_INC_PATH)error.h
+$(BIN_DIR)lg_error.o : $(LG_DIR)error.c $(LG_INC_DIR)error.h
 	$(CC) -c -o $@ $< $(CFLAGS) 

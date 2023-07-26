@@ -1,28 +1,28 @@
-INC_PATH = $(LEXGEN_PATH)include/
-SRC_PATH = $(LEXGEN_PATH)src/
-BIN_PATH = $(LEXGEN_PATH)bin/
-LIB_PATH = $(LEXGEN_PATH)lib/
+INC_DIR = $(LEXGEN_DIR)include/
+SRC_DIR = $(LEXGEN_DIR)src/
+BIN_DIR = $(LEXGEN_DIR)bin/
+LIB_DIR = $(LEXGEN_DIR)lib/
 
 #finite_automaton path
-FA_PATH = $(SRC_PATH)finite_automaton/
+FA_DIR = $(SRC_DIR)finite_automaton/
 #parser path
-PS_PATH = $(SRC_PATH)parser/
+PS_DIR = $(SRC_DIR)parser/
 #tablegen path
-TG_PATH = $(SRC_PATH)tablegen/
+TG_DIR = $(SRC_DIR)tablegen/
 #lexgen path
-LG_PATH = $(SRC_PATH)lexgen/
+LG_DIR = $(SRC_DIR)lexgen/
 
-all: $(BIN_PATH)main.o 
-	mkdir -p $(BIN_PATH)
-	$(MAKE) -C $(FA_PATH)
-	$(MAKE) -C $(PS_PATH)
-	$(MAKE) -C $(LG_PATH)
-	$(CC) -o $(BIN_PATH)$(TARGET_LEXGEN_NAME) $(BIN_PATH)main.o $(BIN_PATH)liblexgen.a $(BIN_PATH)libparser.a $(BIN_PATH)libfa.a $(UTILS_PATH)bin/libutils.a
+all: $(BIN_DIR)main.o 
+	mkdir -p $(BIN_DIR)
+	$(MAKE) -C $(FA_DIR)
+	$(MAKE) -C $(PS_DIR)
+	$(MAKE) -C $(LG_DIR)
+	$(CC) -o $(BIN_DIR)$(TARGET_LEXGEN_NAME) $(BIN_DIR)main.o $(BIN_DIR)liblexgen.a $(BIN_DIR)libparser.a $(BIN_DIR)libfa.a $(UTILS_DIR)bin/libutils.a
 
-$(BIN_PATH)main.o : $(SRC_PATH)main.c
-	mkdir -p $(BIN_PATH)
+$(BIN_DIR)main.o : $(SRC_DIR)main.c
+	mkdir -p $(BIN_DIR)
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
 .PHONY: clean
 clean :
-	rm $(BIN_PATH)*
+	rm $(BIN_DIR)*

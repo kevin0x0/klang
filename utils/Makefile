@@ -1,60 +1,60 @@
-INC_PATH = $(UTILS_PATH)include/
-SRC_PATH = $(UTILS_PATH)src/
-BIN_PATH = $(UTILS_PATH)bin/
-LIB_PATH = $(UTILS_PATH)lib/
+INC_DIR = $(UTILS_DIR)include/
+SRC_DIR = $(UTILS_DIR)src/
+BIN_DIR = $(UTILS_DIR)bin/
+LIB_DIR = $(UTILS_DIR)lib/
 
-OBJP_INC_PATH = $(INC_PATH)object_pool/
-OBJP_PATH = $(SRC_PATH)object_pool/
-HMAP_INC_PATH = $(INC_PATH)hashmap/
-HMAP_PATH = $(SRC_PATH)hashmap/
-SET_INC_PATH = $(INC_PATH)set/
-SET_PATH = $(SRC_PATH)set/
-ARRAY_INC_PATH = $(INC_PATH)array/
-ARRAY_PATH = $(SRC_PATH)array/
-QUEUE_INC_PATH = $(INC_PATH)queue/
-QUEUE_PATH = $(SRC_PATH)queue/
-LIST_INC_PATH = $(INC_PATH)list/
-LIST_PATH = $(SRC_PATH)list/
-OS_SPEC_PATH = $(SRC_PATH)os_spec/
-OS_SPEC_INC_PATH = $(INC_PATH)os_spec/
-GEN_INC_PATH = $(INC_PATH)general/
+OBJP_INC_DIR = $(INC_DIR)object_pool/
+OBJP_DIR = $(SRC_DIR)object_pool/
+HMAP_INC_DIR = $(INC_DIR)hashmap/
+HMAP_DIR = $(SRC_DIR)hashmap/
+SET_INC_DIR = $(INC_DIR)set/
+SET_DIR = $(SRC_DIR)set/
+ARRAY_INC_DIR = $(INC_DIR)array/
+ARRAY_DIR = $(SRC_DIR)array/
+QUEUE_INC_DIR = $(INC_DIR)queue/
+QUEUE_DIR = $(SRC_DIR)queue/
+LIST_INC_DIR = $(INC_DIR)list/
+LIST_DIR = $(SRC_DIR)list/
+OS_SPEC_DIR = $(SRC_DIR)os_spec/
+OS_SPEC_INC_DIR = $(INC_DIR)os_spec/
+GEN_INC_DIR = $(INC_DIR)general/
 
-all : $(BIN_PATH) $(BIN_PATH)libutils.a
+all : $(BIN_DIR) $(BIN_DIR)libutils.a
 
 
-$(BIN_PATH)libutils.a : $(BIN_PATH)dir.o $(BIN_PATH)intsetmap_node_pool.o $(BIN_PATH)intset_map.o $(BIN_PATH)setint_map.o $(BIN_PATH)str_map.o $(BIN_PATH)address_map.o $(BIN_PATH)bitset.o $(BIN_PATH)set_array.o $(BIN_PATH)int_queue.o
+$(BIN_DIR)libutils.a : $(BIN_DIR)dir.o $(BIN_DIR)intsetmap_node_pool.o $(BIN_DIR)intset_map.o $(BIN_DIR)setint_map.o $(BIN_DIR)str_map.o $(BIN_DIR)address_map.o $(BIN_DIR)bitset.o $(BIN_DIR)set_array.o $(BIN_DIR)int_queue.o
 	$(AR) $@ $^
 
-$(BIN_PATH) :
-	mkdir $(BIN_PATH)
+$(BIN_DIR) :
+	mkdir $(BIN_DIR)
 
-$(BIN_PATH)dir.o : $(OS_SPEC_PATH)dir.c $(OS_SPEC_INC_PATH)dir.h
+$(BIN_DIR)dir.o : $(OS_SPEC_DIR)dir.c $(OS_SPEC_INC_DIR)dir.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-$(BIN_PATH)intsetmap_node_pool.o : $(OBJP_PATH)intsetmap_node_pool.c  $(OBJP_INC_PATH)intsetmap_node_pool.h $(SET_INC_PATH)bitset.h $(GEN_INC_PATH)global_def.h
+$(BIN_DIR)intsetmap_node_pool.o : $(OBJP_DIR)intsetmap_node_pool.c  $(OBJP_INC_DIR)intsetmap_node_pool.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_PATH)address_map.o : $(HMAP_PATH)address_map.c $(HMAP_INC_PATH)address_map.h $(GEN_INC_PATH)global_def.h
+$(BIN_DIR)address_map.o : $(HMAP_DIR)address_map.c $(HMAP_INC_DIR)address_map.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_PATH)intset_map.o : $(HMAP_PATH)intset_map.c $(HMAP_INC_PATH)intset_map.h $(SET_INC_PATH)bitset.h $(GEN_INC_PATH)global_def.h $(OBJP_INC_PATH)intsetmap_node_pool.h
+$(BIN_DIR)intset_map.o : $(HMAP_DIR)intset_map.c $(HMAP_INC_DIR)intset_map.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h $(OBJP_INC_DIR)intsetmap_node_pool.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_PATH)setint_map.o : $(HMAP_PATH)setint_map.c $(HMAP_INC_PATH)setint_map.h $(SET_INC_PATH)bitset.h $(GEN_INC_PATH)global_def.h
+$(BIN_DIR)setint_map.o : $(HMAP_DIR)setint_map.c $(HMAP_INC_DIR)setint_map.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_PATH)str_map.o : $(HMAP_PATH)str_map.c $(HMAP_INC_PATH)str_map.h
+$(BIN_DIR)str_map.o : $(HMAP_DIR)str_map.c $(HMAP_INC_DIR)str_map.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_PATH)bitset.o : $(SET_PATH)bitset.c $(SET_INC_PATH)bitset.h $(GEN_INC_PATH)global_def.h
+$(BIN_DIR)bitset.o : $(SET_DIR)bitset.c $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_PATH)set_array.o : $(ARRAY_PATH)set_array.c $(ARRAY_INC_PATH)set_array.h $(SET_INC_PATH)bitset.h $(GEN_INC_PATH)global_def.h
+$(BIN_DIR)set_array.o : $(ARRAY_DIR)set_array.c $(ARRAY_INC_DIR)set_array.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_PATH)int_queue.o : $(QUEUE_PATH)int_queue.c $(QUEUE_INC_PATH)int_queue.h $(GEN_INC_PATH)global_def.h
+$(BIN_DIR)int_queue.o : $(QUEUE_DIR)int_queue.c $(QUEUE_INC_DIR)int_queue.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 .PHONY: clean
 clean :
-	rm $(BIN_PATH)*
+	rm $(BIN_DIR)*
