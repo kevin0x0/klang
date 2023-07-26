@@ -76,6 +76,7 @@ static void kev_lexgen_set_default(KevOptions* options) {
   options->opts[KEV_LEXGEN_OPT_HELP] = KEV_LEXGEN_OPT_FALSE;
   options->opts[KEV_LEXGEN_OPT_TAB_ONLY] = KEV_LEXGEN_OPT_FALSE;
   options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("c");
+  options->strs[KEV_LEXGEN_OUT_SRC_PATH] = copy_string("lex.out");
 }
 
 void kev_lexgen_destroy_options(KevOptions* options) {
