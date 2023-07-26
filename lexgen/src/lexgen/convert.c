@@ -45,7 +45,7 @@ void kev_lexgen_convert_destroy(KevPatternBinary* binary_info) {
 }
 
 static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
-                                                KevParserState* parser_state, size_t* acc_mapping) {
+                                              KevParserState* parser_state, size_t* acc_mapping) {
   size_t non_acc_no = binary_info->dfa_non_acc_no;
   size_t state_no = binary_info->dfa_state_no;
   size_t nfa_no = binary_info->nfa_no;
@@ -84,7 +84,7 @@ static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
 }
 
 static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, KevParserState* parser_state,
-                                                    size_t* acc_mapping) {
+                                               size_t* acc_mapping) {
   size_t non_acc_state_no = binary_info->dfa_non_acc_no;
   size_t nfa_no = binary_info->nfa_no;
   size_t state_no = binary_info->dfa_state_no;

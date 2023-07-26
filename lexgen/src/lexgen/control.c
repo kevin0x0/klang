@@ -20,7 +20,8 @@ static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevString
 /* Set variables whose value is the transition table or token infos after
  * generating DFA and converting it to table. These variables used in the
  * template file. */
-static void kev_lexgen_control_set_env_var_for_output(KevPatternBinary* binary_info, KevOutputFunc* func_group, KevStringMap* env_var);
+static void kev_lexgen_control_set_env_var_for_output(KevPatternBinary* binary_info,
+                                                      KevOutputFunc* func_group, KevStringMap* env_var);
 
 void kev_lexgen_control(KevOptions* options) {
   /* show help if specified */
@@ -44,8 +45,9 @@ void kev_lexgen_control(KevOptions* options) {
   int error_number = kev_lexgen_control_parse(input, &parser_state);
   fclose(input);
   if (error_number != 0) {
-    fprintf(stderr, "%d error(s) detected.\n", error_number);
-    exit(EXIT_FAILURE);
+    char num_buf[256];  /* size 256 should be enough for integer */
+    sprintf(num_buf, "%d", error_number);
+    kev_throw_error("control: ", num_buf, " error(s) detected.");
   }
   kev_lexgen_control_set_env_var_after(options, &parser_state.env_var);
 
@@ -73,7 +75,7 @@ void kev_lexgen_control(KevOptions* options) {
 }
 
 static void kev_lexgen_control_set_env_var_for_output(KevPatternBinary* binary_info,
-                                              KevOutputFunc* func_group, KevStringMap* env_var) {
+                                                      KevOutputFunc* func_group, KevStringMap* env_var) {
   if (!kev_strmap_update_move(env_var, "callback-array",
       func_group->output_callback(binary_info))) {
     kev_throw_error("control:", "out of memory", NULL);
