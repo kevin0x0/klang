@@ -21,7 +21,4 @@ void kev_addressmap_destroy(KevAddressMap* map);
 bool kev_addressmap_insert(KevAddressMap* map, void* key, void* value);
 KevAddressMapNode* kev_addressmap_search(KevAddressMap* map, void* key);
 
-
-
-
 #endif
