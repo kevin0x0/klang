@@ -1,7 +1,7 @@
 Usage:
-  lexgen [ opt [opt-value]]...
+  lexgen [ opt [opt-value] | <key>=<value> ]...
 
-options:
+Options:
   -h --help                        Show this message.
   -i --in                          Input file path.
   -o <path> --out <path>           Output file path.
