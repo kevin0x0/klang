@@ -20,7 +20,7 @@ static inline size_t kev_get_array_size(KevFA** nfa_array);
 /* build mapping array between node number and address of node */
 static KevGraphNode** kev_build_node_mapping_array(KevFA** nfa_array, size_t state_number);
 /* compute epsilon-closure of single state set */
-static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping, KevBitSet* closure, KevIntQueue* queue);
+static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping, KevBitSet* closures, KevIntQueue* queue);
 /* compute epsilon-closure for every single state set */
 static KevBitSet* kev_compute_closure_array(KevGraphNode** state_mapping, size_t state_number);
 /* return a set containing start state of every nfa */
@@ -124,7 +124,8 @@ static KevGraphNode** kev_build_node_mapping_array(KevFA** nfa_array, size_t sta
   return mapping_array;
 }
 
-static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping, KevBitSet* closure, KevIntQueue* queue) {
+static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping, KevBitSet* closures, KevIntQueue* queue) {
+  KevBitSet* closure = &closures[state];
   if (!kev_bitset_set(closure, state) || !kev_intqueue_insert(queue, state))
     return false;
   
@@ -134,8 +135,14 @@ static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping
     while (edge) {
       if (edge->attr == KEV_NFA_SYMBOL_EPSILON &&
           !kev_bitset_has_element(closure, edge->node->id)) {
-        if (!kev_bitset_set(closure, edge->node->id) ||
-            !kev_intqueue_insert(queue, edge->node->id)) {
+        KevGraphNodeId id = edge->node->id;
+        if (edge->node->id < state) {
+          if (!kev_bitset_union(closure, closures + id))
+            return false;
+          continue;
+        }
+        if (!kev_bitset_set(closure, id) ||
+            !kev_intqueue_insert(queue, id)) {
           return false;
         }
       }
@@ -156,7 +163,7 @@ static KevBitSet* kev_compute_closure_array(KevGraphNode** state_mapping, size_t
 
   for (size_t i = 0; i < state_number; ++i) {
     if (!kev_bitset_init(state_closure + i, state_number) ||
-        !kev_compute_state_closure(i, state_mapping, state_closure + i, &queue)) {
+        !kev_compute_state_closure(i, state_mapping, state_closure, &queue)) {
       for (size_t j = 0; j < i; ++j)
         kev_bitset_destroy(state_closure + j);
       free(state_closure);
