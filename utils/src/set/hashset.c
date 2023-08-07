@@ -106,7 +106,7 @@ bool kev_hashset_insert(KevHashSet* set, void* element) {
   return true;
 }
 
-KevHashSetNode* kev_hashset_search(KevHashSet* set, void* element) {
+bool kev_hashset_has(KevHashSet* set, void* element) {
   size_t index = (set->capacity - 1) & kev_hashset_hashing(element);
   KevHashSetNode* node = set->array[index];
   while (node) {
@@ -115,5 +115,5 @@ KevHashSetNode* kev_hashset_search(KevHashSet* set, void* element) {
     node = node->next;
   }
 
-  return node;
+  return node != NULL;
 }
