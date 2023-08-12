@@ -35,7 +35,7 @@ KevRule* kev_lr_rule_create(KevSymbol* head, KevSymbol** body, size_t body_lengt
 KevRule* kev_lr_rule_create_move(KevSymbol* head, KevSymbol** body, size_t body_length);
 void kev_lr_rule_delete(KevRule* rule);
 
-KevSymbol** kev_lr_get_symbol_array(KevSymbol* start, size_t* p_size);
+KevSymbol** kev_lr_get_symbol_array(KevSymbol* start, KevSymbol** lookahead, size_t la_len, size_t* p_size);
 void kev_lr_symbol_array_partition(KevSymbol** array, size_t size);
 
 #endif

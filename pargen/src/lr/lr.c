@@ -1,4 +1,4 @@
-#include "pargen/include/lr/lr_collection.h"
+#include "pargen/include/lr/lr.h"
 
 #include <stdlib.h>
 
@@ -91,4 +91,40 @@ KevBitSet* kev_lr_symbols_to_bitset(KevSymbol** symbols, size_t length) {
     }
   }
   return set;
+}
+
+KevItemSet* kev_lr_get_start_itemset(KevSymbol* start, KevSymbol** lookahead, size_t length) {
+  KevBitSet* la_bitset = kev_lr_symbols_to_bitset(lookahead, length);
+  KevItemSet* iset = kev_lr_itemset_create();
+  if (!iset || !la_bitset) {
+    kev_bitset_delete(la_bitset);
+    kev_lr_itemset_delete(iset);
+    return NULL;
+  }
+  KevRuleNode* node = start->rules;
+  while (node) {
+    KevKernelItem* item = kev_lr_kernel_item_create(node->rule, 0);
+    if (!item || !(item->lookahead = kev_bitset_create_copy(la_bitset))) {
+      kev_lr_itemset_delete(iset);
+      kev_bitset_delete(la_bitset);
+      return NULL;
+    }
+    kev_lr_itemset_add_item(iset, item);
+    node = node->next;
+  }
+  kev_bitset_delete(la_bitset);
+  return iset;
+}
+
+size_t kev_lr_label_symbols(KevSymbol** symbols, size_t symbol_no) {
+  size_t number = 0;
+  size_t i = 0;
+  while (symbols[i]->kind == KEV_LR_SYMBOL_TERMINAL) {
+    symbols[i]->tmp_id = i;
+    ++i;
+  }
+  number = i;
+  for (; i < symbol_no; ++i)
+    symbols[i]->tmp_id = i;
+  return number;
 }

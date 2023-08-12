@@ -1,11 +1,12 @@
 #ifndef KEVCC_PARGEN_INCLUDE_LR_LALR_H
 #define KEVCC_PARGEN_INCLUDE_LR_LALR_H
 
-#include "pargen/include/lr/lr_collection.h"
+#include "pargen/include/lr/lr.h"
 #include "utils/include/set/bitset.h"
 
 typedef struct tagKevLookaheadPropagation {
-  KevBitSet* lookahead;
+  KevBitSet* from;
+  KevBitSet* to;
   struct tagKevLookaheadPropagation* next;
 } KevLookaheadPropagation;
 
@@ -18,5 +19,7 @@ typedef struct tagKevLALRCollection {
   size_t itemset_no;
   KevBitSet** firsts;
 } KevLALRCollection;
+
+
 
 #endif

@@ -22,7 +22,7 @@ GEN_INC_DIR = $(INC_DIR)general/
 all : $(BIN_DIR) $(BIN_DIR)libutils.a
 
 
-$(BIN_DIR)libutils.a : $(BIN_DIR)dir.o $(BIN_DIR)intsetmap_node_pool.o $(BIN_DIR)intset_map.o $(BIN_DIR)setint_map.o $(BIN_DIR)str_map.o $(BIN_DIR)address_map.o $(BIN_DIR)bitset.o $(BIN_DIR)set_array.o $(BIN_DIR)int_queue.o
+$(BIN_DIR)libutils.a : $(BIN_DIR)dir.o $(BIN_DIR)intsetmap_node_pool.o $(BIN_DIR)intset_map.o $(BIN_DIR)setint_map.o $(BIN_DIR)str_map.o $(BIN_DIR)address_map.o $(BIN_DIR)bitset.o $(BIN_DIR)hashset.o $(BIN_DIR)set_array.o $(BIN_DIR)int_queue.o $(BIN_DIR)addr_queue.o $(BIN_DIR)addr_array.o
 	$(AR) $@ $^
 
 $(BIN_DIR) :
@@ -49,10 +49,19 @@ $(BIN_DIR)str_map.o : $(HMAP_DIR)str_map.c $(HMAP_INC_DIR)str_map.h
 $(BIN_DIR)bitset.o : $(SET_DIR)bitset.c $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+$(BIN_DIR)hashset.o : $(SET_DIR)hashset.c $(SET_INC_DIR)hashset.h $(GEN_INC_DIR)global_def.h
+	$(CC) -c -o $@ $< $(CFLAGS)
+
 $(BIN_DIR)set_array.o : $(ARRAY_DIR)set_array.c $(ARRAY_INC_DIR)set_array.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+$(BIN_DIR)addr_array.o : $(ARRAY_DIR)addr_array.c $(ARRAY_INC_DIR)addr_array.h $(GEN_INC_DIR)global_def.h
+	$(CC) -c -o $@ $< $(CFLAGS)
+
 $(BIN_DIR)int_queue.o : $(QUEUE_DIR)int_queue.c $(QUEUE_INC_DIR)int_queue.h $(GEN_INC_DIR)global_def.h
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(BIN_DIR)addr_queue.o : $(QUEUE_DIR)addr_queue.c $(QUEUE_INC_DIR)addr_queue.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 .PHONY: clean

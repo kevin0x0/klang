@@ -19,7 +19,6 @@ KevSymbol* kev_lr_symbol_create(int kind, char* name, KevSymbolID id) {
 
 void kev_lr_symbol_delete(KevSymbol* symbol) {
   if (symbol) {
-    free(symbol->name);
     kev_rulenode_delete(symbol->rules);
     free(symbol);
   }
@@ -76,7 +75,7 @@ static inline void kev_rulenode_delete(KevRuleNode* rules) {
   }
 }
 
-KevSymbol** kev_lr_get_symbol_array(KevSymbol* start, size_t* p_size) {
+KevSymbol** kev_lr_get_symbol_array(KevSymbol* start, KevSymbol** lookahead, size_t la_len, size_t* p_size) {
   KevAddrArray array;
   if (!kev_addrarray_init(&array))
     return NULL;
@@ -86,19 +85,24 @@ KevSymbol** kev_lr_get_symbol_array(KevSymbol* start, size_t* p_size) {
     kev_hashset_destroy(&set);
     return NULL;
   }
-  kev_addrarray_push_back(&array, start);
+  if (!kev_hashset_insert(&set, start) ||
+      !kev_addrarray_push_back(&array, start)) {
+    kev_hashset_destroy(&set);
+    kev_addrarray_destroy(&array);
+    return NULL;
+  }
   size_t curr = 0;
 
   while (curr != kev_addrarray_size(&array)) {
     KevSymbol* symbol = kev_addrarray_visit(&array, curr++);
     KevRuleNode* rule = symbol->rules;
-    while (rule) {
+    for (; rule; rule = rule->next) {
       KevSymbol** rule_body = rule->rule->body;
       size_t len = rule->rule->bodylen;
       for (size_t i = 0; i < len; ++i) {
         if (kev_hashset_has(&set, rule_body[i]))
           continue;
-        if (!kev_hashset_insert(&set, symbol) ||
+        if (!kev_hashset_insert(&set, rule_body[i]) ||
             !kev_addrarray_push_back(&array, rule_body[i])) {
           kev_hashset_destroy(&set);
           kev_addrarray_destroy(&array);
@@ -107,6 +111,23 @@ KevSymbol** kev_lr_get_symbol_array(KevSymbol* start, size_t* p_size) {
       }
     }
   }
+
+  for (size_t i = 0; i < la_len; ++i) {
+    if (kev_hashset_has(&set, lookahead[i]))
+      continue;
+    if (lookahead[i]->kind == KEV_LR_SYMBOL_NONTERMINAL) {
+      kev_hashset_destroy(&set);
+      kev_addrarray_destroy(&array);
+      return NULL;
+    }
+    if (!kev_hashset_insert(&set, lookahead[i]) ||
+        !kev_addrarray_push_back(&array, lookahead[i])) {
+      kev_hashset_destroy(&set);
+      kev_addrarray_destroy(&array);
+      return NULL;
+    }
+  }
+
   kev_hashset_destroy(&set);
   *p_size = kev_addrarray_size(&array);
   return (KevSymbol**)array.begin;
