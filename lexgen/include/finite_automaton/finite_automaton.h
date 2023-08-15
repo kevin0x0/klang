@@ -95,33 +95,24 @@ static inline KevGraphNode* kev_fa_get_states(KevFA* fa) {
 }
 
 static inline size_t kev_fa_state_number(KevFA* dfa) {
-  KevGraphNode* node = kev_fa_get_states(dfa);
   uint64_t count = 0;
-  while (node) {
+  for (KevGraphNode* node = kev_fa_get_states(dfa); node; node = node->next)
     ++count;
-    node = node->next;
-  }
   return count;
 }
 
 static inline size_t kev_dfa_accept_state_number(KevFA* dfa) {
-  KevGraphNode* node = dfa->accept_states;
   uint64_t count = 0;
-  while (node) {
+  for (KevGraphNode* node = dfa->accept_states; node; node = node->next)
     ++count;
-    node = node->next;
-  }
   return count;
 }
 
 static inline size_t kev_dfa_non_accept_state_number(KevFA* dfa) {
-  KevGraphNode* node = kev_fa_get_states(dfa);
   KevGraphNode* acc_node = dfa->accept_states;
   uint64_t count = 0;
-  while (node != acc_node) {
+  for (KevGraphNode* node = kev_fa_get_states(dfa); node != acc_node; node = node->next)
     ++count;
-    node = node->next;
-  }
   return count;
 }
 

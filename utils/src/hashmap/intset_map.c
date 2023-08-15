@@ -128,10 +128,8 @@ bool kev_intsetmap_insert(KevIntSetMap* map, size_t key, KevBitSet* value) {
 KevIntSetMapNode* kev_intsetmap_search(KevIntSetMap* map, size_t key) {
   size_t index = (map->capacity - 1) & kev_intsetmap_hashing(key);
   KevIntSetMapNode* node = map->array[index].map_node_list;
-  while (node) {
-    if (node->key == key)
-      break;
-    node = node->next;
+  for (; node; node = node->next) {
+    if (node->key == key) break;
   }
   return node;
 }

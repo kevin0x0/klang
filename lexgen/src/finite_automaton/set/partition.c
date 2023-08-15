@@ -46,13 +46,11 @@ KevPartitionSet* kev_partition_refine(KevPartitionUniverse partition, KevPartiti
   size_t begin = set->begin;
   size_t end = set->end;
   size_t pivot = end;
-  KevNodeListNode* node = target;
-  while (node) {
+  for (KevNodeListNode* node = target; node; node = node->next) {
     size_t id = node->element->id;
     if (begin <= id && id < pivot) {
       kev_partition_swap_element(partition, id, --pivot);
     }
-    node = node->next;
   }
   set->end = pivot;
   new_set->begin = pivot;

@@ -109,10 +109,8 @@ bool kev_hashset_insert(KevHashSet* set, void* element) {
 bool kev_hashset_has(KevHashSet* set, void* element) {
   size_t index = (set->capacity - 1) & kev_hashset_hashing(element);
   KevHashSetNode* node = set->array[index];
-  while (node) {
-    if (node->element == element)
-      break;
-    node = node->next;
+  for (; node; node = node->next) {
+    if (node->element == element) break;
   }
 
   return node != NULL;

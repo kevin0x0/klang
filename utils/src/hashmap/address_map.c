@@ -110,10 +110,8 @@ bool kev_addressmap_insert(KevAddressMap* map, void* key, void* value) {
 KevAddressMapNode* kev_addressmap_search(KevAddressMap* map, void* key) {
   size_t index = (map->capacity - 1) & kev_addressmap_hashing(key);
   KevAddressMapNode* node = map->array[index];
-  while (node) {
-    if (node->key == key)
-      break;
-    node = node->next;
+  for (; node; node = node->next) {
+    if (node->key == key) break;
   }
 
   return node;

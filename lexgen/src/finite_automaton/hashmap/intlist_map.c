@@ -128,10 +128,9 @@ KevIntListMapNode* kev_intlistmap_insert(KevIntListMap* map, size_t key, KevNode
 KevIntListMapNode* kev_intlistmap_search(KevIntListMap* map, size_t key) {
   size_t index = (map->capacity - 1) & kev_intlistmap_hashing(key);
   KevIntListMapNode* node = map->array[index].map_node_list;
-  while (node) {
+  for (; node; node = node->next) {
     if (node->key == key)
       break;
-    node = node->next;
   }
   return node;
 }

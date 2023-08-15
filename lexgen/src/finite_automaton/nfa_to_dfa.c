@@ -115,10 +115,8 @@ static KevGraphNode** kev_build_node_mapping_array(KevFA** nfa_array, size_t sta
   KevFA** pnfa = nfa_array - 1;
   while (*++pnfa != NULL) {
     KevGraphNodeList* nodelst = kev_fa_get_states(*pnfa);
-    KevGraphNode* node = nodelst;
-    while (node) {
+    for (KevGraphNode* node = nodelst; node; node = node->next) {
       mapping_array[node->id] = node;
-      node = node->next;
     }
   }
   return mapping_array;
@@ -131,8 +129,7 @@ static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping
   
   while (!kev_intqueue_empty(queue)) {
     size_t state = kev_intqueue_pop(queue);
-    KevGraphEdge* edge = state_mapping[state]->edges;
-    while (edge) {
+    for (KevGraphEdge* edge = state_mapping[state]->edges; edge; edge = edge->next) {
       if (edge->attr == KEV_NFA_SYMBOL_EPSILON &&
           !kev_bitset_has_element(closure, edge->node->id)) {
         KevGraphNodeId id = edge->node->id;
@@ -146,7 +143,6 @@ static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping
           return false;
         }
       }
-      edge = edge->next;
     }
   }
   return true;
@@ -234,7 +230,7 @@ static bool kev_compute_all_transition(KevIntSetMap* transition_map, KevBitSet* 
   do {
     state = next_state;
     KevGraphEdge* edge = kev_graphnode_get_edges(state_mapping[state]);
-    while (edge) {
+    for (; edge; edge = edge->next) {
       if (edge->attr != KEV_NFA_SYMBOL_EPSILON) {
         KevIntSetMapNode* map_node = kev_intsetmap_search(transition_map, edge->attr);
         KevBitSet* set = NULL;
@@ -248,7 +244,6 @@ static bool kev_compute_all_transition(KevIntSetMap* transition_map, KevBitSet* 
           kev_bitset_union(map_node->value, &closures[edge->node->id]);
         }
       }
-      edge = edge->next;
     }
     next_state = kev_bitset_iterate_next(closure, state);
   } while (next_state != state);
@@ -295,10 +290,8 @@ static size_t* kev_get_state_ownership_array(KevFA** nfa_array, size_t state_num
     KevFA** pnfa = nfa_array;
     size_t count = 0;
     while (*pnfa) {
-      KevGraphNode* node = kev_fa_get_states(*pnfa);
-      while (node) {
+      for (KevGraphNode* node = kev_fa_get_states(*pnfa); node; node = node->next) {
         ownership[node->id] = count;
-        node = node->next;
       }
       count++;
       pnfa++;

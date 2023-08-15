@@ -25,13 +25,22 @@ typedef struct tagKevLRAction {
   size_t symbol_no;
 } KevLRAction;
 
-/* generation of lr collection */
-KevLRCollection* kev_create_lalr_collection(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
-KevLRCollection* kev_create_lr0_collection(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
-KevLRCollection* kev_create_lr1_collection(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
-KevLRCollection* kev_create_slr_collection(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
+typedef struct tagKevLRGoto {
+  size_t** go_to;
+  size_t itemset_no;
+  size_t symbol_no;
+} KevLRGoto;
 
-void kev_lr_delete_collection(KevLRCollection* collec);
+/* generation of lr collection */
+KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
+KevLRCollection* kev_lr_collection_create_lr0(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
+KevLRCollection* kev_lr_collection_create_lr1(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
+KevLRCollection* kev_lr_collection_create_slr(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
+void kev_lr_collection_delete(KevLRCollection* collec);
+
+/* generation of GOTO and ACTION table */
+KevLRAction* kev_lr_action_create(KevLRCollection* collec);
+KevLRGoto* kev_lr_goto_create(KevLRCollection* collec);
 
 /* get */
 static inline KevItemSet* kev_lr_get_itemset_by_index(KevLRCollection* collec, size_t index);

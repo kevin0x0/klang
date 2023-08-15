@@ -185,10 +185,8 @@ bool kev_strmap_insert_move(KevStringMap* map, char* key, char* value) {
 KevStringMapNode* kev_strmap_search(KevStringMap* map, char* key) {
   size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
   KevStringMapNode* node = map->array[index].map_node_list;
-  while (node) {
-    if (strcmp(node->key, key) == 0)
-      break;
-    node = node->next;
+  for (; node; node = node->next) {
+    if (strcmp(node->key, key) == 0) break;
   }
   return node;
 }

@@ -13,6 +13,7 @@ void kev_lr_itemset_delete(KevItemSet* itemset) {
     free(go_to);
     go_to = tmp;
   }
+  kev_itemset_pool_deallocate(itemset);
 }
 
 void kev_lr_itemset_add_item(KevItemSet* itemset, KevKernelItem* item) {

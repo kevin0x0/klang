@@ -9,8 +9,7 @@ static bool kev_lr_closure_propagate(KevItemSet* itemset, KevAddrArray* closure,
 
 void kev_lr_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon) {
   KevBitSet* first = firsts[symbol->tmp_id];
-    KevRuleNode* node = symbol->rules;
-    while (node) {
+    for (KevRuleNode* node = symbol->rules; node; node = node->next) {
       KevRule* rule = node->rule;
       size_t bodylen = rule->bodylen;
       KevSymbol** body = rule->body;
@@ -30,7 +29,6 @@ void kev_lr_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon)
         kev_bitset_clear(first, epsilon);
       else
         kev_bitset_set(first, epsilon);
-      node = node->next;
     }
 }
 
@@ -99,25 +97,23 @@ KevBitSet* kev_lr_symbols_to_bitset(KevSymbol** symbols, size_t length) {
 }
 
 KevItemSet* kev_lr_get_start_itemset(KevSymbol* start, KevSymbol** lookahead, size_t length) {
-  KevBitSet* la_bitset = kev_lr_symbols_to_bitset(lookahead, length);
+  KevBitSet* la = kev_lr_symbols_to_bitset(lookahead, length);
   KevItemSet* iset = kev_lr_itemset_create();
-  if (!iset || !la_bitset) {
-    kev_bitset_delete(la_bitset);
+  if (!iset || !la) {
+    kev_bitset_delete(la);
     kev_lr_itemset_delete(iset);
     return NULL;
   }
-  KevRuleNode* node = start->rules;
-  while (node) {
+  for (KevRuleNode* node = start->rules; node; node = node->next) {
     KevKernelItem* item = kev_lr_kernel_item_create(node->rule, 0);
-    if (!item || !(item->lookahead = kev_bitset_create_copy(la_bitset))) {
+    if (!item || !(item->lookahead = kev_bitset_create_copy(la))) {
       kev_lr_itemset_delete(iset);
-      kev_bitset_delete(la_bitset);
+      kev_bitset_delete(la);
       return NULL;
     }
     kev_lr_itemset_add_item(iset, item);
-    node = node->next;
   }
-  kev_bitset_delete(la_bitset);
+  kev_bitset_delete(la);
   return iset;
 }
 

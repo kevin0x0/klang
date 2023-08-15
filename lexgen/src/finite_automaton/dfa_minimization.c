@@ -149,9 +149,8 @@ static KevFA* kev_construct_min_dfa(KevSetCrossList* setlist, KevPartitionUniver
 }
 
 static bool kev_hopcroft_compute_all_targets(KevIntListMap* all_targets, KevPartitionSet* restrict workset, KevGraphNode* states) {
-  while (states) {
-    KevGraphEdge* edge = kev_graphnode_get_edges(states);
-    while (edge) {
+  for (; states; states = states->next) {
+    for (KevGraphEdge* edge = kev_graphnode_get_edges(states); edge; edge = edge->next) {
       if (kev_partition_set_has(workset, edge->node)) {
         KevIntListMapNode* target = kev_intlistmap_search(all_targets, edge->attr);
         if (!target) {
@@ -162,9 +161,7 @@ static bool kev_hopcroft_compute_all_targets(KevIntListMap* all_targets, KevPart
         if (!lst) return false;
         target->value = lst;
       }
-      edge = edge->next;
     }
-    states = states->next;
   }
   return true;
 }
@@ -259,11 +256,10 @@ static bool kev_construct_min_dfa_edges(KevGraphNode** min_dfa_states, KevSetCro
        itr = kev_setcrosslist_iterate_next(itr), ++i) {
     KevGraphNode* representative = kev_partition_set_representative(universe, itr->set);
     KevGraphEdge* edge = kev_graphnode_get_edges(representative);
-    while (edge) {
+    for (; edge; edge = edge->next) {
       if (!kev_graphnode_connect(min_dfa_states[i], min_dfa_states[edge->node->id], edge->attr)) {
         return false;
       }
-      edge = edge->next;
     }
   }
   return true;
@@ -279,16 +275,15 @@ static KevFA* kev_classify_min_dfa_states(KevGraphNode** min_dfa_states, size_t 
                                         KevFA* dfa, size_t* accept_state_mapping) {
   KevGraphNode* min_dfa_accept_states = NULL;
   KevGraphNode* min_dfa_all_states = NULL;
-  KevGraphNode* dfa_accept_state = kev_fa_get_accept_state(dfa);
   size_t min_dfa_acc_state_number = 0;
-  while (dfa_accept_state) {
+  KevGraphNode* dfa_accept_state = kev_fa_get_accept_state(dfa);
+  for (; dfa_accept_state; dfa_accept_state = dfa_accept_state->next) {
     KevGraphNode* min_dfa_acc_state = min_dfa_states[dfa_accept_state->id];
     if (min_dfa_acc_state->id == KEV_DFA_UNKNOWN_STATE) {
       min_dfa_acc_state->next = min_dfa_accept_states;
       min_dfa_accept_states = min_dfa_acc_state;
       min_dfa_acc_state->id = ++min_dfa_acc_state_number;
     }
-    dfa_accept_state = dfa_accept_state->next;
   }
   min_dfa_all_states = min_dfa_accept_states;
   for (size_t i = 0; i < min_dfa_state_number; ++i) {
@@ -309,11 +304,10 @@ static KevFA* kev_classify_min_dfa_states(KevGraphNode** min_dfa_states, size_t 
 static bool kev_construct_min_dfa_acc_state_map(KevGraphNode** min_dfa_states, size_t min_dfa_acc_state_number, KevFA* dfa, size_t* accept_state_mapping) {
   size_t* min_dfa_acc_state_mapping = (size_t*)malloc(sizeof (size_t) * min_dfa_acc_state_number);
   if (!min_dfa_acc_state_mapping) return false;
-  KevGraphNode* dfa_acc_state = kev_fa_get_accept_state(dfa);
   size_t i = 0;
-  while (dfa_acc_state) {
+  KevGraphNode* dfa_acc_state = kev_fa_get_accept_state(dfa);
+  for (; dfa_acc_state; dfa_acc_state = dfa_acc_state->next) {
     min_dfa_acc_state_mapping[min_dfa_acc_state_number - min_dfa_states[dfa_acc_state->id]->id] = accept_state_mapping[i++];
-    dfa_acc_state = dfa_acc_state->next;
   }
   memcpy(accept_state_mapping, min_dfa_acc_state_mapping, sizeof (size_t) * min_dfa_acc_state_number);
   free(min_dfa_acc_state_mapping);
@@ -322,7 +316,7 @@ static bool kev_construct_min_dfa_acc_state_map(KevGraphNode** min_dfa_states, s
 
 static bool kev_do_pre_partition_for_accept_states(KevIntListMap* pre_partition, KevGraphNode* acc_state, size_t* accept_state_mapping) {
   size_t i = 0;
-  while (acc_state) {
+  for (; acc_state; acc_state = acc_state->next) {
     size_t owner = accept_state_mapping ? accept_state_mapping[i] : 0;
     ++i;
     KevIntListMapNode* lstnode = kev_intlistmap_search(pre_partition, owner);
@@ -341,7 +335,6 @@ static bool kev_do_pre_partition_for_accept_states(KevIntListMap* pre_partition,
         return false;
     }
     lstnode->value = lst;
-    acc_state = acc_state->next;
   }
   return true;
 }

@@ -201,10 +201,8 @@ bool kev_nfa_positive(KevFA* nfa) {
 size_t kev_fa_state_assign_id(KevFA* fa, KevStateId start_id) {
   KevGraphNodeList* nodes = kev_graph_get_nodes(&fa->transition);
   size_t count = start_id;
-  KevGraphNode* current_node = nodes;
-  while (current_node) {
+  for (KevGraphNode* current_node = nodes; current_node; current_node = current_node->next) {
     current_node->id = count;
-    current_node = current_node->next;
     ++count;
   }
   return count;
