@@ -134,14 +134,16 @@ KevSymbol** kev_lr_get_symbol_array(KevSymbol* start, KevSymbol** lookahead, siz
 }
 
 void kev_lr_symbol_array_partition(KevSymbol** array, size_t size) {
-  size_t next_pos = 0;
-  while (array[next_pos]->kind == KEV_LR_SYMBOL_TERMINAL && next_pos < size)
-    next_pos++;
-  for (size_t i = next_pos; i < size; ++i) {
-    if (array[i]->kind == KEV_LR_SYMBOL_TERMINAL) {
-      KevSymbol* tmp = array[next_pos];
-      array[next_pos++] = array[i];
-      array[i] = tmp;
-    }
+  KevSymbol** left = array;
+  KevSymbol** right = array + size - 1;
+  while (left < right) {
+    while (left < right && (*left)->kind == KEV_LR_SYMBOL_TERMINAL)
+      ++left;
+    while (left < right && (*right)->kind == KEV_LR_SYMBOL_NONTERMINAL)
+      --right;
+    if (left >= right) break;
+    KevSymbol* tmp = *left;
+    *left = *right;
+    *right = tmp;
   }
 }

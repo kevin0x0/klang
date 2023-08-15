@@ -26,5 +26,5 @@ void kev_lr_itemset_add_item(KevItemSet* itemset, KevKernelItem* item) {
   while (items->next && !kev_lr_item_less_than(item, items->next))
     items = items->next;
   item->next = items->next;
-  items->next = item->next;
+  items->next = item;
 }

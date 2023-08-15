@@ -228,6 +228,7 @@ static inline void kev_destroy_state_sets(KevStateSets* dfa_states_sets, bool de
 
 static bool kev_compute_all_transition(KevIntSetMap* transition_map, KevBitSet* closure,
                                        KevBitSet* closures, KevGraphNode** state_mapping) {
+  /* It is guaranteed that the closure is not empty. */
   size_t state = 0;
   size_t next_state = kev_bitset_iterate_begin(closure);
   do {
