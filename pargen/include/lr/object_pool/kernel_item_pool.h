@@ -3,9 +3,9 @@
 
 #include "pargen/include/lr/item_def.h"
 
-KevKernelItem* kev_kernel_item_pool_acquire(void);
-KevKernelItem* kev_kernel_item_pool_allocate(void);
-void kev_kernel_item_pool_deallocate(KevKernelItem* kernel_item);
-void kev_kernel_item_pool_free(void);
+KevItem* kev_item_pool_acquire(void);
+KevItem* kev_item_pool_allocate(void);
+void kev_item_pool_deallocate(KevItem* item);
+void kev_item_pool_free(void);
 
 #endif

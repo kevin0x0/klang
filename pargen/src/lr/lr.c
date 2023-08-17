@@ -69,7 +69,7 @@ KevBitSet** kev_lr_compute_first_array(KevSymbol** symbols, size_t symbol_no, si
 }
 
 KevSymbol* kev_lr_augment(KevSymbol* start) {
-  KevSymbol* new_start = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, NULL, 0);
+  KevSymbol* new_start = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, NULL);
   if (!new_start) return NULL;
   KevRule* start_rule = kev_lr_rule_create(new_start, &start, 1);
   if (!start_rule) {
@@ -106,7 +106,7 @@ KevItemSet* kev_lr_get_start_itemset(KevSymbol* start, KevSymbol** lookahead, si
     return NULL;
   }
   for (KevRuleNode* node = start->rules; node; node = node->next) {
-    KevKernelItem* item = kev_lr_kernel_item_create(node->rule, 0);
+    KevItem* item = kev_lr_item_create(node->rule, 0);
     if (!item || !(item->lookahead = kev_bitset_create_copy(la))) {
       kev_lr_itemset_delete(iset);
       kev_bitset_delete(la);
@@ -132,7 +132,7 @@ size_t kev_lr_label_symbols(KevSymbol** symbols, size_t symbol_no) {
 }
 
 bool kev_lr_closure(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevBitSet** firsts, size_t epsilon) {
-  KevKernelItem* kitem = itemset->items;
+  KevItem* kitem = itemset->items;
   for (; kitem; kitem = kitem->next) {
     if (kitem->dot == kitem->rule->bodylen)
       continue;
@@ -262,7 +262,7 @@ bool kev_lr_closure_propagate(KevItemSet* itemset, KevAddrArray* closure, KevBit
   return true;
 }
 
-KevBitSet* kev_lr_get_kernel_item_follows(KevKernelItem* kitem, KevBitSet** firsts, size_t epsilon) {
+KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon) {
   size_t len = kitem->rule->bodylen;
   KevSymbol** rulebody = kitem->rule->body;
   KevBitSet* follows = kev_bitset_create(epsilon + 3);

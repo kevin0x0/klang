@@ -24,12 +24,13 @@ typedef struct tagKevRule {
   size_t bodylen;
   size_t id;
 } KevRule;
+
 typedef struct tagKevRuleNode {
   KevRule* rule;
   struct tagKevRuleNode* next;
 } KevRuleNode;
 
-KevSymbol* kev_lr_symbol_create(int kind, char* name, KevSymbolID id);
+KevSymbol* kev_lr_symbol_create(int kind, char* name);
 void kev_lr_symbol_delete(KevSymbol* symbol);
 KevRule* kev_lr_rule_create(KevSymbol* head, KevSymbol** body, size_t body_length);
 KevRule* kev_lr_rule_create_move(KevSymbol* head, KevSymbol** body, size_t body_length);

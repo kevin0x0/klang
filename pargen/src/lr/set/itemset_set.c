@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 inline static size_t kev_itemsetset_hashing(KevItemSet* element) {
-  KevKernelItem* kitem = element->items;
+  KevItem* kitem = element->items;
   size_t hashval = 0;
   for (; kitem; kitem = kitem->next) {
     hashval += ((size_t)(kitem->rule) + kitem->dot) >> 3;

@@ -9,6 +9,7 @@
 #define KEV_LR_ACTION_SHI     (1)
 #define KEV_LR_ACTION_RED     (2)
 #define KEV_LR_ACTION_ACC     (3)
+#define KEV_LR_ACTION_CON     (4)
 
 #define KEV_LR_GOTO_NONE      ((KevLRGotoEntry)-1)
 
@@ -21,23 +22,38 @@ typedef struct tagKevLRCollection {
   KevBitSet** firsts;
 } KevLRCollection;
 
+typedef struct tagKevLRConflict {
+  size_t conflict_itemset;
+  KevItem* conflict_items;
+  struct tagKevLRConflict* next;
+} KevLRConflict;
+
+typedef union tagKevLRActionEntryInfo {
+  KevRule* rule;
+  KevLRConflict* conflict;
+  size_t itemset;
+} KevLRActionEntryInfo;
+
 typedef struct tagKevLRActionEntry {
-  size_t info;
+  KevLRActionEntryInfo info;
   int action;
 } KevLRActionEntry;
 
 typedef struct tagKevLRAction {
   KevLRActionEntry** table;
+  KevLRConflict* conflicts;
   size_t itemset_no;
   size_t symbol_no;
 } KevLRAction;
 
 typedef int64_t KevLRGotoEntry;
+
 typedef struct tagKevLRGoto {
   KevLRGotoEntry** table;
   size_t itemset_no;
   size_t symbol_no;
 } KevLRGoto;
+
 
 /* generation of lr collection */
 KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
@@ -58,6 +74,11 @@ static inline size_t kev_lr_get_itmeset_no(KevLRCollection* collec);
 static inline size_t kev_lr_get_symbol_no(KevLRCollection* collec);
 static inline size_t kev_lr_get_terminal_no(KevLRCollection* collec);
 
+/* conflict */
+KevLRConflict* kev_lr_conflict_create(size_t itemset);
+void kev_lr_conflict_delete(KevLRConflict* conflict);
+static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item);
+
 /* general function */
 void kev_lr_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon);
 KevBitSet** kev_lr_compute_first_array(KevSymbol** symbols, size_t symbol_no, size_t terminal_no);
@@ -72,7 +93,7 @@ bool kev_lr_closure_create(KevLRCollection* collec, KevItemSet* itemset, KevAddr
 void kev_lr_closure_make_empty(KevAddrArray* closure, KevBitSet** la_symbols);
 void kev_lr_closure_destroy(KevAddrArray* closure, KevBitSet** la_symbols);
 void kev_lr_closure_delete(KevAddrArray* closure, KevBitSet** la_symbols);
-KevBitSet* kev_lr_get_kernel_item_follows(KevKernelItem* kitem, KevBitSet** firsts, size_t epsilon);
+KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon);
 KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon);
 
 static inline KevItemSet* kev_lr_get_itemset_by_index(KevLRCollection* collec, size_t index) {
@@ -95,4 +116,8 @@ static inline size_t kev_lr_get_terminal_no(KevLRCollection* collec) {
   return collec->terminal_no;
 }
 
+static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item) {
+  item->next = conflict->conflict_items;
+  conflict->conflict_items = item->next;
+}
 #endif

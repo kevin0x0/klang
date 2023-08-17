@@ -4,18 +4,12 @@
 #include "pargen/include/lr/rule.h"
 #include "utils/include/set/bitset.h"
 
-typedef struct tagKevKernelItem {
+typedef struct tagKevItem {
   KevRule* rule;
   KevBitSet* lookahead;
-  struct tagKevKernelItem* next;
+  struct tagKevItem* next;
   size_t dot;
-} KevKernelItem;
-
-typedef struct tagKevNonKernelItem {
-  KevSymbol* head;
-  KevBitSet* lookahead;
-  struct tagKevNonKernelItem* next;
-} KevNonKernelItem;
+} KevItem;
 
 struct tagKevItemSet;
 typedef struct tagKevItemSetGoto {
@@ -25,7 +19,7 @@ typedef struct tagKevItemSetGoto {
 } KevItemSetGoto;
 
 typedef struct tagKevItemSet {
-  KevKernelItem* items;
+  KevItem* items;
   KevItemSetGoto* gotos;
   size_t id;
 } KevItemSet;

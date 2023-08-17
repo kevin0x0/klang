@@ -203,15 +203,15 @@ static bool kev_lalr_get_itemset(KevItemSet* itemset, KevAddrArray* closure, Kev
 static bool kev_lalr_generate_gotos(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevGotoMap* goto_container) {
   kev_gotomap_make_empty(goto_container);
   /* for kernel item */
-  KevKernelItem* kitem = itemset->items;
+  KevItem* kitem = itemset->items;
   for (; kitem; kitem = kitem->next) {
     KevRule* rule = kitem->rule;
     if (rule->bodylen == kitem->dot) continue;
     KevSymbol* symbol = rule->body[kitem->dot];
-    KevKernelItem* item = kev_lr_kernel_item_create(rule, kitem->dot + 1);
+    KevItem* item = kev_lr_item_create(rule, kitem->dot + 1);
     if (!item) return false;
     if (!(item->lookahead = kev_bitset_create_copy(kitem->lookahead))) {
-      kev_lr_kernel_item_delete(item);
+      kev_lr_item_delete(item);
       return false;
     }
     KevGotoMapNode* node = kev_gotomap_search(goto_container, symbol);
@@ -220,7 +220,7 @@ static bool kev_lalr_generate_gotos(KevItemSet* itemset, KevAddrArray* closure, 
     } else {
       KevItemSet* iset = kev_lr_itemset_create();
       if (!iset) {
-        kev_lr_kernel_item_delete(item);
+        kev_lr_item_delete(item);
         return false;
       }
       kev_lr_itemset_add_item(iset, item);
@@ -241,10 +241,10 @@ static bool kev_lalr_generate_gotos(KevItemSet* itemset, KevAddrArray* closure, 
       KevRule* rule = rulenode->rule;
       if (rule->bodylen == 0) continue;
       KevSymbol* symbol = rule->body[0];
-      KevKernelItem* item = kev_lr_kernel_item_create(rule, 1);
+      KevItem* item = kev_lr_item_create(rule, 1);
       if (!item) return false;
       if (!(item->lookahead = kev_bitset_create_copy(la_symbols[head->tmp_id]))) {
-        kev_lr_kernel_item_delete(item);
+        kev_lr_item_delete(item);
         return false;
       }
       KevGotoMapNode* node = kev_gotomap_search(goto_container, symbol);
@@ -253,7 +253,7 @@ static bool kev_lalr_generate_gotos(KevItemSet* itemset, KevAddrArray* closure, 
       } else {
         KevItemSet* iset = kev_lr_itemset_create();
         if (!iset) {
-          kev_lr_kernel_item_delete(item);
+          kev_lr_item_delete(item);
           return false;
         }
         kev_lr_itemset_add_item(iset, item);
@@ -269,7 +269,7 @@ static bool kev_lalr_generate_gotos(KevItemSet* itemset, KevAddrArray* closure, 
 }
 
 static inline bool kev_lalr_init_kitem_la(KevItemSet* itemset, size_t epsilon) {
-  KevKernelItem* kitem = itemset->items;
+  KevItem* kitem = itemset->items;
   size_t id = epsilon + 1;
   for (; kitem; kitem = kitem->next) {
     if (!kev_bitset_set(kitem->lookahead, id++))
@@ -279,7 +279,7 @@ static inline bool kev_lalr_init_kitem_la(KevItemSet* itemset, size_t epsilon) {
 }
 
 static inline void kev_lalr_final_kitem_la(KevItemSet* itemset, size_t epsilon) {
-  KevKernelItem* kitem = itemset->items;
+  KevItem* kitem = itemset->items;
   size_t id = epsilon + 1;
   for (; kitem; kitem = kitem->next) {
     kev_bitset_clear(kitem->lookahead, id++);
@@ -288,8 +288,8 @@ static inline void kev_lalr_final_kitem_la(KevItemSet* itemset, size_t epsilon) 
 
 
 static bool kev_lalr_itemset_equal(KevItemSet* itemset1, KevItemSet* itemset2) {
-  KevKernelItem* kitem1 = itemset1->items;
-  KevKernelItem* kitem2 = itemset2->items;
+  KevItem* kitem1 = itemset1->items;
+  KevItem* kitem2 = itemset2->items;
   while (kitem1 && kitem2) {
     if (kitem1->rule != kitem2->rule || kitem1->dot != kitem2->dot)
       return false;
@@ -301,11 +301,11 @@ static bool kev_lalr_itemset_equal(KevItemSet* itemset1, KevItemSet* itemset2) {
 
 static bool kev_lalr_merge_itemset(KevItemSet* new, KevItemSet* old, KevItemSet* itemset, KevLALRCollection* collec) {
   KevLookaheadPropagation* propagation = collec->propagation;
-  KevKernelItem* new_kitem = new->items;
-  KevKernelItem* old_kitem = old->items;
+  KevItem* new_kitem = new->items;
+  KevItem* old_kitem = old->items;
   size_t epsilon = collec->terminal_no;
   for (;old_kitem; old_kitem = old_kitem->next, new_kitem = new_kitem->next) {
-    KevKernelItem* kitem_in_itemset = itemset->items;
+    KevItem* kitem_in_itemset = itemset->items;
     KevBitSet* old_la = old_kitem->lookahead;
     KevBitSet* new_la = new_kitem->lookahead;
     for (size_t i = epsilon + 1; kitem_in_itemset; kitem_in_itemset = kitem_in_itemset->next, ++i) {
@@ -329,8 +329,8 @@ static bool kev_lalr_merge_itemset(KevItemSet* new, KevItemSet* old, KevItemSet*
 
 static bool kev_lalr_add_new_itemset(KevItemSet* new, KevItemSetSet* iset_set, KevItemSet* itemset, KevLALRCollection* collec) {
   KevLookaheadPropagation* propagation = collec->propagation;
-  for (KevKernelItem* kitem = new->items; kitem; kitem = kitem->next) {
-    KevKernelItem* kitem_in_itemset = itemset->items;
+  for (KevItem* kitem = new->items; kitem; kitem = kitem->next) {
+    KevItem* kitem_in_itemset = itemset->items;
     KevBitSet* la = kitem->lookahead;
     for (size_t i = collec->terminal_no + 1; kitem_in_itemset; kitem_in_itemset = kitem_in_itemset->next, ++i) {
       if (kev_bitset_has_element(la, i)) {

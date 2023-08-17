@@ -7,12 +7,11 @@
 
 static inline void kev_rulenode_delete(KevRuleNode* rules);
 
-KevSymbol* kev_lr_symbol_create(int kind, char* name, KevSymbolID id) {
+KevSymbol* kev_lr_symbol_create(int kind, char* name) {
   KevSymbol* symbol = (KevSymbol*)malloc(sizeof (KevSymbol));
   if (!symbol) return NULL;
   symbol->kind = kind;
   symbol->name = name;
-  symbol->id = id;
   symbol->rules = NULL;
   return symbol;
 }

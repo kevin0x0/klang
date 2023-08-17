@@ -5,6 +5,7 @@
 #include "pargen/include/lr/object_pool/itemset_pool.h"
 #include "pargen/include/lr/object_pool/itemsetgoto_pool.h"
 #include "pargen/include/lr/object_pool/kernel_item_pool.h"
+#include "utils/include/set/bitset.h"
 
 #include <stdlib.h>
 
@@ -14,12 +15,13 @@
 
 static inline KevItemSet* kev_lr_itemset_create(void);
 void kev_lr_itemset_delete(KevItemSet* itemset);
-void kev_lr_itemset_add_item(KevItemSet* itemset, KevKernelItem* item);
+void kev_lr_itemset_add_item(KevItemSet* itemset, KevItem* item);
 static inline void kev_lr_itemset_add_goto(KevItemSet* itemset, KevItemSetGoto* go_to);
 static inline bool kev_lr_itemset_goto(KevItemSet* itemset, KevSymbol* symbol, KevItemSet* iset);
 
-static inline KevKernelItem* kev_lr_kernel_item_create(KevRule* rule, size_t dot);
-static inline void kev_lr_kernel_item_delete(KevKernelItem* item);
+static inline KevItem* kev_lr_item_create(KevRule* rule, size_t dot);
+static inline KevItem* kev_lr_item_create_copy(KevItem* item);
+static inline void kev_lr_item_delete(KevItem* item);
 
 
 static inline KevItemSet* kev_lr_itemset_create(void) {
@@ -30,8 +32,8 @@ static inline KevItemSet* kev_lr_itemset_create(void) {
   return itemset;
 }
 
-static inline KevKernelItem* kev_lr_kernel_item_create(KevRule* rule, size_t dot) {
-  KevKernelItem* item = kev_kernel_item_pool_allocate();
+static inline KevItem* kev_lr_item_create(KevRule* rule, size_t dot) {
+  KevItem* item = kev_item_pool_allocate();
   if (!item) return NULL;
   item->rule = rule;
   item->dot = dot;
@@ -39,10 +41,22 @@ static inline KevKernelItem* kev_lr_kernel_item_create(KevRule* rule, size_t dot
   return item;
 }
 
-static inline void kev_lr_kernel_item_delete(KevKernelItem* item) {
+static inline KevItem* kev_lr_item_create_copy(KevItem* item) {
+  KevItem* ret = kev_item_pool_allocate();
+  ret->rule = item->rule;
+  ret->dot = item->dot;
+  ret->lookahead = NULL;
+  if (item->lookahead && !(ret->lookahead = kev_bitset_create_copy(item->lookahead))) {
+    kev_lr_item_delete(ret);
+    return NULL;
+  }
+  return ret;
+}
+
+static inline void kev_lr_item_delete(KevItem* item) {
   if (item) {
     kev_bitset_delete(item->lookahead);
-    kev_kernel_item_pool_deallocate(item);
+    kev_item_pool_deallocate(item);
   }
 }
 

@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-static bool kev_lr_decide_action(KevItemSet* itemset, KevLRCollection* collec, KevLRGoto* goto_table, KevBitSet** la_symbols, KevAddrArray* closure);
+static bool kev_lr_decide_action(KevItemSet* itemset, KevLRCollection* collec, KevLRGoto* goto_table, KevLRAction* action_table, KevAddrArray* closure, KevBitSet** la_symbols);
 
 KevLRAction* kev_lr_action_create(KevLRCollection* collec, KevLRGoto* goto_table) {
   size_t symbol_no = collec->symbol_no;
@@ -22,13 +22,16 @@ KevLRAction* kev_lr_action_create(KevLRCollection* collec, KevLRGoto* goto_table
   KevLRAction* ret_table = (KevLRAction*)malloc(sizeof (KevLRAction));
   if (!ret_table) {
     kev_lr_closure_delete(closure, la_symbols);
-    return ret_table;
+    return NULL;
   }
+  ret_table->itemset_no = itemset_no;
+  ret_table->symbol_no = symbol_no;
+  ret_table->conflicts = NULL;
   KevLRActionEntry** table = (KevLRActionEntry**)malloc(sizeof (KevLRActionEntry*) * itemset_no);
   if (!table) {
     free(ret_table);
     kev_lr_closure_delete(closure, la_symbols);
-    return ret_table;
+    return NULL;
   }
   ret_table->table = table;
   KevLRActionEntry* tmp = (KevLRActionEntry*)malloc(sizeof (KevLRActionEntry) * itemset_no * terminal_no);
@@ -47,7 +50,7 @@ KevLRAction* kev_lr_action_create(KevLRCollection* collec, KevLRGoto* goto_table
 
   for (size_t i = 0; i < itemset_no; ++i) {
     if (!kev_lr_closure(itemsets[i], closure, la_symbols, collec->firsts, collec->terminal_no) ||
-        !kev_lr_decide_action(itemsets[i], collec, goto_table, la_symbols, closure)) {
+        !kev_lr_decide_action(itemsets[i], collec, goto_table, ret_table, closure, la_symbols)) {
       kev_lr_action_delete(ret_table);
       kev_lr_closure_delete(closure, la_symbols);
       return NULL;
@@ -56,7 +59,7 @@ KevLRAction* kev_lr_action_create(KevLRCollection* collec, KevLRGoto* goto_table
   return ret_table;
 }
 
-static bool kev_lr_decide_action(KevItemSet* itemset, KevLRCollection* collec, KevBitSet** la_symbols, KevAddrArray* closure) {
+static bool kev_lr_decide_action(KevItemSet* itemset, KevLRCollection* collec, KevLRGoto* goto_table, KevLRAction* action_table, KevAddrArray* closure, KevBitSet** la_symbols) {
 
 }
 
@@ -107,4 +110,23 @@ void kev_lr_goto_delete(KevLRGoto* table) {
   free(table->table[0]);
   free(table->table);
   free(table);
+}
+
+KevLRConflict* kev_lr_conflict_create(size_t itemset) {
+  KevLRConflict* conflict = (KevLRConflict*)malloc(sizeof (KevLRConflict));
+  if (!conflict) return NULL;
+  conflict->next = NULL;
+  conflict->conflict_items = NULL;
+  conflict->conflict_itemset = itemset;
+  return conflict;
+}
+
+void kev_lr_conflict_delete(KevLRConflict* conflict) {
+  if (!conflict) return;
+  KevItem* item = conflict->conflict_items;
+  while (item) {
+    KevItem* tmp = item->next;
+    kev_lr_item_delete(item);
+    item = tmp;
+  }
 }

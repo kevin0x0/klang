@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemset, bool print_closure) {
-  for (KevKernelItem* kitem = itemset->items; kitem; kitem = kitem->next) {
+  for (KevItem* kitem = itemset->items; kitem; kitem = kitem->next) {
     kev_lr_print_kernel_item(out, collec, kitem);
     fputc('\n', out);
   }
@@ -37,7 +37,7 @@ bool kev_lr_print_collection(FILE* out, KevLRCollection* collec, bool print_clos
   return true;
 }
 
-void kev_lr_print_kernel_item(FILE* out, KevLRCollection* collec, KevKernelItem* kitem) {
+void kev_lr_print_kernel_item(FILE* out, KevLRCollection* collec, KevItem* kitem) {
   KevRule* rule = kitem->rule;
   KevSymbol** body = rule->body;
   size_t len = rule->bodylen;
