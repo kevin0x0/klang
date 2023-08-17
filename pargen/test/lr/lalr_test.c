@@ -19,9 +19,9 @@ int main(int argc, char** argv) {
   KevRule* rule4 = kev_lr_rule_create(R, &L, 1);
   KevRule* rule5 = kev_lr_rule_create(S, body1, 3);
   KevRule* rule6 = kev_lr_rule_create(L, body2, 2);
-  KevLRCollection* collec = kev_create_lalr_collection(G, &end, 1);
+  KevLRCollection* collec = kev_lr_collection_create_lalr(G, &end, 1);
   kev_lr_print_collection(stdout, collec, false);
-  kev_lr_delete_collection(collec);
+  kev_lr_collection_delete(collec);
 
   kev_lr_rule_delete(rule1);
   kev_lr_rule_delete(rule2);

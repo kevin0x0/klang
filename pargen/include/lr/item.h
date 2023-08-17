@@ -9,9 +9,8 @@
 #include <stdlib.h>
 
 #define kev_lr_item_less_than(item1, item2) ((size_t)(item1) < (size_t)(item2) || \
-                        ((size_t)(item1) == (size_t)(item2) && \
-                        (item1)->dot < (item2)->dot))
-
+                                            ((size_t)(item1) == (size_t)(item2) && \
+                                            (item1)->dot < (item2)->dot))
 
 static inline KevItemSet* kev_lr_itemset_create(void);
 void kev_lr_itemset_delete(KevItemSet* itemset);

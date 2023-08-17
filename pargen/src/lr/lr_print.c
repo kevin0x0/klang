@@ -11,8 +11,9 @@ bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemse
   }
   if (!print_closure) return true;
   KevBitSet** la_symbols = NULL;
-  KevAddrArray* closure = kev_lr_closure(collec, itemset, &la_symbols);
-  if (!closure) return false;
+  KevAddrArray* closure = NULL;
+  if (!kev_lr_closure_create(collec, itemset, &closure, &la_symbols))
+    return false;
   for (size_t i = 0; i < kev_addrarray_size(closure); ++i) {
     KevSymbol* head = kev_addrarray_visit(closure, i);
     size_t head_index = head->tmp_id;
@@ -22,13 +23,13 @@ bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemse
       fputc('\n', out);
     }
   }
-  kev_lr_delete_closure(closure, la_symbols);
+  kev_lr_closure_delete(closure, la_symbols);
   return true;
 }
 
 bool kev_lr_print_collection(FILE* out, KevLRCollection* collec, bool print_closure) {
   for (size_t i = 0; i < collec->itemset_no; ++i) {
-    fprintf(out, "item set %d:\n", (int)i);
+    fprintf(out, "item set %d:\n", (int)collec->itemsets[i]->id);
     if (!kev_lr_print_itemset(out, collec, collec->itemsets[i], print_closure))
       return false;
     fputc('\n', out);

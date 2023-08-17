@@ -27,6 +27,7 @@ typedef struct tagKevItemSetGoto {
 typedef struct tagKevItemSet {
   KevKernelItem* items;
   KevItemSetGoto* gotos;
+  size_t id;
 } KevItemSet;
 
 #endif

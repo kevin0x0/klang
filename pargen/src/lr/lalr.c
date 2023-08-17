@@ -2,8 +2,6 @@
 #include "pargen/include/lr/hashmap/gotomap.h"
 #include "pargen/include/lr/set/itemset_set.h"
 
-#include <stdlib.h>
-
 static bool kev_lalr_get_all_itemsets(KevItemSet* start_iset, KevLALRCollection* collec);
 static bool kev_lalr_do_lookahead_propagation(KevLookaheadPropagation* propagation);
 static bool kev_lalr_merge_gotos(KevItemSetSet* iset_set, KevAddrArray* itemset_array, KevLALRCollection* collec, KevItemSet* itemset);
@@ -11,14 +9,11 @@ static bool kev_lalr_merge_itemset(KevItemSet* new, KevItemSet* old, KevItemSet*
 static bool kev_lalr_add_new_itemset(KevItemSet* new, KevItemSetSet* iset_set, KevItemSet* itemset, KevLALRCollection* collec);
 static bool kev_lalr_get_itemset(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevBitSet** firsts, size_t epsilon, KevGotoMap* goto_container);
 static bool kev_lalr_generate_gotos(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevGotoMap* goto_container);
-static void kev_lalr_clear_la_symbols_and_closure(KevAddrArray* closure, KevBitSet** la_symbols);
-static bool kev_lalr_closure(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevBitSet** firsts, size_t epsilon);
-static bool kev_lalr_closure_propagate(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevBitSet** firsts, size_t epsilon);
 /* initialize lookahead for kernel items in itemset */
 static inline bool kev_lalr_init_kitem_la(KevItemSet* itemset, size_t epsilon);
 static inline void kev_lalr_final_kitem_la(KevItemSet* itemset, size_t epsilon);
-static KevBitSet* kev_lalr_get_kernel_item_follows(KevKernelItem* kitem, KevBitSet** firsts, size_t epsilon);
-static KevBitSet* kev_lalr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon);
+
+static inline void kev_lalr_assign_itemset_id(KevItemSet** itemsets, size_t itemset_no);
 
 static KevLALRCollection* kev_lalr_get_empty_collec(void);
 static bool kev_lalr_itemset_equal(KevItemSet* itemset1, KevItemSet* itemset2);
@@ -29,7 +24,7 @@ static void kev_lalr_destroy_itemset_array(KevAddrArray* itemset_array);
 static void kev_lalr_destroy_collec(KevLALRCollection* collec);
 
 
-KevLRCollection* kev_create_lalr_collection(KevSymbol* start, KevSymbol** lookahead, size_t la_len) {
+KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** lookahead, size_t la_len) {
   KevLALRCollection* collec = kev_lalr_get_empty_collec();
   if (!collec) return NULL;
   collec->symbols = kev_lr_get_symbol_array(start, lookahead, la_len, &collec->symbol_no);
@@ -53,6 +48,7 @@ KevLRCollection* kev_create_lalr_collection(KevSymbol* start, KevSymbol** lookah
     kev_lalr_destroy_collec(collec);
     return NULL;
   }
+  kev_lalr_assign_itemset_id(collec->itemsets, collec->itemset_no);
   if (!kev_lalr_do_lookahead_propagation(collec->propagation)) {
     kev_lalr_destroy_collec(collec);
     return NULL;
@@ -141,7 +137,7 @@ static bool kev_lalr_get_all_itemsets(KevItemSet* start_iset, KevLALRCollection*
       free(la_symbols);
       return false;
     }
-    kev_lalr_clear_la_symbols_and_closure(closure, la_symbols);
+    kev_lr_closure_make_empty(closure, la_symbols);
   }
   kev_addrarray_delete(closure);
   kev_gotomap_delete(goto_container);
@@ -196,7 +192,7 @@ static bool kev_lalr_merge_gotos(KevItemSetSet* iset_set, KevAddrArray* itemset_
 static bool kev_lalr_get_itemset(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevBitSet** firsts, size_t epsilon, KevGotoMap* goto_container) {
   if (!kev_lalr_init_kitem_la(itemset, epsilon))
     return false;
-  if (!kev_lalr_closure(itemset, closure, la_symbols, firsts, epsilon))
+  if (!kev_lr_closure(itemset, closure, la_symbols, firsts, epsilon))
     return false;
   if (!kev_lalr_generate_gotos(itemset, closure, la_symbols, goto_container))
     return false;
@@ -290,144 +286,6 @@ static inline void kev_lalr_final_kitem_la(KevItemSet* itemset, size_t epsilon) 
   }
 }
 
-static KevBitSet* kev_lalr_get_kernel_item_follows(KevKernelItem* kitem, KevBitSet** firsts, size_t epsilon) {
-  size_t len = kitem->rule->bodylen;
-  KevSymbol** rulebody = kitem->rule->body;
-  KevBitSet* follows = kev_bitset_create(epsilon + 3);
-  if (!follows) return NULL;
-  for (size_t i = kitem->dot + 1; i < len; ++i) {
-    if (rulebody[i]->kind == KEV_LR_SYMBOL_TERMINAL) {
-      kev_bitset_set(follows, rulebody[i]->tmp_id);
-      return follows;
-    }
-    KevBitSet* set = firsts[rulebody[i]->tmp_id];
-    if (!kev_bitset_union(follows, set)) {
-      kev_bitset_delete(follows);
-      return NULL;
-    }
-    if (!kev_bitset_has_element(set, epsilon)) {
-      kev_bitset_clear(follows, epsilon);
-      return follows;
-    }
-  }
-  kev_bitset_clear(follows, epsilon);
-  if (!kev_bitset_union(follows, kitem->lookahead)) {
-    kev_bitset_delete(follows);
-    return NULL;
-  }
-  return follows;
-}
-
-static KevBitSet* kev_lalr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon) {
-  size_t len = rule->bodylen;
-  KevSymbol** rulebody = rule->body;
-  KevBitSet* follows = kev_bitset_create(epsilon + 3);
-  if (!follows) return NULL;
-  for (size_t i = 1; i < len; ++i) {
-    if (rulebody[i]->kind == KEV_LR_SYMBOL_TERMINAL) {
-      kev_bitset_set(follows, rulebody[i]->tmp_id);
-      return follows;
-    }
-    KevBitSet* set = firsts[rulebody[i]->tmp_id];
-    if (!kev_bitset_union(follows, set)) {
-      kev_bitset_delete(follows);
-      return NULL;
-    }
-    if (!kev_bitset_has_element(set, epsilon)) {
-      kev_bitset_clear(follows, epsilon);
-      return follows;
-    }
-  }
-  kev_bitset_clear(follows, epsilon);
-  if (!kev_bitset_union(follows, lookahead)) {
-    kev_bitset_delete(follows);
-    return NULL;
-  }
-  return follows;
-}
-
-static bool kev_lalr_closure(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevBitSet** firsts, size_t epsilon) {
-  KevKernelItem* kitem = itemset->items;
-  for (; kitem; kitem = kitem->next) {
-    if (kitem->dot == kitem->rule->bodylen)
-      continue;
-    KevSymbol* symbol = kitem->rule->body[kitem->dot];
-    if (symbol->kind == KEV_LR_SYMBOL_TERMINAL)
-      continue;
-    KevBitSet* la = kev_lalr_get_kernel_item_follows(kitem, firsts, epsilon);
-    if (!la) return false;
-    size_t index = symbol->tmp_id;
-    if (la_symbols[index]) {
-      if (!kev_bitset_union(la_symbols[index], la)) {
-        kev_bitset_delete(la);
-        return false;
-      }
-      kev_bitset_delete(la);
-    } else {
-      la_symbols[index] = la;
-      if (!kev_addrarray_push_back(closure, symbol))
-        return false;
-    }
-  }
-
-  for (size_t i = 0; i < kev_addrarray_size(closure); ++i) {
-    KevSymbol* head = kev_addrarray_visit(closure, i);
-    size_t head_index = head->tmp_id;
-    for (KevRuleNode* node = head->rules; node; node = node->next) {
-      KevRule* rule = node->rule;
-      if (rule->bodylen == 0) continue;
-      KevSymbol* symbol = rule->body[0];
-      if (symbol->kind == KEV_LR_SYMBOL_TERMINAL)
-        continue;
-      KevBitSet* la = kev_lalr_get_non_kernel_item_follows(rule, la_symbols[head_index], firsts, epsilon);
-      if (!la) return false;
-      size_t index = symbol->tmp_id;
-      if (la_symbols[index]) {
-        if (!kev_bitset_union(la_symbols[index], la)) {
-          kev_bitset_delete(la);
-          return false;
-        }
-        kev_bitset_delete(la);
-      } else {
-        la_symbols[index] = la;
-        if (!kev_addrarray_push_back(closure, symbol))
-          return false;
-      }
-    }
-  }
-
-  return kev_lalr_closure_propagate(itemset, closure, la_symbols, firsts, epsilon);
-}
-
-static bool kev_lalr_closure_propagate(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevBitSet** firsts, size_t epsilon) {
-  size_t closure_size = kev_addrarray_size(closure);
-  bool propagated = true;
-  while (propagated) {
-    propagated = false;
-    for (size_t i = 0; i < closure_size; ++i) {
-      KevSymbol* symbol = (KevSymbol*)kev_addrarray_visit(closure, i);
-      KevRuleNode* node = symbol->rules;
-      for (; node; node = node->next) {
-        size_t i = 0;
-        size_t len = node->rule->bodylen;
-        if (len == 0) continue;
-        KevSymbol** body = node->rule->body;
-        for (; i < len; ++i) {
-          if (body[i]->kind == KEV_LR_SYMBOL_TERMINAL || 
-              kev_bitset_has_element(la_symbols[body[i]->tmp_id], epsilon))
-            break;
-        }
-        if (i != len) continue;
-        if (!kev_bitset_is_subset(la_symbols[symbol->tmp_id], la_symbols[body[0]->tmp_id])) {
-          propagated = true;
-          if (!kev_bitset_union(la_symbols[body[0]->tmp_id], la_symbols[symbol->tmp_id]))
-            return false;
-        }
-      }
-    }
-  }
-  return true;
-}
 
 static bool kev_lalr_itemset_equal(KevItemSet* itemset1, KevItemSet* itemset2) {
   KevKernelItem* kitem1 = itemset1->items;
@@ -439,16 +297,6 @@ static bool kev_lalr_itemset_equal(KevItemSet* itemset1, KevItemSet* itemset2) {
     kitem2 = kitem2->next;
   }
   return !(kitem1 || kitem2);
-}
-
-static void kev_lalr_clear_la_symbols_and_closure(KevAddrArray* closure, KevBitSet** la_symbols) {
-  size_t size = kev_addrarray_size(closure);
-  for (size_t i = 0; i < size; ++i) {
-    size_t index = ((KevSymbol*)kev_addrarray_visit(closure, i))->tmp_id;
-    kev_bitset_delete(la_symbols[index]);
-    la_symbols[index] = NULL;
-  }
-  kev_addrarray_make_empty(closure);
 }
 
 static bool kev_lalr_merge_itemset(KevItemSet* new, KevItemSet* old, KevItemSet* itemset, KevLALRCollection* collec) {
@@ -538,4 +386,9 @@ static KevLRCollection* kev_lalr_to_lr_collec(KevLALRCollection* lalr_collec) {
   lalr_collec->firsts = NULL;
   kev_lalr_destroy_collec(lalr_collec);
   return lr_collec;
+}
+
+static inline void kev_lalr_assign_itemset_id(KevItemSet** itemsets, size_t itemset_no) {
+  for (size_t i = 0; i < itemset_no; ++i)
+    itemsets[i]->id = i;
 }
