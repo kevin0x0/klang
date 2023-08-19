@@ -1,6 +1,7 @@
 #include "pargen/include/lr/lr_print.h"
 
 #define KEV_LR_SYMBOL_EPSILON_STRING  "ε"
+#define KEV_UNNAMED                   "[UNNAMED]"
 
 #include <stdio.h>
 
@@ -41,23 +42,23 @@ void kev_lr_print_kernel_item(FILE* out, KevLRCollection* collec, KevItem* kitem
   KevRule* rule = kitem->rule;
   KevSymbol** body = rule->body;
   size_t len = rule->bodylen;
-  fprintf(out, "%s -> ", rule->head->name);
+  fprintf(out, "%s -> ", rule->head->name ? rule->head->name : KEV_UNNAMED);
   size_t dot = kitem->dot;
   for (size_t i = 0; i < dot; ++i) 
-    fprintf(out, "%s ", body[i]->name);
+    fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_UNNAMED);
   fprintf(out, ": ");
   for (size_t i = dot; i < len; ++i) 
-    fprintf(out, "%s ", body[i]->name);
+    fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_UNNAMED);
   kev_lr_print_terminal_set(out, collec, kitem->lookahead);
 }
 
 void kev_lr_print_non_kernel_item(FILE* out, KevLRCollection* collec, KevRule* rule, KevBitSet* lookahead) {
   KevSymbol** body = rule->body;
   size_t len = rule->bodylen;
-  fprintf(out, "%s -> ", rule->head->name);
+  fprintf(out, "%s -> ", rule->head->name ? rule->head->name : KEV_UNNAMED);
   fprintf(out, ": ");
   for (size_t i = 0; i < len; ++i) 
-    fprintf(out, "%s ", body[i]->name);
+    fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_UNNAMED);
   kev_lr_print_terminal_set(out, collec, lookahead);
 }
 
@@ -70,12 +71,14 @@ void kev_lr_print_terminal_set(FILE* out, KevLRCollection* collec, KevBitSet* lo
   size_t epsilon = collec->terminal_no;
   size_t symbol_index = kev_bitset_iterate_begin(lookahead);
   size_t next_index = 0;
-  fprintf(out, "[%s", collec->symbols[symbol_index]->name);
+  char* name = collec->symbols[symbol_index]->name;
+  fprintf(out, "[%s", name ? name : KEV_UNNAMED);
   next_index = kev_bitset_iterate_next(lookahead, symbol_index);
   while (next_index != symbol_index) {
     symbol_index = next_index;
     if (symbol_index != epsilon) {
-      fprintf(out, ", %s", collec->symbols[symbol_index]->name);
+      char* name = collec->symbols[symbol_index]->name;
+      fprintf(out, ", %s", name ? name : KEV_UNNAMED);
     } else {
       fprintf(out, KEV_LR_SYMBOL_EPSILON_STRING);
     }

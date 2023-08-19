@@ -27,7 +27,14 @@ static void kev_lalr_destroy_collec(KevLALRCollection* collec);
 KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** lookahead, size_t la_len) {
   KevLALRCollection* collec = kev_lalr_get_empty_collec();
   if (!collec) return NULL;
-  collec->symbols = kev_lr_get_symbol_array(start, lookahead, la_len, &collec->symbol_no);
+  KevSymbol* augmented_grammar_start = kev_lr_augment(start);
+  if (!augmented_grammar_start) {
+    kev_lalr_destroy_collec(collec);
+    return NULL;
+  }
+  collec->start = augmented_grammar_start;
+  collec->start_rule = augmented_grammar_start->rules->rule;
+  collec->symbols = kev_lr_get_symbol_array(augmented_grammar_start, lookahead, la_len, &collec->symbol_no);
   if (!collec->symbols) {
     kev_lalr_destroy_collec(collec);
     return NULL;
@@ -39,7 +46,7 @@ KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** loo
     kev_lalr_destroy_collec(collec);
     return NULL;
   }
-  KevItemSet* start_iset = kev_lr_get_start_itemset(start, lookahead, la_len);
+  KevItemSet* start_iset = kev_lr_get_start_itemset(augmented_grammar_start, lookahead, la_len);
   if (!start_iset) {
     kev_lalr_destroy_collec(collec);
     return NULL;
@@ -65,6 +72,8 @@ static KevLALRCollection* kev_lalr_get_empty_collec(void) {
   collec->symbols = NULL;
   collec->itemsets = NULL;
   collec->propagation = NULL;
+  collec->start = NULL;
+  collec->start_rule = NULL;
   return collec;
 }
 
@@ -87,6 +96,8 @@ static void kev_lalr_destroy_collec(KevLALRCollection* collec) {
       prop = tmp;
     }
   }
+  kev_lr_symbol_delete(collec->start);
+  kev_lr_rule_delete(collec->start_rule);
   free(collec);
 }
 
@@ -381,9 +392,13 @@ static KevLRCollection* kev_lalr_to_lr_collec(KevLALRCollection* lalr_collec) {
   lr_collec->symbol_no = lalr_collec->symbol_no;
   lr_collec->itemsets = lalr_collec->itemsets;
   lr_collec->itemset_no = lalr_collec->itemset_no;
+  lr_collec->start = lalr_collec->start;
+  lr_collec->start_rule = lalr_collec->start_rule;
   lalr_collec->itemsets = NULL;
   lalr_collec->symbols = NULL;
   lalr_collec->firsts = NULL;
+  lalr_collec->start = NULL;
+  lalr_collec->start_rule = NULL;
   kev_lalr_destroy_collec(lalr_collec);
   return lr_collec;
 }

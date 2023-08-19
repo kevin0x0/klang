@@ -13,6 +13,9 @@
 
 #define KEV_LR_GOTO_NONE      ((KevLRGotoEntry)-1)
 
+#define KEV_LR_CONFLICT_RR    (0)
+#define KEV_LR_CONFLICT_SR    (1)
+
 typedef struct tagKevLRCollection {
   KevSymbol** symbols;
   size_t symbol_no;
@@ -20,12 +23,15 @@ typedef struct tagKevLRCollection {
   KevItemSet** itemsets;
   size_t itemset_no;
   KevBitSet** firsts;
+  KevSymbol* start;
+  KevRule* start_rule;
 } KevLRCollection;
 
 typedef struct tagKevLRConflict {
-  size_t conflict_itemset;
-  KevItem* conflict_items;
+  KevItemSet* conflict_itemset;
+  KevSymbol* symbol;
   struct tagKevLRConflict* next;
+  int type;
 } KevLRConflict;
 
 typedef union tagKevLRActionEntryInfo {
@@ -66,6 +72,7 @@ KevLRAction* kev_lr_action_create(KevLRCollection* collec, KevLRGoto* goto_table
 KevLRGoto* kev_lr_goto_create(KevLRCollection* collec);
 void kev_lr_action_delete(KevLRAction* table);
 void kev_lr_goto_delete(KevLRGoto* table);
+static inline void kev_lr_action_add_conflict(KevLRAction* action, KevLRConflict* conflict);
 
 /* get */
 static inline KevItemSet* kev_lr_get_itemset_by_index(KevLRCollection* collec, size_t index);
@@ -75,9 +82,8 @@ static inline size_t kev_lr_get_symbol_no(KevLRCollection* collec);
 static inline size_t kev_lr_get_terminal_no(KevLRCollection* collec);
 
 /* conflict */
-KevLRConflict* kev_lr_conflict_create(size_t itemset);
-void kev_lr_conflict_delete(KevLRConflict* conflict);
-static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item);
+KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, int conflict_type);
+static inline void kev_lr_conflict_delete(KevLRConflict* conflict);
 
 /* general function */
 void kev_lr_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon);
@@ -116,8 +122,13 @@ static inline size_t kev_lr_get_terminal_no(KevLRCollection* collec) {
   return collec->terminal_no;
 }
 
-static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item) {
-  item->next = conflict->conflict_items;
-  conflict->conflict_items = item->next;
+static inline void kev_lr_conflict_delete(KevLRConflict* conflict) {
+  free(conflict);
 }
+
+static inline void kev_lr_action_add_conflict(KevLRAction* action, KevLRConflict* conflict) {
+  conflict->next = action->conflicts;
+  action->conflicts = conflict;
+}
+
 #endif

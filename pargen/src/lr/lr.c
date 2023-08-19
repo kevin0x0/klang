@@ -1,10 +1,8 @@
 #include "pargen/include/lr/lr.h"
-#include "pargen/include/lr/item.h"
-#include "utils/include/array/addr_array.h"
-#include "utils/include/set/bitset.h"
 
 #include <stdlib.h>
-#include <time.h>
+
+#define KEV_LR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME   "augmented_grammar_start_symbol"
 
 static bool kev_lr_closure_propagate(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevBitSet** firsts, size_t epsilon);
 
@@ -69,7 +67,7 @@ KevBitSet** kev_lr_compute_first_array(KevSymbol** symbols, size_t symbol_no, si
 }
 
 KevSymbol* kev_lr_augment(KevSymbol* start) {
-  KevSymbol* new_start = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, NULL);
+  KevSymbol* new_start = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, KEV_LR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME);
   if (!new_start) return NULL;
   KevRule* start_rule = kev_lr_rule_create(new_start, &start, 1);
   if (!start_rule) {
@@ -329,5 +327,7 @@ void kev_lr_collection_delete(KevLRCollection* collec) {
     kev_lr_itemset_delete(collec->itemsets[i]);
   }
   free(collec->itemsets);
+  kev_lr_rule_delete(collec->start_rule);
+  kev_lr_symbol_delete(collec->start);
   free(collec);
 }

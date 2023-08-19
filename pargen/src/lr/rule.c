@@ -1,7 +1,6 @@
 #include "pargen/include/lr/rule.h"
 #include "utils/include/array/addr_array.h"
 #include "utils/include/set/hashset.h"
-#include "utils/include/queue/addr_queue.h"
 
 #include <stdlib.h>
 

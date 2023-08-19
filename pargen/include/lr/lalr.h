@@ -18,6 +18,8 @@ typedef struct tagKevLALRCollection {
   KevLookaheadPropagation* propagation;
   size_t itemset_no;
   KevBitSet** firsts;
+  KevSymbol* start;
+  KevRule* start_rule;
 } KevLALRCollection;
 
 
