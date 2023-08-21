@@ -60,6 +60,15 @@ typedef struct tagKevLRGoto {
   size_t symbol_no;
 } KevLRGoto;
 
+typedef struct tagKevLRTable {
+  KevLRGotoEntry** gotos;
+  KevLRActionEntry** actions;
+  size_t itemset_no;
+  size_t symbol_no;
+  size_t terminal_no;
+} KevLRTable;
+
+
 
 /* generation of lr collection */
 KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** lookahead, size_t la_len);
@@ -73,6 +82,8 @@ KevLRGoto* kev_lr_goto_create(KevLRCollection* collec);
 void kev_lr_action_delete(KevLRAction* table);
 void kev_lr_goto_delete(KevLRGoto* table);
 static inline void kev_lr_action_add_conflict(KevLRAction* action, KevLRConflict* conflict);
+KevLRTable* kev_lr_table_create(KevLRCollection* collec);
+void kev_lr_table_delete(KevLRTable* table);
 
 /* get */
 static inline KevItemSet* kev_lr_get_itemset_by_index(KevLRCollection* collec, size_t index);
