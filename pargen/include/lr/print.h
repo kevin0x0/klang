@@ -1,7 +1,7 @@
-#ifndef KEVCC_PARGEN_INCLUDE_LR_LR_PRINT_H
-#define KEVCC_PARGEN_INCLUDE_LR_LR_PRINT_H
+#ifndef KEVCC_PARGEN_INCLUDE_LR_PRINT_H
+#define KEVCC_PARGEN_INCLUDE_LR_PRINT_H
 
-#include "pargen/include/lr/lr.h"
+#include "pargen/include/lr/collection.h"
 
 #include <stdio.h>
 

@@ -1,4 +1,4 @@
-#include "pargen/include/lr/lr_print.h"
+#include "pargen/include/lr/print.h"
 
 #define KEV_LR_SYMBOL_EPSILON_STRING  "ε"
 #define KEV_UNNAMED                   "[UNNAMED]"

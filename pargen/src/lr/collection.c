@@ -1,4 +1,4 @@
-#include "pargen/include/lr/lr.h"
+#include "pargen/include/lr/collection.h"
 
 #include <stdlib.h>
 

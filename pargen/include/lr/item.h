@@ -5,7 +5,6 @@
 #include "pargen/include/lr/object_pool/itemset_pool.h"
 #include "pargen/include/lr/object_pool/itemsetgoto_pool.h"
 #include "pargen/include/lr/object_pool/kernel_item_pool.h"
-#include "utils/include/set/bitset.h"
 
 #include <stdlib.h>
 
