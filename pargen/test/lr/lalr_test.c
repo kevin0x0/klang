@@ -18,7 +18,18 @@ int main(int argc, char** argv) {
   KevRule* rule5 = kev_lr_rule_create(L, body2, 2);
   KevLRCollection* collec = kev_lr_collection_create_lalr(S, &end, 1);
   kev_lr_print_collection(stdout, collec, false);
+
+  S->id = 0;
+  L->id = 1;
+  R->id = 2;
+  id->id = 3;
+  star->id = 4;
+  assign->id = 5;
+  end->id = 6;
+
+  KevLRTable* table = kev_lr_table_create(collec);
   kev_lr_collection_delete(collec);
+  kev_lr_table_delete(table);
 
   kev_lr_rule_delete(rule1);
   kev_lr_rule_delete(rule2);

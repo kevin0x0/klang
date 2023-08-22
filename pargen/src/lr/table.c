@@ -44,20 +44,20 @@ static bool kev_lr_action_create(KevLRTable* table, KevLRCollection* collec) {
     return false;
   }
   for (size_t i = 0; i < symbol_no; ++i)
-    la_symbols[i] = false;
+    la_symbols[i] = NULL;
 
   KevLRActionEntry** actions = (KevLRActionEntry**)malloc(sizeof (KevLRActionEntry*) * itemset_no);
   if (!actions) {
     kev_lr_closure_delete(closure, la_symbols);
     return false;
   }
-  KevLRActionEntry* tmp = (KevLRActionEntry*)malloc(sizeof (KevLRActionEntry) * itemset_no * terminal_no);
+  KevLRActionEntry* tmp = (KevLRActionEntry*)malloc(sizeof (KevLRActionEntry) * itemset_no * symbol_no);
   if (!tmp) {
     free(actions);
     kev_lr_closure_delete(closure, la_symbols);
     return false;
   }
-  for (size_t i = 0; i < itemset_no * terminal_no; ++i)
+  for (size_t i = 0; i < itemset_no * symbol_no; ++i)
     tmp[i].action = KEV_LR_ACTION_ERR;
 
   actions[0] = tmp;
@@ -74,6 +74,7 @@ static bool kev_lr_action_create(KevLRTable* table, KevLRCollection* collec) {
       return false;
     }
   }
+  kev_lr_closure_delete(closure, la_symbols);
   return true;
 }
 
