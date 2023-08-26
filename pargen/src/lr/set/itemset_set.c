@@ -131,3 +131,8 @@ KevItemSetSetNode* kev_itemsetset_search(KevItemSetSet* set, KevItemSet* element
 
   return node;
 }
+
+void kev_itemsetset_delete(KevItemSetSet* set) {
+  kev_itemsetset_destroy(set);
+  free(set);
+}

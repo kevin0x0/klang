@@ -37,13 +37,6 @@ KevSymbol* kev_lr_augment(KevSymbol* start);
 KevBitSet* kev_lr_symbols_to_bitset(KevSymbol** symbols, size_t length);
 size_t kev_lr_label_symbols(KevSymbol** symbols, size_t symbol_no);
 KevItemSet* kev_lr_get_start_itemset(KevSymbol* start, KevSymbol** lookahead, size_t length);
-bool kev_lr_closure(KevItemSet* itemset, KevAddrArray* closure, KevBitSet** la_symbols, KevBitSet** firsts, size_t epsilon);
-bool kev_lr_closure_create(KevLRCollection* collec, KevItemSet* itemset, KevAddrArray** p_closure, KevBitSet*** p_la_symbols);
-void kev_lr_closure_make_empty(KevAddrArray* closure, KevBitSet** la_symbols);
-void kev_lr_closure_destroy(KevAddrArray* closure, KevBitSet** la_symbols);
-void kev_lr_closure_delete(KevAddrArray* closure, KevBitSet** la_symbols);
-KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon);
-KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon);
 
 static inline KevItemSet* kev_lr_get_itemset_by_index(KevLRCollection* collec, size_t index) {
   return collec->itemsets[index];

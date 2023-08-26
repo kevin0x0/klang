@@ -21,6 +21,4 @@ typedef struct tagKevLALRCollection {
   KevRule* start_rule;
 } KevLALRCollection;
 
-
-
 #endif

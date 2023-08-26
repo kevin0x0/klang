@@ -3,28 +3,30 @@
 #define KEV_LR_SYMBOL_EPSILON_STRING  "ε"
 #define KEV_UNNAMED                   "[UNNAMED]"
 
-#include <stdio.h>
-
 bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemset, bool print_closure) {
   for (KevItem* kitem = itemset->items; kitem; kitem = kitem->next) {
     kev_lr_print_kernel_item(out, collec, kitem);
     fputc('\n', out);
   }
   if (!print_closure) return true;
-  KevBitSet** la_symbols = NULL;
-  KevAddrArray* closure = NULL;
-  if (!kev_lr_closure_create(collec, itemset, &closure, &la_symbols))
-    return false;
-  for (size_t i = 0; i < kev_addrarray_size(closure); ++i) {
-    KevSymbol* head = kev_addrarray_visit(closure, i);
+  KevItemSetClosure* closure = kev_lr_closure_create(collec->symbol_no);
+  if (!closure) return false;
+  if (!kev_lr_closure_make(closure, itemset, collec->firsts, collec->terminal_no)) {
+    kev_lr_closure_delete(closure);
+    return NULL;
+  }
+  KevAddrArray* symbols = closure->symbols;
+  KevBitSet** las = closure->lookaheads;
+  for (size_t i = 0; i < kev_addrarray_size(symbols); ++i) {
+    KevSymbol* head = kev_addrarray_visit(symbols, i);
     size_t head_index = head->tmp_id;
     for (KevRuleNode* node = head->rules; node; node = node->next) {
       KevRule* rule = node->rule;
-      kev_lr_print_non_kernel_item(out, collec, rule, la_symbols[head_index]);
+      kev_lr_print_non_kernel_item(out, collec, rule, las[head_index]);
       fputc('\n', out);
     }
   }
-  kev_lr_closure_delete(closure, la_symbols);
+  kev_lr_closure_delete(closure);
   return true;
 }
 

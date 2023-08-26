@@ -174,7 +174,7 @@ bool kev_bitset_equal(KevBitSet* set1, KevBitSet* set2) {
     if (set1->bits[i] != set2->bits[i])
       return false;
   }
-  KevBitSet* the_larger_set = set1->length < set2->length ? set1 : set2;
+  KevBitSet* the_larger_set = set1->length < set2->length ? set2 : set1;
   for (size_t i = min_length; i < the_larger_set->length; ++i) {
     if (the_larger_set->bits[i] != 0)
       return false;

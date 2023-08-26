@@ -6,8 +6,6 @@
 #include "pargen/include/lr/object_pool/itemsetgoto_pool.h"
 #include "pargen/include/lr/object_pool/kernel_item_pool.h"
 
-#include <stdlib.h>
-
 #define kev_lr_item_less_than(item1, item2) ((size_t)(item1) < (size_t)(item2) || \
                                             ((size_t)(item1) == (size_t)(item2) && \
                                             (item1)->dot < (item2)->dot))
@@ -22,6 +20,15 @@ static inline KevItem* kev_lr_item_create(KevRule* rule, size_t dot);
 static inline KevItem* kev_lr_item_create_copy(KevItem* item);
 static inline void kev_lr_item_delete(KevItem* item);
 
+bool kev_lr_closure_init(KevItemSetClosure* closure, size_t symbol_no);
+void kev_lr_closure_destroy(KevItemSetClosure* closure);
+KevItemSetClosure* kev_lr_closure_create(size_t symbol_no);
+void kev_lr_closure_delete(KevItemSetClosure* closure);
+
+bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBitSet** firsts, size_t epsilon);
+void kev_lr_closure_make_empty(KevItemSetClosure* closure);
+KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon);
+KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon);
 
 static inline KevItemSet* kev_lr_itemset_create(void) {
   KevItemSet* itemset = kev_itemset_pool_allocate();

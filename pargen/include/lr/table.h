@@ -17,44 +17,42 @@
 typedef struct tagKevLRConflict {
   KevItemSet* conflict_itemset;
   KevSymbol* symbol;
+  KevItemSetClosure* closure;
   struct tagKevLRConflict* next;
-  int type;
+  int conflict_type;
 } KevLRConflict;
 
-typedef union tagKevLRActionEntryInfo {
+typedef union tagKevLRActionInfo {
   KevRule* rule;
   KevLRConflict* conflict;
   size_t itemset;
-} KevLRActionEntryInfo;
-
-typedef struct tagKevLRActionEntry {
-  KevLRActionEntryInfo info;
-  int action;
-} KevLRActionEntry;
+} KevLRActionInfo;
 
 typedef int64_t KevLRGotoEntry;
 
+typedef struct tagKevLRTableEntry {
+  KevLRActionInfo info;
+  KevLRGotoEntry go_to;
+  int action;
+} KevLRTableEntry;
+
+
 typedef struct tagKevLRTable {
-  KevLRGotoEntry** gotos;
-  KevLRActionEntry** actions;
+  KevLRTableEntry** entries;
   size_t itemset_no;
   size_t symbol_no;
   size_t terminal_no;
   KevLRConflict* conflicts;
 } KevLRTable;
 
-
+typedef bool (*KevLRConflictHandler)(KevLRConflict* conflicts, KevLRCollection* collec);
 
 /* generation of table */
-KevLRTable* kev_lr_table_create(KevLRCollection* collec);
+KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler conf_handler);
 void kev_lr_table_delete(KevLRTable* table);
 
 /* conflict */
-KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, int conflict_type);
-static inline void kev_lr_conflict_delete(KevLRConflict* conflict);
-
-static inline void kev_lr_conflict_delete(KevLRConflict* conflict) {
-  free(conflict);
-}
+KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, KevItemSetClosure* closure, int conflict_type);
+void kev_lr_conflict_delete(KevLRConflict* conflict);
 
 #endif

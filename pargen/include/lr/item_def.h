@@ -2,6 +2,7 @@
 #define KEVCC_PARGEN_INCLUDE_LR_ITEM_DEF_H
 
 #include "pargen/include/lr/rule.h"
+#include "utils/include/array/addr_array.h"
 #include "utils/include/set/bitset.h"
 
 typedef struct tagKevItem {
@@ -23,5 +24,11 @@ typedef struct tagKevItemSet {
   KevItemSetGoto* gotos;
   size_t id;
 } KevItemSet;
+
+typedef struct tagKevItemSetClosure {
+  KevAddrArray* symbols;
+  KevBitSet** lookaheads;
+} KevItemSetClosure;
+
 
 #endif

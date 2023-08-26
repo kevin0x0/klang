@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   KevRule* rule3 = kev_lr_rule_create(R, &L, 1);
   KevRule* rule4 = kev_lr_rule_create(S, body1, 3);
   KevRule* rule5 = kev_lr_rule_create(L, body2, 2);
-  KevLRCollection* collec = kev_lr_collection_create_lalr(S, &end, 1);
+  KevLRCollection* collec = kev_lr_collection_create_lr1(S, &end, 1);
   kev_lr_print_collection(stdout, collec, false);
 
   S->id = 0;
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
   assign->id = 5;
   end->id = 6;
 
-  KevLRTable* table = kev_lr_table_create(collec);
+  KevLRTable* table = kev_lr_table_create(collec, NULL);
   kev_lr_collection_delete(collec);
   kev_lr_table_delete(table);
 

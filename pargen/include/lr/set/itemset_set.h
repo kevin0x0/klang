@@ -19,14 +19,9 @@ typedef struct tagKevItemSetSet {
 bool kev_itemsetset_init(KevItemSetSet* set, size_t capacity, bool (*equal)(KevItemSet*, KevItemSet*));
 void kev_itemsetset_destroy(KevItemSetSet* set);
 KevItemSetSet* kev_itemsetset_create(size_t capacity, bool (*equal)(KevItemSet*, KevItemSet*));
-static inline void kev_itemsetset_delete(KevItemSetSet* set);
+void kev_itemsetset_delete(KevItemSetSet* set);
 
 bool kev_itemsetset_insert(KevItemSetSet* set, KevItemSet* element);
 KevItemSetSetNode* kev_itemsetset_search(KevItemSetSet* set, KevItemSet* element);
-
-static inline void kev_itemsetset_delete(KevItemSetSet* set) {
-  kev_itemsetset_destroy(set);
-  free(set);
-}
 
 #endif

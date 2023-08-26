@@ -1,0 +1,17 @@
+#ifndef KEVCC_PARGEN_INCLUDE_LR_LR1_H
+#define KEVCC_PARGEN_INCLUDE_LR_LR1_H
+
+#include "pargen/include/lr/collection.h"
+
+typedef struct tagKevLR1Collection {
+  KevSymbol** symbols;
+  size_t symbol_no;
+  size_t terminal_no;
+  KevItemSet** itemsets;
+  size_t itemset_no;
+  KevBitSet** firsts;
+  KevSymbol* start;
+  KevRule* start_rule;
+} KevLR1Collection;
+
+#endif
