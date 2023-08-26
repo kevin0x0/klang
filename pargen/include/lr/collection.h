@@ -29,14 +29,6 @@ static inline size_t kev_lr_get_itmeset_no(KevLRCollection* collec);
 static inline size_t kev_lr_get_symbol_no(KevLRCollection* collec);
 static inline size_t kev_lr_get_terminal_no(KevLRCollection* collec);
 
-/* general function */
-void kev_lr_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon);
-KevBitSet** kev_lr_compute_first_array(KevSymbol** symbols, size_t symbol_no, size_t terminal_no);
-void kev_lr_destroy_first_array(KevBitSet** firsts, size_t size);
-KevSymbol* kev_lr_augment(KevSymbol* start);
-KevBitSet* kev_lr_symbols_to_bitset(KevSymbol** symbols, size_t length);
-size_t kev_lr_label_symbols(KevSymbol** symbols, size_t symbol_no);
-KevItemSet* kev_lr_get_start_itemset(KevSymbol* start, KevSymbol** lookahead, size_t length);
 
 static inline KevItemSet* kev_lr_get_itemset_by_index(KevLRCollection* collec, size_t index) {
   return collec->itemsets[index];
