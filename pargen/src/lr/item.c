@@ -49,7 +49,7 @@ void kev_lr_closure_destroy(KevItemSetClosure* closure) {
     kev_bitset_delete(closure->lookaheads[index]);
   }
   free(closure->lookaheads);
-  free(closure->symbols);
+  kev_addrarray_delete(closure->symbols);
   closure->symbols = NULL;
   closure->lookaheads = NULL;
 }
