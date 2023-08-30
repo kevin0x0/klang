@@ -1,7 +1,7 @@
 #ifndef KEVCC_PARGEN_INCLUDE_HASHMAP_GOTOMAP_H
 #define KEVCC_PARGEN_INCLUDE_HASHMAP_GOTOMAP_H
 
-#include "pargen/include/lr/lalr.h"
+#include "pargen/include/lr/collection.h"
 #include "utils/include/general/global_def.h"
 
 typedef struct tagKevGotoMapNode {

@@ -1,6 +1,12 @@
 #include "pargen/include/lr/lr.h"
 #include <stdio.h>
 
+bool conflict_report(KevLRConflict* conflict, KevLRCollection* collec) {
+  printf("All conflict items here:\n");
+  kev_lr_print_itemset(stdout, collec, conflict->conflct_items, false);
+  return false;
+}
+
 int main(int argc, char** argv) {
   KevSymbol* S = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, "S");
   KevSymbol* L = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, "L");
@@ -27,7 +33,7 @@ int main(int argc, char** argv) {
   assign->id = 5;
   end->id = 6;
 
-  KevLRTable* table = kev_lr_table_create(collec, NULL);
+  KevLRTable* table = kev_lr_table_create(collec, conflict_report);
   kev_lr_collection_delete(collec);
   kev_lr_table_delete(table);
 

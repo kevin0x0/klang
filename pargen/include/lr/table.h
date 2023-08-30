@@ -11,21 +11,21 @@
 
 #define KEV_LR_GOTO_NONE      ((KevLRGotoEntry)-1)
 
-#define KEV_LR_CONFLICT_RR    (0)
-#define KEV_LR_CONFLICT_SR    (1)
+
+struct tagKevLRTableEntry;
 
 typedef struct tagKevLRConflict {
-  KevItemSet* conflict_itemset;
+  KevItemSet* itemset;
   KevSymbol* symbol;
-  KevItemSetClosure* closure;
+  KevItemSet* conflct_items;
+  struct tagKevLRTableEntry* entry;
   struct tagKevLRConflict* next;
-  int conflict_type;
 } KevLRConflict;
 
 typedef union tagKevLRActionInfo {
   KevRule* rule;
   KevLRConflict* conflict;
-  size_t itemset;
+  size_t itemset_id;
 } KevLRActionInfo;
 
 typedef int64_t KevLRGotoEntry;
@@ -45,14 +45,29 @@ typedef struct tagKevLRTable {
   KevLRConflict* conflicts;
 } KevLRTable;
 
-typedef bool (*KevLRConflictHandler)(KevLRConflict* conflicts, KevLRCollection* collec);
+typedef bool KevLRConflictHandler(KevLRConflict* conflict, KevLRCollection* collec);
 
 /* generation of table */
-KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler conf_handler);
+KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* conf_handler);
 void kev_lr_table_delete(KevLRTable* table);
 
 /* conflict */
-KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, KevItemSetClosure* closure, int conflict_type);
+KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, struct tagKevLRTableEntry* entry);
 void kev_lr_conflict_delete(KevLRConflict* conflict);
+static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item);
+static inline bool kev_lr_conflict_SR(KevLRConflict* conflict);
+static inline bool kev_lr_conflict_RR(KevLRConflict* conflict);
+
+static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item) {
+  kev_lr_itemset_add_item(conflict->conflct_items, item);
+}
+
+static inline bool kev_lr_conflict_SR(KevLRConflict* conflict) {
+  return conflict->entry->go_to != KEV_LR_GOTO_NONE;
+}
+
+static inline bool kev_lr_conflict_RR(KevLRConflict* conflict) {
+  return conflict->conflct_items->items->next != NULL;
+}
 
 #endif

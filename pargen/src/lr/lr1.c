@@ -1,9 +1,20 @@
-#include "pargen/include/lr/lr1.h"
+#include "pargen/include/lr/collection.h"
 #include "pargen/include/lr/lr_utils.h"
 #include "pargen/include/lr/hashmap/gotomap.h"
 #include "pargen/include/lr/set/itemset_set.h"
 
 #include <stdlib.h>
+
+typedef struct tagKevLR1Collection {
+  KevSymbol** symbols;
+  size_t symbol_no;
+  size_t terminal_no;
+  KevItemSet** itemsets;
+  size_t itemset_no;
+  KevBitSet** firsts;
+  KevSymbol* start;
+  KevRule* start_rule;
+} KevLR1Collection;
 
 static bool kev_lr1_get_all_itemsets(KevItemSet* start_iset, KevLR1Collection* collec);
 static bool kev_lr1_merge_gotos(KevItemSetSet* iset_set, KevAddrArray* itemset_array, KevLR1Collection* collec, KevItemSet* itemset);

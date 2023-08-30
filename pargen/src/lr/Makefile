@@ -25,10 +25,10 @@ $(BIN_DIR)item.o : $(LR_DIR)item.c $(LR_INC_DIR)item.h $(LR_INC_DIR)item_def.h $
 $(BIN_DIR)lr_utils.o : $(LR_DIR)lr_utils.c $(LR_INC_DIR)lr_utils.h $(LR_INC_DIR)collection.h $(LR_INC_DIR)item.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h  $(HMAP_INC_DIR)gotomap.h $(UTILS_INC_DIR)array/addr_array.h $(GEN_INC_DIR)global_def.h 
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)lalr.o : $(LR_DIR)lalr.c $(LR_INC_DIR)lalr.h $(LR_INC_DIR)lr_utils.h $(LR_INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(HMAP_INC_DIR)gotomap.h $(SET_INC_DIR)itemset_set.h $(UTILS_INC_DIR)array/addr_array.h $(GEN_INC_DIR)global_def.h 
+$(BIN_DIR)lalr.o : $(LR_DIR)lalr.c $(LR_INC_DIR)lr_utils.h $(LR_INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(HMAP_INC_DIR)gotomap.h $(SET_INC_DIR)itemset_set.h $(UTILS_INC_DIR)array/addr_array.h $(GEN_INC_DIR)global_def.h 
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)lr1.o : $(LR_DIR)lr1.c $(LR_INC_DIR)lr1.h $(LR_INC_DIR)lr_utils.h $(LR_INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(HMAP_INC_DIR)gotomap.h $(SET_INC_DIR)itemset_set.h $(UTILS_INC_DIR)array/addr_array.h $(GEN_INC_DIR)global_def.h 
+$(BIN_DIR)lr1.o : $(LR_DIR)lr1.c $(LR_INC_DIR)lr_utils.h $(LR_INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(HMAP_INC_DIR)gotomap.h $(SET_INC_DIR)itemset_set.h $(UTILS_INC_DIR)array/addr_array.h $(GEN_INC_DIR)global_def.h 
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(BIN_DIR)collection.o : $(LR_DIR)collection.c $(LR_INC_DIR)collection.h $(LR_INC_DIR)item.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(UTILS_INC_DIR)set/bitset.h
@@ -46,10 +46,10 @@ $(BIN_DIR)rule.o : $(LR_DIR)rule.c $(LR_INC_DIR)rule.h $(UTILS_INC_DIR)set/hashs
 $(BIN_DIR)itemset_set.o : $(SET_DIR)itemset_set.c $(SET_INC_DIR)itemset_set.h $(LR_INC_DIR)item.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)gotomap.o : $(HMAP_DIR)gotomap.c $(HMAP_INC_DIR)gotomap.h $(LR_INC_DIR)lr.h $(LR_INC_DIR)lalr.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(GEN_INC_DIR)global_def.h
+$(BIN_DIR)gotomap.o : $(HMAP_DIR)gotomap.c $(HMAP_INC_DIR)gotomap.h $(LR_INC_DIR)lr.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)gotomap_node_pool.o : $(OBJP_DIR)gotomap_node_pool.c $(OBJP_INC_DIR)gotomap_node_pool.h $(HMAP_INC_DIR)gotomap.h $(LR_INC_DIR)lr.h $(LR_INC_DIR)lalr.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(GEN_INC_DIR)global_def.h
+$(BIN_DIR)gotomap_node_pool.o : $(OBJP_DIR)gotomap_node_pool.c $(OBJP_INC_DIR)gotomap_node_pool.h $(HMAP_INC_DIR)gotomap.h $(LR_INC_DIR)lr.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)kernel_item_pool.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(BIN_DIR)itemset_pool.o : $(OBJP_DIR)itemset_pool.c $(OBJP_INC_DIR)itemset_pool.h $(LR_INC_DIR)item_def.h $(LR_INC_DIR)rule.h $(UTILS_INC_DIR)set/bitset.h $(GEN_INC_DIR)global_def.h

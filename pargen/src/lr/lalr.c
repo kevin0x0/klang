@@ -1,9 +1,28 @@
-#include "pargen/include/lr/lalr.h"
+#include "pargen/include/lr/collection.h"
 #include "pargen/include/lr/lr_utils.h"
 #include "pargen/include/lr/hashmap/gotomap.h"
 #include "pargen/include/lr/set/itemset_set.h"
 
 #include <stdlib.h>
+
+typedef struct tagKevLookaheadPropagation {
+  KevBitSet* from;
+  KevBitSet* to;
+  struct tagKevLookaheadPropagation* next;
+} KevLookaheadPropagation;
+
+typedef struct tagKevLALRCollection {
+  KevSymbol** symbols;
+  size_t symbol_no;
+  size_t terminal_no;
+  KevItemSet** itemsets;
+  KevLookaheadPropagation* propagation;
+  size_t itemset_no;
+  KevBitSet** firsts;
+  KevSymbol* start;
+  KevRule* start_rule;
+} KevLALRCollection;
+
 
 static bool kev_lalr_get_all_itemsets(KevItemSet* start_iset, KevLALRCollection* collec);
 static bool kev_lalr_do_lookahead_propagation(KevLookaheadPropagation* propagation);
