@@ -8,6 +8,7 @@ ROOT_PATH = $(abspath ../../../)/
 CC_GLOBAL_PARAM = -Wall -I $(ROOT_PATH)
 
 LEXGEN_PATH = $(ROOT_PATH)lexgen/
+UTILS_PATH = $(ROOT_PATH)utils/
 INC_PATH = $(LEXGEN_PATH)include/
 SRC_PATH = $(LEXGEN_PATH)src/
 BIN_PATH = $(LEXGEN_PATH)bin/
@@ -25,7 +26,7 @@ RP_PATH = $(SRC_PATH)parser/
 TD_INC_PATH = $(INC_PATH)tablegen/
 TD_PATH = $(SRC_PATH)tablegen/
 
-test.exe : test.c $(RP_PATH)regex.c $(BIN_PATH)libparser.a $(BIN_PATH)libfa.a 
+test.exe : test.c $(RP_PATH)regex.c $(BIN_PATH)libparser.a $(BIN_PATH)libfa.a $(UTILS_PATH)bin/libutils.a
 	$(CC) -o $@ $^ $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 

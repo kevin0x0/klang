@@ -15,6 +15,7 @@ bool kev_patternlist_init(KevPatternList* list) {
   list->head->macro = NULL;
   list->head->next = NULL;
   list->head->fa_info = NULL;
+  list->pattern_no = 0;
   return true;
 }
 
@@ -38,6 +39,7 @@ bool kev_patternlist_insert(KevPatternList* list, char* pattern_name, char* macr
   tail->next = NULL;
   list->tail->next = tail;
   list->tail = tail;
+  list->pattern_no++;
   return true;
 }
 

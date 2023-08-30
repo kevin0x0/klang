@@ -102,14 +102,13 @@ static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, Ke
   if (!nfa_to_pattern) kev_throw_error("convert:", "out of memory", NULL);
   KevPattern* pattern = list->head->next;
   size_t i = 0;
-  size_t pattern_id = 0;
   while (pattern) {
     KevFAInfo* nfa_info = pattern->fa_info;
+    size_t pattern_id = pattern->pattern_id;
     while (nfa_info) {
       nfa_to_pattern[i++] = pattern_id;
       nfa_info = nfa_info->next;
     }
-    pattern_id++;
     pattern = pattern->next;
   }
   int* pattern_mapping = (int*)malloc(sizeof (size_t) * state_no);
@@ -124,15 +123,18 @@ static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, Ke
 static void kev_lexgen_convert_macro_array(KevPatternBinary* binary_info, KevParserState* parser_state) {
   KevPattern* pattern = parser_state->list.head->next;
   char** macros = (char**)malloc(sizeof (char*) * binary_info->pattern_no);
-  if ( !macros)
+  int* macro_ids = (int*)malloc(sizeof (int) * binary_info->pattern_no);
+  if ( !macros || !macro_ids)
     kev_throw_error("convert:", "out of memory", NULL);
 
   size_t i = 0;
   while (pattern) {
-    macros[i++] = pattern->macro;
+    macros[i] = pattern->macro;
+    macro_ids[i++] = (int)pattern->pattern_id;
     pattern = pattern->next;
   }
   binary_info->macros = macros;
+  binary_info->macro_ids = macro_ids;
 }
 
 static void kev_lexgen_convert_generate(KevPatternBinary* patterns_info, KevParserState* parser_state, KevFA** p_min_dfa,
@@ -153,7 +155,6 @@ static void kev_lexgen_convert_generate(KevPatternBinary* patterns_info, KevPars
   if (!nfa_array) kev_throw_error("convert:", "out of memory", NULL);
   pattern = list->head->next;
   size_t i = 0;
-  size_t pattern_no = 0;
   while (pattern) {
     KevFAInfo* nfa_info = pattern->fa_info;
     while (nfa_info) {
@@ -161,7 +162,6 @@ static void kev_lexgen_convert_generate(KevPatternBinary* patterns_info, KevPars
       nfa_info = nfa_info->next;
     }
     pattern = pattern->next;
-    pattern_no++;
   }
   nfa_array[i] = NULL;  /* nfa_array must terminate with NULL */
 
@@ -177,7 +177,7 @@ static void kev_lexgen_convert_generate(KevPatternBinary* patterns_info, KevPars
   patterns_info->dfa_state_no = kev_fa_state_assign_id(*p_min_dfa, 0);
   patterns_info->dfa_non_acc_no = kev_dfa_non_accept_state_number(*p_min_dfa);
   patterns_info->dfa_start = (*p_min_dfa)->start_state->id;
-  patterns_info->pattern_no = pattern_no;
+  patterns_info->pattern_no = list->pattern_no;
 }
 
 static void kev_lexgen_convert_table(KevPatternBinary* binary_info, KevParserState* parser_state, KevFA* dfa) {

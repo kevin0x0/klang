@@ -14,9 +14,10 @@ typedef struct tagPatternBinary {
   size_t dfa_state_no;
   size_t dfa_start;
   char** callbacks;
-  char** macros;
+  char** macros;        /* store macro in order of patternlist */
+  int* macro_ids;
   char** infos;
-  int* pattern_mapping;
+  int* pattern_mapping; /* DFA state to pattern_id */
   void* table;
   size_t charset_size;
   size_t state_length;

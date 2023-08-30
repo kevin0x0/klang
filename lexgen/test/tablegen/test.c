@@ -43,7 +43,9 @@ int main(int argc, char** argv) {
   KevFA* end = kev_regex_parse_ascii("\\xFF", NULL);
   KevFA* long_str = kev_regex_parse_ascii("!([^\\n\\xFF] | \\n[^\\n\\xFF])*(\\n\\n)?", NULL);
   KevFA* str = kev_regex_parse_ascii("\"[^\\n\\xFF]*", NULL);
-  KevFA* nfa_array[] = { def, import, id, regex, assign, colon, blanks, open_paren, close_paren, env_var_def, end, long_str, str, NULL };
+  KevFA* number = kev_regex_parse_ascii("[0-9]+", NULL);
+  KevFA* comma = kev_regex_parse_ascii(",", NULL);
+  KevFA* nfa_array[] = { def, import, id, regex, assign, colon, blanks, open_paren, close_paren, env_var_def, end, long_str, str, number, comma, NULL };
   size_t* mapping = NULL;
   KevFA* dfa = kev_nfa_to_dfa(nfa_array, &mapping);
   KevFA* min_dfa = kev_dfa_minimization(dfa, mapping);
@@ -61,6 +63,8 @@ int main(int argc, char** argv) {
   kev_fa_delete(end);
   kev_fa_delete(long_str);
   kev_fa_delete(str);
+  kev_fa_delete(number);
+  kev_fa_delete(comma);
   kev_fa_delete(dfa);
   kev_fa_delete(min_dfa);
   free(table);

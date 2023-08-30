@@ -20,6 +20,8 @@
 #define KEV_LEXGEN_TOKEN_END          (10)
 #define KEV_LEXGEN_TOKEN_LONG_STR     (11)
 #define KEV_LEXGEN_TOKEN_STR          (12)
+#define KEV_LEXGEN_TOKEN_NUMBER       (13)
+#define KEV_LEXGEN_TOKEN_COMMA        (14)
 
 typedef struct tagKevLexGenLexer {
   FILE* infile;
