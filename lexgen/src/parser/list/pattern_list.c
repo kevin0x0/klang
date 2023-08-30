@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 
-static void kev_pattern_destroy(KevPattern* info);
-static void kev_pattern_free_content(KevPattern* info);
+static void kev_pattern_destroy(KevPattern* pattern);
+static void kev_pattern_free_content(KevPattern* pattern);
 
 bool kev_patternlist_init(KevPatternList* list) {
   if (!list) return false;
@@ -28,10 +28,11 @@ void kev_patternlist_destroy(KevPatternList* list) {
   }
 }
 
-bool kev_patternlist_insert(KevPatternList* list, char* pattern_name, char* macro) {
+bool kev_patternlist_insert(KevPatternList* list, char* pattern_name, char* macro, size_t pattern_id) {
   KevPattern* tail = (KevPattern*)malloc(sizeof (KevPattern));
   if (!tail) return false;
   tail->name = pattern_name;
+  tail->pattern_id = pattern_id;
   tail->macro = macro;
   tail->fa_info = NULL;
   tail->next = NULL;
@@ -40,13 +41,13 @@ bool kev_patternlist_insert(KevPatternList* list, char* pattern_name, char* macr
   return true;
 }
 
-bool kev_pattern_insert(KevPattern* info, char* name, KevFA* fa) {
+bool kev_pattern_insert(KevPattern* pattern, char* name, KevFA* fa) {
   KevFAInfo* new_fa_info = (KevFAInfo*)malloc(sizeof (KevFAInfo));
   if (!new_fa_info) return false;
   new_fa_info->name = name;
   new_fa_info->fa = fa;
-  new_fa_info->next = info->fa_info;
-  info->fa_info = new_fa_info;
+  new_fa_info->next = pattern->fa_info;
+  pattern->fa_info = new_fa_info;
   return true;
 }
 
