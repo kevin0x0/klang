@@ -81,9 +81,11 @@ static void kev_pattern_free_content(KevPattern* pattern) {
   }
   free(pattern->name);
   pattern->name = NULL;
-  size_t arrlen = kev_addrarray_size(pattern->macros);
-  for (size_t i = 0; i < arrlen; ++i)
-    free(kev_addrarray_visit(pattern->macros, i));
-  kev_addrarray_delete(pattern->macros);
-  pattern->macros = NULL;
+  if (pattern->macros) {
+    size_t arrlen = kev_addrarray_size(pattern->macros);
+    for (size_t i = 0; i < arrlen; ++i)
+      free(kev_addrarray_visit(pattern->macros, i));
+    kev_addrarray_delete(pattern->macros);
+    pattern->macros = NULL;
+  }
 }
