@@ -122,14 +122,14 @@ static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, Ke
 
 static void kev_lexgen_convert_macro_array(KevPatternBinary* binary_info, KevParserState* parser_state) {
   KevPattern* pattern = parser_state->list.head->next;
-  char** macros = (char**)malloc(sizeof (char*) * binary_info->pattern_no);
+  KevAddrArray** macros = (KevAddrArray**)malloc(sizeof (KevAddrArray*) * binary_info->pattern_no);
   int* macro_ids = (int*)malloc(sizeof (int) * binary_info->pattern_no);
   if ( !macros || !macro_ids)
     kev_throw_error("convert:", "out of memory", NULL);
 
   size_t i = 0;
   while (pattern) {
-    macros[i] = pattern->macro;
+    macros[i] = pattern->macros;
     macro_ids[i++] = (int)pattern->pattern_id;
     pattern = pattern->next;
   }

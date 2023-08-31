@@ -12,7 +12,7 @@ bool kev_patternlist_init(KevPatternList* list) {
   list->tail = list->head;
   if (!list->head) return false;
   list->head->name = NULL;
-  list->head->macro = NULL;
+  list->head->macros = NULL;
   list->head->next = NULL;
   list->head->fa_info = NULL;
   list->pattern_no = 0;
@@ -29,12 +29,12 @@ void kev_patternlist_destroy(KevPatternList* list) {
   }
 }
 
-bool kev_patternlist_insert(KevPatternList* list, char* pattern_name, char* macro, size_t pattern_id) {
+bool kev_patternlist_insert(KevPatternList* list, char* pattern_name, KevAddrArray* macros, size_t pattern_id) {
   KevPattern* tail = (KevPattern*)malloc(sizeof (KevPattern));
   if (!tail) return false;
   tail->name = pattern_name;
   tail->pattern_id = pattern_id;
-  tail->macro = macro;
+  tail->macros = macros;
   tail->fa_info = NULL;
   tail->next = NULL;
   list->tail->next = tail;
@@ -81,6 +81,9 @@ static void kev_pattern_free_content(KevPattern* pattern) {
   }
   free(pattern->name);
   pattern->name = NULL;
-  free(pattern->macro);
-  pattern->macro = NULL;
+  size_t arrlen = kev_addrarray_size(pattern->macros);
+  for (size_t i = 0; i < arrlen; ++i)
+    free(kev_addrarray_visit(pattern->macros, i));
+  kev_addrarray_delete(pattern->macros);
+  pattern->macros = NULL;
 }
