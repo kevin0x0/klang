@@ -1,15 +1,12 @@
+#include "lexgen/include/finite_automaton/array/node_array.h"
 #include "lexgen/include/finite_automaton/finite_automaton.h"
 #include "lexgen/include/finite_automaton/graph.h"
-#include "lexgen/include/finite_automaton/hashmap/address_map.h"
-#include "lexgen/include/finite_automaton/hashmap/intset_map.h"
-#include "lexgen/include/finite_automaton/hashmap/setint_map.h"
-#include "lexgen/include/finite_automaton/set/bitset.h"
-#include "lexgen/include/finite_automaton/array/node_array.h"
-#include "lexgen/include/finite_automaton/queue/int_queue.h"
 #include "lexgen/include/parser/parser.h"
 #include "lexgen/include/parser/regex.h"
+#include "utils/include/hashmap/setint_map.h"
+#include "utils/include/queue/int_queue.h"
+#include "utils/include/set/bitset.h"
 
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -23,11 +20,7 @@ void print_graph(FILE* out, KevGraph* graph) {
     fprintf(out, "%llu: ", node->id);
     while (edge) {
       char ch = edge->attr;
-      if (ch == KEV_NFA_SYMBOL_EMPTY)
-        fprintf(out, " -- -> %llu ", edge->node->id);
-      else if (ch == KEV_NFA_SYMBOL_EPSILON)
-        fprintf(out, " ----> %llu ", edge->node->id);
-      else if (ch == '\n')
+      if (ch == '\n')
         fprintf(out, " -\\n-> %llu ", edge->node->id);
       else if (ch == '\t')
         fprintf(out, " -\\t-> %llu ", edge->node->id);
@@ -35,6 +28,12 @@ void print_graph(FILE* out, KevGraph* graph) {
         fprintf(out, " -\\e-> %llu ", edge->node->id);
       else
         fprintf(out, " --%c-> %llu ", ch, edge->node->id);
+      edge = edge->next;
+    }
+    KevGraphEdge* epsilon = node->epsilons;
+    while (epsilon) {
+      char ch = epsilon->attr;
+      fprintf(out, " --ε-> %llu ", ch, edge->node->id);
       edge = edge->next;
     }
     fprintf(out, "\n");

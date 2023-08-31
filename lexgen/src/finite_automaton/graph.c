@@ -83,6 +83,7 @@ inline KevGraphNode* kev_graphnode_create(KevGraphNodeId node_id) {
   if (node) {
     node->id = node_id;
     node->edges = NULL;
+    node->epsilons = NULL;
     node->next = NULL;
   }
   return node;
@@ -91,6 +92,7 @@ inline KevGraphNode* kev_graphnode_create(KevGraphNodeId node_id) {
 inline void kev_graphnode_delete(KevGraphNode* node) {
   if (!node) return;
   kev_graph_edgelist_delete(node->edges);
+  kev_graph_edgelist_delete(node->epsilons);
   kev_graph_node_pool_deallocate(node);
 }
 
@@ -101,6 +103,15 @@ bool kev_graphnode_connect(KevGraphNode* from, KevGraphNode* to, KevGraphEdgeAtt
   new_edge->attr = attr;
   new_edge->node = to;
   from->edges = new_edge;
+  return true;
+}
+
+bool kev_graphnode_connect_epsilon(KevGraphNode* from, KevGraphNode* to) {
+  KevGraphEdgeList* new_edge = kev_graph_edge_pool_allocate();
+  if (!new_edge) return false;
+  new_edge->next = from->epsilons;
+  new_edge->node = to;
+  from->epsilons = new_edge;
   return true;
 }
 
@@ -125,6 +136,8 @@ bool kev_graph_node_list_copy(KevAddressMap* map, KevGraphNodeList** p_dest, Kev
     }
 
     new_node->id = src->id;
+    new_node->epsilons = NULL;
+    new_node->edges = NULL;
     tail->next = new_node;
     tail = new_node;
     src = src->next;
@@ -181,18 +194,14 @@ bool kev_graph_init_copy(KevGraph* graph, KevGraph* src) {
   KevGraphNode* src_node = src->head;
   KevGraphNode* tail = NULL;
   while (node) {  /* copy edges for every node */
-   if (!kev_graph_edge_list_copy(&corresponding_node_map, &node->edges, src_node->edges)) {
+   if (!kev_graph_edge_list_copy(&corresponding_node_map, &node->edges, src_node->edges) ||
+       !kev_graph_edge_list_copy(&corresponding_node_map, &node->epsilons, src_node->epsilons)) {
      /* handle error */
      kev_addressmap_destroy(&corresponding_node_map);
      KevGraphNode* free_node = head;
-     while (free_node != node) {
-       KevGraphNode* tmp = free_node->next;
-       kev_graphnode_delete(free_node);
-       free_node = tmp;
-     }
      while (free_node) {
        KevGraphNode* tmp = free_node->next;
-       kev_graph_node_pool_deallocate(free_node);
+       kev_graphnode_delete(free_node);
        free_node = tmp;
      }
      return false;

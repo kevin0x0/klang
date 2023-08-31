@@ -4,13 +4,54 @@
 
 #define KEV_NFA_STATE_NAME_PLACE_HOLDER   (0)
 
+bool kev_nfa_init_empty(KevFA* fa) {
+  if (!fa) return false;
+  
+  KevGraphNode* start = kev_graphnode_create(KEV_NFA_STATE_NAME_PLACE_HOLDER);
+  KevGraphNode* accept = kev_graphnode_create(KEV_NFA_STATE_NAME_PLACE_HOLDER);
+  if (!start || !accept) {
+    kev_graphnode_delete(start);
+    kev_graphnode_delete(accept);
+    fa->start_state = NULL;
+    fa->accept_states = NULL;
+    kev_graph_init(&fa->transition, NULL);
+    return false;
+  }
+
+  fa->start_state = start;
+  fa->accept_states = accept;
+  start->next = accept;
+  return kev_graph_init_set(&fa->transition, start, accept);
+}
+
+bool kev_nfa_init_epsilon(KevFA* fa) {
+  if (!fa) return false;
+  
+  KevGraphNode* start = kev_graphnode_create(KEV_NFA_STATE_NAME_PLACE_HOLDER);
+  KevGraphNode* accept = kev_graphnode_create(KEV_NFA_STATE_NAME_PLACE_HOLDER);
+  if (!start || !accept ||
+      !kev_graphnode_connect_epsilon(start, accept)) {
+    kev_graphnode_delete(start);
+    kev_graphnode_delete(accept);
+    fa->start_state = NULL;
+    fa->accept_states = NULL;
+    kev_graph_init(&fa->transition, NULL);
+    return false;
+  }
+
+  fa->start_state = start;
+  fa->accept_states = accept;
+  start->next = accept;
+  return kev_graph_init_set(&fa->transition, start, accept);
+}
+
 bool kev_nfa_init(KevFA* fa, KevNFAChar character) {
   if (!fa) return false;
   
   KevGraphNode* start = kev_graphnode_create(KEV_NFA_STATE_NAME_PLACE_HOLDER);
   KevGraphNode* accept = kev_graphnode_create(KEV_NFA_STATE_NAME_PLACE_HOLDER);
   if (!start || !accept ||
-      !(character == KEV_NFA_SYMBOL_EMPTY || kev_graphnode_connect(start, accept, character))) {
+      !kev_graphnode_connect(start, accept, character)) {
     kev_graphnode_delete(start);
     kev_graphnode_delete(accept);
     fa->start_state = NULL;
@@ -84,6 +125,28 @@ void kev_fa_destroy(KevFA* fa) {
   }
 }
 
+KevFA* kev_nfa_create_empty(void) {
+  KevFA* fa = kev_fa_pool_allocate();
+  if (!fa) return false;
+
+  if (!kev_nfa_init_empty(fa)) {
+    kev_fa_pool_deallocate(fa);
+    return NULL;
+  }
+  return fa;
+}
+
+KevFA* kev_nfa_create_epsilon(void) {
+  KevFA* fa = kev_fa_pool_allocate();
+  if (!fa) return false;
+
+  if (!kev_nfa_init_epsilon(fa)) {
+    kev_fa_pool_deallocate(fa);
+    return NULL;
+  }
+  return fa;
+}
+
 KevFA* kev_nfa_create(KevNFAChar character) {
   KevFA* fa = kev_fa_pool_allocate();
   if (!fa) return false;
@@ -135,11 +198,13 @@ void kev_fa_delete(KevFA* fa) {
 
 bool kev_nfa_concatenation(KevFA* dest, KevFA* src) {
   dest->accept_states->edges = src->start_state->edges;
+  dest->accept_states->epsilons = src->start_state->epsilons;
   src->start_state->edges = NULL;
+  src->start_state->epsilons = NULL;
   dest->accept_states = src->accept_states;
   src->start_state = NULL;
   src->accept_states = NULL;
-  /* the head state is starting state, remove starting state */
+  /* the head state is starting state, remove starting state of 'src' */
   KevGraphNode* tmp = src->transition.head;
   src->transition.head = src->transition.head->next;
   kev_graphnode_delete(tmp);
@@ -162,10 +227,10 @@ bool kev_nfa_alternation(KevFA* dest, KevFA* src) {
   KevGraphNode* src_accept = src->accept_states;
   src->start_state = NULL;
   src->accept_states = NULL;
-  if (!kev_graphnode_connect(new_start, dest->start_state, KEV_NFA_SYMBOL_EPSILON)   ||
-      !kev_graphnode_connect(new_start, src_start, KEV_NFA_SYMBOL_EPSILON)    ||
-      !kev_graphnode_connect(dest->accept_states, new_accept, KEV_NFA_SYMBOL_EPSILON) ||
-      !kev_graphnode_connect(src_accept, new_accept, KEV_NFA_SYMBOL_EPSILON)) {
+  if (!kev_graphnode_connect_epsilon(new_start, dest->start_state)    ||
+      !kev_graphnode_connect_epsilon(new_start, src_start)            ||
+      !kev_graphnode_connect_epsilon(dest->accept_states, new_accept) ||
+      !kev_graphnode_connect_epsilon(src_accept, new_accept)) {
     dest->start_state = new_start;
     dest->accept_states = new_accept;
     return false;
@@ -186,9 +251,9 @@ bool kev_nfa_positive(KevFA* nfa) {
 
   kev_graph_insert_node(&nfa->transition, new_accept);
   kev_graph_insert_node(&nfa->transition, new_start); /* start state should be at the start of the node list */
-  if (!kev_graphnode_connect(new_start, nfa->start_state, KEV_NFA_SYMBOL_EPSILON)   ||
-      !kev_graphnode_connect(nfa->accept_states, new_accept, KEV_NFA_SYMBOL_EPSILON) ||
-      !kev_graphnode_connect(nfa->accept_states, nfa->start_state, KEV_NFA_SYMBOL_EPSILON)) {
+  if (!kev_graphnode_connect_epsilon(new_start, nfa->start_state)   ||
+      !kev_graphnode_connect_epsilon(nfa->accept_states, new_accept) ||
+      !kev_graphnode_connect_epsilon(nfa->accept_states, nfa->start_state)) {
     nfa->start_state = new_start;
     nfa->accept_states = new_accept;
     return false;

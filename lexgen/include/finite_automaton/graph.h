@@ -6,11 +6,12 @@
 struct tagKevGraphEdgeList;
 
 typedef int KevGraphNodeId;
-typedef int64_t KevGraphEdgeAttr;
+typedef size_t KevGraphEdgeAttr;
 
 typedef struct tagKevGraphNodeList {
   KevGraphNodeId id;
   struct tagKevGraphEdgeList* edges;
+  struct tagKevGraphEdgeList* epsilons;   /* list of epsilon transition, only used in NFA */
   struct tagKevGraphNodeList* next;
 } KevGraphNodeList;
 
@@ -47,6 +48,7 @@ static inline KevGraphNodeList* kev_graph_get_nodes(KevGraph* graph);
 KevGraphNode* kev_graphnode_create(KevGraphNodeId id);
 void kev_graphnode_delete(KevGraphNode* node);
 bool kev_graphnode_connect(KevGraphNode* from, KevGraphNode* to, KevGraphEdgeAttr attr);
+bool kev_graphnode_connect_epsilon(KevGraphNode* from, KevGraphNode* to);
 static inline KevGraphEdgeList* kev_graphnode_get_edges(KevGraphNode* node);
 
 static inline bool kev_graph_init_set(KevGraph* graph, KevGraphNode* head, KevGraphNode* tail) {
@@ -94,6 +96,10 @@ static inline KevGraphNodeList* kev_graph_get_nodes(KevGraph* graph) {
 
 static inline KevGraphEdgeList* kev_graphnode_get_edges(KevGraphNode* node) {
   return node->edges;
+}
+
+static inline KevGraphEdgeList* kev_graphnode_get_epsilon(KevGraphNode* node) {
+  return node->epsilons;
 }
 
 #endif

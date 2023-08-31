@@ -4,9 +4,6 @@
 #include "lexgen/include/finite_automaton/graph.h"
 #include "utils/include/general/global_def.h"
 
-#define KEV_NFA_SYMBOL_EPSILON        (-1)
-#define KEV_NFA_SYMBOL_EMPTY          (-2)
-
 typedef KevGraphNodeId KevStateId;
 typedef KevGraphEdgeAttr KevNFAChar;
 
@@ -29,12 +26,16 @@ typedef struct tagKevFA {
 } KevFA;
 
 bool kev_nfa_init(KevFA* fa, KevNFAChar character);
+bool kev_nfa_init_empty(KevFA* fa);
+bool kev_nfa_init_epsilon(KevFA* fa);
 bool kev_fa_init_copy(KevFA* fa, KevFA* src);
 bool kev_fa_init_move(KevFA* fa, KevFA* src);
 /* Do not check parameters. You should aware of what you are doing. */
 bool kev_fa_init_set(KevFA* fa, KevGraphNodeList* state_list, KevGraphNode* start, KevGraphNode* accept);
 void kev_fa_destroy(KevFA* fa);
 KevFA* kev_nfa_create(KevNFAChar character);
+KevFA* kev_nfa_create_epsilon(void);
+KevFA* kev_nfa_create_empty(void);
 /* this remain validity of NFAs */
 KevFA* kev_fa_create_copy(KevFA* src);
 /* this remain validity of NFAs */
@@ -44,6 +45,7 @@ KevFA* kev_fa_create_set(KevGraphNodeList* state_list, KevGraphNode* start, KevG
 void kev_fa_delete(KevFA* fa);
 
 static inline bool kev_nfa_add_transition(KevFA* nfa, KevNFAChar character);
+static inline bool kev_nfa_add_epsilon(KevFA* nfa);
 size_t kev_fa_state_assign_id(KevFA* fa, KevStateId start_id);
 /* Do concatenation between 'dest' and 'src'. 
  * The result is in 'dest', 'src' would be set to empty */
@@ -73,13 +75,16 @@ static inline KevGraphNode* kev_fa_get_accept_state(KevFA* fa);
 static inline KevGraphNode* kev_fa_get_states(KevFA* fa);
 
 static inline bool kev_nfa_add_transition(KevFA* nfa, KevNFAChar character) {
-  if (character == KEV_NFA_SYMBOL_EMPTY) return true;
   return kev_graphnode_connect(nfa->start_state, nfa->accept_states, character);
+}
+
+static inline bool kev_nfa_add_epsilon(KevFA* nfa) {
+  return kev_graphnode_connect_epsilon(nfa->start_state, nfa->accept_states);
 }
 
 static inline bool kev_nfa_kleene(KevFA* nfa) {
   return kev_nfa_positive(nfa) &&
-         kev_graphnode_connect(nfa->start_state, nfa->accept_states, KEV_NFA_SYMBOL_EPSILON);
+         kev_graphnode_connect_epsilon(nfa->start_state, nfa->accept_states);
 }
 
 static inline KevGraphNode* kev_fa_get_start_state(KevFA* fa) {

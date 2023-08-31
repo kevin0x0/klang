@@ -284,7 +284,7 @@ static bool kev_regex_post(KevParser* parser, KevFA* nfa) {
         break;
       }
       case '?': {
-        if (!kev_nfa_add_transition(nfa, KEV_NFA_SYMBOL_EPSILON)) {
+        if (!kev_nfa_add_epsilon(nfa)) {
           kev_fa_delete(nfa);
           error_type = KEV_REGEX_ERR_GENERATE;
           kev_regex_set_error_info("failed to do ? operation");
@@ -359,7 +359,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
   }
 
   KevFA result;
-  if (!kev_nfa_init(&result, KEV_NFA_SYMBOL_EPSILON)) {
+  if (!kev_nfa_init_epsilon(&result)) {
     kev_fa_delete(nfa);
     error_type = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("failed to repeat");
@@ -375,7 +375,7 @@ static bool kev_regex_post_repeat(KevParser* parser, KevFA* nfa) {
       return false;
     }
   }
-  if (!kev_nfa_add_transition(nfa, KEV_NFA_SYMBOL_EPSILON)) {
+  if (!kev_nfa_add_epsilon(nfa)) {
       kev_fa_destroy(&result);
       kev_fa_delete(nfa);
       error_type = KEV_REGEX_ERR_GENERATE;
@@ -465,7 +465,7 @@ static KevFA* kev_regex_charset(KevParser* parser, KevStringFaMap* nfa_map) {
     for (int i = begin; i <= end; ++i)
       in_charset[i] = mark;
   }
-  KevFA* nfa = kev_nfa_create(KEV_NFA_SYMBOL_EMPTY);
+  KevFA* nfa = kev_nfa_create_empty();
   if (!nfa) {
     kev_fa_delete(nfa);
     error_type = KEV_REGEX_ERR_GENERATE;

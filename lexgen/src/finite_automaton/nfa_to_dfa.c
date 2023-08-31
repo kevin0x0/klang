@@ -129,11 +129,10 @@ static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping
   
   while (!kev_intqueue_empty(queue)) {
     size_t state = kev_intqueue_pop(queue);
-    for (KevGraphEdge* edge = state_mapping[state]->edges; edge; edge = edge->next) {
-      if (edge->attr == KEV_NFA_SYMBOL_EPSILON &&
-          !kev_bitset_has_element(closure, edge->node->id)) {
-        KevGraphNodeId id = edge->node->id;
-        if (edge->node->id < state) {
+    for (KevGraphEdge* epsilons = kev_graphnode_get_epsilon(state_mapping[state]); epsilons; epsilons = epsilons->next) {
+      if (!kev_bitset_has_element(closure, epsilons->node->id)) {
+        KevGraphNodeId id = epsilons->node->id;
+        if (epsilons->node->id < state) {
           if (!kev_bitset_union(closure, closures + id))
             return false;
           continue;
@@ -231,18 +230,16 @@ static bool kev_compute_all_transition(KevIntSetMap* transition_map, KevBitSet* 
     state = next_state;
     KevGraphEdge* edge = kev_graphnode_get_edges(state_mapping[state]);
     for (; edge; edge = edge->next) {
-      if (edge->attr != KEV_NFA_SYMBOL_EPSILON) {
-        KevIntSetMapNode* map_node = kev_intsetmap_search(transition_map, edge->attr);
-        KevBitSet* set = NULL;
-        if (map_node == NULL) {
-          if (!(set = kev_bitset_create_copy(&closures[edge->node->id])) ||
-              !kev_intsetmap_insert(transition_map, edge->attr, set)) {
-            kev_bitset_delete(set);
-            return false;
-          }
-        } else {
-          kev_bitset_union(map_node->value, &closures[edge->node->id]);
+      KevIntSetMapNode* map_node = kev_intsetmap_search(transition_map, edge->attr);
+      KevBitSet* set = NULL;
+      if (map_node == NULL) {
+        if (!(set = kev_bitset_create_copy(&closures[edge->node->id])) ||
+            !kev_intsetmap_insert(transition_map, edge->attr, set)) {
+          kev_bitset_delete(set);
+          return false;
         }
+      } else {
+        kev_bitset_union(map_node->value, &closures[edge->node->id]);
       }
     }
     next_state = kev_bitset_iterate_next(closure, state);
@@ -293,8 +290,7 @@ static size_t* kev_get_state_ownership_array(KevFA** nfa_array, size_t state_num
       for (KevGraphNode* node = kev_fa_get_states(*pnfa); node; node = node->next) {
         ownership[node->id] = count;
       }
-      count++;
-      pnfa++;
+      count++; pnfa++;
     }
   }
   return ownership;

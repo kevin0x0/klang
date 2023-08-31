@@ -9,6 +9,7 @@ ROOT_PATH = $(abspath ../../../)/
 CC_GLOBAL_PARAM = -Wall -I $(ROOT_PATH)
 
 LEXGEN_PATH = $(ROOT_PATH)lexgen/
+UTILS_PATH = $(ROOT_PATH)utils/
 INC_PATH = $(LEXGEN_PATH)include/
 SRC_PATH = $(LEXGEN_PATH)src/
 BIN_PATH = $(LEXGEN_PATH)bin/
@@ -20,7 +21,7 @@ GEN_INC_PATH = $(INC_PATH)general/
 FA_INC_PATH = $(INC_PATH)finite_automaton/
 FA_PATH = $(SRC_PATH)finite_automaton/
 
-graph_test.exe : graph_test.c $(BIN_PATH)libfa.a $(BIN_PATH)libparser.a
+graph_test.exe : graph_test.c $(BIN_PATH)libfa.a $(BIN_PATH)libparser.a $(UTILS_PATH)bin/libutils.a
 	$(CC) -o $@ $^ $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 

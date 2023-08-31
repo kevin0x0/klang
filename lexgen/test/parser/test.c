@@ -16,11 +16,6 @@ void print_graph(FILE* out, KevGraph* graph) {
     fprintf(out, "%llu: ", node->id);
     while (edge) {
       char ch = edge->attr;
-      if (ch == KEV_NFA_SYMBOL_EMPTY)
-        fprintf(out, " -- -> %llu ", edge->node->id);
-      else if (ch == KEV_NFA_SYMBOL_EPSILON)
-        fprintf(out, " ----> %llu ", edge->node->id);
-      else
         fprintf(out, " --%c-> %llu ", ch, edge->node->id);
       edge = edge->next;
     }
