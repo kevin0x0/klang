@@ -24,17 +24,16 @@ void print_graph(FILE* out, KevGraph* graph) {
         fprintf(out, " -\\n-> %llu ", edge->node->id);
       else if (ch == '\t')
         fprintf(out, " -\\t-> %llu ", edge->node->id);
-      else if ((uint8_t)ch == '\e')
-        fprintf(out, " -\\e-> %llu ", edge->node->id);
+      else if ((uint8_t)ch == '\0')
+        fprintf(out, " -\\0-> %llu ", edge->node->id);
       else
         fprintf(out, " --%c-> %llu ", ch, edge->node->id);
       edge = edge->next;
     }
     KevGraphEdge* epsilon = node->epsilons;
     while (epsilon) {
-      char ch = epsilon->attr;
-      fprintf(out, " --ε-> %llu ", ch, edge->node->id);
-      edge = edge->next;
+      fprintf(out, " -null-> %llu ", epsilon->node->id);
+      epsilon = epsilon->next;
     }
     fprintf(out, "\n");
     node = node->next;
@@ -100,9 +99,12 @@ int main(void) {
     kev_fa_delete(min_dfa);
   }
 
-  KevFA* nfa = kev_regex_parse_ascii("[a][b]", NULL);
-  kev_fa_state_assign_id(nfa, 0);
-  print_nfa(stderr, nfa);
+  KevFA* nfa = kev_regex_parse_ascii("[ab]*b[ab]{10}", NULL);
+  KevFA* nfas[] = { nfa, NULL };
+  KevFA* dfa = kev_nfa_to_dfa(nfas, NULL);
+  KevFA* min_dfa = /*kev_fa_create_copy(dfa);*/kev_dfa_minimization(dfa, NULL);
+  kev_fa_state_assign_id(min_dfa, 0);
+  print_dfa(stderr, min_dfa);
   //KevFA* nfa_array[] = { nfa, NULL };
   //KevFA* dfa = kev_nfa_to_dfa(nfa_array, NULL);
   //kev_fa_state_assign_id(dfa, 0);
