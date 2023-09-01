@@ -40,6 +40,8 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
         kev_throw_error("command line parser:", "missing output path: ", "--out-inc <path>");
       free(options->strs[KEV_LEXGEN_OUT_INC_PATH]);
       options->strs[KEV_LEXGEN_OUT_INC_PATH] = copy_string(argv[i]);
+    } else if (strcmp(arg, "--table-only") == 0) {
+      options->opts[KEV_LEXGEN_OPT_TAB_ONLY] = KEV_LEXGEN_OPT_TRUE;
     } else {
       kev_lexgen_set_kv_pair(arg, options);
     }
