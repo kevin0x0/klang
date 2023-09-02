@@ -2,7 +2,7 @@
 #define KEVCC_PARGEN_INCLUDE_LR_LR_UTILS_H
 
 #include "pargen/include/lr/collection.h"
-#include "pargen/include/lr/hashmap/gotomap.h"
+#include "pargen/include/lr/hashmap/goto_map.h"
 
 static inline void kev_lrs_assign_itemset_id(KevItemSet** itemsets, size_t itemset_no);
 bool kev_lrs_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure, KevGotoMap* goto_container);

@@ -4,7 +4,7 @@
 #include "pargen/include/lr/item_def.h"
 #include "pargen/include/lr/object_pool/itemset_pool.h"
 #include "pargen/include/lr/object_pool/itemsetgoto_pool.h"
-#include "pargen/include/lr/object_pool/kernel_item_pool.h"
+#include "pargen/include/lr/object_pool/item_pool.h"
 
 #define kev_lr_item_less_than(item1, item2) ((size_t)(item1) < (size_t)(item2) || \
                                             ((size_t)(item1) == (size_t)(item2) && \

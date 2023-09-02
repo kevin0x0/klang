@@ -1,4 +1,4 @@
-#include "pargen/include/lr/object_pool/kernel_item_pool.h"
+#include "pargen/include/lr/object_pool/item_pool.h"
 
 #include <stdlib.h>
 

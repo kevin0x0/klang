@@ -16,7 +16,9 @@ static bool kev_lr_conflict_create_and_add_item(KevLRConflict* conflict, KevRule
 KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* conf_handler) {
   KevLRTable* table = (KevLRTable*)malloc(sizeof (KevLRTable));
   if (!table) return NULL;
-  table->symbol_no = collec->symbol_no;
+  /* start symbol is excluded in the table, so the actual symbol number for
+   * the table is table->symbol_no - 1. */
+  table->symbol_no = collec->symbol_no - 1;
   table->terminal_no = collec->terminal_no;
   table->itemset_no = collec->itemset_no;
   table->conflicts = NULL;
@@ -90,7 +92,7 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
           kev_lr_conflict_delete(conflict);
           return false;
         }
-        if (!conf_handler || !conf_handler(conflict, collec))
+        if (!conf_handler || !kev_lr_conflict_handle(conf_handler, conflict, collec))
           kev_lr_table_add_conflict(table, conflict);
         else
           kev_lr_conflict_delete(conflict);
@@ -131,7 +133,7 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
               kev_lr_conflict_delete(conflict);
               return false;
             }
-            if (!conf_handler || !conf_handler(conflict, collec))
+            if (!conf_handler || !kev_lr_conflict_handle(conf_handler, conflict, collec))
               kev_lr_table_add_conflict(table, conflict);
             else
               kev_lr_conflict_delete(conflict);
@@ -222,4 +224,16 @@ static bool kev_lr_conflict_create_and_add_item(KevLRConflict* conflict, KevRule
   if (!conflict_item) return false;
   kev_lr_conflict_add_item(conflict, conflict_item);
   return true;
+}
+
+KevLRConflictHandler* kev_lr_conflict_handler_create(void* object, KevLRConflictCallback* callback) {
+  KevLRConflictHandler* handler = (KevLRConflictHandler*)malloc(sizeof (KevLRConflictHandler));
+  if (!handler) return NULL;
+  handler->object = object;
+  handler->callback = callback;
+  return handler;
+}
+
+void kev_lr_conflict_handler_delete(KevLRConflictHandler* handler) {
+  free(handler);
 }

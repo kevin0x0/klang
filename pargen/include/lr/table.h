@@ -45,19 +45,32 @@ typedef struct tagKevLRTable {
   KevLRConflict* conflicts;
 } KevLRTable;
 
-typedef bool KevLRConflictHandler(KevLRConflict* conflict, KevLRCollection* collec);
+typedef bool KevLRConflictCallback(void* object, KevLRConflict* conflict, KevLRCollection* collec);
+
+/* conflict handler */
+typedef struct tagKevLRConflictHandler {
+  void* object;
+  KevLRConflictCallback* callback;
+} KevLRConflictHandler;
 
 /* generation of table */
 KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* conf_handler);
 void kev_lr_table_delete(KevLRTable* table);
 
 /* conflict */
-KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, struct tagKevLRTableEntry* entry);
+KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, KevLRTableEntry* entry);
 void kev_lr_conflict_delete(KevLRConflict* conflict);
 static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item);
+static inline bool kev_lr_conflict_handle(KevLRConflictHandler* handler, KevLRConflict* conflict, KevLRCollection* collec);
 static inline bool kev_lr_conflict_SR(KevLRConflict* conflict);
 static inline bool kev_lr_conflict_RR(KevLRConflict* conflict);
 
+/* conflict handler */
+KevLRConflictHandler* kev_lr_conflict_handler_create(void* object, KevLRConflictCallback* callback);
+void kev_lr_conflict_handler_delete(KevLRConflictHandler* handler);
+
+
+/* implement of inline functions */
 static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item) {
   kev_lr_itemset_add_item(conflict->conflct_items, item);
 }
@@ -68,6 +81,10 @@ static inline bool kev_lr_conflict_SR(KevLRConflict* conflict) {
 
 static inline bool kev_lr_conflict_RR(KevLRConflict* conflict) {
   return conflict->conflct_items->items->next != NULL;
+}
+
+static inline bool kev_lr_conflict_handle(KevLRConflictHandler* handler, KevLRConflict* conflict, KevLRCollection* collec) {
+  return handler->callback(handler->object, conflict, collec);
 }
 
 #endif

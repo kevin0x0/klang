@@ -1,6 +1,6 @@
 #include "pargen/include/lr/collection.h"
 #include "pargen/include/lr/lr_utils.h"
-#include "pargen/include/lr/hashmap/gotomap.h"
+#include "pargen/include/lr/hashmap/goto_map.h"
 #include "pargen/include/lr/set/itemset_set.h"
 
 #include <stdlib.h>

@@ -2,7 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "pargen/include/lr/hashmap/gotomap.h"
+#include "pargen/include/lr/hashmap/goto_map.h"
 #include "pargen/include/lr/object_pool/gotomap_node_pool.h"
 
 #include <stdlib.h>

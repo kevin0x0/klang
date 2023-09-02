@@ -1,7 +1,7 @@
 #include "pargen/include/lr/lr.h"
 #include <stdio.h>
 
-bool conflict_report(KevLRConflict* conflict, KevLRCollection* collec) {
+bool conflict_report(void* object, KevLRConflict* conflict, KevLRCollection* collec) {
   printf("All conflict items here:\n");
   kev_lr_print_itemset(stdout, collec, conflict->conflct_items, false);
   return false;
@@ -33,7 +33,9 @@ int main(int argc, char** argv) {
   assign->id = 5;
   end->id = 6;
 
-  KevLRTable* table = kev_lr_table_create(collec, conflict_report);
+  KevLRConflictHandler* handler = kev_lr_conflict_handler_create(NULL, conflict_report);
+  KevLRTable* table = kev_lr_table_create(collec, handler);
+  kev_lr_conflict_handler_delete(handler);
   kev_lr_collection_delete(collec);
   kev_lr_table_delete(table);
 
@@ -49,4 +51,5 @@ int main(int argc, char** argv) {
   kev_lr_symbol_delete(star);
   kev_lr_symbol_delete(assign);
   kev_lr_symbol_delete(end);
+  return 0;
 }

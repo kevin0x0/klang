@@ -1,7 +1,7 @@
 #ifndef KEVCC_PARGEN_INCLUDE_LR_OBJECT_POOL_GOTOMAP_NODE_POOL_H
 #define KEVCC_PARGEN_INCLUDE_LR_OBJECT_POOL_GOTOMAP_NODE_POOL_H
 
-#include "pargen/include/lr/hashmap/gotomap.h"
+#include "pargen/include/lr/hashmap/goto_map.h"
 
 KevGotoMapNode* kev_gotomap_node_pool_acquire(void);
 KevGotoMapNode* kev_gotomap_node_pool_allocate(void);

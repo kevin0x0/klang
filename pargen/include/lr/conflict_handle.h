@@ -1,14 +1,18 @@
-#ifndef KEVCC_PARGEN_INCLUDE_LR_CONFLICT_H
-#define KEVCC_PARGEN_INCLUDE_LR_CONFLICT_H
+#ifndef KEVCC_PARGEN_INCLUDE_LR_CONFLICT_HANDLE_H
+#define KEVCC_PARGEN_INCLUDE_LR_CONFLICT_HANDLE_H
 
 #include "pargen/include/lr/table.h"
 
+extern KevLRConflictHandler* kev_lr_confhandler_reducing;
+extern KevLRConflictHandler* kev_lr_confhandler_shifting;
+
 static inline void kev_lr_conflict_set_reducing(KevLRConflict* conflict, KevItem* item);
 static inline void kev_lr_conflict_set_shifting(KevLRConflict* conflict);
-static inline KevLRConflictHandler kev_lr_confhandler_shifting;
-static inline KevLRConflictHandler kev_lr_confhandler_reducing;
-/* TODO: immplement priority handler */
-static inline KevLRConflictHandler kev_lr_confhandler_priority;
+
+static inline KevLRConflictCallback kev_lr_confhandler_shifting_callback;
+static inline KevLRConflictCallback kev_lr_confhandler_reducing_callback;
+/* TODO: immplement priority handler callback */
+KevLRConflictCallback kev_lr_confhandler_priority_callback;
 
 
 static inline void kev_lr_conflict_set_reducing(KevLRConflict* conflict, KevItem* item) {
@@ -24,13 +28,13 @@ static inline void kev_lr_conflict_set_shifting(KevLRConflict* conflict) {
   entry->info.itemset_id = target_itemset_id;
 }
 
-static inline bool kev_lr_confhandler_reducing(KevLRConflict* conflict, KevLRCollection* collec) {
+static inline bool kev_lr_confhandler_reducing_callback(void* object, KevLRConflict* conflict, KevLRCollection* collec) {
   if (kev_lr_conflict_RR(conflict)) return false;
   kev_lr_conflict_set_reducing(conflict, conflict->conflct_items->items);
   return true;
 }
 
-static inline bool kev_lr_confhandler_shifting(KevLRConflict* conflict, KevLRCollection* collec) {
+static inline bool kev_lr_confhandler_shifting_callback(void* object, KevLRConflict* conflict, KevLRCollection* collec) {
   if (kev_lr_conflict_RR(conflict)) return false;
   kev_lr_conflict_set_shifting(conflict);
   return true;

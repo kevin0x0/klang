@@ -28,6 +28,8 @@ static inline KevBitSet* kev_lr_get_firstset_by_index(KevLRCollection* collec, s
 static inline size_t kev_lr_get_itmeset_no(KevLRCollection* collec);
 /* A augmented grammar nonterminal symbol is included */
 static inline size_t kev_lr_get_symbol_no(KevLRCollection* collec);
+/* A augmented grammar nonterminal symbol is excluded */
+static inline size_t kev_lr_get_user_symbol_no(KevLRCollection* collec);
 static inline size_t kev_lr_get_terminal_no(KevLRCollection* collec);
 
 
@@ -45,6 +47,11 @@ static inline size_t kev_lr_get_itmeset_no(KevLRCollection* collec) {
 
 static inline size_t kev_lr_get_symbol_no(KevLRCollection* collec) {
   return collec->symbol_no;
+}
+static inline size_t kev_lr_get_user_symbol_no(KevLRCollection* collec) {
+  /* start symbol is excluded, so the actual symbol number created by user is
+   * collec->symbol_no - 1. */
+  return collec->symbol_no - 1;
 }
 
 static inline size_t kev_lr_get_terminal_no(KevLRCollection* collec) {
