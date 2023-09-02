@@ -8,6 +8,7 @@
 
 static inline void kev_lr_print_item(FILE* out, KevLRCollection* collec, KevItem* item);
 bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemset, bool print_closure);
+void kev_lr_print_itemset_with_closure(FILE* out, KevLRCollection* collec, KevItemSet* itemset, KevItemSetClosure* closure);
 bool kev_lr_print_collection(FILE* out, KevLRCollection* collec, bool print_closure);
 bool kev_lr_print_symbols(FILE* out, KevLRCollection* collec);
 

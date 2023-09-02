@@ -12,8 +12,6 @@ static inline size_t kev_max(size_t num1, size_t num2);
 static int kev_symbol_compare(const void* sym1, const void* sym2);
 
 
-static void kev_lr_print_itemset_with_closure(FILE* out, KevLRCollection* collec, KevItemSet* itemset, KevItemSetClosure* closure);
-
 static inline size_t kev_numlen(size_t num) {
   char numstr[sizeof (size_t) * 4];
   return sprintf(numstr, "%llu", num);
@@ -27,7 +25,7 @@ static int kev_symbol_compare(const void* sym1, const void* sym2) {
   return (*(KevSymbol**)sym1)->id - (*(KevSymbol**)sym2)->id;
 }
 
-static void kev_lr_print_itemset_with_closure(FILE* out, KevLRCollection* collec, KevItemSet* itemset, KevItemSetClosure* closure) {
+void kev_lr_print_itemset_with_closure(FILE* out, KevLRCollection* collec, KevItemSet* itemset, KevItemSetClosure* closure) {
   for (KevItem* kitem = itemset->items; kitem; kitem = kitem->next) {
     kev_lr_print_kernel_item(out, collec, kitem);
     fputc('\n', out);
