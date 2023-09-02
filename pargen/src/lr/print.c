@@ -1,7 +1,7 @@
 #include "pargen/include/lr/print.h"
 
 #define KEV_LR_SYMBOL_EPSILON_STRING  "ε"
-#define KEV_LR_DOT                    ""
+#define KEV_LR_DOT                    "·"
 #define KEV_LR_SYMBOL_UNNAMED         "[UNNAMED]"
 
 bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemset, bool print_closure) {
@@ -59,7 +59,7 @@ void kev_lr_print_non_kernel_item(FILE* out, KevLRCollection* collec, KevRule* r
   KevSymbol** body = rule->body;
   size_t len = rule->bodylen;
   fprintf(out, "%s -> ", rule->head->name ? rule->head->name : KEV_LR_SYMBOL_UNNAMED);
-  fprintf(out, ": ");
+  fprintf(out, "%s ", KEV_LR_DOT);
   for (size_t i = 0; i < len; ++i) 
     fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_LR_SYMBOL_UNNAMED);
   kev_lr_print_terminal_set(out, collec, lookahead);
