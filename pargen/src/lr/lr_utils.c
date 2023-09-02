@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#define KEV_LR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME   "augmented_grammar_start_symbol"
+#define KEV_LR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME   "G"
 
 bool kev_lrs_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure, KevGotoMap* goto_container) {
   kev_gotomap_make_empty(goto_container);
