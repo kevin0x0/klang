@@ -1,6 +1,4 @@
 #include "pargen/include/lr/table.h"
-#include "pargen/include/lr/collection.h"
-#include "pargen/include/lr/item.h"
 
 #include <stdlib.h>
 

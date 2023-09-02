@@ -1,7 +1,7 @@
-#ifndef KEVCC_PARGEN_INCLUDE_LR_ITEM_H
-#define KEVCC_PARGEN_INCLUDE_LR_ITEM_H
+#ifndef KEVCC_PARGEN_INCLUDE_LR_ITEMSET_H
+#define KEVCC_PARGEN_INCLUDE_LR_ITEMSET_H
 
-#include "pargen/include/lr/item_def.h"
+#include "pargen/include/lr/itemset_def.h"
 #include "pargen/include/lr/object_pool/itemset_pool.h"
 #include "pargen/include/lr/object_pool/itemsetgoto_pool.h"
 #include "pargen/include/lr/object_pool/item_pool.h"
@@ -27,8 +27,6 @@ void kev_lr_closure_delete(KevItemSetClosure* closure);
 
 bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBitSet** firsts, size_t epsilon);
 void kev_lr_closure_make_empty(KevItemSetClosure* closure);
-KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon);
-KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon);
 
 static inline KevItemSet* kev_lr_itemset_create(void) {
   KevItemSet* itemset = kev_itemset_pool_allocate();

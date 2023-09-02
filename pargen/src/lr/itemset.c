@@ -1,8 +1,9 @@
-#include "pargen/include/lr/item.h"
-#include "utils/include/array/addr_array.h"
+#include "pargen/include/lr/itemset.h"
 
 #include <stdlib.h>
 
+static KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon);
+static KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon);
 static bool kev_lr_closure_propagate(KevItemSet* itemset, KevItemSetClosure* closure, KevBitSet** firsts, size_t epsilon);
 
 void kev_lr_itemset_delete(KevItemSet* itemset) {
@@ -181,7 +182,7 @@ static bool kev_lr_closure_propagate(KevItemSet* itemset, KevItemSetClosure* clo
   return true;
 }
 
-KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon) {
+static KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon) {
   size_t len = kitem->rule->bodylen;
   KevSymbol** rulebody = kitem->rule->body;
   KevBitSet* follows = kev_bitset_create(epsilon + 3);
@@ -209,7 +210,7 @@ KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, si
   return follows;
 }
 
-KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon) {
+static KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon) {
   size_t len = rule->bodylen;
   KevSymbol** rulebody = rule->body;
   KevBitSet* follows = kev_bitset_create(epsilon + 3);

@@ -1,6 +1,5 @@
 #include "pargen/include/lr/collection.h"
 #include "pargen/include/lr/lr_utils.h"
-#include "pargen/include/lr/hashmap/goto_map.h"
 #include "pargen/include/lr/set/itemset_set.h"
 
 #include <stdlib.h>
@@ -48,26 +47,26 @@ static void kev_lalr_destroy_collec(KevLALRCollection* collec);
 KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** lookahead, size_t la_len) {
   KevLALRCollection* collec = kev_lalr_get_empty_collec();
   if (!collec) return NULL;
-  KevSymbol* augmented_grammar_start = kev_lrs_augment(start);
+  KevSymbol* augmented_grammar_start = kev_lr_util_augment(start);
   if (!augmented_grammar_start) {
     kev_lalr_destroy_collec(collec);
     return NULL;
   }
   collec->start = augmented_grammar_start;
   collec->start_rule = augmented_grammar_start->rules->rule;
-  collec->symbols = kev_lr_get_symbol_array(augmented_grammar_start, lookahead, la_len, &collec->symbol_no);
+  collec->symbols = kev_lr_util_get_symbol_array(augmented_grammar_start, lookahead, la_len, &collec->symbol_no);
   if (!collec->symbols) {
     kev_lalr_destroy_collec(collec);
     return NULL;
   }
-  kev_lr_symbol_array_partition(collec->symbols, collec->symbol_no);
-  collec->terminal_no = kev_lrs_label_symbols(collec->symbols, collec->symbol_no);
-  collec->firsts = kev_lrs_compute_first_array(collec->symbols, collec->symbol_no, collec->terminal_no);
+  kev_lr_util_symbol_array_partition(collec->symbols, collec->symbol_no);
+  collec->terminal_no = kev_lr_util_label_symbols(collec->symbols, collec->symbol_no);
+  collec->firsts = kev_lr_util_compute_first_array(collec->symbols, collec->symbol_no, collec->terminal_no);
   if (!collec->firsts) {
     kev_lalr_destroy_collec(collec);
     return NULL;
   }
-  KevItemSet* start_iset = kev_lrs_get_start_itemset(augmented_grammar_start, lookahead, la_len);
+  KevItemSet* start_iset = kev_lr_util_get_start_itemset(augmented_grammar_start, lookahead, la_len);
   if (!start_iset) {
     kev_lalr_destroy_collec(collec);
     return NULL;
@@ -100,7 +99,7 @@ static KevLALRCollection* kev_lalr_get_empty_collec(void) {
 
 static void kev_lalr_destroy_collec(KevLALRCollection* collec) {
   if (collec->firsts)
-    kev_lrs_destroy_first_array(collec->firsts, collec->symbol_no);
+    kev_lr_util_destroy_first_array(collec->firsts, collec->symbol_no);
   if (collec->itemsets) {
     for (size_t i = 0; i < collec->itemset_no; ++i) {
       kev_lr_itemset_delete(collec->itemsets[i]);
@@ -218,7 +217,7 @@ static bool kev_lalr_get_itemset(KevItemSet* itemset, KevItemSetClosure* closure
     return false;
   if (!kev_lr_closure_make(closure, itemset, firsts, epsilon))
     return false;
-  if (!kev_lrs_generate_gotos(itemset, closure, goto_container))
+  if (!kev_lr_util_generate_gotos(itemset, closure, goto_container))
     return false;
   kev_lalr_final_kitem_la(itemset, epsilon);
   return true;

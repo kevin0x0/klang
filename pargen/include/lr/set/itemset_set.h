@@ -1,7 +1,7 @@
 #ifndef KEVCC_UTILS_INCLUDE_SET_ITEMSET_SET_H
 #define KEVCC_UTILS_INCLUDE_SET_ITEMSET_SET_H
 
-#include "pargen/include/lr/item.h"
+#include "pargen/include/lr/itemset_def.h"
 #include "utils/include/general/global_def.h"
 
 typedef struct tagKevItemSetSetNode {

@@ -1,6 +1,4 @@
 #include "pargen/include/lr/rule.h"
-#include "utils/include/array/addr_array.h"
-#include "utils/include/set/hashset.h"
 
 #include <stdlib.h>
 
@@ -70,78 +68,5 @@ static inline void kev_rulenode_delete(KevRuleNode* rules) {
     KevRuleNode* tmp = rules->next;
     free(rules);
     rules = tmp;
-  }
-}
-
-KevSymbol** kev_lr_get_symbol_array(KevSymbol* start, KevSymbol** lookahead, size_t la_len, size_t* p_size) {
-  KevAddrArray array;
-  if (!kev_addrarray_init(&array))
-    return NULL;
-
-  KevHashSet set;
-  if (!kev_hashset_init(&set, 64)) {
-    kev_hashset_destroy(&set);
-    return NULL;
-  }
-  if (!kev_hashset_insert(&set, start) ||
-      !kev_addrarray_push_back(&array, start)) {
-    kev_hashset_destroy(&set);
-    kev_addrarray_destroy(&array);
-    return NULL;
-  }
-  size_t curr = 0;
-
-  while (curr != kev_addrarray_size(&array)) {
-    KevSymbol* symbol = kev_addrarray_visit(&array, curr++);
-    KevRuleNode* rule = symbol->rules;
-    for (; rule; rule = rule->next) {
-      KevSymbol** rule_body = rule->rule->body;
-      size_t len = rule->rule->bodylen;
-      for (size_t i = 0; i < len; ++i) {
-        if (kev_hashset_has(&set, rule_body[i]))
-          continue;
-        if (!kev_hashset_insert(&set, rule_body[i]) ||
-            !kev_addrarray_push_back(&array, rule_body[i])) {
-          kev_hashset_destroy(&set);
-          kev_addrarray_destroy(&array);
-          return NULL;
-        }
-      }
-    }
-  }
-
-  for (size_t i = 0; i < la_len; ++i) {
-    if (kev_hashset_has(&set, lookahead[i]))
-      continue;
-    if (lookahead[i]->kind == KEV_LR_SYMBOL_NONTERMINAL) {
-      kev_hashset_destroy(&set);
-      kev_addrarray_destroy(&array);
-      return NULL;
-    }
-    if (!kev_hashset_insert(&set, lookahead[i]) ||
-        !kev_addrarray_push_back(&array, lookahead[i])) {
-      kev_hashset_destroy(&set);
-      kev_addrarray_destroy(&array);
-      return NULL;
-    }
-  }
-
-  kev_hashset_destroy(&set);
-  *p_size = kev_addrarray_size(&array);
-  return (KevSymbol**)array.begin;
-}
-
-void kev_lr_symbol_array_partition(KevSymbol** array, size_t size) {
-  KevSymbol** left = array;
-  KevSymbol** right = array + size - 1;
-  while (left < right) {
-    while (left < right && (*left)->kind == KEV_LR_SYMBOL_TERMINAL)
-      ++left;
-    while (left < right && (*right)->kind == KEV_LR_SYMBOL_NONTERMINAL)
-      --right;
-    if (left >= right) break;
-    KevSymbol* tmp = *left;
-    *left = *right;
-    *right = tmp;
   }
 }

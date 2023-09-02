@@ -22,8 +22,8 @@ int main(int argc, char** argv) {
   KevRule* rule3 = kev_lr_rule_create(R, &L, 1);
   KevRule* rule4 = kev_lr_rule_create(S, body1, 3);
   KevRule* rule5 = kev_lr_rule_create(L, body2, 2);
-  KevLRCollection* collec = kev_lr_collection_create_lalr(S, &end, 1);
-  kev_lr_print_collection(stdout, collec, false);
+  KevLRCollection* collec = kev_lr_collection_create_lr1(S, &end, 1);
+  kev_lr_print_collection(stdout, collec, true);
 
   S->id = 0;
   L->id = 1;
@@ -33,8 +33,38 @@ int main(int argc, char** argv) {
   assign->id = 5;
   end->id = 6;
 
+  rule1->id = 0;
+  rule2->id = 1;
+  rule3->id = 2;
+  rule4->id = 3;
+  rule5->id = 4;
+
   KevLRConflictHandler* handler = kev_lr_conflict_handler_create(NULL, conflict_report);
   KevLRTable* table = kev_lr_table_create(collec, handler);
+  fputc('\n', stdout);
+  fputc('\n', stdout);
+  fputc('\n', stdout);
+  kev_lr_print_symbols(stdout, collec);
+  fputc('\n', stdout);
+  fprintf(stdout, "%d ", 0);
+  kev_lr_print_rule(stdout, rule1);
+  fputc('\n', stdout);
+  fprintf(stdout, "%d ", 1);
+  kev_lr_print_rule(stdout, rule2);
+  fputc('\n', stdout);
+  fprintf(stdout, "%d ", 2);
+  kev_lr_print_rule(stdout, rule3);
+  fputc('\n', stdout);
+  fprintf(stdout, "%d ", 3);
+  kev_lr_print_rule(stdout, rule4);
+  fputc('\n', stdout);
+  fprintf(stdout, "%d ", 4);
+  kev_lr_print_rule(stdout, rule5);
+  fputc('\n', stdout);
+  fputc('\n', stdout);
+  kev_lr_print_goto_table(stdout, table);
+  fputc('\n', stdout);
+  kev_lr_print_action_table(stdout, table);
   kev_lr_conflict_handler_delete(handler);
   kev_lr_collection_delete(collec);
   kev_lr_table_delete(table);

@@ -1,5 +1,5 @@
-#ifndef KEVCC_PARGEN_INCLUDE_LR_ITEM_DEF_H
-#define KEVCC_PARGEN_INCLUDE_LR_ITEM_DEF_H
+#ifndef KEVCC_PARGEN_INCLUDE_LR_ITEMSET_DEF_H
+#define KEVCC_PARGEN_INCLUDE_LR_ITEMSET_DEF_H
 
 #include "pargen/include/lr/rule.h"
 #include "utils/include/array/addr_array.h"
