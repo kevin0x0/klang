@@ -18,10 +18,10 @@ GEN_INC_DIR = $(UTILS_INC)general/
 $(BIN_DIR)libparser.a : $(BIN_DIR)regex.o $(BIN_DIR)parser.o $(BIN_DIR)lexer.o $(BIN_DIR)par_error.o $(BIN_DIR)lexgenlexer_table.o $(BIN_DIR)strfa_map.o $(BIN_DIR)pattern_list.o
 	$(AR) $@ $^
 
-$(BIN_DIR)regex.o : $(PS_DIR)regex.c $(PS_INC_DIR)regex.h $(FA_DEPS) $(GEN_INC_DIR)global_def.h $(PS_INC_DIR)hashmap/strfa_map.h
+$(BIN_DIR)regex.o : $(PS_DIR)regex.c $(PS_INC_DIR)regex.h $(FA_DEPS) $(GEN_INC_DIR)global_def.h $(PS_INC_DIR)hashmap/strfa_map.h $(UTILS_INC)string/kev_srting.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)parser.o : $(PS_DIR)parser.c $(PS_INC_DIR)parser.h $(PS_INC_DIR)error.h $(PS_INC_DIR)lexer.h $(PS_INC_DIR)regex.h $(FA_DEPS) $(GEN_INC_DIR)global_def.h $(UTILS_INC)hashmap/str_map.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)list/pattern_list.h
+$(BIN_DIR)parser.o : $(PS_DIR)parser.c $(PS_INC_DIR)parser.h $(PS_INC_DIR)error.h $(PS_INC_DIR)lexer.h $(PS_INC_DIR)regex.h $(FA_DEPS) $(GEN_INC_DIR)global_def.h $(UTILS_INC)hashmap/str_map.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)list/pattern_list.h $(UTILS_INC)string/kev_srting.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(BIN_DIR)lexer.o : $(PS_DIR)lexer.c $(PS_INC_DIR)lexer.h $(GEN_INC_DIR)global_def.h

@@ -1,12 +1,12 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-#include "utils/include/string/kev_string.h"
 #endif
 
 #include "lexgen/include/parser/parser.h"
 #include "lexgen/include/parser/error.h"
 #include "lexgen/include/parser/regex.h"
 #include "utils/include/os_spec/dir.h"
+#include "utils/include/string/kev_string.h"
 
 #include <stdio.h>
 #include <stdlib.h>
