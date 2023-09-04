@@ -334,3 +334,14 @@ KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts,
   kev_bitset_destroy(&curr_follow);
   return follows;
 }
+
+size_t kev_lr_util_symbol_max_id(KevLRCollection* collec) {
+  size_t max_id = 0;
+  KevSymbol** symbols = kev_lr_collection_get_symbols(collec);
+  size_t symbol_no = collec->symbol_no;
+  for (size_t i = 0; i < symbol_no; ++i) {
+    if (max_id < symbols[i]->id)
+      max_id = symbols[i]->id;
+  }
+  return max_id;
+}

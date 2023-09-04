@@ -1,4 +1,5 @@
 #include "pargen/include/lr/table.h"
+#include "pargen/include/lr/lr_utils.h"
 
 #include <stdlib.h>
 
@@ -10,13 +11,12 @@ static inline void kev_lr_table_add_conflict(KevLRTable* table, KevLRConflict* c
 static KevLRTableEntry** kev_lr_table_get_initial_entries(size_t symbol_no, size_t itemset_no);
 static bool kev_lr_conflict_create_and_add_item(KevLRConflict* conflict, KevRule* rule, size_t dot);
 
-
 KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* conf_handler) {
   KevLRTable* table = (KevLRTable*)malloc(sizeof (KevLRTable));
   if (!table) return NULL;
   /* start symbol is excluded in the table, so the actual symbol number for
    * the table is table->symbol_no - 1. */
-  table->symbol_no = collec->symbol_no - 1;
+  table->symbol_no = kev_lr_util_symbol_max_id(collec);
   table->terminal_no = collec->terminal_no;
   table->itemset_no = collec->itemset_no;
   table->conflicts = NULL;
