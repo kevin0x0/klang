@@ -13,7 +13,7 @@ char* kev_str_copy(char* str) {
 }
 
 char* kev_str_concat(char* str1, char* str2) {
-  if (!str1 || str2) return NULL;
+  if (!str1 || !str2) return NULL;
   size_t len1 = strlen(str1);
   size_t len2 = strlen(str2);
 
