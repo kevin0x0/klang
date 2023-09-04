@@ -28,7 +28,7 @@ $(BIN_DIR)cmdline.o : $(LG_DIR)cmdline.c $(LG_INC_DIR)cmdline.h $(LG_INC_DIR)opt
 $(BIN_DIR)control.o : $(LG_DIR)control.c $(LG_INC_DIR)control.h $(LG_INC_DIR)options.h $(PS_INC_DIR)parser.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)list/pattern_list.h $(FA_DEPS) $(LG_INC_DIR)error.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-$(BIN_DIR)output.o : $(LG_DIR)output.c $(LG_INC_DIR)output.h $(LG_INC_DIR)options.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)parser.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)list/pattern_list.h $(LG_INC_DIR)template.h $(FA_DEPS) $(LG_INC_DIR)error.h $(UTILS_INC)string/kev_srting.h
+$(BIN_DIR)output.o : $(LG_DIR)output.c $(LG_INC_DIR)output.h $(LG_INC_DIR)options.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)parser.h $(PS_INC_DIR)hashmap/strfa_map.h $(PS_INC_DIR)list/pattern_list.h $(LG_INC_DIR)template.h $(FA_DEPS) $(LG_INC_DIR)error.h $(UTILS_INC)string/kev_string.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
 $(BIN_DIR)template.o : $(LG_DIR)template.c $(LG_INC_DIR)template.h $(UTILS_INC)hashmap/str_map.h $(LG_INC_DIR)options.h $(LG_INC_DIR)error.h
