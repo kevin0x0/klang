@@ -343,7 +343,7 @@ size_t kev_lr_util_symbol_max_id(KevLRCollection* collec) {
   KevSymbol** symbols = kev_lr_collection_get_symbols(collec);
   size_t symbol_no = collec->symbol_no;
   for (size_t i = 0; i < symbol_no; ++i) {
-    if (max_id < symbols[i]->id)
+    if (symbols[i] != collec->start && max_id < symbols[i]->id)
       max_id = symbols[i]->id;
   }
   return max_id;

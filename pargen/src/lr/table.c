@@ -16,11 +16,12 @@ KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* c
   if (!table) return NULL;
   /* start symbol is excluded in the table, so the actual symbol number for
    * the table is table->symbol_no - 1. */
-  table->symbol_no = kev_lr_util_symbol_max_id(collec);
-  table->terminal_no = collec->terminal_no;
-  table->itemset_no = collec->itemset_no;
+  table->table_symbol_no = kev_lr_util_symbol_max_id(collec) + 1;
+  table->total_symbol_no = kev_lr_collection_get_symbol_no(collec);
+  table->terminal_no = kev_lr_collection_get_terminal_no(collec);
+  table->itemset_no = kev_lr_collection_get_itemset_no(collec);
+  table->entries = kev_lr_table_get_initial_entries(table->table_symbol_no, table->itemset_no);
   table->conflicts = NULL;
-  table->entries = kev_lr_table_get_initial_entries(table->symbol_no, table->itemset_no);
   if (!table->entries) {
     kev_lr_table_delete(table);
     return NULL;
@@ -35,11 +36,11 @@ KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* c
 }
 
 static bool kev_lr_init_reducing_action(KevLRTable* table, KevLRCollection* collec, KevLRConflictHandler* conf_handler) {
-  size_t symbol_no = table->symbol_no;
+  size_t total_symbol_no = table->total_symbol_no;
   size_t terminal_no = table->terminal_no;
   size_t itemset_no = table->itemset_no;
   KevItemSet** itemsets = collec->itemsets;
-  KevItemSetClosure* closure = kev_lr_closure_create(symbol_no);
+  KevItemSetClosure* closure = kev_lr_closure_create(total_symbol_no);
   if (!closure) return false;
 
   for (size_t i = 0; i < itemset_no; ++i) {
@@ -58,7 +59,7 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
                                  KevItemSetClosure* closure, KevLRConflictHandler* conf_handler) {
   size_t itemset_id = itemset->id;
   KevLRTableEntry** entries = table->entries;
-  KevSymbol** symbols = collec->symbols;
+  KevSymbol** symbols = kev_lr_collection_get_symbols(collec);
   KevRule* start_rule = collec->start_rule;
   KevAddrArray* closure_symbols = closure->symbols;
   KevBitSet** las = closure->lookaheads;
@@ -149,7 +150,7 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
 
 static bool kev_lr_init_goto_and_shifting_action(KevLRTable* table, KevLRCollection* collec) {
   KevItemSet** itemsets = collec->itemsets;
-  size_t itemset_no = collec->itemset_no;
+  size_t itemset_no = kev_lr_collection_get_itemset_no(collec);
   KevLRTableEntry** entries = table->entries;
   for (size_t i = 0; i < itemset_no; ++i) {
     KevItemSet* itemset = itemsets[i];

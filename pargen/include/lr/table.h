@@ -40,7 +40,8 @@ typedef struct tagKevLRTableEntry {
 typedef struct tagKevLRTable {
   KevLRTableEntry** entries;
   size_t itemset_no;
-  size_t symbol_no;
+  size_t total_symbol_no;
+  size_t table_symbol_no;
   size_t terminal_no;
   KevLRConflict* conflicts;
 } KevLRTable;

@@ -183,39 +183,39 @@ void kev_lr_print_terminal_set(FILE* out, KevLRCollection* collec, KevBitSet* lo
 }
 
 void kev_lr_print_goto_table(FILE* out, KevLRTable* table) {
-  size_t width = kev_numlen(kev_max(table->symbol_no, table->itemset_no)) + 1;
+  size_t width = kev_numlen(kev_max(table->table_symbol_no, table->itemset_no)) + 1;
   width = kev_max(width, 5);
   char num_format[sizeof (size_t) * 4];
   char str_format[sizeof (size_t) * 4];
   sprintf(num_format, "%%%llud", width);
   sprintf(str_format, "%%%llus", width);
   fprintf(out, str_format, "GOTO");
-  for (size_t i = 0; i < table->symbol_no; ++i)
+  for (size_t i = 0; i < table->table_symbol_no; ++i)
     fprintf(out, num_format, (int)i);
   fputc('\n', out);
   for (size_t i = 0; i < table->itemset_no; ++i) {
     fprintf(out, num_format, (int)i);
-    for (size_t j = 0; j < table->symbol_no; ++j)
+    for (size_t j = 0; j < table->table_symbol_no; ++j)
       fprintf(out, num_format, (int)table->entries[i][j].go_to);
     fputc('\n', out);
   }
 }
 
 void kev_lr_print_action_table(FILE* out, KevLRTable* table) {
-  size_t width = kev_numlen(kev_max(table->symbol_no, table->itemset_no)) + 1;
+  size_t width = kev_numlen(kev_max(table->table_symbol_no, table->itemset_no)) + 1;
   width = kev_max(width, 7);
   char num_format[sizeof (size_t) * 4];
   char str_format[sizeof (size_t) * 4];
   sprintf(num_format, "%%%llud", width);
   sprintf(str_format, "%%%llus", width);
   fprintf(out, str_format, "ACTION");
-  for (size_t i = 0; i < table->symbol_no; ++i)
+  for (size_t i = 0; i < table->table_symbol_no; ++i)
     fprintf(out, num_format, (int)i);
   fputc('\n', out);
 
   for (size_t i = 0; i < table->itemset_no; ++i) {
     fprintf(out, num_format, (int)i);
-    for (size_t j = 0; j < table->symbol_no; ++j) {
+    for (size_t j = 0; j < table->table_symbol_no; ++j) {
       char* action = NULL;
       switch (table->entries[i][j].action) {
         case KEV_LR_ACTION_ACC: action = "ACC"; break;
@@ -229,7 +229,7 @@ void kev_lr_print_action_table(FILE* out, KevLRTable* table) {
     }
     fputc('\n', out);
     fprintf(out, str_format, " ");
-    for (size_t j = 0; j < table->symbol_no; ++j) {
+    for (size_t j = 0; j < table->table_symbol_no; ++j) {
       KevLRTableEntry* entry = &table->entries[i][j];
       if (entry->action == KEV_LR_ACTION_SHI) {
         fprintf(out, num_format, entry->info.itemset_id);

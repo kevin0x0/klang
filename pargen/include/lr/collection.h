@@ -25,7 +25,7 @@ void kev_lr_collection_delete(KevLRCollection* collec);
 /* get methods */
 static inline KevItemSet* kev_lr_collection_get_itemset_by_index(KevLRCollection* collec, size_t index);
 static inline KevBitSet* kev_lr_collection_get_firstset_by_index(KevLRCollection* collec, size_t index);
-static inline size_t kev_lr_collection_get_itmeset_no(KevLRCollection* collec);
+static inline size_t kev_lr_collection_get_itemset_no(KevLRCollection* collec);
 /* A augmented grammar nonterminal symbol is included */
 static inline size_t kev_lr_collection_get_symbol_no(KevLRCollection* collec);
 /* A augmented grammar nonterminal symbol is excluded */
@@ -42,7 +42,7 @@ static inline KevBitSet* kev_lr_collection_get_firstset_by_index(KevLRCollection
   return collec->firsts[index];
 }
 
-static inline size_t kev_lr_collection_get_itmeset_no(KevLRCollection* collec) {
+static inline size_t kev_lr_collection_get_itemset_no(KevLRCollection* collec) {
   return collec->itemset_no;
 }
 
