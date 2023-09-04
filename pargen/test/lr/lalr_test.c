@@ -1,5 +1,7 @@
 #include "pargen/include/lr/lr.h"
+#include "pargen/include/lr/lr_utils.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 bool conflict_report(void* object, KevLRConflict* conflict, KevLRCollection* collec) {
   printf("All conflict items here:\n");
@@ -22,7 +24,21 @@ int main(int argc, char** argv) {
   KevRule* rule3 = kev_lr_rule_create(R, &L, 1);
   KevRule* rule4 = kev_lr_rule_create(S, body1, 3);
   KevRule* rule5 = kev_lr_rule_create(L, body2, 2);
-  KevLRCollection* collec = kev_lr_collection_create_lr1(S, &end, 1);
+  KevRule* rule6 = kev_lr_rule_create(R, NULL, 0);
+  KevLRCollection* collec = kev_lr_collection_create_slr(S, &end, 1);
+
+  KevBitSet** follows = kev_lr_util_compute_follows(collec->symbols, collec->firsts, collec->symbol_no, collec->terminal_no, collec->start, &end, 1);
+
+  for (size_t i = collec->terminal_no; i < collec->symbol_no; ++i) {
+    fprintf(stdout, "%s ", collec->symbols[i]->name);
+    kev_lr_print_terminal_set(stdout, collec, collec->firsts[i]);
+    fputc('\n', stdout);
+  }
+  for (size_t i = collec->terminal_no; i < collec->symbol_no; ++i) {
+    kev_bitset_delete(follows[i]);
+  }
+  free(follows);
+
   kev_lr_print_collection(stdout, collec, true);
 
   S->id = 0;
@@ -38,6 +54,7 @@ int main(int argc, char** argv) {
   rule3->id = 2;
   rule4->id = 3;
   rule5->id = 4;
+  rule6->id = 5;
 
   KevLRConflictHandler* handler = kev_lr_conflict_handler_create(NULL, conflict_report);
   KevLRTable* table = kev_lr_table_create(collec, handler);
@@ -74,6 +91,7 @@ int main(int argc, char** argv) {
   kev_lr_rule_delete(rule3);
   kev_lr_rule_delete(rule4);
   kev_lr_rule_delete(rule5);
+  kev_lr_rule_delete(rule6);
   kev_lr_symbol_delete(L);
   kev_lr_symbol_delete(R);
   kev_lr_symbol_delete(S);

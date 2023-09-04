@@ -85,8 +85,8 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
         entry->info.conflict = conflict;
         if (!conflict) return false;
         if (!kev_lr_conflict_create_and_add_item(conflict, kitem->rule, kitem->dot) ||
-            !(entry->action == KEV_LR_ACTION_RED &&
-            kev_lr_conflict_create_and_add_item(conflict, entry->info.rule, entry->info.rule->bodylen))) {
+            (entry->action == KEV_LR_ACTION_RED &&
+            !kev_lr_conflict_create_and_add_item(conflict, entry->info.rule, entry->info.rule->bodylen))) {
           kev_lr_conflict_delete(conflict);
           return false;
         }
@@ -170,8 +170,12 @@ KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, Ke
   conflict->next = NULL;
   conflict->itemset = itemset;
   conflict->symbol = symbol;
-  conflict->conflct_items = NULL;
   conflict->entry = entry;
+  conflict->conflct_items = kev_lr_itemset_create();
+  if (!conflict->conflct_items) {
+    free(conflict);
+    return NULL;
+  }
   return conflict;
 }
 

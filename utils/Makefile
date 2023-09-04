@@ -17,18 +17,24 @@ LIST_INC_DIR = $(INC_DIR)list/
 LIST_DIR = $(SRC_DIR)list/
 OS_SPEC_DIR = $(SRC_DIR)os_spec/
 OS_SPEC_INC_DIR = $(INC_DIR)os_spec/
+STR_DIR = $(SRC_DIR)string/
+STR_INC_DIR = $(INC_DIR)string/
+
 GEN_INC_DIR = $(INC_DIR)general/
 
 all : $(BIN_DIR) $(BIN_DIR)libutils.a
 
 
-$(BIN_DIR)libutils.a : $(BIN_DIR)dir.o $(BIN_DIR)intsetmap_node_pool.o $(BIN_DIR)intset_map.o $(BIN_DIR)setint_map.o $(BIN_DIR)str_map.o $(BIN_DIR)address_map.o $(BIN_DIR)bitset.o $(BIN_DIR)hashset.o $(BIN_DIR)set_array.o $(BIN_DIR)int_queue.o $(BIN_DIR)addr_queue.o $(BIN_DIR)addr_array.o
+$(BIN_DIR)libutils.a : $(BIN_DIR)dir.o $(BIN_DIR)intsetmap_node_pool.o $(BIN_DIR)intset_map.o $(BIN_DIR)setint_map.o $(BIN_DIR)str_map.o $(BIN_DIR)address_map.o $(BIN_DIR)bitset.o $(BIN_DIR)hashset.o $(BIN_DIR)set_array.o $(BIN_DIR)int_queue.o $(BIN_DIR)addr_queue.o $(BIN_DIR)addr_array.o $(BIN_DIR)kev_string.o
 	$(AR) $@ $^
 
 $(BIN_DIR) :
 	mkdir $(BIN_DIR)
 
 $(BIN_DIR)dir.o : $(OS_SPEC_DIR)dir.c $(OS_SPEC_INC_DIR)dir.h
+	$(CC) -c -o $@ $< $(CFLAGS) 
+
+$(BIN_DIR)kev_string.o : $(STR_DIR)kev_string.c $(STR_INC_DIR)kev_string.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
 $(BIN_DIR)intsetmap_node_pool.o : $(OBJP_DIR)intsetmap_node_pool.c  $(OBJP_INC_DIR)intsetmap_node_pool.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h

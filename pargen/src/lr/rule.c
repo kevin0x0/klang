@@ -1,10 +1,20 @@
 #include "pargen/include/lr/rule.h"
+#include "utils/include/string/kev_string.h"
 
 #include <stdlib.h>
 
 static inline void kev_rulenode_delete(KevRuleNode* rules);
 
 KevSymbol* kev_lr_symbol_create(int kind, char* name) {
+  KevSymbol* symbol = (KevSymbol*)malloc(sizeof (KevSymbol));
+  if (!symbol) return NULL;
+  symbol->kind = kind;
+  symbol->name = kev_str_copy(name);
+  symbol->rules = NULL;
+  return symbol;
+}
+
+KevSymbol* kev_lr_symbol_create_move(int kind, char* name) {
   KevSymbol* symbol = (KevSymbol*)malloc(sizeof (KevSymbol));
   if (!symbol) return NULL;
   symbol->kind = kind;
@@ -16,12 +26,12 @@ KevSymbol* kev_lr_symbol_create(int kind, char* name) {
 void kev_lr_symbol_delete(KevSymbol* symbol) {
   if (symbol) {
     kev_rulenode_delete(symbol->rules);
+    free(symbol->name);
     free(symbol);
   }
 }
 
 KevRule* kev_lr_rule_create(KevSymbol* head, KevSymbol** body, size_t body_length) {
-  if (!head || !body) return NULL;
   KevRule* rule = (KevRule*)malloc(sizeof (KevRule));
   KevSymbol** rule_body = (KevSymbol**)malloc(sizeof (KevSymbol*) * body_length);
   KevRuleNode* rulenode = (KevRuleNode*)malloc(sizeof (KevRuleNode));
@@ -43,7 +53,6 @@ KevRule* kev_lr_rule_create(KevSymbol* head, KevSymbol** body, size_t body_lengt
 }
 
 KevRule* kev_lr_rule_create_move(KevSymbol* head, KevSymbol** body, size_t body_length) {
-  if (!head || !body) return NULL;
   KevRule* rule = (KevRule*)malloc(sizeof (KevRule));
   KevRuleNode* rulenode = (KevRuleNode*)malloc(sizeof (KevRuleNode));
   if (!rule || !rulenode) return NULL;

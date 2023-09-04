@@ -44,7 +44,7 @@ static void kev_lalr_destroy_itemset_array(KevAddrArray* itemset_array);
 static void kev_lalr_destroy_collec(KevLALRCollection* collec);
 
 
-KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** lookahead, size_t la_len) {
+KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** ends, size_t ends_no) {
   KevLALRCollection* collec = kev_lalr_get_empty_collec();
   if (!collec) return NULL;
   KevSymbol* augmented_grammar_start = kev_lr_util_augment(start);
@@ -54,7 +54,7 @@ KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** loo
   }
   collec->start = augmented_grammar_start;
   collec->start_rule = augmented_grammar_start->rules->rule;
-  collec->symbols = kev_lr_util_get_symbol_array(augmented_grammar_start, lookahead, la_len, &collec->symbol_no);
+  collec->symbols = kev_lr_util_get_symbol_array(augmented_grammar_start, ends, ends_no, &collec->symbol_no);
   if (!collec->symbols) {
     kev_lalr_destroy_collec(collec);
     return NULL;
@@ -66,7 +66,7 @@ KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** loo
     kev_lalr_destroy_collec(collec);
     return NULL;
   }
-  KevItemSet* start_iset = kev_lr_util_get_start_itemset(augmented_grammar_start, lookahead, la_len);
+  KevItemSet* start_iset = kev_lr_util_get_start_itemset(augmented_grammar_start, ends, ends_no);
   if (!start_iset) {
     kev_lalr_destroy_collec(collec);
     return NULL;
@@ -99,7 +99,7 @@ static KevLALRCollection* kev_lalr_get_empty_collec(void) {
 
 static void kev_lalr_destroy_collec(KevLALRCollection* collec) {
   if (collec->firsts)
-    kev_lr_util_destroy_first_array(collec->firsts, collec->symbol_no);
+    kev_lr_util_destroy_terminal_set_array(collec->firsts, collec->symbol_no);
   if (collec->itemsets) {
     for (size_t i = 0; i < collec->itemset_no; ++i) {
       kev_lr_itemset_delete(collec->itemsets[i]);

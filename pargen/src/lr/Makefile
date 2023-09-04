@@ -16,7 +16,7 @@ SET_DIR = $(LR_DIR)set/
 UTILS_INC_DIR = $(UTILS_DIR)include/
 GEN_INC_DIR = $(UTILS_INC_DIR)general/
 
-$(BIN_DIR)liblr.a : $(BIN_DIR)itemset.o $(BIN_DIR)lr_utils.o $(BIN_DIR)lalr.o $(BIN_DIR)lr1.o $(BIN_DIR)collection.o $(BIN_DIR)table.o $(BIN_DIR)confhandle.o $(BIN_DIR)print.o $(BIN_DIR)rule.o $(BIN_DIR)itemset_set.o $(BIN_DIR)item_pool.o $(BIN_DIR)itemsetgoto_pool.o $(BIN_DIR)itemset_pool.o $(BIN_DIR)gotomap_node_pool.o $(BIN_DIR)goto_map.o $(BIN_DIR)priority_map.o
+$(BIN_DIR)liblr.a : $(BIN_DIR)itemset.o $(BIN_DIR)lr_utils.o $(BIN_DIR)lalr.o $(BIN_DIR)lr1.o $(BIN_DIR)slr.o $(BIN_DIR)collection.o $(BIN_DIR)table.o $(BIN_DIR)confhandle.o $(BIN_DIR)print.o $(BIN_DIR)rule.o $(BIN_DIR)itemset_set.o $(BIN_DIR)item_pool.o $(BIN_DIR)itemsetgoto_pool.o $(BIN_DIR)itemset_pool.o $(BIN_DIR)gotomap_node_pool.o $(BIN_DIR)goto_map.o $(BIN_DIR)priority_map.o
 	$(AR) $@ $^
 
 $(BIN_DIR)itemset.o : $(LR_DIR)itemset.c $(LR_INC_DIR)itemset.h $(LR_INC_DIR)itemset_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(UTILS_INC_DIR)set/bitset.h $(GEN_INC_DIR)global_def.h
@@ -31,6 +31,9 @@ $(BIN_DIR)lalr.o : $(LR_DIR)lalr.c $(LR_INC_DIR)lr_utils.h $(LR_INC_DIR)collecti
 $(BIN_DIR)lr1.o : $(LR_DIR)lr1.c $(LR_INC_DIR)lr_utils.h $(LR_INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)itemset_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(HMAP_INC_DIR)goto_map.h $(SET_INC_DIR)itemset_set.h $(UTILS_INC_DIR)array/addr_array.h $(GEN_INC_DIR)global_def.h 
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+$(BIN_DIR)slr.o : $(LR_DIR)slr.c $(LR_INC_DIR)lr_utils.h $(LR_INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(LR_INC_DIR)itemset_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(HMAP_INC_DIR)goto_map.h $(SET_INC_DIR)itemset_set.h $(UTILS_INC_DIR)array/addr_array.h $(GEN_INC_DIR)global_def.h 
+	$(CC) -c -o $@ $< $(CFLAGS)
+
 $(BIN_DIR)collection.o : $(LR_DIR)collection.c $(LR_INC_DIR)collection.h $(LR_INC_DIR)itemset.h $(LR_INC_DIR)itemset_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(UTILS_INC_DIR)set/bitset.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
@@ -43,7 +46,7 @@ $(BIN_DIR)confhandle.o : $(LR_DIR)conflict_handle.c $(LR_INC_DIR)conflict_handle
 $(BIN_DIR)print.o : $(LR_DIR)print.c $(LR_INC_DIR)print.h $(LR_INC_DIR)itemset.h $(LR_INC_DIR)itemset_def.h $(LR_INC_DIR)rule.h $(OBJP_INC_DIR)itemsetgoto_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(UTILS_INC_DIR)set/bitset.h $(UTILS_INC_DIR)array/addr_array.h $(GEN_INC_DIR)global_def.h 
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)rule.o : $(LR_DIR)rule.c $(LR_INC_DIR)rule.h $(UTILS_INC_DIR)set/hashset.h $(UTILS_INC_DIR)array/addr_array.h $(UTILS_INC_DIR)queue/addr_queue.h $(GEN_INC_DIR)global_def.h
+$(BIN_DIR)rule.o : $(LR_DIR)rule.c $(LR_INC_DIR)rule.h $(UTILS_INC_DIR)set/hashset.h $(UTILS_INC_DIR)array/addr_array.h $(UTILS_INC_DIR)queue/addr_queue.h $(UTILS_INC_DIR)string/kev_string.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(BIN_DIR)itemset_set.o : $(SET_DIR)itemset_set.c $(SET_INC_DIR)itemset_set.h $(LR_INC_DIR)itemset_def.h $(LR_INC_DIR)rule.h $(GEN_INC_DIR)global_def.h

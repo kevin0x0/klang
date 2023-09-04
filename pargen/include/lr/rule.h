@@ -31,6 +31,7 @@ typedef struct tagKevRuleNode {
 } KevRuleNode;
 
 KevSymbol* kev_lr_symbol_create(int kind, char* name);
+KevSymbol* kev_lr_symbol_create_move(int kind, char* name);
 void kev_lr_symbol_delete(KevSymbol* symbol);
 KevRule* kev_lr_rule_create(KevSymbol* head, KevSymbol** body, size_t body_length);
 KevRule* kev_lr_rule_create_move(KevSymbol* head, KevSymbol** body, size_t body_length);

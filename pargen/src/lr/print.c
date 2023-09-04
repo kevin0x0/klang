@@ -175,7 +175,7 @@ void kev_lr_print_terminal_set(FILE* out, KevLRCollection* collec, KevBitSet* lo
       char* name = collec->symbols[symbol_index]->name;
       fprintf(out, ", %s", name ? name : KEV_LR_SYMBOL_UNNAMED);
     } else {
-      fprintf(out, KEV_LR_SYMBOL_EPSILON_STRING);
+      fprintf(out, ", %s", KEV_LR_SYMBOL_EPSILON_STRING);
     }
     next_index = kev_bitset_iterate_next(lookahead, symbol_index);
   }

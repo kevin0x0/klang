@@ -20,6 +20,7 @@ KevBitSet* kev_bitset_create_copy(KevBitSet* src);
 void kev_bitset_delete(KevBitSet* bitset);
 bool kev_bitset_expand(KevBitSet* bitset, size_t new_size);
 bool kev_bitset_assign(KevBitSet* bitset, KevBitSet* src);
+static inline void kev_bitset_make_empty(KevBitSet* set);
 
 static inline bool kev_bitset_set(KevBitSet* bitset, size_t bit);
 static inline void kev_bitset_clear(KevBitSet* bitset, size_t bit);
@@ -28,6 +29,7 @@ bool kev_bitset_union(KevBitSet* dest, KevBitSet* src);
 bool kev_bitset_intersection(KevBitSet* dest, KevBitSet* src);
 bool kev_bitset_completion(KevBitSet* bitset);
 bool kev_bitset_difference(KevBitSet* dest, KevBitSet* src);
+static inline bool kev_bitset_changed_after_shrinking_union(KevBitSet* dest, KevBitSet* src);
 
 size_t kev_bitset_iterate_next(KevBitSet* bitset, size_t previous);
 static inline size_t kev_bitset_iterate_begin(KevBitSet* bitset);
@@ -89,6 +91,26 @@ static inline bool kev_bitset_empty(KevBitSet* set) {
 
 static inline size_t kev_bitset_capacity(KevBitSet* bitset) {
   return bitset->length << KEV_BITSET_SHIFT;
+}
+
+static inline void kev_bitset_make_empty(KevBitSet* set) {
+  for (size_t i = 0; i < set->length; ++i) {
+    set->bits[i] = 0;
+  }
+}
+
+static inline bool kev_bitset_changed_after_shrinking_union(KevBitSet* dest, KevBitSet* src) {
+  size_t len = src->length < dest->length ? src->length : dest->length;
+  KevBitSetInt* dest_bits = dest->bits;
+  KevBitSetInt* src_bits = src->bits;
+  KevBitSetInt ret = 0;
+  for (size_t i = 0; i < len; ++i) {
+    KevBitSetInt tmp = dest_bits[i];
+    /* if dest_bits[i] is not changed, the right value will be 0, else non-zero. */
+    ret |= tmp ^ (dest_bits[i] |= src_bits[i]);
+  }
+  /* ret is not zero if and only if the dest_bits changed */
+  return ret != 0;
 }
 
 #endif
