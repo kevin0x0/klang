@@ -5,6 +5,9 @@
 
 #define KEV_LR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME   "G"
 
+
+static void kev_lr_util_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon);
+
 bool kev_lr_util_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure, KevGotoMap* goto_container) {
   kev_gotomap_make_empty(goto_container);
   KevAddrArray* symbols = closure->symbols;
@@ -75,7 +78,7 @@ bool kev_lr_util_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure,
   return true;
 }
 
-void kev_lr_util_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon) {
+static void kev_lr_util_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon) {
   KevBitSet* first = firsts[symbol->tmp_id];
     for (KevRuleNode* node = symbol->rules; node; node = node->next) {
       KevRule* rule = node->rule;

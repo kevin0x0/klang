@@ -6,7 +6,6 @@
 
 static inline void kev_lr_util_assign_itemset_id(KevItemSet** itemsets, size_t itemset_no);
 bool kev_lr_util_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure, KevGotoMap* goto_container);
-void kev_lr_util_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon);
 void kev_lr_util_destroy_terminal_set_array(KevBitSet** array, size_t size);
 KevSymbol* kev_lr_util_augment(KevSymbol* start);
 KevBitSet* kev_lr_util_symbols_to_bitset(KevSymbol** symbols, size_t length);
