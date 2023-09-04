@@ -1,9 +1,9 @@
 #include "lexgen/include/parser/regex.h"
 #include "lexgen/include/parser/hashmap/strfa_map.h"
 #include "lexgen/include/finite_automaton/finite_automaton.h"
+#include "utils/include/string/kev_string.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 static uint64_t error_type = KEV_REGEX_ERR_NONE;
 static char* error_info = NULL;
@@ -517,14 +517,12 @@ uint8_t* kev_regex_ref_name(KevParser* parser) {
     kev_regex_set_error_info("identifier can not be empty string");
     return NULL;
   }
-  uint8_t* name = (uint8_t*)malloc(sizeof (uint8_t) * (name_end - parser->current + 1));
+  uint8_t* name = (uint8_t*)kev_str_copy_len((char*)parser->current, name_end - parser->current);
   if (!name) {
     error_type = KEV_REGEX_ERR_GENERATE;
     kev_regex_set_error_info("out of memory");
     return NULL;
   }
-  memcpy(name, parser->current, (name_end - parser->current) * sizeof (uint8_t));
-  name[name_end - parser->current] = '\0';
   parser->current = name_end;
   kev_regex_clear_blank(parser);
   return name;

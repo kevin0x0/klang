@@ -100,7 +100,7 @@ void kev_lr_util_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t eps
     }
 }
 
-KevBitSet** kev_lr_util_compute_first_array(KevSymbol** symbols, size_t symbol_no, size_t terminal_no) {
+KevBitSet** kev_lr_util_compute_firsts(KevSymbol** symbols, size_t symbol_no, size_t terminal_no) {
   KevBitSet** firsts = (KevBitSet**)malloc(sizeof (KevBitSet*) * symbol_no);
   if (!firsts) return NULL;
   KevBitSet backup;
@@ -269,4 +269,8 @@ void kev_lr_util_symbol_array_partition(KevSymbol** array, size_t size) {
     *left = *right;
     *right = tmp;
   }
+}
+
+KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, size_t symbol_no, size_t terminal_no) {
+
 }

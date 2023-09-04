@@ -6,6 +6,7 @@
 #include "lexgen/include/lexgen/template.h"
 #include "lexgen/include/lexgen/error.h"
 #include "utils/include/os_spec/dir.h"
+#include "utils/include/string/kev_string.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -62,11 +63,9 @@ void kev_lexgen_output_help(void) {
   char* resources_dir = kev_get_lexgen_resources_dir();
   if (!resources_dir)
     kev_throw_error("output:", "can not get resources directory", NULL);
-  char* help_dir = (char*)malloc(sizeof (char) * (strlen(resources_dir) + 16));
+  char* help_dir = kev_str_concat(resources_dir, "doc/help.txt");
   if (!help_dir)
     kev_throw_error("output:", "out of memory", NULL);
-  strcpy(help_dir, resources_dir);
-  strcat(help_dir, "doc/help.txt");
   FILE* help = fopen(help_dir, "r");
   char line[90];
   while (fgets(line, 90, help))
@@ -80,28 +79,34 @@ void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_
   char* resources_dir = kev_get_lexgen_resources_dir();
   if (!resources_dir)
     kev_throw_error("output:", "can not get resources directory", NULL);
-  char* src_path = (char*)malloc(sizeof (char) * (strlen(resources_dir) + strlen("lexer/") + strlen("src.tmpl") + 32 + 1));
-  if (!src_path)
-    kev_throw_error("output:", "out of memory", NULL);
 
   FILE* tmpl = NULL;
   if (options->strs[KEV_LEXGEN_OUT_SRC_PATH]) {
-    strcpy(src_path, resources_dir);
-    strcat(src_path, "lexer/");
-    strcat(src_path, options->strs[KEV_LEXGEN_LANG_NAME]);
-    strcat(src_path, "/src.tmpl");
+    char* src_path = kev_str_concat(resources_dir, "lexer/");
+    char* tmp = src_path;
+    src_path = kev_str_concat(tmp, options->strs[KEV_LEXGEN_LANG_NAME]);
+    free(tmp);
+    tmp = src_path;
+    src_path = kev_str_concat(tmp, "/src.tmpl");
+    free(tmp);
     tmpl = fopen(src_path, "r");
+    if (!src_path)
+      kev_throw_error("output:", "out of memory", NULL);
     if (!tmpl)
       kev_throw_error("output:", "can not open file(maybe this language is not supported): ", src_path);
     kev_template_convert(output, tmpl, env_var);
     fclose(tmpl);
+    free(src_path);
   }
   /* some languages like C/C++ need a header */
   if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
-    strcpy(src_path, resources_dir);
-    strcat(src_path, "lexer/");
-    strcat(src_path, options->strs[KEV_LEXGEN_LANG_NAME]);
-    strcat(src_path, "/inc.tmpl");
+    char* src_path = kev_str_concat(resources_dir, "lexer/");
+    char* tmp = src_path;
+    src_path = kev_str_concat(tmp, options->strs[KEV_LEXGEN_LANG_NAME]);
+    free(tmp);
+    tmp = src_path;
+    src_path = kev_str_concat(tmp, "/inc.tmpl");
+    free(tmp);
     tmpl = fopen(src_path, "r");
     if (!tmpl)
       kev_throw_error("output:", "can not open file: ", src_path);
@@ -111,8 +116,8 @@ void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_
     kev_template_convert(output, tmpl, env_var);
     fclose(output);
     fclose(tmpl);
+    free(src_path);
   }
-  free(src_path);
   free(resources_dir);
 }
 

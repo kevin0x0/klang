@@ -1,5 +1,6 @@
 #include "lexgen/include/lexgen/convert.h"
 #include "lexgen/include/lexgen/error.h"
+
 #include <stdlib.h>
 
 static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, KevParserState* parser_state,

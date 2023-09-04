@@ -1,3 +1,8 @@
 1. Lexical token pattern id should be specified by user. ---
 2. Optimize finite automaton in iteration of epsilon transition or non-epsilon transition. ---
-3. Implement multiple macro name for each token.
+3. Implement multiple macro name for each token. ---
+4. Implement kev_lr_util_compute_follows().
+5. Add module kev_string.
+6. Implement compression algorithm for lexgen and pargen in the future.
+7. Fix bug: table->symbol_no is not definitely collec->symbol_no - 1, it should be max id of  used symbols.
+8. Make function kev_lr_util_compute_first() be static.
