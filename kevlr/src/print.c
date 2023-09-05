@@ -14,7 +14,7 @@ static int kev_symbol_compare(const void* sym1, const void* sym2);
 
 static inline size_t kev_numlen(size_t num) {
   char numstr[sizeof (size_t) * 4];
-  return sprintf(numstr, "%llu", num);
+  return sprintf(numstr, "%llu", (unsigned long long)num);
 }
 
 static inline size_t kev_max(size_t num1, size_t num2) {
@@ -117,8 +117,8 @@ bool kev_lr_print_symbols(FILE* out, KevLRCollection* collec) {
   width += 1;
   char num_format[sizeof (size_t) * 4];
   char str_format[sizeof (size_t) * 4];
-  sprintf(num_format, "%%%llud", width);
-  sprintf(str_format, "%%%llus", width);
+  sprintf(num_format, "%%%llud", (unsigned long long)width);
+  sprintf(str_format, "%%%llus", (unsigned long long)width);
   fprintf(out, str_format, "SYMBOLS");
   for (size_t i = 0; i < 10; ++i)
     fprintf(out, num_format, (int)i);
@@ -197,8 +197,8 @@ void kev_lr_print_goto_table(FILE* out, KevLRTable* table) {
   width = kev_max(width, 5);
   char num_format[sizeof (size_t) * 4];
   char str_format[sizeof (size_t) * 4];
-  sprintf(num_format, "%%%llud", width);
-  sprintf(str_format, "%%%llus", width);
+  sprintf(num_format, "%%%llud", (unsigned long long)width);
+  sprintf(str_format, "%%%llus", (unsigned long long)width);
   fprintf(out, str_format, "GOTO");
   for (size_t i = 0; i < table->table_symbol_no; ++i)
     fprintf(out, num_format, (int)i);
@@ -216,8 +216,8 @@ void kev_lr_print_action_table(FILE* out, KevLRTable* table) {
   width = kev_max(width, 7);
   char num_format[sizeof (size_t) * 4];
   char str_format[sizeof (size_t) * 4];
-  sprintf(num_format, "%%%llud", width);
-  sprintf(str_format, "%%%llus", width);
+  sprintf(num_format, "%%%llud", (unsigned long long)width);
+  sprintf(str_format, "%%%llus", (unsigned long long)width);
   fprintf(out, str_format, "ACTION");
   for (size_t i = 0; i < table->table_symbol_no; ++i)
     fprintf(out, num_format, (int)i);
