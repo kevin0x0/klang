@@ -1,6 +1,4 @@
 #include "lexgen/include/parser/regex.h"
-#include "lexgen/include/parser/hashmap/strfa_map.h"
-#include "lexgen/include/finite_automaton/finite_automaton.h"
 #include "utils/include/string/kev_string.h"
 
 #include <stdlib.h>

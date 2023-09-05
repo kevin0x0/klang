@@ -1,7 +1,7 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_PARSER_HASHMAP_STRNFA_MAP_H
 #define KEVCC_LEXGEN_INCLUDE_PARSER_HASHMAP_STRNFA_MAP_H
 
-#include "lexgen/include/finite_automaton/finite_automaton.h"
+#include "kevfa/include/finite_automaton.h"
 
 typedef struct tagKevStringFaMapNode {
   char* key;

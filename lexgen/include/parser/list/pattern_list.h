@@ -1,7 +1,7 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_PARSER_LIST_PATTERN_LIST_H
 #define KEVCC_LEXGEN_INCLUDE_PARSER_LIST_PATTERN_LIST_H
 
-#include "lexgen/include/finite_automaton/finite_automaton.h"
+#include "kevfa/include/finite_automaton.h"
 #include "utils/include/array/addr_array.h"
 
 typedef struct tagKevFAInfo {

@@ -1,6 +1,5 @@
 INC_DIR = $(UTILS_DIR)include/
 SRC_DIR = $(UTILS_DIR)src/
-BIN_DIR = $(UTILS_DIR)bin/
 LIB_DIR = $(UTILS_DIR)lib/
 
 OBJP_INC_DIR = $(INC_DIR)object_pool/
@@ -22,54 +21,55 @@ STR_INC_DIR = $(INC_DIR)string/
 
 GEN_INC_DIR = $(INC_DIR)general/
 
-all : $(BIN_DIR) $(BIN_DIR)libutils.a
+all : $(LIB_DIR) $(LIB_DIR)libutils.a
 
 
-$(BIN_DIR)libutils.a : $(BIN_DIR)dir.o $(BIN_DIR)intsetmap_node_pool.o $(BIN_DIR)intset_map.o $(BIN_DIR)setint_map.o $(BIN_DIR)str_map.o $(BIN_DIR)address_map.o $(BIN_DIR)bitset.o $(BIN_DIR)hashset.o $(BIN_DIR)set_array.o $(BIN_DIR)int_queue.o $(BIN_DIR)addr_queue.o $(BIN_DIR)addr_array.o $(BIN_DIR)kev_string.o
+$(LIB_DIR)libutils.a : $(LIB_DIR)dir.o $(LIB_DIR)intsetmap_node_pool.o $(LIB_DIR)intset_map.o $(LIB_DIR)setint_map.o $(LIB_DIR)str_map.o $(LIB_DIR)address_map.o $(LIB_DIR)bitset.o $(LIB_DIR)hashset.o $(LIB_DIR)set_array.o $(LIB_DIR)int_queue.o $(LIB_DIR)addr_queue.o $(LIB_DIR)addr_array.o $(LIB_DIR)kev_string.o | create_lib_dir
 	$(AR) $@ $^
 
-$(BIN_DIR) :
-	mkdir $(BIN_DIR)
 
-$(BIN_DIR)dir.o : $(OS_SPEC_DIR)dir.c $(OS_SPEC_INC_DIR)dir.h
+$(LIB_DIR)dir.o : $(OS_SPEC_DIR)dir.c $(OS_SPEC_INC_DIR)dir.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-$(BIN_DIR)kev_string.o : $(STR_DIR)kev_string.c $(STR_INC_DIR)kev_string.h
+$(LIB_DIR)kev_string.o : $(STR_DIR)kev_string.c $(STR_INC_DIR)kev_string.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
-$(BIN_DIR)intsetmap_node_pool.o : $(OBJP_DIR)intsetmap_node_pool.c  $(OBJP_INC_DIR)intsetmap_node_pool.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
+$(LIB_DIR)intsetmap_node_pool.o : $(OBJP_DIR)intsetmap_node_pool.c  $(OBJP_INC_DIR)intsetmap_node_pool.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)address_map.o : $(HMAP_DIR)address_map.c $(HMAP_INC_DIR)address_map.h $(GEN_INC_DIR)global_def.h
+$(LIB_DIR)address_map.o : $(HMAP_DIR)address_map.c $(HMAP_INC_DIR)address_map.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)intset_map.o : $(HMAP_DIR)intset_map.c $(HMAP_INC_DIR)intset_map.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h $(OBJP_INC_DIR)intsetmap_node_pool.h
+$(LIB_DIR)intset_map.o : $(HMAP_DIR)intset_map.c $(HMAP_INC_DIR)intset_map.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h $(OBJP_INC_DIR)intsetmap_node_pool.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)setint_map.o : $(HMAP_DIR)setint_map.c $(HMAP_INC_DIR)setint_map.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
+$(LIB_DIR)setint_map.o : $(HMAP_DIR)setint_map.c $(HMAP_INC_DIR)setint_map.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)str_map.o : $(HMAP_DIR)str_map.c $(HMAP_INC_DIR)str_map.h
+$(LIB_DIR)str_map.o : $(HMAP_DIR)str_map.c $(HMAP_INC_DIR)str_map.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)bitset.o : $(SET_DIR)bitset.c $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
+$(LIB_DIR)bitset.o : $(SET_DIR)bitset.c $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)hashset.o : $(SET_DIR)hashset.c $(SET_INC_DIR)hashset.h $(GEN_INC_DIR)global_def.h
+$(LIB_DIR)hashset.o : $(SET_DIR)hashset.c $(SET_INC_DIR)hashset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)set_array.o : $(ARRAY_DIR)set_array.c $(ARRAY_INC_DIR)set_array.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
+$(LIB_DIR)set_array.o : $(ARRAY_DIR)set_array.c $(ARRAY_INC_DIR)set_array.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)addr_array.o : $(ARRAY_DIR)addr_array.c $(ARRAY_INC_DIR)addr_array.h $(GEN_INC_DIR)global_def.h
+$(LIB_DIR)addr_array.o : $(ARRAY_DIR)addr_array.c $(ARRAY_INC_DIR)addr_array.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)int_queue.o : $(QUEUE_DIR)int_queue.c $(QUEUE_INC_DIR)int_queue.h $(GEN_INC_DIR)global_def.h
+$(LIB_DIR)int_queue.o : $(QUEUE_DIR)int_queue.c $(QUEUE_INC_DIR)int_queue.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)addr_queue.o : $(QUEUE_DIR)addr_queue.c $(QUEUE_INC_DIR)addr_queue.h $(GEN_INC_DIR)global_def.h
+$(LIB_DIR)addr_queue.o : $(QUEUE_DIR)addr_queue.c $(QUEUE_INC_DIR)addr_queue.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-.PHONY: clean
+.PHONY: clean create_lib_dir
 clean :
-	rm $(BIN_DIR)*
+	rm $(LIB_DIR)*
+
+create_lib_dir :
+	mkdir -p $(LIB_DIR)

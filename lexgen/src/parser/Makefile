@@ -1,22 +1,15 @@
 INC_DIR = $(LEXGEN_DIR)include/
 SRC_DIR = $(LEXGEN_DIR)src/
 BIN_DIR = $(LEXGEN_DIR)bin/
-LIB_DIR = $(LEXGEN_DIR)lib/
 
-#finite_automaton path
-FA_INC_DIR = $(INC_DIR)finite_automaton/
-FA_DIR = $(SRC_DIR)finite_automaton/
 #parser path
 PS_INC_DIR = $(INC_DIR)parser/
 PS_DIR = $(SRC_DIR)parser/
 
-FA_DEPS = $(FA_INC_DIR)finite_automaton.h $(FA_INC_DIR)graph.h
-
 UTILS_INC = $(UTILS_DIR)include/
 GEN_INC_DIR = $(UTILS_INC)general/
 
-$(BIN_DIR)libparser.a : $(BIN_DIR)regex.o $(BIN_DIR)parser.o $(BIN_DIR)lexer.o $(BIN_DIR)par_error.o $(BIN_DIR)lexgenlexer_table.o $(BIN_DIR)strfa_map.o $(BIN_DIR)pattern_list.o
-	$(AR) $@ $^
+all : $(BIN_DIR)regex.o $(BIN_DIR)parser.o $(BIN_DIR)lexer.o $(BIN_DIR)par_error.o $(BIN_DIR)lexgenlexer_table.o $(BIN_DIR)strfa_map.o $(BIN_DIR)pattern_list.o
 
 $(BIN_DIR)regex.o : $(PS_DIR)regex.c $(PS_INC_DIR)regex.h $(FA_DEPS) $(GEN_INC_DIR)global_def.h $(PS_INC_DIR)hashmap/strfa_map.h $(UTILS_INC)string/kev_string.h
 	$(CC) -c -o $@ $< $(CFLAGS)

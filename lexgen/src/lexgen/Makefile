@@ -1,13 +1,9 @@
 INC_DIR = $(LEXGEN_DIR)include/
 SRC_DIR = $(LEXGEN_DIR)src/
 BIN_DIR = $(LEXGEN_DIR)bin/
-LIB_DIR = $(LEXGEN_DIR)lib/
 
 GEN_INC_DIR = $(INC_DIR)general/
 
-#finite_automaton path
-FA_INC_DIR = $(INC_DIR)finite_automaton/
-FA_DIR = $(SRC_DIR)finite_automaton/
 #parser path
 PS_INC_DIR = $(INC_DIR)parser/
 PS_DIR = $(SRC_DIR)parser/
@@ -17,10 +13,7 @@ LG_DIR = $(SRC_DIR)lexgen/
 
 UTILS_INC = $(UTILS_DIR)include/
 
-FA_DEPS = $(FA_INC_DIR)finite_automaton.h $(FA_INC_DIR)graph.h
-
-$(BIN_DIR)liblexgen.a : $(BIN_DIR)cmdline.o $(BIN_DIR)control.o $(BIN_DIR)template.o $(BIN_DIR)output.o $(BIN_DIR)convert.o $(BIN_DIR)lg_error.o
-	$(AR) $@ $^
+all : $(BIN_DIR)cmdline.o $(BIN_DIR)control.o $(BIN_DIR)template.o $(BIN_DIR)output.o $(BIN_DIR)convert.o $(BIN_DIR)lg_error.o
 
 $(BIN_DIR)cmdline.o : $(LG_DIR)cmdline.c $(LG_INC_DIR)cmdline.h $(LG_INC_DIR)options.h $(LG_INC_DIR)error.h
 	$(CC) -c -o $@ $< $(CFLAGS) 

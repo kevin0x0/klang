@@ -1,4 +1,3 @@
-#include "lexgen/include/finite_automaton/finite_automaton.h"
 #include "lexgen/include/parser/regex.h"
 #include <stdio.h>
 #include <stdlib.h>

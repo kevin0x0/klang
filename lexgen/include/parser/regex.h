@@ -1,8 +1,8 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_PARSER_REGEX_H
 #define KEVCC_LEXGEN_INCLUDE_PARSER_REGEX_H
 
-#include "lexgen/include/finite_automaton/finite_automaton.h"
 #include "lexgen/include/parser/hashmap/strfa_map.h"
+#include "kevfa/include/finite_automaton.h"
 #include "utils/include/general/global_def.h"
 
 #define KEV_REGEX_ERR_NONE              (0)

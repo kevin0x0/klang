@@ -1,4 +1,3 @@
-#include "lexgen/include/finite_automaton/finite_automaton.h"
 #include "lexgen/include/parser/hashmap/strfa_map.h"
 #include "lexgen/include/parser/lexer.h"
 #include "lexgen/include/parser/list/pattern_list.h"

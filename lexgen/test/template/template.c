@@ -1,5 +1,4 @@
 #include "lexgen/include/lexgen/template.h"
-#include "lexgen/include/parser/hashmap/str_map.h"
 
 #include <stdio.h>
 
