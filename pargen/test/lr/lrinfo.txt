@@ -1,96 +1,194 @@
-R [id, *, ε]
-L [id, *]
-S [id, *, ε]
-G [id, *, ε]
-item set 0:
-G -> · S [$]
-S -> · L = R [$]
-S -> · R [$]
-L -> · * R [$, =]
-L -> · id [$, =]
-R -> · [$]
-R -> · L [$]
-
-item set 1:
-L -> id · [$, =]
-
-item set 2:
-L -> * · R [$, =]
-R -> · [$, =]
-R -> · L [$, =]
-L -> · * R [$, =]
-L -> · id [$, =]
-
-item set 3:
-S -> R · [$]
-
-item set 4:
-S -> L · = R [$]
-R -> L · [$, =]
-
-item set 5:
-G -> S · [$]
-
-item set 6:
-R -> L · [$, =]
-
-item set 7:
-L -> * R · [$, =]
-
-item set 8:
-S -> L = · R [$]
-R -> · [$]
-R -> · L [$]
-L -> · * R [$]
-L -> · id [$]
-
-item set 9:
-S -> L = R · [$]
-
-All conflict items here:
-R -> L · 
-
-
-
- SYMBOLS       0       1       2       3       4       5       6       7       8       9
-       0       S       L       R      id       *       =       $
-
-0 S -> · R 
-1 L -> · id 
-2 R -> · L 
-3 S -> · L = R 
-4 L -> · * R 
-
- GOTO    0    1    2    3    4    5    6
-    0    5    4    3    1    2   -1   -1
-    1   -1   -1   -1   -1   -1   -1   -1
-    2   -1    6    7    1    2   -1   -1
-    3   -1   -1   -1   -1   -1   -1   -1
-    4   -1   -1   -1   -1   -1    8   -1
-    5   -1   -1   -1   -1   -1   -1   -1
-    6   -1   -1   -1   -1   -1   -1   -1
-    7   -1   -1   -1   -1   -1   -1   -1
-    8   -1    6    9    1    2   -1   -1
-    9   -1   -1   -1   -1   -1   -1   -1
-
- ACTION      0      1      2      3      4      5      6
-      0    SHI    SHI    SHI    SHI    SHI    ERR    RED
-             5      4      3      1      2             5
-      1    ERR    ERR    ERR    ERR    ERR    RED    RED
-                                                1      1
-      2    ERR    SHI    SHI    SHI    SHI    RED    RED
-                    6      7      1      2      5      5
-      3    ERR    ERR    ERR    ERR    ERR    ERR    RED
-                                                       0
-      4    ERR    ERR    ERR    ERR    ERR    CON    RED
-                                               SR      2
-      5    ERR    ERR    ERR    ERR    ERR    ERR    ACC
-                                                        
-      6    ERR    ERR    ERR    ERR    ERR    RED    RED
-                                                2      2
-      7    ERR    ERR    ERR    ERR    ERR    RED    RED
-                                                4      4
-      8    ERR    SHI    SHI    SHI    SHI    ERR    RED
-                    6      9      1      2             5
-      9    ERR    ERR    ERR    ERR    ERR    ERR    RED
-                                                       3
+ GOTO    0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17   18   19   20   21   22   23   24   25   26   27   28   29   30   31
+    0   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   10
+    1   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   11
+    2   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   12
+    3   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   13
+    4   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1
+    5   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   14
+    6   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   15
+    7   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   16
+    8   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   17
+    9   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   18
+   10   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   11   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   12   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   13   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   42   -1
+   14   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   15   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   16   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   17   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   18   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   19   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   43
+   20   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   44
+   21   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   45
+   22   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1
+   23   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   46
+   24   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1
+   25   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   47
+   26   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   48
+   27   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   49
+   28   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   50
+   29   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   51
+   30   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   52
+   31   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   53
+   32   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   54
+   33   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   55
+   34   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   56
+   35   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   57
+   36   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   58
+   37   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   59
+   38   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   60
+   39   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   61
+   40   -1    4    1    2   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1    5    6    7    8    9    3   -1   62
+   41   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1
+   42   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1
+   43   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   44   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   45   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   46   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   47   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   63   41   22   24   -1   -1   -1   -1   -1   -1
+   48   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   49   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   50   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   51   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   52   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   53   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   54   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   55   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   56   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   57   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   58   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   59   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   60   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   61   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   62   -1   -1   38   26   40   31   28   35   32   20   19   39   34   37   30   29   21   27   23   33   36   25   -1   41   22   24   -1   -1   -1   -1   -1   -1
+   63   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1   -1
+ ACTION      0      1      2      3      4      5      6      7      8      9     10     11     12     13     14     15     16     17     18     19     20     21     22     23     24     25     26     27     28     29     30     31
+      0    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            10
+      1    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            11
+      2    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            12
+      3    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            13
+      4    RED    ERR    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    ERR    ERR    ERR    ERR    RED    ERR
+             7             7      7      7      7      7      7      7      7      7      7      7      7      7      7      7      7      7      7      7      7      7      7      7      7                                  7       
+      5    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            14
+      6    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            15
+      7    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            16
+      8    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            17
+      9    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            18
+     10    ACC    ERR    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR
+                          38     26     40     31     28     35     32     20     19     39     34     37     30     29     21     27     23     33     36     25            41     22     24                                          
+     11    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+             4            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR      4     SR     SR     SR                                  4       
+     12    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+             5            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR      5     SR     SR     SR                                  5       
+     13    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    SHI    ERR
+                          38     26     40     31     28     35     32     20     19     39     34     37     30     29     21     27     23     33     36     25            41     22     24                                 42       
+     14    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            27            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     27     SR     SR     SR                                 27       
+     15    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            28            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     28     SR     SR     SR                                 28       
+     16    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            29            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     29     SR     SR     SR                                 29       
+     17    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            30            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     30     SR     SR     SR                                 30       
+     18    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            31            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     31     SR     SR     SR                                 31       
+     19    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            43
+     20    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            44
+     21    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            45
+     22    RED    ERR    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    ERR    ERR    ERR    ERR    RED    ERR
+            25            25     25     25     25     25     25     25     25     25     25     25     25     25     25     25     25     25     25     25     25     25     25     25     25                                 25       
+     23    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            46
+     24    RED    ERR    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    ERR    ERR    ERR    ERR    RED    ERR
+            26            26     26     26     26     26     26     26     26     26     26     26     26     26     26     26     26     26     26     26     26     26     26     26     26                                 26       
+     25    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            47
+     26    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            48
+     27    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            49
+     28    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            50
+     29    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            51
+     30    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            52
+     31    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            53
+     32    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            54
+     33    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            55
+     34    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            56
+     35    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            57
+     36    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            58
+     37    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            59
+     38    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            60
+     39    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            61
+     40    ERR    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    ERR    SHI
+                    4      1      2                                                                                                                                                  5      6      7      8      9      3            62
+     41    RED    ERR    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    ERR    ERR    ERR    ERR    RED    ERR
+            24            24     24     24     24     24     24     24     24     24     24     24     24     24     24     24     24     24     24     24     24     24     24     24     24                                 24       
+     42    RED    ERR    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    ERR    ERR    ERR    ERR    RED    ERR
+             6             6      6      6      6      6      6      6      6      6      6      6      6      6      6      6      6      6      6      6      6      6      6      6      6                                  6       
+     43    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            12            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     12     SR     SR     SR                                 12       
+     44    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            11            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     11     SR     SR     SR                                 11       
+     45    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            18            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     18     SR     SR     SR                                 18       
+     46    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            20            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     20     SR     SR     SR                                 20       
+     47    ERR    ERR    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    SHI    ERR    ERR    ERR    ERR    ERR    ERR
+                          38     26     40     31     28     35     32     20     19     39     34     37     30     29     21     27     23     33     36     25     63     41     22     24                                          
+     48    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+             1            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR      1     SR     SR     SR                                  1       
+     49    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            19            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     19     SR     SR     SR                                 19       
+     50    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+             8            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR      8     SR     SR     SR                                  8       
+     51    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            17            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     17     SR     SR     SR                                 17       
+     52    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            16            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     16     SR     SR     SR                                 16       
+     53    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+             3            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR      3     SR     SR     SR                                  3       
+     54    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            10            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     10     SR     SR     SR                                 10       
+     55    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            21            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     21     SR     SR     SR                                 21       
+     56    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            14            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     14     SR     SR     SR                                 14       
+     57    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+             9            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR      9     SR     SR     SR                                  9       
+     58    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            22            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     22     SR     SR     SR                                 22       
+     59    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            15            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     15     SR     SR     SR                                 15       
+     60    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+             0            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR      0     SR     SR     SR                                  0       
+     61    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+            13            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     13     SR     SR     SR                                 13       
+     62    RED    ERR    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    CON    RED    CON    CON    CON    ERR    ERR    ERR    ERR    RED    ERR
+             2            SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR     SR      2     SR     SR     SR                                  2       
+     63    RED    ERR    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    RED    ERR    ERR    ERR    ERR    RED    ERR
+            23            23     23     23     23     23     23     23     23     23     23     23     23     23     23     23     23     23     23     23     23     23     23     23     23                                 23       

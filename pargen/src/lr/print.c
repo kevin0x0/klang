@@ -73,6 +73,16 @@ bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemse
 }
 
 bool kev_lr_print_collection(FILE* out, KevLRCollection* collec, bool print_closure) {
+  if (!print_closure) {
+    for (size_t i = 0; i < collec->itemset_no; ++i) {
+      KevItemSet* itemset = collec->itemsets[i];
+      fprintf(out, "item set %d:\n", (int)itemset->id);
+      kev_lr_print_itemset_with_closure(out, collec, itemset, NULL);
+      fputc('\n', out);
+    }
+  }
+
+
   KevItemSetClosure* closure = kev_lr_closure_create(collec->symbol_no);
   if (!closure) return false;
   for (size_t i = 0; i < collec->itemset_no; ++i) {
