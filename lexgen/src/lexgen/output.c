@@ -77,21 +77,25 @@ void kev_lexgen_output_help(void) {
 
 void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_var) {
   if (options->strs[KEV_LEXGEN_OUT_SRC_PATH]) {
-    char* src_path = options->strs[KEV_LEXGEN_SRC_TMPL_PATH];
-    FILE* tmpl = fopen(src_path, "r");
+    char* src_tmpl_path = options->strs[KEV_LEXGEN_SRC_TMPL_PATH];
+    FILE* tmpl = fopen(src_tmpl_path, "r");
     if (!tmpl)
-      kev_throw_error("output:", "can not open file: ", src_path);
+      kev_throw_error("output:", "can not open file: ", src_tmpl_path);
     kev_template_convert(output, tmpl, env_var);
     fclose(tmpl);
   }
   /* some languages like C/C++ need a header */
   if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
-    char* inc_path = options->strs[KEV_LEXGEN_SRC_TMPL_PATH];
-    FILE* tmpl = fopen(inc_path, "r");
+    char* inc_tmpl_path = options->strs[KEV_LEXGEN_INC_TMPL_PATH];
+    FILE* tmpl = fopen(inc_tmpl_path, "r");
+    FILE* inc_output = fopen(options->strs[KEV_LEXGEN_OUT_INC_PATH], "w");
     if (!tmpl)
-      kev_throw_error("output:", "can not open file: ", inc_path);
-    kev_template_convert(output, tmpl, env_var);
+      kev_throw_error("output:", "can not open file: ", inc_tmpl_path);
+    if (!inc_output)
+      kev_throw_error("output:", "can not open file: ", options->strs[KEV_LEXGEN_OUT_INC_PATH]);
+    kev_template_convert(inc_output, tmpl, env_var);
     fclose(tmpl);
+    fclose(inc_output);
   }
 }
 
