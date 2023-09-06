@@ -76,51 +76,23 @@ void kev_lexgen_output_help(void) {
 }
 
 void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_var) {
-  char* resources_dir = kev_get_lexgen_resources_dir();
-  if (!resources_dir)
-    kev_throw_error("output:", "can not get resources directory", NULL);
-
-  FILE* tmpl = NULL;
   if (options->strs[KEV_LEXGEN_OUT_SRC_PATH]) {
-    char* src_path = kev_str_concat(resources_dir, "lexer/");
-    char* tmp = src_path;
-    src_path = kev_str_concat(tmp, options->strs[KEV_LEXGEN_LANG_NAME]);
-    free(tmp);
-    tmp = src_path;
-    src_path = kev_str_concat(tmp, "/src.tmpl");
-    free(tmp);
-    if (!src_path)
-      kev_throw_error("output:", "out of memory", NULL);
-    tmpl = fopen(src_path, "r");
+    char* src_path = options->strs[KEV_LEXGEN_SRC_TMPL_PATH];
+    FILE* tmpl = fopen(src_path, "r");
     if (!tmpl)
-      kev_throw_error("output:", "can not open file(maybe this language is not supported): ", src_path);
+      kev_throw_error("output:", "can not open file: ", src_path);
     kev_template_convert(output, tmpl, env_var);
     fclose(tmpl);
-    free(src_path);
   }
   /* some languages like C/C++ need a header */
   if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
-    char* src_path = kev_str_concat(resources_dir, "lexer/");
-    char* tmp = src_path;
-    src_path = kev_str_concat(tmp, options->strs[KEV_LEXGEN_LANG_NAME]);
-    free(tmp);
-    tmp = src_path;
-    src_path = kev_str_concat(tmp, "/inc.tmpl");
-    free(tmp);
-    if (!src_path)
-      kev_throw_error("output:", "out of memory", NULL);
-    tmpl = fopen(src_path, "r");
+    char* inc_path = options->strs[KEV_LEXGEN_SRC_TMPL_PATH];
+    FILE* tmpl = fopen(inc_path, "r");
     if (!tmpl)
-      kev_throw_error("output:", "can not open file: ", src_path);
-    output = fopen(options->strs[KEV_LEXGEN_OUT_INC_PATH], "w");
-    if (!output)
-      kev_throw_error("output:", "can not open file: ", options->strs[KEV_LEXGEN_OUT_INC_PATH]);
+      kev_throw_error("output:", "can not open file: ", inc_path);
     kev_template_convert(output, tmpl, env_var);
-    fclose(output);
     fclose(tmpl);
-    free(src_path);
   }
-  free(resources_dir);
 }
 
 static char* kev_lexgen_output_macro_rust(KevPatternBinary* binary_info) {

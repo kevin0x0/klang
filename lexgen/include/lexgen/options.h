@@ -11,10 +11,12 @@
 
 /* string parameters */
 #define KEV_LEXGEN_INPUT_PATH         (0)
-#define KEV_LEXGEN_LANG_NAME          (1)
-#define KEV_LEXGEN_OUT_SRC_PATH       (2)
-#define KEV_LEXGEN_OUT_INC_PATH       (3)
-#define KEV_LEXGEN_STR_NO             (4)
+#define KEV_LEXGEN_SRC_TMPL_PATH      (1)
+#define KEV_LEXGEN_INC_TMPL_PATH      (2)
+#define KEV_LEXGEN_LANG_NAME          (3)
+#define KEV_LEXGEN_OUT_SRC_PATH       (4)
+#define KEV_LEXGEN_OUT_INC_PATH       (5)
+#define KEV_LEXGEN_STR_NO             (6)
 
 /* record options */
 typedef struct tagKevOptions {

@@ -5,9 +5,13 @@ Options:
   -h --help                        Show this message.
   -i --in                          Input file path.
   -o <path> --out <path>           Output file path.
-  --out-inc <path>                 Output include file path. This option works
+  --out-inc <path>                 Output header file path. This option works
                                    only when the language needs header file,
                                    such as C/C++.
+  -t --tmpl <path>                 Specify template file for generating output
+                                   file.
+  --it --inc-tmpl <path>           Specify template file for generating header
+                                   file.
   --table-only                     Only generate the transition table.
   -l=<value> --lang[uage]=<value>  Specify language.
     c                              This is the default value.
