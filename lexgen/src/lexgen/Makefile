@@ -13,7 +13,7 @@ LG_DIR = $(SRC_DIR)lexgen/
 
 UTILS_INC = $(UTILS_DIR)include/
 
-all : $(BIN_DIR)cmdline.o $(BIN_DIR)control.o $(BIN_DIR)template.o $(BIN_DIR)output.o $(BIN_DIR)convert.o $(BIN_DIR)lg_error.o
+all : $(BIN_DIR)cmdline.o $(BIN_DIR)control.o $(BIN_DIR)template.o $(BIN_DIR)output.o $(BIN_DIR)convert.o $(BIN_DIR)lg_error.o $(BIN_DIR)dir.o
 
 $(BIN_DIR)cmdline.o : $(LG_DIR)cmdline.c $(LG_INC_DIR)cmdline.h $(LG_INC_DIR)options.h $(LG_INC_DIR)error.h
 	$(CC) -c -o $@ $< $(CFLAGS) 
@@ -31,4 +31,7 @@ $(BIN_DIR)convert.o : $(LG_DIR)convert.c $(LG_INC_DIR)convert.h $(PS_INC_DIR)has
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
 $(BIN_DIR)lg_error.o : $(LG_DIR)error.c $(LG_INC_DIR)error.h
+	$(CC) -c -o $@ $< $(CFLAGS) 
+
+$(BIN_DIR)dir.o : $(LG_DIR)dir.c $(LG_INC_DIR)dir.h $(UTILS_INC)os_spec/dir.h
 	$(CC) -c -o $@ $< $(CFLAGS) 

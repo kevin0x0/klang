@@ -3,9 +3,9 @@
 #endif
 
 #include "lexgen/include/lexgen/cmdline.h"
+#include "lexgen/include/lexgen/dir.h"
 #include "lexgen/include/lexgen/error.h"
 #include "utils/include/string/kev_string.h"
-#include "utils/include/os_spec/dir.h"
 
 #include <stdio.h>
 #include <stdlib.h>

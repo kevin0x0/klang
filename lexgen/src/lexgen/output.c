@@ -5,7 +5,7 @@
 #include "lexgen/include/lexgen/output.h"
 #include "lexgen/include/lexgen/template.h"
 #include "lexgen/include/lexgen/error.h"
-#include "utils/include/os_spec/dir.h"
+#include "lexgen/include/lexgen/dir.h"
 #include "utils/include/string/kev_string.h"
 
 #include <stdlib.h>
