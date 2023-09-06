@@ -24,7 +24,7 @@ typedef struct tagPatternBinary {
 } KevPatternBinary;
 
 /* fill structure 'binary_info' according to infomation in 'parser_state' */
-void kev_lexgen_convert(KevPatternBinary* binary_info, KevParserState* parser_state);
+void kev_lexgen_convert(KevPatternBinary* binary_info, KevLParserState* parser_state);
 /* free resources */
 void kev_lexgen_convert_destroy(KevPatternBinary* binary_info);
 

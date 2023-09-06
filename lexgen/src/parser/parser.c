@@ -18,7 +18,7 @@ static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* 
 static int kev_lexgenparser_set_pattern_attribute(KevLexGenLexer* lex, KevLexGenToken* token, KevAddrArray* macros, size_t* p_pattern_id);
 static char* kev_get_id_name(char* id);
 
-bool kev_lexgenparser_init(KevParserState* parser_state) {
+bool kev_lexgenparser_init(KevLParserState* parser_state) {
   if (!parser_state) return false;
   if (!kev_patternlist_init(&parser_state->list))
     return false;
@@ -34,14 +34,14 @@ bool kev_lexgenparser_init(KevParserState* parser_state) {
   return true;
 }
 
-void kev_lexgenparser_destroy(KevParserState* parser_state) {
+void kev_lexgenparser_destroy(KevLParserState* parser_state) {
   kev_patternlist_free_content(&parser_state->list);
   kev_patternlist_destroy(&parser_state->list);
   kev_strfamap_destroy(&parser_state->nfa_map);
   kev_strmap_destroy(&parser_state->env_var);
 }
 
-int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
+int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state) {
   KevPatternList* list = &parser_state->list;
   KevStringFaMap* nfa_map = &parser_state->nfa_map;
   int err_count = 0;
@@ -75,7 +75,7 @@ int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* t
   return err_count;
 }
 
-int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
+int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state) {
   KevPatternList* list = &parser_state->list;
   KevStringFaMap* nfa_map = &parser_state->nfa_map;
   int err_count = 0;
@@ -118,7 +118,7 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
   return err_count;
 }
 
-int kev_lexgenparser_statement_env_var_def(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
+int kev_lexgenparser_statement_env_var_def(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state) {
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
@@ -153,7 +153,7 @@ int kev_lexgenparser_statement_env_var_def(KevLexGenLexer* lex, KevLexGenToken* 
   }
 }
 
-int kev_lexgenparser_parse(char* filepath, KevParserState* parser_state) {
+int kev_lexgenparser_parse(char* filepath, KevLParserState* parser_state) {
   int err_count = 0;
   FILE* input = fopen(filepath, "r");
   if (!input) {
@@ -184,7 +184,7 @@ int kev_lexgenparser_parse(char* filepath, KevParserState* parser_state) {
   return err_count;
 }
 
-int kev_lexgenparser_statement_import(KevLexGenLexer* lex, KevLexGenToken* token, KevParserState* parser_state) {
+int kev_lexgenparser_statement_import(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state) {
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_STR);
@@ -214,7 +214,7 @@ int kev_lexgenparser_statement_import(KevLexGenLexer* lex, KevLexGenToken* token
   return err_count;
 }
 
-int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevParserState* parser_state) {
+int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevLParserState* parser_state) {
   int err_count = 0;
   while (token->kind == KEV_LEXGEN_TOKEN_BLANKS) 
     err_count += kev_lexgenparser_next_nonblank(lex, token);

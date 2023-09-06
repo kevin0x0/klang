@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state);
+static int kev_lexgen_control_parse(FILE* input, KevLParserState* parser_state);
 /* Set environment variable after parsing the lexical description file.
  * It set some variables according to some other variables set in the file. */
 static void kev_lexgen_control_set_env_var_after(KevOptions* options, KevStringMap* env_var);
@@ -30,7 +30,7 @@ void kev_lexgen_control(KevOptions* options) {
     return;
   }
 
-  KevParserState parser_state;
+  KevLParserState parser_state;
   if (!kev_lexgenparser_init(&parser_state)) {
     kev_throw_error("control:", "failed to initialize parser", NULL);
   }
@@ -92,7 +92,7 @@ static void kev_lexgen_control_set_env_var_for_output(KevPatternBinary* binary_i
   }
 }
 
-static int kev_lexgen_control_parse(FILE* input, KevParserState* parser_state) {
+static int kev_lexgen_control_parse(FILE* input, KevLParserState* parser_state) {
   KevLexGenLexer lex;
   KevLexGenToken token;
   if (!kev_lexgenlexer_init(&lex, input))
