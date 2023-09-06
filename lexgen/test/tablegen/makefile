@@ -26,7 +26,7 @@ RP_PATH = $(SRC_PATH)parser/
 TD_INC_PATH = $(INC_PATH)tablegen/
 TD_PATH = $(SRC_PATH)tablegen/
 
-test.exe : test.c $(RP_PATH)regex.c $(BIN_PATH)libparser.a $(BIN_PATH)libfa.a $(UTILS_PATH)bin/libutils.a
+test.exe : test.c $(BIN_PATH)regex.o $(BIN_PATH)strfa_map.o $(ROOT_PATH)kevfa/lib/libkevfa.a $(UTILS_PATH)lib/libutils.a
 	$(CC) -o $@ $^ $(OPTIMIZE) $(CC_GLOBAL_PARAM)
 
 
