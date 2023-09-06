@@ -89,9 +89,9 @@ void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_
     tmp = src_path;
     src_path = kev_str_concat(tmp, "/src.tmpl");
     free(tmp);
-    tmpl = fopen(src_path, "r");
     if (!src_path)
       kev_throw_error("output:", "out of memory", NULL);
+    tmpl = fopen(src_path, "r");
     if (!tmpl)
       kev_throw_error("output:", "can not open file(maybe this language is not supported): ", src_path);
     kev_template_convert(output, tmpl, env_var);
@@ -107,6 +107,8 @@ void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_
     tmp = src_path;
     src_path = kev_str_concat(tmp, "/inc.tmpl");
     free(tmp);
+    if (!src_path)
+      kev_throw_error("output:", "out of memory", NULL);
     tmpl = fopen(src_path, "r");
     if (!tmpl)
       kev_throw_error("output:", "can not open file: ", src_path);
