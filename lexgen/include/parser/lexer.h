@@ -25,7 +25,7 @@
 
 typedef struct tagKevLLexer {
   FILE* infile;
-  size_t position;
+  size_t currpos; /* current position */
   uint8_t (*table)[256];
   int* acc_mapping;
   size_t start;

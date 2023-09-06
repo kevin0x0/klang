@@ -28,7 +28,7 @@ size_t kev_lexgenlexer_get_start_state(void);
 bool kev_lexgenlexer_init(KevLLexer* lex, FILE* infile) {
   if (!lex) return false;
   lex->infile = infile;
-  lex->position = 0;
+  lex->currpos = 0;
   lex->table = kev_lexgenlexer_get_table();
   lex->acc_mapping = kev_lexgenlexer_get_acc_array();
   lex->start = kev_lexgenlexer_get_start_state();
@@ -38,7 +38,7 @@ bool kev_lexgenlexer_init(KevLLexer* lex, FILE* infile) {
 void kev_lexgenlexer_destroy(KevLLexer* lex) {
   if (lex) {
     lex->infile = NULL;
-    lex->position = 0;
+    lex->currpos = 0;
     lex->acc_mapping = NULL;
     lex->table = NULL;
   }
@@ -58,13 +58,13 @@ bool kev_lexgenlexer_next(KevLLexer* lex, KevLToken* token) {
   }
   ungetc(ch, infile);
   lex_attr_buffer[position] = '\0';
-  token->begin = lex->position;
-  token->end = lex->position + position;
-  lex->position += position;
+  token->begin = lex->currpos;
+  token->end = lex->currpos + position;
+  lex->currpos += position;
   if (lex->acc_mapping[state] == KEV_LEXGENLEXER_NONACC) {
     token->kind = KEV_LEXGEN_TOKEN_ERR;
     if (position == 0)
-      lex->position++;
+      lex->currpos++;
     fgetc(infile);
     return false;
   }
