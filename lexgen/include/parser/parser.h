@@ -16,11 +16,11 @@ typedef struct tagKevLParserState {
 bool kev_lexgenparser_init(KevLParserState* parser_state);
 void kev_lexgenparser_destroy(KevLParserState* parser_state);
 
-int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state);
-int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state);
-int kev_lexgenparser_statement_env_var_def(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state);
-int kev_lexgenparser_statement_import(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state);
+int kev_lexgenparser_statement_nfa_assign(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state);
+int kev_lexgenparser_statement_deftoken(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state);
+int kev_lexgenparser_statement_env_var_def(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state);
+int kev_lexgenparser_statement_import(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state);
 int kev_lexgenparser_parse(char* filepath, KevLParserState* parser_state);
-int kev_lexgenparser_lex_src(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state);
+int kev_lexgenparser_lex_src(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state);
 
 #endif

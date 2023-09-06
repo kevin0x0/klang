@@ -25,7 +25,7 @@ uint8_t (*kev_lexgenlexer_get_table(void))[256];
 int* kev_lexgenlexer_get_acc_array(void);
 size_t kev_lexgenlexer_get_start_state(void);
 
-bool kev_lexgenlexer_init(KevLexGenLexer* lex, FILE* infile) {
+bool kev_lexgenlexer_init(KevLLexer* lex, FILE* infile) {
   if (!lex) return false;
   lex->infile = infile;
   lex->position = 0;
@@ -35,7 +35,7 @@ bool kev_lexgenlexer_init(KevLexGenLexer* lex, FILE* infile) {
   return true;
 }
 
-void kev_lexgenlexer_destroy(KevLexGenLexer* lex) {
+void kev_lexgenlexer_destroy(KevLLexer* lex) {
   if (lex) {
     lex->infile = NULL;
     lex->position = 0;
@@ -44,7 +44,7 @@ void kev_lexgenlexer_destroy(KevLexGenLexer* lex) {
   }
 }
  
-bool kev_lexgenlexer_next(KevLexGenLexer* lex, KevLexGenToken* token) {
+bool kev_lexgenlexer_next(KevLLexer* lex, KevLToken* token) {
   size_t position = 0;
   uint8_t (*table)[256] = lex->table;
   uint8_t state = lex->start;

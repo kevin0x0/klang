@@ -23,25 +23,25 @@
 #define KEV_LEXGEN_TOKEN_NUMBER       (13)
 #define KEV_LEXGEN_TOKEN_COMMA        (14)
 
-typedef struct tagKevLexGenLexer {
+typedef struct tagKevLLexer {
   FILE* infile;
   size_t position;
   uint8_t (*table)[256];
   int* acc_mapping;
   size_t start;
-} KevLexGenLexer;
+} KevLLexer;
 
-typedef struct tagKevLexGenToken {
+typedef struct tagKevLToken {
   size_t begin;
   size_t end;
   char* attr;
   int kind;
-} KevLexGenToken;
+} KevLToken;
 
-bool kev_lexgenlexer_init(KevLexGenLexer* lex,FILE* infile);
-void kev_lexgenlexer_destroy(KevLexGenLexer* lex);
+bool kev_lexgenlexer_init(KevLLexer* lex,FILE* infile);
+void kev_lexgenlexer_destroy(KevLLexer* lex);
  
-bool kev_lexgenlexer_next(KevLexGenLexer* lex, KevLexGenToken* token);
+bool kev_lexgenlexer_next(KevLLexer* lex, KevLToken* token);
 char* kev_lexgenlexer_info(int kind);
 
 #endif

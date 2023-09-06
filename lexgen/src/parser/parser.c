@@ -11,11 +11,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int kev_lexgenparser_next_nonblank(KevLexGenLexer* lex, KevLexGenToken* token);
-static int kev_lexgenparser_match(KevLexGenLexer* lex, KevLexGenToken* token, int kind);
-static int kev_lexgenparser_guarantee(KevLexGenLexer* lex, KevLexGenToken* token, int kind);
-static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* token, char** p_name);
-static int kev_lexgenparser_set_pattern_attribute(KevLexGenLexer* lex, KevLexGenToken* token, KevAddrArray* macros, size_t* p_pattern_id);
+static int kev_lexgenparser_next_nonblank(KevLLexer* lex, KevLToken* token);
+static int kev_lexgenparser_match(KevLLexer* lex, KevLToken* token, int kind);
+static int kev_lexgenparser_guarantee(KevLLexer* lex, KevLToken* token, int kind);
+static int kev_lexgenparser_proc_func_name(KevLLexer* lex, KevLToken* token, char** p_name);
+static int kev_lexgenparser_set_pattern_attribute(KevLLexer* lex, KevLToken* token, KevAddrArray* macros, size_t* p_pattern_id);
 static char* kev_get_id_name(char* id);
 
 bool kev_lexgenparser_init(KevLParserState* parser_state) {
@@ -41,7 +41,7 @@ void kev_lexgenparser_destroy(KevLParserState* parser_state) {
   kev_strmap_destroy(&parser_state->env_var);
 }
 
-int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state) {
+int kev_lexgenparser_statement_nfa_assign(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state) {
   KevPatternList* list = &parser_state->list;
   KevStringFaMap* nfa_map = &parser_state->nfa_map;
   int err_count = 0;
@@ -75,7 +75,7 @@ int kev_lexgenparser_statement_nfa_assign(KevLexGenLexer* lex, KevLexGenToken* t
   return err_count;
 }
 
-int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state) {
+int kev_lexgenparser_statement_deftoken(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state) {
   KevPatternList* list = &parser_state->list;
   KevStringFaMap* nfa_map = &parser_state->nfa_map;
   int err_count = 0;
@@ -118,7 +118,7 @@ int kev_lexgenparser_statement_deftoken(KevLexGenLexer* lex, KevLexGenToken* tok
   return err_count;
 }
 
-int kev_lexgenparser_statement_env_var_def(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state) {
+int kev_lexgenparser_statement_env_var_def(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state) {
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
@@ -160,7 +160,7 @@ int kev_lexgenparser_parse(char* filepath, KevLParserState* parser_state) {
     fprintf(stderr, "error: faied to open file: %s\n", filepath);
     return err_count + 1;
   }
-  KevLexGenLexer lex;
+  KevLLexer lex;
   if (!kev_lexgenlexer_init(&lex, input)) {
     kev_parser_error_report(stderr, input, "failed to initialize lexer", 0);
     fclose(input);
@@ -174,7 +174,7 @@ int kev_lexgenparser_parse(char* filepath, KevLParserState* parser_state) {
     return err_count + 1;
   }
 
-  KevLexGenToken token;
+  KevLToken token;
   while (!kev_lexgenlexer_next(&lex, &token))
     continue;
   err_count += kev_lexgenparser_lex_src(&lex, &token, parser_state);
@@ -184,7 +184,7 @@ int kev_lexgenparser_parse(char* filepath, KevLParserState* parser_state) {
   return err_count;
 }
 
-int kev_lexgenparser_statement_import(KevLexGenLexer* lex, KevLexGenToken* token, KevLParserState* parser_state) {
+int kev_lexgenparser_statement_import(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state) {
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_STR);
@@ -214,7 +214,7 @@ int kev_lexgenparser_statement_import(KevLexGenLexer* lex, KevLexGenToken* token
   return err_count;
 }
 
-int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevLParserState* parser_state) {
+int kev_lexgenparser_lex_src(KevLLexer *lex, KevLToken *token, KevLParserState* parser_state) {
   int err_count = 0;
   while (token->kind == KEV_LEXGEN_TOKEN_BLANKS) 
     err_count += kev_lexgenparser_next_nonblank(lex, token);
@@ -240,7 +240,7 @@ int kev_lexgenparser_lex_src(KevLexGenLexer *lex, KevLexGenToken *token, KevLPar
   return err_count;
 }
 
-static int kev_lexgenparser_next_nonblank(KevLexGenLexer* lex, KevLexGenToken* token) {
+static int kev_lexgenparser_next_nonblank(KevLLexer* lex, KevLToken* token) {
   int err_count = 0;
   do {
     if (!kev_lexgenlexer_next(lex, token)) {
@@ -252,7 +252,7 @@ static int kev_lexgenparser_next_nonblank(KevLexGenLexer* lex, KevLexGenToken* t
   return err_count;
 }
 
-static int kev_lexgenparser_match(KevLexGenLexer* lex, KevLexGenToken* token, int kind) {
+static int kev_lexgenparser_match(KevLLexer* lex, KevLToken* token, int kind) {
   int err_count = 0;
   if (token->kind != kind) {
     static char err_info_buf[1024];
@@ -265,7 +265,7 @@ static int kev_lexgenparser_match(KevLexGenLexer* lex, KevLexGenToken* token, in
   return err_count;
 }
 
-static int kev_lexgenparser_guarantee(KevLexGenLexer* lex, KevLexGenToken* token, int kind) {
+static int kev_lexgenparser_guarantee(KevLLexer* lex, KevLToken* token, int kind) {
   if (token->kind != kind) {
     static char err_info_buf[1024];
     sprintf(err_info_buf, "expected %s", kev_lexgenlexer_info(kind));
@@ -276,7 +276,7 @@ static int kev_lexgenparser_guarantee(KevLexGenLexer* lex, KevLexGenToken* token
   return 0;
 }
 
-static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* token, char** p_name) {
+static int kev_lexgenparser_proc_func_name(KevLLexer* lex, KevLToken* token, char** p_name) {
   int err_count = 0;
   if (token->kind == KEV_LEXGEN_TOKEN_OPEN_PAREN) {
     err_count += kev_lexgenparser_next_nonblank(lex, token);
@@ -291,7 +291,7 @@ static int kev_lexgenparser_proc_func_name(KevLexGenLexer* lex, KevLexGenToken* 
   return err_count;
 }
 
-static int kev_lexgenparser_set_pattern_attribute(KevLexGenLexer* lex, KevLexGenToken* token, KevAddrArray* macros, size_t* p_pattern_id) {
+static int kev_lexgenparser_set_pattern_attribute(KevLLexer* lex, KevLToken* token, KevAddrArray* macros, size_t* p_pattern_id) {
   int err_count = 0;
   if (token->kind == KEV_LEXGEN_TOKEN_OPEN_PAREN) {
     while (true) {

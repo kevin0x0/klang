@@ -93,8 +93,8 @@ static void kev_lexgen_control_set_env_var_for_output(KevPatternBinary* binary_i
 }
 
 static int kev_lexgen_control_parse(FILE* input, KevLParserState* parser_state) {
-  KevLexGenLexer lex;
-  KevLexGenToken token;
+  KevLLexer lex;
+  KevLToken token;
   if (!kev_lexgenlexer_init(&lex, input))
     kev_throw_error("control:", "kev_lexgenlexer_init() failed", NULL);
   while (!kev_lexgenlexer_next(&lex, &token))

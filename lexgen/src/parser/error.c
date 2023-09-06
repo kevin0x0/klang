@@ -49,8 +49,8 @@ void kev_parser_error_report(FILE* err_stream, FILE* infile, char* info, size_t 
   fseek(infile, original_position, SEEK_SET);
 }
 
-void kev_parser_error_handling(FILE* err_stream, KevLexGenLexer* lex, int kind, bool complement) {
-  KevLexGenToken token;
+void kev_parser_error_handling(FILE* err_stream, KevLLexer* lex, int kind, bool complement) {
+  KevLToken token;
   do {
     kev_lexgenlexer_next(lex, &token);
   } while ((token.kind == kind) == complement && token.kind != KEV_LEXGEN_TOKEN_END);
