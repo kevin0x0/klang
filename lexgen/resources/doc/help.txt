@@ -6,9 +6,9 @@ Options:
   -i --in                          Input file path.
   -o <path> --out <path>           Output file path.
   --out-inc <path>                 Output header file path. This option works
-                                   only when the language needs header file,
+                                   only when the language needs a header file,
                                    such as C/C++.
-  -t --tmpl <path>                 Specify template file for generating output
+  -t --tmpl <path>                 Specify template file for generating source
                                    file.
   --it --inc-tmpl <path>           Specify template file for generating header
                                    file.
