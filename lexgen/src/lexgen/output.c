@@ -169,7 +169,7 @@ static void kev_lexgen_output_table_rust(FILE* output, KevPatternBinary* binary_
   fputs("];\n\n", output);
   /* interface function */
   fprintf(output, "fn kev_lexgen_get_transition_table(void) -> &[[%s;%d]] {\n", type, (int)charset_size);
-  fprintf(output, "  return TRANSITION;\n\n");
+  fprintf(output, "  return TRANSITION;\n");
   fprintf(output, "}\n\n");
 }
 
