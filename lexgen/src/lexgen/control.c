@@ -14,9 +14,9 @@
 static int kev_lexgen_control_parse(FILE* input, KevLParserState* parser_state);
 /* Set environment variable after parsing the lexical description file.
  * It set some variables according to some other variables set in the file. */
-static void kev_lexgen_control_set_env_var_after(KevOptions* options, KevStringMap* env_var);
+static void kev_lexgen_control_set_env_var_post(KevOptions* options, KevStringMap* env_var);
 /* Set environment variable before parsing the lexical description file. */
-static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevStringMap* env_var);
+static void kev_lexgen_control_set_env_var_pre(KevOptions* options, KevStringMap* env_var);
 /* Set variables whose value is the transition table or token infos after
  * generating DFA and converting it to table. These variables used in the
  * template file. */
@@ -34,7 +34,7 @@ void kev_lexgen_control(KevOptions* options) {
   if (!kev_lexgenparser_init(&parser_state)) {
     kev_throw_error("control:", "failed to initialize parser", NULL);
   }
-  kev_lexgen_control_set_env_var_before(options, &parser_state.env_var);
+  kev_lexgen_control_set_env_var_pre(options, &parser_state.env_var);
 
   /* read lexical description file */
   FILE* input = fopen(options->strs[KEV_LEXGEN_INPUT_PATH], "r");
@@ -49,7 +49,7 @@ void kev_lexgen_control(KevOptions* options) {
     sprintf(num_buf, "%d", error_number);
     kev_throw_error("control: ", num_buf, " error(s) detected.");
   }
-  kev_lexgen_control_set_env_var_after(options, &parser_state.env_var);
+  kev_lexgen_control_set_env_var_post(options, &parser_state.env_var);
 
   /* convert */
   KevPatternBinary binary_info;
@@ -104,7 +104,7 @@ static int kev_lexgen_control_parse(FILE* input, KevLParserState* parser_state) 
   return error_number;
 }
 
-static void kev_lexgen_control_set_env_var_after(KevOptions* options, KevStringMap* env_var) {
+static void kev_lexgen_control_set_env_var_post(KevOptions* options, KevStringMap* env_var) {
   KevStringMapNode* node = kev_strmap_search(env_var, "state-length");
   /* check state-length */
   if (node) {
@@ -131,7 +131,7 @@ static void kev_lexgen_control_set_env_var_after(KevOptions* options, KevStringM
   }
 }
 
-static void kev_lexgen_control_set_env_var_before(KevOptions* options, KevStringMap* env_var) {
+static void kev_lexgen_control_set_env_var_pre(KevOptions* options, KevStringMap* env_var) {
   /* set include path for C/C++ header */
   if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
     char* relpath = kev_get_relpath(options->strs[KEV_LEXGEN_OUT_SRC_PATH],
