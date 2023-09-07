@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void kev_parser_error_report(FILE* err_stream, FILE* infile, char* info, size_t position) {
+void kev_parser_error_report(FILE* err_stream, FILE* infile, const char* info, size_t position) {
   if (!infile) {
     fprintf(err_stream, "%s", info);
     return;

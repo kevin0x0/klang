@@ -62,13 +62,3 @@ char* kev_get_relpath(char* from, char* to) {
   return relpath;
 }
 
-char* kev_trunc_leaf(char* path) {
-  int i = 0;
-  char* p = path - 1;
-  while (*++p != '\0') {
-    if (*p == '/' || *p == '\\')
-      i = p - path;
-  }
-  path[i + 1] = '\0';
-  return path;
-}

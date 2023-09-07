@@ -19,7 +19,7 @@ typedef struct tagKevOutputFunc {
 } KevOutputFunc;
 
 /* fill the structure by language */
-void kev_lexgen_output_set_func(KevOutputFunc* func_group, char* language);
+void kev_lexgen_output_set_func(KevOutputFunc* func_group, const char* language);
 /* output to file */
 void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_var);
 void kev_lexgen_output_help(void);

@@ -3,13 +3,13 @@
 #endif
 
 #include "utils/include/hashmap/str_map.h"
+#include "utils/include/string/kev_string.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-static inline char* copy_string(char* str);
 
-inline static size_t kev_strmap_hashing(char* key) {
+inline static size_t kev_strmap_hashing(const char* key) {
   if (!key) return 0;
   size_t hash_val = 0;
   size_t count = 0;
@@ -133,7 +133,7 @@ void kev_strmap_delete(KevStringMap* map) {
   free(map);
 }
 
-bool kev_strmap_insert(KevStringMap* map, char* key, char* value) {
+bool kev_strmap_insert(KevStringMap* map, const char* key, const char* value) {
   if (map->size >= map->capacity && !kev_strmap_expand(map))
     return false;
 
@@ -141,8 +141,8 @@ bool kev_strmap_insert(KevStringMap* map, char* key, char* value) {
   if (!new_node) return false;
 
   size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
-  new_node->key = copy_string(key);
-  new_node->value = copy_string(value);
+  new_node->key = kev_str_copy(key);
+  new_node->value = kev_str_copy(value);
   if (!new_node->key || !new_node->value) {
     free(new_node->key);
     free(new_node->value);
@@ -158,7 +158,7 @@ bool kev_strmap_insert(KevStringMap* map, char* key, char* value) {
   return true;
 }
 
-bool kev_strmap_insert_move(KevStringMap* map, char* key, char* value) {
+bool kev_strmap_insert_move(KevStringMap* map, const char* key, char* value) {
   if (map->size >= map->capacity && !kev_strmap_expand(map))
     return false;
 
@@ -166,7 +166,7 @@ bool kev_strmap_insert_move(KevStringMap* map, char* key, char* value) {
   if (!new_node) return false;
 
   size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
-  new_node->key = copy_string(key);
+  new_node->key = kev_str_copy(key);
   new_node->value = value;
   if (!new_node->key || !new_node->value) {
     free(new_node->key);
@@ -182,7 +182,7 @@ bool kev_strmap_insert_move(KevStringMap* map, char* key, char* value) {
   return true;
 }
 
-KevStringMapNode* kev_strmap_search(KevStringMap* map, char* key) {
+KevStringMapNode* kev_strmap_search(KevStringMap* map, const char* key) {
   size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
   KevStringMapNode* node = map->array[index].map_node_list;
   for (; node; node = node->next) {
@@ -200,12 +200,12 @@ KevStringMapNode* kev_strmap_iterate_next(KevStringMap* map, KevStringMapNode* c
   return NULL;
 }
 
-bool kev_strmap_update(KevStringMap* map, char* key, char* value) {
+bool kev_strmap_update(KevStringMap* map, const char* key, const char* value) {
   if (!map) return false;
   KevStringMapNode* node = kev_strmap_search(map, key);
   if (node) {
     free(node->value);
-    node->value = copy_string(value);
+    node->value = kev_str_copy(value);
     return node->value != NULL;
   }
   else if (!kev_strmap_insert(map, key, value)) {
@@ -214,7 +214,7 @@ bool kev_strmap_update(KevStringMap* map, char* key, char* value) {
   return true;
 }
 
-bool kev_strmap_update_move(KevStringMap* map, char* key, char* value) {
+bool kev_strmap_update_move(KevStringMap* map, const char* key, char* value) {
   if (!map) return false;
   KevStringMapNode* node = kev_strmap_search(map, key);
   if (node) {
@@ -225,12 +225,4 @@ bool kev_strmap_update_move(KevStringMap* map, char* key, char* value) {
   else {
     return kev_strmap_insert_move(map, key, value);
   }
-}
-
-static inline char* copy_string(char* str) {
-  if (!str) return NULL;
-  char* ret = (char*)malloc(sizeof (char) * (strlen(str) + 1));
-  if (!ret) return NULL;
-  strcpy(ret, str);
-  return ret;
 }

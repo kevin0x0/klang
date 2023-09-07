@@ -20,7 +20,7 @@ int kev_lexgenparser_statement_nfa_assign(KevLLexer* lex, KevLToken* token, KevL
 int kev_lexgenparser_statement_deftoken(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state);
 int kev_lexgenparser_statement_env_var_def(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state);
 int kev_lexgenparser_statement_import(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state);
-int kev_lexgenparser_parse(char* filepath, KevLParserState* parser_state);
+int kev_lexgenparser_parse(const char* filepath, KevLParserState* parser_state);
 int kev_lexgenparser_lex_src(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state);
 
 #endif

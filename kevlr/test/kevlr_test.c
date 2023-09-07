@@ -1,10 +1,5 @@
-#include "pargen/include/lr/collection.h"
-#include "pargen/include/lr/lr.h"
-#include "pargen/include/lr/lr_utils.h"
-#include "pargen/include/lr/print.h"
-#include "pargen/include/lr/rule.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include "kevlr/include/lr.h"
+
 #include <time.h>
 
 bool conflict_report(void* object, KevLRConflict* conflict, KevLRCollection* collec) {
@@ -184,10 +179,10 @@ int main(int argc, char** argv) {
     KevLRCollection* collec = kev_lr_collection_create_lalr(E, &end, 1);
     //kev_lr_print_collection(stdout, collec, true);
 
-    KevLRTable* table = kev_lr_table_create(collec, NULL);
+    //KevLRTable* table = kev_lr_table_create(collec, NULL);
     //kev_lr_print_goto_table(stdout, table);
     //kev_lr_print_action_table(stdout, table);
-    kev_lr_table_delete(table);
+    //kev_lr_table_delete(table);
     kev_lr_collection_delete(collec);
   }
   printf("total time used:%fs\n", ((float)(clock() - t)) / (float)CLOCKS_PER_SEC);

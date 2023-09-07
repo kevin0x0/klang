@@ -5,7 +5,6 @@
 #include "lexgen/include/parser/parser.h"
 #include "lexgen/include/parser/error.h"
 #include "lexgen/include/parser/regex.h"
-#include "utils/include/os_spec/dir.h"
 #include "utils/include/string/kev_string.h"
 
 #include <stdlib.h>
@@ -144,7 +143,7 @@ int kev_lexgenparser_statement_env_var_def(KevLLexer* lex, KevLToken* token, Kev
   }
 }
 
-int kev_lexgenparser_parse(char* filepath, KevLParserState* parser_state) {
+int kev_lexgenparser_parse(const char* filepath, KevLParserState* parser_state) {
   int err_count = 0;
   FILE* input = fopen(filepath, "r");
   if (!input) {
@@ -158,7 +157,7 @@ int kev_lexgenparser_parse(char* filepath, KevLParserState* parser_state) {
     return err_count + 1;
   }
 
-  if (!kev_strmap_update(&parser_state->env_var, "import-path", kev_trunc_leaf(filepath))) {
+  if (!kev_strmap_update_move(&parser_state->env_var, "import-path", kev_trunc_leaf(filepath))) {
     fclose(input);
     kev_lexgenlexer_destroy(&lex);
     kev_parser_error_report(stderr, lex.infile, "failed to initialize import-path", 0);

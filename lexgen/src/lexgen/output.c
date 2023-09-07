@@ -28,9 +28,9 @@ static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info);
 /* convert 'str' to escape string to 'output' buffer,
  * return pointer of next position in buffer
  */
-static char* kev_lexgen_output_escape_string(char* output, char* str);
+static char* kev_lexgen_output_escape_string(char* output, const char* str);
 
-void kev_lexgen_output_set_func(KevOutputFunc* func_group, char* language) {
+void kev_lexgen_output_set_func(KevOutputFunc* func_group, const char* language) {
   if (strcmp(language, "rust") == 0) {
     func_group->output_table = kev_lexgen_output_table_rust;
     func_group->output_pattern_mapping = kev_lexgen_output_pattern_mapping_rust;
@@ -51,7 +51,7 @@ void kev_lexgen_output_set_func(KevOutputFunc* func_group, char* language) {
   }
 }
 
-static char* kev_lexgen_output_escape_string(char* output, char* str) {
+static char* kev_lexgen_output_escape_string(char* output, const char* str) {
   if (!str) sprintf(output, "NULL");
   char* bufpos = output;
   while (*str != '\0')
