@@ -65,10 +65,8 @@ void kev_lexgen_control(KevOptions* options) {
   func_group.output_table(output, &binary_info);
   func_group.output_pattern_mapping(output, &binary_info);
   func_group.output_start(output, &binary_info);
-  if (options->opts[KEV_LEXGEN_OPT_TAB_ONLY] == KEV_LEXGEN_OPT_FALSE) {
-    kev_lexgen_control_set_env_var_for_output(&binary_info, &func_group, &parser_state.env_var);
-    kev_lexgen_output_src(output, options, &parser_state.env_var);
-  }
+  kev_lexgen_control_set_env_var_for_output(&binary_info, &func_group, &parser_state.env_var);
+  kev_lexgen_output_src(output, options, &parser_state.env_var);
   fclose(output);
 
   /* free resources */

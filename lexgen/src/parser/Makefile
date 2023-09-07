@@ -9,7 +9,7 @@ PS_DIR = $(SRC_DIR)parser/
 UTILS_INC = $(UTILS_DIR)include/
 GEN_INC_DIR = $(UTILS_INC)general/
 
-all : $(BIN_DIR)regex.o $(BIN_DIR)parser.o $(BIN_DIR)lexer.o $(BIN_DIR)par_error.o $(BIN_DIR)lexgenlexer_table.o $(BIN_DIR)strfa_map.o $(BIN_DIR)pattern_list.o
+all : $(BIN_DIR)regex.o $(BIN_DIR)parser.o $(BIN_DIR)lexer.o $(BIN_DIR)par_error.o $(BIN_DIR)lextab.o $(BIN_DIR)strfa_map.o $(BIN_DIR)pattern_list.o
 
 $(BIN_DIR)regex.o : $(PS_DIR)regex.c $(PS_INC_DIR)regex.h $(FA_DEPS) $(GEN_INC_DIR)global_def.h $(PS_INC_DIR)hashmap/strfa_map.h $(UTILS_INC)string/kev_string.h
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -23,7 +23,7 @@ $(BIN_DIR)lexer.o : $(PS_DIR)lexer.c $(PS_INC_DIR)lexer.h $(GEN_INC_DIR)global_d
 $(BIN_DIR)par_error.o : $(PS_DIR)error.c $(PS_INC_DIR)error.h $(PS_INC_DIR)lexer.h $(GEN_INC_DIR)global_def.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BIN_DIR)lexgenlexer_table.o : $(PS_DIR)lexgenlexer_table.c
+$(BIN_DIR)lextab.o : $(PS_DIR)lextab.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(BIN_DIR)strfa_map.o : $(PS_DIR)hashmap/strfa_map.c $(PS_INC_DIR)hashmap/strfa_map.h $(FA_DEPS)

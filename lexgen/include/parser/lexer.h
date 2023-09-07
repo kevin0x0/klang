@@ -3,24 +3,11 @@
 
 #include "utils/include/general/global_def.h"
 
+#include "lexgen/include/parser/lextokens.h"
+
 #include <stdio.h>
 
 #define KEV_LTK_ERR          (-1)
-#define KEV_LTK_DEF          (0)
-#define KEV_LTK_IMPORT       (1)
-#define KEV_LTK_ID           (2)
-#define KEV_LTK_REGEX        (3)
-#define KEV_LTK_ASSIGN       (4)
-#define KEV_LTK_COLON        (5)
-#define KEV_LTK_BLANKS       (6)
-#define KEV_LTK_OPEN_PAREN   (7)
-#define KEV_LTK_CLOSE_PAREN  (8)
-#define KEV_LTK_ENV_VAR_DEF  (9)
-#define KEV_LTK_END          (10)
-#define KEV_LTK_LONG_STR     (11)
-#define KEV_LTK_STR          (12)
-#define KEV_LTK_NUMBER       (13)
-#define KEV_LTK_COMMA        (14)
 
 typedef struct tagKevLLexer {
   FILE* infile;
@@ -41,6 +28,11 @@ bool kev_lexgenlexer_init(KevLLexer* lex,FILE* infile);
 void kev_lexgenlexer_destroy(KevLLexer* lex);
  
 bool kev_lexgenlexer_next(KevLLexer* lex, KevLToken* token);
-char* kev_lexgenlexer_info(int kind);
+const char* kev_lexgenlexer_info(int kind);
+
+uint8_t (*kev_lexgen_get_transition_table(void))[256];
+int* kev_lexgen_get_pattern_mapping(void);
+size_t kev_lexgen_get_start_state(void);
+const char** kev_lexgen_get_info(void);
 
 #endif

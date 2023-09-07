@@ -9,29 +9,16 @@
 #define KEV_LEXGENLEXER_DEAD    ((uint8_t)255)
 #define KEV_LEXGENLEXER_NONACC  (-1)
 
-static char* token_info[] = {
-  [KEV_LTK_ASSIGN] = "\'=\'", [KEV_LTK_END] = "EOF",
-  [KEV_LTK_BLANKS] = "blanks", [KEV_LTK_COLON] = "\':\'",
-  [KEV_LTK_ID] = "identifier", [KEV_LTK_REGEX] = "regular expression",
-  [KEV_LTK_OPEN_PAREN] = "\'(\'", [KEV_LTK_CLOSE_PAREN] = "\')\'",
-  [KEV_LTK_DEF] = "def", [KEV_LTK_ENV_VAR_DEF] = "environment variable definition header",
-  [KEV_LTK_LONG_STR] = "long string", [KEV_LTK_STR] = "string",
-  [KEV_LTK_IMPORT] = "import", 
-};
-
 static char lex_attr_buffer[1024];
 
-uint8_t (*kev_lexgenlexer_get_table(void))[256];
-int* kev_lexgenlexer_get_acc_array(void);
-size_t kev_lexgenlexer_get_start_state(void);
 
 bool kev_lexgenlexer_init(KevLLexer* lex, FILE* infile) {
   if (!lex) return false;
   lex->infile = infile;
   lex->currpos = 0;
-  lex->table = kev_lexgenlexer_get_table();
-  lex->acc_mapping = kev_lexgenlexer_get_acc_array();
-  lex->start = kev_lexgenlexer_get_start_state();
+  lex->table = kev_lexgen_get_transition_table();
+  lex->acc_mapping = kev_lexgen_get_pattern_mapping();
+  lex->start = kev_lexgen_get_start_state();
   return true;
 }
 
@@ -73,6 +60,6 @@ bool kev_lexgenlexer_next(KevLLexer* lex, KevLToken* token) {
   return true;
 }
 
-char* kev_lexgenlexer_info(int kind) {
-  return token_info[kind];
+const char* kev_lexgenlexer_info(int kind) {
+  return kev_lexgen_get_info()[kind];
 }
