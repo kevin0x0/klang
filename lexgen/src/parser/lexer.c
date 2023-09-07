@@ -10,13 +10,13 @@
 #define KEV_LEXGENLEXER_NONACC  (-1)
 
 static char* token_info[] = {
-  [KEV_LEXGEN_TOKEN_ASSIGN] = "\'=\'", [KEV_LEXGEN_TOKEN_END] = "EOF",
-  [KEV_LEXGEN_TOKEN_BLANKS] = "blanks", [KEV_LEXGEN_TOKEN_COLON] = "\':\'",
-  [KEV_LEXGEN_TOKEN_ID] = "identifier", [KEV_LEXGEN_TOKEN_REGEX] = "regular expression",
-  [KEV_LEXGEN_TOKEN_OPEN_PAREN] = "\'(\'", [KEV_LEXGEN_TOKEN_CLOSE_PAREN] = "\')\'",
-  [KEV_LEXGEN_TOKEN_DEF] = "def", [KEV_LEXGEN_TOKEN_ENV_VAR_DEF] = "environment variable definition header",
-  [KEV_LEXGEN_TOKEN_LONG_STR] = "long string", [KEV_LEXGEN_TOKEN_STR] = "string",
-  [KEV_LEXGEN_TOKEN_IMPORT] = "import", 
+  [KEV_LTK_ASSIGN] = "\'=\'", [KEV_LTK_END] = "EOF",
+  [KEV_LTK_BLANKS] = "blanks", [KEV_LTK_COLON] = "\':\'",
+  [KEV_LTK_ID] = "identifier", [KEV_LTK_REGEX] = "regular expression",
+  [KEV_LTK_OPEN_PAREN] = "\'(\'", [KEV_LTK_CLOSE_PAREN] = "\')\'",
+  [KEV_LTK_DEF] = "def", [KEV_LTK_ENV_VAR_DEF] = "environment variable definition header",
+  [KEV_LTK_LONG_STR] = "long string", [KEV_LTK_STR] = "string",
+  [KEV_LTK_IMPORT] = "import", 
 };
 
 static char lex_attr_buffer[1024];
@@ -62,7 +62,7 @@ bool kev_lexgenlexer_next(KevLLexer* lex, KevLToken* token) {
   token->end = lex->currpos + position;
   lex->currpos += position;
   if (lex->acc_mapping[state] == KEV_LEXGENLEXER_NONACC) {
-    token->kind = KEV_LEXGEN_TOKEN_ERR;
+    token->kind = KEV_LTK_ERR;
     if (position == 0)
       lex->currpos++;
     fgetc(infile);

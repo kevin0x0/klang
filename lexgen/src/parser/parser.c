@@ -51,8 +51,8 @@ int kev_lexgenparser_statement_nfa_assign(KevLLexer* lex, KevLToken* token, KevL
     err_count++;
   }
   err_count += kev_lexgenparser_next_nonblank(lex, token);
-  err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ASSIGN);
-  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_REGEX);
+  err_count += kev_lexgenparser_match(lex, token, KEV_LTK_ASSIGN);
+  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LTK_REGEX);
   KevFA* nfa = kev_regex_parse((uint8_t*)token->attr + 1, nfa_map);
   if (!nfa) {
     kev_parser_error_report(stderr, lex->infile, kev_regex_get_info(), token->begin + kev_regex_get_pos() + 1);
@@ -80,7 +80,7 @@ int kev_lexgenparser_statement_deftoken(KevLLexer* lex, KevLToken* token, KevLPa
   KevStringFaMap* nfa_map = &parser_state->nfa_map;
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
-  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
+  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LTK_ID);
   char* name = kev_get_id_name(token->attr);
   KevAddrArray* macros = kev_addrarray_create();
   if (!name || !macros) {
@@ -96,11 +96,11 @@ int kev_lexgenparser_statement_deftoken(KevLLexer* lex, KevLToken* token, KevLPa
     kev_parser_error_report(stderr, lex->infile, "failed to add new pattern", token->begin);
     err_count++;
   }
-  err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_COLON);
+  err_count += kev_lexgenparser_match(lex, token, KEV_LTK_COLON);
   do {
     char* proc_name = NULL;
     err_count += kev_lexgenparser_proc_func_name(lex, token, &proc_name);
-    err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_REGEX);
+    err_count += kev_lexgenparser_guarantee(lex, token, KEV_LTK_REGEX);
     uint8_t* regex = (uint8_t*)token->attr + 1;
     KevFA* nfa = kev_regex_parse(regex, nfa_map);
     if (!nfa) {
@@ -114,23 +114,23 @@ int kev_lexgenparser_statement_deftoken(KevLLexer* lex, KevLToken* token, KevLPa
       }
     }
     err_count += kev_lexgenparser_next_nonblank(lex, token);
-  } while (token->kind == KEV_LEXGEN_TOKEN_REGEX || token->kind == KEV_LEXGEN_TOKEN_OPEN_PAREN);
+  } while (token->kind == KEV_LTK_REGEX || token->kind == KEV_LTK_OPEN_PAREN);
   return err_count;
 }
 
 int kev_lexgenparser_statement_env_var_def(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state) {
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
-  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
+  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LTK_ID);
   char* env_var = kev_get_id_name(token->attr);
   if (!env_var) {
     kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
     err_count++;
   }
   err_count += kev_lexgenparser_next_nonblank(lex, token);
-  err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_ASSIGN);
-  if (token->kind != KEV_LEXGEN_TOKEN_LONG_STR && token->kind != KEV_LEXGEN_TOKEN_STR) {
-    err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_STR);
+  err_count += kev_lexgenparser_match(lex, token, KEV_LTK_ASSIGN);
+  if (token->kind != KEV_LTK_LONG_STR && token->kind != KEV_LTK_STR) {
+    err_count += kev_lexgenparser_match(lex, token, KEV_LTK_STR);
     free(env_var);
     return err_count;
   }
@@ -138,7 +138,7 @@ int kev_lexgenparser_statement_env_var_def(KevLLexer* lex, KevLToken* token, Kev
     return err_count + kev_lexgenparser_next_nonblank(lex, token);
   } else {
     char* env_value = NULL;
-    if (token->kind == KEV_LEXGEN_TOKEN_LONG_STR) {
+    if (token->kind == KEV_LTK_LONG_STR) {
       size_t len = token->end - token->begin;
       token->attr[len - 2] = '\0';  /* long string ends with two '\n', eliminate them */
     }
@@ -187,7 +187,7 @@ int kev_lexgenparser_parse(char* filepath, KevLParserState* parser_state) {
 int kev_lexgenparser_statement_import(KevLLexer* lex, KevLToken* token, KevLParserState* parser_state) {
   int err_count = 0;
   err_count += kev_lexgenparser_next_nonblank(lex, token);
-  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_STR);
+  err_count += kev_lexgenparser_guarantee(lex, token, KEV_LTK_STR);
 
   char* relpath = token->attr + 1;
   char* base = NULL;
@@ -216,27 +216,27 @@ int kev_lexgenparser_statement_import(KevLLexer* lex, KevLToken* token, KevLPars
 
 int kev_lexgenparser_lex_src(KevLLexer *lex, KevLToken *token, KevLParserState* parser_state) {
   int err_count = 0;
-  while (token->kind == KEV_LEXGEN_TOKEN_BLANKS) 
+  while (token->kind == KEV_LTK_BLANKS) 
     err_count += kev_lexgenparser_next_nonblank(lex, token);
   do {
-    if (token->kind == KEV_LEXGEN_TOKEN_ID) {
+    if (token->kind == KEV_LTK_ID) {
       err_count += kev_lexgenparser_statement_nfa_assign(lex, token, parser_state);
     }
-    else if (token->kind == KEV_LEXGEN_TOKEN_DEF) {
+    else if (token->kind == KEV_LTK_DEF) {
       err_count += kev_lexgenparser_statement_deftoken(lex, token, parser_state);
     }
-    else if (token->kind == KEV_LEXGEN_TOKEN_ENV_VAR_DEF) {
+    else if (token->kind == KEV_LTK_ENV_VAR_DEF) {
       err_count += kev_lexgenparser_statement_env_var_def(lex, token, parser_state);
     }
-    else if (token->kind == KEV_LEXGEN_TOKEN_IMPORT) {
+    else if (token->kind == KEV_LTK_IMPORT) {
       err_count += kev_lexgenparser_statement_import(lex, token, parser_state);
     }
     else {
       kev_parser_error_report(stderr, lex->infile, "expected \'def\' or identifer", token->begin);
-      kev_parser_error_handling(stderr, lex, KEV_LEXGEN_TOKEN_DEF, false);
+      kev_parser_error_handling(stderr, lex, KEV_LTK_DEF, false);
       err_count++;
     }
-  } while (token->kind != KEV_LEXGEN_TOKEN_END);
+  } while (token->kind != KEV_LTK_END);
   return err_count;
 }
 
@@ -245,10 +245,10 @@ static int kev_lexgenparser_next_nonblank(KevLLexer* lex, KevLToken* token) {
   do {
     if (!kev_lexgenlexer_next(lex, token)) {
       kev_parser_error_report(stderr, lex->infile, "lexical error", token->begin);
-      kev_parser_error_handling(stderr, lex, KEV_LEXGEN_TOKEN_BLANKS, true);
+      kev_parser_error_handling(stderr, lex, KEV_LTK_BLANKS, true);
       err_count++;
     }
-  } while (token->kind == KEV_LEXGEN_TOKEN_BLANKS);
+  } while (token->kind == KEV_LTK_BLANKS);
   return err_count;
 }
 
@@ -278,12 +278,12 @@ static int kev_lexgenparser_guarantee(KevLLexer* lex, KevLToken* token, int kind
 
 static int kev_lexgenparser_proc_func_name(KevLLexer* lex, KevLToken* token, char** p_name) {
   int err_count = 0;
-  if (token->kind == KEV_LEXGEN_TOKEN_OPEN_PAREN) {
+  if (token->kind == KEV_LTK_OPEN_PAREN) {
     err_count += kev_lexgenparser_next_nonblank(lex, token);
-    err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_ID);
+    err_count += kev_lexgenparser_guarantee(lex, token, KEV_LTK_ID);
     char* name = kev_get_id_name(token->attr);
     err_count += kev_lexgenparser_next_nonblank(lex, token);
-    err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_CLOSE_PAREN);
+    err_count += kev_lexgenparser_match(lex, token, KEV_LTK_CLOSE_PAREN);
     *p_name = name;
   } else {
     *p_name = NULL;
@@ -293,27 +293,27 @@ static int kev_lexgenparser_proc_func_name(KevLLexer* lex, KevLToken* token, cha
 
 static int kev_lexgenparser_set_pattern_attribute(KevLLexer* lex, KevLToken* token, KevAddrArray* macros, size_t* p_pattern_id) {
   int err_count = 0;
-  if (token->kind == KEV_LEXGEN_TOKEN_OPEN_PAREN) {
+  if (token->kind == KEV_LTK_OPEN_PAREN) {
     while (true) {
       err_count += kev_lexgenparser_next_nonblank(lex, token);
-      if (token->kind == KEV_LEXGEN_TOKEN_ID) {
+      if (token->kind == KEV_LTK_ID) {
         char* name = kev_get_id_name(token->attr);
         if (!name || !kev_addrarray_push_back(macros, name)) {
           kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
           free(name);
           err_count++;
         }
-      } else if (token->kind == KEV_LEXGEN_TOKEN_NUMBER) {
+      } else if (token->kind == KEV_LTK_NUMBER) {
         *p_pattern_id = (size_t)strtoull(token->attr, NULL, 10);
       } else {
-        err_count += kev_lexgenparser_guarantee(lex, token, KEV_LEXGEN_TOKEN_CLOSE_PAREN);
+        err_count += kev_lexgenparser_guarantee(lex, token, KEV_LTK_CLOSE_PAREN);
         break;
       }
       err_count += kev_lexgenparser_next_nonblank(lex, token);
-      if (token->kind != KEV_LEXGEN_TOKEN_COMMA)
+      if (token->kind != KEV_LTK_COMMA)
         break;
     }
-    err_count += kev_lexgenparser_match(lex, token, KEV_LEXGEN_TOKEN_CLOSE_PAREN);
+    err_count += kev_lexgenparser_match(lex, token, KEV_LTK_CLOSE_PAREN);
   }
   return err_count;
 }

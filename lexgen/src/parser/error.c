@@ -53,7 +53,7 @@ void kev_parser_error_handling(FILE* err_stream, KevLLexer* lex, int kind, bool 
   KevLToken token;
   do {
     kev_lexgenlexer_next(lex, &token);
-  } while ((token.kind == kind) == complement && token.kind != KEV_LEXGEN_TOKEN_END);
+  } while ((token.kind == kind) == complement && token.kind != KEV_LTK_END);
   if ((token.kind == kind) == complement) {
     fputs("fatal: can not recovery from last error, terminated\n", err_stream);
     exit(EXIT_FAILURE);
