@@ -58,7 +58,7 @@ int kev_lexgenparser_statement_nfa_assign(KevLLexer* lex, KevLToken* token, KevL
     free(name);
     err_count++;
   } else {
-    if (!kev_pattern_insert(list->tail, name, nfa)) {
+    if (!kev_pattern_insert(list->head, name, nfa)) {
       kev_parser_error_report(stderr, lex->infile, "failed to register NFA", token->begin);
       err_count++;
       free(name);
@@ -127,7 +127,6 @@ int kev_lexgenparser_statement_env_var_def(KevLLexer* lex, KevLToken* token, Kev
   }
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_match(lex, token, KEV_LTK_ASSIGN);
-  err_count += kev_lexgenparser_next_nonblank(lex, token);
   err_count += kev_lexgenparser_guarantee(lex, token, KEV_LTK_STR);
   if (!env_var) {
     return err_count + kev_lexgenparser_next_nonblank(lex, token);
@@ -315,7 +314,7 @@ static int kev_lexgenparser_set_pattern_attribute(KevLLexer* lex, KevLToken* tok
 static char* kev_get_str(KevLToken* token) {
   char* str = NULL;
   char* origin = token->attr;
-  if (token->kind == KEV_LTK_STR) {
+  if (origin[0] == '\'') {
     str = (char*)malloc(sizeof (char) * (kev_str_len(origin) - 1));
     size_t i = 0;
     if (!str) return NULL;
@@ -335,10 +334,15 @@ static char* kev_get_str(KevLToken* token) {
       }
     }
     str[i] = '\0';
+  } else if (origin[0] == '\"') {
+    str = kev_str_copy_len(origin + 1, token->end - token->begin - 1);
   } else {
     size_t len = token->end - token->begin;
-    /* long string ends with two '\n', eliminate them */
-    str = kev_str_copy_len(origin + 1, len - 2);
+    /* long string ends with '\n', eliminate them */
+    while (origin[len - 1] == '\n') {
+      --len;
+    }
+    str = kev_str_copy_len(origin + 1, len - 1);
   }
   return str;
 }

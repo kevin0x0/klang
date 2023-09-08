@@ -38,7 +38,7 @@ bool kev_lexgenlexer_next(KevLLexer* lex, KevLToken* token) {
   uint8_t next_state = 0;
   FILE* infile = lex->infile;
   uint8_t ch = (uint8_t)fgetc(infile);
-  while ((next_state = table[state][ch]) != KEV_LEXGENLEXER_DEAD && position < sizeof (lex_attr_buffer) / sizeof (uint8_t)) {
+  while ((next_state = table[state][ch]) != KEV_LEXGENLEXER_DEAD && position < sizeof (lex_attr_buffer) / sizeof (uint8_t) - 1) {
     state = next_state;
     lex_attr_buffer[position++] = ch;
     ch = (uint8_t)fgetc(infile);
@@ -50,9 +50,10 @@ bool kev_lexgenlexer_next(KevLLexer* lex, KevLToken* token) {
   lex->currpos += position;
   if (lex->acc_mapping[state] == KEV_LEXGENLEXER_NONACC) {
     token->kind = KEV_LTK_ERR;
-    if (position == 0)
+    if (position == 0) {
       lex->currpos++;
-    fgetc(infile);
+      fgetc(infile);
+    }
     return false;
   }
   token->attr = lex_attr_buffer;
