@@ -12,7 +12,11 @@
 char* kev_get_bin_dir(void) {
   char* buf = NULL;
   size_t size = 64;
+#ifdef _WIN32
   size_t len = 0;
+#else
+  int len = 0;
+#endif
   do {
     free(buf);
     size = size + size / 2;
