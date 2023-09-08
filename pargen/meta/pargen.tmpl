@@ -16,29 +16,64 @@ static char* kev_get_escape_str(const char* str, size_t len);
 
 void kev_plex_simple_id(KevPLexer* lex) {
   KevPToken* token = &lex->currtoken;
-  if (!(token->attr.str = kev_str_copy_len(lex->buf, token->end - token->begin))) {
+  if (!(token->attr.str = kev_str_copy_len((char*)lex->buf, token->end - token->begin))) {
     kev_parser_error_report(stderr, lex->infile, token->begin, "out of memory");
   }
 }
 
 void kev_plex_str_id(KevPLexer* lex) {
   KevPToken* token = &lex->currtoken;
-  if (!(token->attr.str = kev_get_escape_str(lex->buf + 1, token->end - token->begin - 1))) {
+  if (!(token->attr.str = kev_get_escape_str((char*)lex->buf + 1, token->end - token->begin - 1))) {
     kev_parser_error_report(stderr, lex->infile, token->begin, "out of memory");
   }
 }
 
 void kev_plex_str(KevPLexer* lex) {
   KevPToken* token = &lex->currtoken;
-  if (!(token->attr.str = kev_get_escape_str(lex->buf + 1, token->end - token->begin - 1))) {
+  if (!(token->attr.str = kev_get_escape_str((char*)lex->buf + 1, token->end - token->begin - 1))) {
     kev_parser_error_report(stderr, lex->infile, token->begin, "out of memory");
   }
 }
 
 void kev_plex_num(KevPLexer* lex) {
   KevPToken* token = &lex->currtoken;
-  if (!(token->attr.num = strtol(lex->buf, NULL, 10))) {
+  if (!(token->attr.num = strtol((char*)lex->buf, NULL, 10))) {
     kev_parser_error_report(stderr, lex->infile, token->begin, "out of memory");
+  }
+}
+
+void kev_plex_err(KevPLexer* lex) {
+  KevPToken* token = &lex->currtoken;
+  kev_parser_error_report(stderr, lex->infile, token->begin, "lexical error");
+  lex->currpos++;
+  FILE* infile = lex->infile;
+  uint8_t (*table)[256] = lex->table;
+  uint8_t* buf = lex->buf;
+  size_t tokenlen = 0;
+  uint8_t state = lex->start;
+  do {
+    state = lex->start;
+    uint8_t next_state = 0;
+    uint8_t ch = (uint8_t)fgetc(infile);
+    tokenlen = 0;
+    while ((next_state = table[state][ch]) != KEV_PLEX_DEAD && tokenlen < KEV_PLEX_BUF_SIZE) {
+      buf[tokenlen++] = ch;
+      state = next_state;
+      ch = (uint8_t)fgetc(infile);
+    }
+    ungetc(ch, infile);
+    lex->currpos += tokenlen;
+    if (tokenlen == 0) {
+      fgetc(infile);
+      lex->currpos++;
+    }
+  } while (lex->pattern_mapping[state] == KEV_PLEX_NONACC);
+
+  token->begin = lex->currpos - tokenlen;
+  token->end = lex->currpos;
+  token->kind = lex->pattern_mapping[state];
+  if (lex->callbacks[state]) {
+    lex->callbacks[state](lex);
   }
 }
 

@@ -1,12 +1,14 @@
 def declare (KEV_PTK_DECL):
   $decl
 
+comment = $#[^\n\xFF]*
+
 def identifier (KEV_PTK_ID):
   (kev_plex_simple_id)  $[A-Za-z_\-][A-Za-z0-9_\-]*
-  (kev_plex_str_id)     $'([^'\\] | \\.)*'
+  (kev_plex_str_id)     $'([^'\\\xFF] | \\[^\xFF])*'
 
 def string (KEV_PTK_STR):
-  (kev_plex_str)  $"([^"\\] | \\.)*"
+  (kev_plex_str)  $"([^"\\\xFF] | \\[^\xFF])*"
 
 def '(' (KEV_PTK_LP):
   $\(
@@ -38,5 +40,14 @@ def '=' (KEV_PTK_ASSIGN):
 def '%' (KEV_PTK_ENV):
   $%
 
+def blanks (KEV_PTK_BLKS):
+  $([\ \n\t] | [:comment:])+
+
 def number (KEV_PTK_NUM):
   (kev_plex_num) $[0-9]+
+
+def end (KEV_PTK_END):
+  $\xFF
+
+%error-handler = "kev_plex_err
+

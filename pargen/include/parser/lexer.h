@@ -6,6 +6,14 @@
 
 #include <stdio.h>
 
+#define KEV_PLEX_BUF_SIZE   (4096)
+#define KEV_PLEX_DEAD       (255)
+#define KEV_PLEX_NONACC     (-1)
+
+
+struct tagKevPLexer;
+typedef void Callback(struct tagKevPLexer* lex);
+
 typedef union tagKevPTokenAttr {
   int num;
   char* str;
@@ -22,15 +30,17 @@ typedef struct tagKevPLexer {
   FILE* infile;
   size_t currpos; /* current position */
   KevPToken currtoken;
-  char* buf;
+  uint8_t* buf;
+  uint8_t (*table)[256];
+  int* pattern_mapping;
+  uint8_t start;
+  Callback** callbacks;
 } KevPLexer;
-
-typedef void Callback(KevPLexer* lex);
 
 bool kev_pargenlexer_init(KevPLexer* lex,FILE* infile);
 void kev_pargenlexer_destroy(KevPLexer* lex);
  
-bool kev_pargenlexer_next(KevPLexer* lex);
+void kev_pargenlexer_next(KevPLexer* lex);
 const char* kev_pargenlexer_info(int kind);
 
 uint8_t (*kev_lexgen_get_transition_table(void))[256];
