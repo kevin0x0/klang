@@ -13,7 +13,7 @@ KEVFA_LIB_DIR = $(KEVFA_DIR)lib/
 $(BIN_DIR)$(TARGET_LEXGEN_NAME) : $(BIN_DIR)main.o | create_bin_dir
 	$(MAKE) -C $(PS_DIR)
 	$(MAKE) -C $(LG_DIR)
-	$(CC) -o $@ $(BIN_DIR)*.o $(KEVFA_LIB_DIR)libkevfa.a $(UTILS_LIB_DIR)libutils.a
+	$(CC) -o $@ $(BIN_DIR)*.o -L $(KEVFA_LIB_DIR) -lkevfa -L $(UTILS_LIB_DIR) -lutils
 
 $(BIN_DIR)main.o : $(SRC_DIR)main.c | create_bin_dir
 	$(CC) -c -o $@ $< $(CFLAGS) 
@@ -21,7 +21,7 @@ $(BIN_DIR)main.o : $(SRC_DIR)main.c | create_bin_dir
 
 .PHONY: clean create_bin_dir
 clean :
-	rm $(BIN_DIR)*
+	$(RM) $(BIN_DIR)*
 
 create_bin_dir :
 	mkdir -p $(BIN_DIR)

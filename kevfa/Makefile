@@ -76,7 +76,7 @@ $(LIB_DIR)node_list.o : $(LIST_DIR)node_list.c $(LIST_INC_DIR)node_list.h $(INC_
 
 .PHONY: clean craete_lib_dir
 clean :
-	rm $(LIB_DIR)*
+	$(RM) $(LIB_DIR)*
 
 create_lib_dir :
 	mkdir -p $(LIB_DIR)

@@ -13,7 +13,7 @@
 KevFA* kev_regex_parse(const uint8_t* regex, KevStringFaMap* map);
 static inline KevFA* kev_regex_parse_ascii(const char* regex, KevStringFaMap* map);
 uint64_t kev_regex_get_error(void);
-char* kev_regex_get_info(void);
+const char* kev_regex_get_info(void);
 size_t kev_regex_get_pos(void);
 
 static inline KevFA* kev_regex_parse_ascii(const char* regex, KevStringFaMap* map) {

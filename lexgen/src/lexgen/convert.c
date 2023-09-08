@@ -196,7 +196,7 @@ static void kev_lexgen_convert_table(KevPatternBinary* binary_info, KevLParserSt
     kev_throw_error("convert:", "internal error occurred in kev_lexgen_output_table()", NULL);
   }
   if (!binary_info->table) {
-    char* info = NULL;
+    const char* info = NULL;
     if (alphabet_size == 128 || length == 8) {
       info = "failed to generate transition table, try to add:\n"
              "%encoding = \"utf-8\n"

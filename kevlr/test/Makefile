@@ -23,4 +23,4 @@ kevlr_test.exe : kevlr_test.c $(LIB_PATH)libkevlr.a
 
 
 ,PHONY clean:
-	rm *.exe
+	$(RM) *.exe

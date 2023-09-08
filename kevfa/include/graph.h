@@ -5,7 +5,7 @@
 
 struct tagKevGraphEdgeList;
 
-typedef int KevGraphNodeId;
+typedef size_t KevGraphNodeId;
 typedef size_t KevGraphEdgeAttr;
 
 typedef struct tagKevGraphNodeList {

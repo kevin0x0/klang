@@ -1,0 +1,42 @@
+def declare (KEV_PTK_DECL):
+  $decl
+
+def identifier (KEV_PTK_ID):
+  (kev_plex_simple_id)  $[A-Za-z_\-][A-Za-z0-9_\-]*
+  (kev_plex_str_id)     $'([^'\\] | \\.)*'
+
+def string (KEV_PTK_STR):
+  (kev_plex_str)  $"([^"\\] | \\.)*"
+
+def '(' (KEV_PTK_LP):
+  $\(
+
+def ')' (KEV_PTK_RP):
+  $\)
+
+def '[' (KEV_PTK_LBE):
+  $\[
+
+def ']' (KEV_PTK_RBE):
+  $\]
+
+def '{' (KEV_PTK_LBC):
+  $\{
+
+def '}' (KEV_PTK_RBC):
+  $\}
+
+def ':' (KEV_PTK_COLON):
+  $:
+
+def ';' (KEV_PTK_SEMI):
+  $;
+
+def '=' (KEV_PTK_ASSIGN):
+  $=
+
+def '%' (KEV_PTK_ENV):
+  $%
+
+def number (KEV_PTK_NUM):
+  (kev_plex_num) $[0-9]+

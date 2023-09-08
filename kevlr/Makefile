@@ -71,7 +71,7 @@ $(LIB_DIR)item_pool.o : $(OBJP_DIR)item_pool.c $(OBJP_INC_DIR)item_pool.h $(INC_
 
 .PHONY: clean create_lib_dir
 clean :
-	rm $(LIB_DIR)*
+	$(RM) $(LIB_DIR)*
 
 create_lib_dir :
 	mkdir -p $(LIB_DIR)

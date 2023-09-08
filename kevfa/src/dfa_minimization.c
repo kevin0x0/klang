@@ -148,7 +148,7 @@ static KevFA* kev_construct_min_dfa(KevSetCrossList* setlist, KevPartitionUniver
   return min_dfa;
 }
 
-static bool kev_hopcroft_compute_all_targets(KevIntListMap* all_targets, KevPartitionSet* restrict workset, KevGraphNode* states) {
+static bool kev_hopcroft_compute_all_targets(KevIntListMap* all_targets, KevPartitionSet* workset, KevGraphNode* states) {
   for (; states; states = states->next) {
     for (KevGraphEdge* edge = kev_graphnode_get_edges(states); edge; edge = edge->next) {
       if (kev_partition_set_has(workset, edge->node)) {

@@ -68,7 +68,7 @@ $(LIB_DIR)addr_queue.o : $(QUEUE_DIR)addr_queue.c $(QUEUE_INC_DIR)addr_queue.h $
 
 .PHONY: clean create_lib_dir
 clean :
-	rm $(LIB_DIR)*
+	$(RM) $(LIB_DIR)*
 
 create_lib_dir :
 	mkdir -p $(LIB_DIR)

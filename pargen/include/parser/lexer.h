@@ -2,39 +2,41 @@
 #define KEVCC_PARGEN_INCLUDE_PARSER_LEXER_H
 
 #include "utils/include/general/global_def.h"
+#include "pargen/include/parser/partokens.h"
 
 #include <stdio.h>
 
-#define KEV_PTK_DECL    (0)
-#define KEV_PTK_ID      (1)
-#define KEV_PTK_STR     (2)
-#define KEV_PTK_LP      (3)
-#define KEV_PTK_RP      (4)
-#define KEV_PTK_LBE     (5)
-#define KEV_PTK_RBE     (6)
-#define KEV_PTK_LBC     (7)
-#define KEV_PTK_RBC     (8)
-#define KEV_PTK_COLON   (9)
-#define KEV_PTK_SEMI    (10)
-#define KEV_PTK_ASSIGN  (11)
-#define KEV_PTK_ENV     (12)
-
-typedef struct tagKevPLexer {
-  FILE* infile;
-  size_t currpos; /* current position */
-} KevPLexer;
+typedef union tagKevPTokenAttr {
+  int num;
+  char* str;
+} KevPTokenAttr;
 
 typedef struct tagKevPToken {
   int kind;
   size_t begin;
   size_t end;
-  char* attr;
+  KevPTokenAttr attr;
 } KevPToken;
+
+typedef struct tagKevPLexer {
+  FILE* infile;
+  size_t currpos; /* current position */
+  KevPToken currtoken;
+  char* buf;
+} KevPLexer;
+
+typedef void Callback(KevPLexer* lex);
 
 bool kev_pargenlexer_init(KevPLexer* lex,FILE* infile);
 void kev_pargenlexer_destroy(KevPLexer* lex);
  
-bool kev_pargenlexer_next(KevPLexer* lex, KevPToken* token);
-char* kev_pargenlexer_info(int kind);
+bool kev_pargenlexer_next(KevPLexer* lex);
+const char* kev_pargenlexer_info(int kind);
+
+uint8_t (*kev_lexgen_get_transition_table(void))[256];
+int* kev_lexgen_get_pattern_mapping(void);
+size_t kev_lexgen_get_start_state(void);
+Callback** kev_lexgen_get_callbacks(void);
+const char** kev_lexgen_get_info(void);
 
 #endif

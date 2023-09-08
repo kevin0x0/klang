@@ -18,13 +18,13 @@ static void kev_lexgen_set_pre(KevOptions* options);
 /* set value for options after resolve argv */
 static void kev_lexgen_set_post(KevOptions* options);
 /* get a copy of 'str' */
-static char* copy_string(char* str);
+static char* copy_string(const char* str);
 /* get value in a key-value pair */
-static char* kev_get_value(char* arg, char* prefix);
+static const char* kev_get_value(const char* arg, const char* prefix);
 
 void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
   kev_lexgen_set_pre(options);
-  for (size_t i = 1; i < argc; ++i) {
+  for (int i = 1; i < argc; ++i) {
     char* arg = argv[i];
     if (strcmp(arg, "-o") == 0 || strcmp(arg, "--out") == 0) {
       if (++i >= argc)
@@ -66,7 +66,7 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
   kev_lexgen_set_post(options);
 }
 
-static char* copy_string(char* str) {
+static char* copy_string(const char* str) {
   char* ret = (char*)malloc(sizeof (char) * (strlen(str) + 1));
   if (!ret) kev_throw_error("command line parser:", "out of memory", NULL);
   strcpy(ret, str);
@@ -76,7 +76,7 @@ static char* copy_string(char* str) {
 static void kev_lexgen_set_kv_pair(char* arg, KevOptions* options) {
   if (arg[0] != '-')
     kev_throw_error("command line parser:", "not an option: ", arg);
-  char* value = NULL;
+  const char* value = NULL;
   if ((value = kev_get_value(arg, "-l=")) || (value = kev_get_value(arg, "--lang=")) ||
       (value = kev_get_value(arg, "--language="))) {
     free(options->strs[KEV_LEXGEN_LANG_NAME]);
@@ -134,7 +134,7 @@ void kev_lexgen_destroy_options(KevOptions* options) {
     free(options->strs[i]);
 }
 
-static char* kev_get_value(char* arg, char* prefix) {
+static const char* kev_get_value(const char* arg, const char* prefix) {
   size_t len = strlen(prefix);
   if (strncmp(arg, prefix, len) == 0)
     return arg + len;

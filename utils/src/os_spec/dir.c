@@ -19,7 +19,7 @@ char* kev_get_bin_dir(void) {
     buf = (char*)malloc(sizeof (char) * size);
     if (!buf) return NULL;
 #ifdef _WIN32
-  } while ((len = GetModuleFileNameA(NULL, buf, size)) == -1);
+  } while ((len = (size_t)GetModuleFileNameA(NULL, buf, size)) == size);
 #else
   } while ((len = readlink("/proc/self/exe",buf, size)) == -1);
 #endif
@@ -33,12 +33,7 @@ char* kev_get_bin_dir(void) {
   return buf;
 }
 
-char* kev_get_kevcc_dir(void) {
-  exit(EXIT_FAILURE);
-  return NULL;
-}
-
-char* kev_get_relpath(char* from, char* to) {
+char* kev_get_relpath(const char* from, const char* to) {
   size_t i = 0;
   while (from[i] == to[i] && from[i] != '\0')
     i++;
@@ -46,13 +41,13 @@ char* kev_get_relpath(char* from, char* to) {
     continue;
   if (i != 0) ++i;
   size_t dir_depth = 0;
-  for (int j = i; from[j] != '\0'; ++j) {
+  for (size_t j = i; from[j] != '\0'; ++j) {
     if (from[j] == '/' || from[j] == '\\')
       dir_depth++;
   }
   char* relpath = (char*)malloc(sizeof (char) * (dir_depth * 3 + strlen(to) + 1));
   if (!relpath) return NULL;
-  for (int j = 0; j < dir_depth; ++j) {
+  for (size_t j = 0; j < dir_depth; ++j) {
     relpath[j * 3] = '.';
     relpath[j * 3 + 1] = '.';
     relpath[j * 3 + 2] = '/';

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 static uint64_t error_type = KEV_REGEX_ERR_NONE;
-static char* error_info = NULL;
+static const char* error_info = NULL;
 static size_t error_pos = 0;
 
 typedef struct tagKevParser {
@@ -37,7 +37,7 @@ static bool kev_nfa_append(KevFA* dest, KevFA* src);
 static bool kev_char_range(KevFA* nfa, int64_t begin, int64_t end);
 uint8_t* kev_regex_ref_name(KevParser* parser);
 KevFA* kev_get_named_nfa(uint8_t* name, KevStringFaMap* nfa_map);
-static void kev_regex_set_error_info(char* info);
+static void kev_regex_set_error_info(const char* info);
 
 KevFA* kev_regex_parse(const uint8_t* regex, KevStringFaMap* nfa_map) {
   error_type = KEV_REGEX_ERR_NONE;
@@ -124,52 +124,68 @@ static KevFA* kev_regex_concatenation(KevParser* parser, KevStringFaMap* nfa_map
 
 
 static KevFA* kev_regex_unit(KevParser* parser, KevStringFaMap* nfa_map) {
-  static uint8_t illegal[256] = {
-    ['{'] = 1, ['}'] = 1, [')'] = 1, [']'] = 1,
-    ['|'] = 1, ['+'] = 1, ['?'] = 1, ['*'] = 1,
-    ['\0'] = 1
-  };
   uint8_t ch = *parser->current;
   KevFA* nfa = NULL;
-  if (ch == '(') {
-    kev_regex_next_char(parser);
-    nfa = kev_regex_alternation(parser, nfa_map);
-    if (!nfa) return NULL;
-    if (*parser->current != ')') {
+  switch (ch) {
+    case '(': {
+      kev_regex_next_char(parser);
+      nfa = kev_regex_alternation(parser, nfa_map);
+      if (!nfa) return NULL;
+      if (*parser->current != ')') {
+        error_type = KEV_REGEX_ERR_SYNTAX;
+        kev_regex_set_error_info("expected \')\'");
+        kev_fa_delete(nfa);
+        return NULL;
+      }
+      kev_regex_next_char(parser);
+      break;
+    }
+    case '[': {
+      nfa = kev_regex_charset(parser, nfa_map);
+      if (!nfa) return NULL;
+      break;
+    }
+    case '.': {
+      nfa = kev_nfa_create(ch);
+      if (!nfa ||
+          !kev_char_range(nfa, 0, 256)) {
+        kev_fa_delete(nfa);
+        error_type = KEV_REGEX_ERR_GENERATE;
+        kev_regex_set_error_info("failed to create NFA");
+        return NULL;
+      }
+      kev_regex_next_char(parser);
+      break;
+    }
+    case '\\': {
+      nfa = kev_regex_escape_nfa(parser);
+      if (!nfa) return NULL;
+      break;
+    }
+    case '{':
+    case '}':
+    case ']':
+    case '|':
+    case '+':
+    case '?':
+    case '*':
+    case '\0':
+    case ')': {
       error_type = KEV_REGEX_ERR_SYNTAX;
-      kev_regex_set_error_info("expected \')\'");
-      kev_fa_delete(nfa);
+      kev_regex_set_error_info("expected character");
       return NULL;
+      break;
     }
-    kev_regex_next_char(parser);
-  } else if (ch == '[') {
-    nfa = kev_regex_charset(parser, nfa_map);
-    if (!nfa) return NULL;
-  } else if (ch == '.') {
-    nfa = kev_nfa_create(ch);
-    if (!nfa ||
-        !kev_char_range(nfa, 0, 256)) {
-      kev_fa_delete(nfa);
-      error_type = KEV_REGEX_ERR_GENERATE;
-      kev_regex_set_error_info("failed to create NFA");
-      return NULL;
+    default: {
+      nfa = kev_nfa_create(ch);
+      if (!nfa) {
+        error_type = KEV_REGEX_ERR_GENERATE;
+        kev_regex_set_error_info("failed to create NFA");
+        return NULL;
+      }
+      kev_regex_next_char(parser);
+      break;
     }
-    kev_regex_next_char(parser);
-  } else if (illegal[ch]) {
-    error_type = KEV_REGEX_ERR_SYNTAX;
-    kev_regex_set_error_info("expected character");
-    return NULL;
-  } else if (ch == '\\') {
-    nfa = kev_regex_escape_nfa(parser);
-    if (!nfa) return NULL;
-  } else {
-    nfa = kev_nfa_create(ch);
-    if (!nfa) {
-      error_type = KEV_REGEX_ERR_GENERATE;
-      kev_regex_set_error_info("failed to create NFA");
-      return NULL;
-    }
-    kev_regex_next_char(parser);
   }
   kev_regex_post(parser, nfa);
   return nfa;
@@ -253,7 +269,7 @@ static inline KevFA* kev_regex_escape_nfa(KevParser* parser) {
   return nfa;
 }
 
-static void kev_regex_set_error_info(char* info) {
+static void kev_regex_set_error_info(const char* info) {
   error_info = info;
 }
 
@@ -553,7 +569,7 @@ uint64_t kev_regex_get_error(void) {
   return error_type;
 }
 
-char* kev_regex_get_info(void) {
+const char* kev_regex_get_info(void) {
   return error_info;
 }
 

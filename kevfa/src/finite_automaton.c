@@ -127,7 +127,7 @@ void kev_fa_destroy(KevFA* fa) {
 
 KevFA* kev_nfa_create_empty(void) {
   KevFA* fa = kev_fa_pool_allocate();
-  if (!fa) return false;
+  if (!fa) return NULL;
 
   if (!kev_nfa_init_empty(fa)) {
     kev_fa_pool_deallocate(fa);
@@ -138,7 +138,7 @@ KevFA* kev_nfa_create_empty(void) {
 
 KevFA* kev_nfa_create_epsilon(void) {
   KevFA* fa = kev_fa_pool_allocate();
-  if (!fa) return false;
+  if (!fa) return NULL;
 
   if (!kev_nfa_init_epsilon(fa)) {
     kev_fa_pool_deallocate(fa);
@@ -149,7 +149,7 @@ KevFA* kev_nfa_create_epsilon(void) {
 
 KevFA* kev_nfa_create(KevNFAChar character) {
   KevFA* fa = kev_fa_pool_allocate();
-  if (!fa) return false;
+  if (!fa) return NULL;
 
   if (!kev_nfa_init(fa, character)) {
     kev_fa_pool_deallocate(fa);
@@ -160,7 +160,7 @@ KevFA* kev_nfa_create(KevNFAChar character) {
 
 KevFA* kev_fa_create_copy(KevFA* src) {
   KevFA* fa = kev_fa_pool_allocate();
-  if (!fa) return false;
+  if (!fa) return NULL;
 
   if (!kev_fa_init_copy(fa, src)) {
     kev_fa_pool_deallocate(fa);
@@ -171,7 +171,7 @@ KevFA* kev_fa_create_copy(KevFA* src) {
 
 KevFA* kev_fa_create_move(KevFA* src) {
   KevFA* fa = kev_fa_pool_allocate();
-  if (!fa) return false;
+  if (!fa) return NULL;
 
   if (!kev_fa_init_move(fa, src)) {
     kev_fa_pool_deallocate(fa);
@@ -182,7 +182,7 @@ KevFA* kev_fa_create_move(KevFA* src) {
 
 KevFA* kev_fa_create_set(KevGraphNodeList* state_list, KevGraphNode* start, KevGraphNode* accept) {
   KevFA* fa = kev_fa_pool_allocate();
-  if (!fa) return false;
+  if (!fa) return NULL;
 
   if (!kev_fa_init_set(fa, state_list, start, accept)) {
     kev_fa_pool_deallocate(fa);

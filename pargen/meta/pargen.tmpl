@@ -1,0 +1,69 @@
+#include "pargen/include/parser/lexer.h"
+#include "pargen/include/parser/error.h"
+#include "utils/include/string/kev_string.h"
+
+#include <stdlib.h>
+
+
+typedef void Callback(KevPLexer* lex);
+
+$r callback-array $:$;
+
+$r info-array $:$;
+
+static char* kev_get_escape_str(const char* str, size_t len);
+
+
+void kev_plex_simple_id(KevPLexer* lex) {
+  KevPToken* token = &lex->currtoken;
+  if (!(token->attr.str = kev_str_copy_len(lex->buf, token->end - token->begin))) {
+    kev_parser_error_report(stderr, lex->infile, token->begin, "out of memory");
+  }
+}
+
+void kev_plex_str_id(KevPLexer* lex) {
+  KevPToken* token = &lex->currtoken;
+  if (!(token->attr.str = kev_get_escape_str(lex->buf + 1, token->end - token->begin - 1))) {
+    kev_parser_error_report(stderr, lex->infile, token->begin, "out of memory");
+  }
+}
+
+void kev_plex_str(KevPLexer* lex) {
+  KevPToken* token = &lex->currtoken;
+  if (!(token->attr.str = kev_get_escape_str(lex->buf + 1, token->end - token->begin - 1))) {
+    kev_parser_error_report(stderr, lex->infile, token->begin, "out of memory");
+  }
+}
+
+void kev_plex_num(KevPLexer* lex) {
+  KevPToken* token = &lex->currtoken;
+  if (!(token->attr.num = strtol(lex->buf, NULL, 10))) {
+    kev_parser_error_report(stderr, lex->infile, token->begin, "out of memory");
+  }
+}
+
+static char* kev_get_escape_str(const char* origin, size_t len) {
+  char* str = NULL;
+  str = (char*)malloc(sizeof (char) * (len + 1));
+  size_t i = 0;
+  if (!str) return NULL;
+  const char* endptr = origin + len;
+  while (origin != endptr) {
+    if (*origin == '\\') {
+      switch (*++origin) {
+        case 'n': str[i++] = '\n'; break;
+        case 'r': str[i++] = '\r'; break;
+        case 't': str[i++] = '\t'; break;
+        case '\'': str[i++] = '\''; break;
+        case '\"': str[i++] = '\"'; break;
+        case '\\': str[i++] = '\\'; break;
+        default: str[i++] = *origin; break;
+      }
+    } else {
+      str[i++] = *origin;
+    }
+    origin++;
+  }
+  str[i] = '\0';
+  return str;
+}

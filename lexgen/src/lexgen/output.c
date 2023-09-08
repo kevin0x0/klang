@@ -121,7 +121,7 @@ static void kev_lexgen_output_table_rust(FILE* output, KevPatternBinary* binary_
   size_t state_length = binary_info->state_length;
   size_t charset_size = binary_info->charset_size;
   size_t state_no = binary_info->dfa_state_no;
-  char* type = state_length == 8 ? "uint8_t" : "uint16_t";
+  const char* type = state_length == 8 ? "uint8_t" : "uint16_t";
   void* table =binary_info->table;
   /* output transition table */
   fprintf(output, "static TRANSITION : [[%s;%d];%d] = [\n", type, (int)charset_size, (int)state_no);
@@ -203,7 +203,7 @@ static void kev_lexgen_output_table_c_cpp(FILE* output, KevPatternBinary* binary
   size_t state_length = binary_info->state_length;
   size_t charset_size = binary_info->charset_size;
   size_t state_no = binary_info->dfa_state_no;
-  char* type = state_length == 8 ? "uint8_t" : "uint16_t";
+  const char* type = state_length == 8 ? "uint8_t" : "uint16_t";
   void* table =binary_info->table;
   fputs( "#include <stdint.h>\n", output);
   fputs( "#include <stddef.h>\n", output);
@@ -341,7 +341,7 @@ static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info) {
   for (size_t i = 0; i < binary_info->pattern_no; ++i) {
     size_t arrlen = kev_addrarray_size(macros[i]);
     for (size_t j = 0; j < arrlen; ++j) {
-      char* macro_name = kev_addrarray_visit(macros[i], j);
+      const char* macro_name = (const char*)kev_addrarray_visit(macros[i], j);
       buflen += strlen(macro_name) + 22 + sizeof (macro_ids[0]) * 8 / 2; /* log(10, 2) < 0.5, * 0.5 -> / 2 */
     }
   }
@@ -353,7 +353,7 @@ static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info) {
   for (size_t i = 0; i < binary_info->pattern_no; ++i) {
     size_t arrlen = kev_addrarray_size(macros[i]);
     for (size_t j = 0; j < arrlen; ++j) {
-      char* macro_name = kev_addrarray_visit(macros[i], j);
+      const char* macro_name = (const char*)kev_addrarray_visit(macros[i], j);
       bufpos += sprintf(bufpos, "#define ");
       bufpos += sprintf(bufpos, "%s (%d)\n", macro_name, (int)macro_ids[i]);
     }
