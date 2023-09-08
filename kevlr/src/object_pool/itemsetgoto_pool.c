@@ -9,11 +9,14 @@ union KevItemSetGotoPool {
 
 static union KevItemSetGotoPool* itemsetgoto_pool = NULL;
 
-inline KevItemSetGoto* kev_itemsetgoto_pool_acquire(void) {
+static inline KevItemSetGoto* kev_itemsetgoto_pool_acquire(void);
+
+
+static inline KevItemSetGoto* kev_itemsetgoto_pool_acquire(void) {
   return (KevItemSetGoto*)malloc(sizeof (union KevItemSetGotoPool));
 }
 
-inline KevItemSetGoto* kev_itemsetgoto_pool_allocate(void) {
+KevItemSetGoto* kev_itemsetgoto_pool_allocate(void) {
   if (itemsetgoto_pool) {
     KevItemSetGoto* retval = &itemsetgoto_pool->itemsetgoto;
     itemsetgoto_pool = itemsetgoto_pool->next;
@@ -23,7 +26,7 @@ inline KevItemSetGoto* kev_itemsetgoto_pool_allocate(void) {
   }
 }
 
-inline void kev_itemsetgoto_pool_deallocate(KevItemSetGoto* itemsetgoto) {
+void kev_itemsetgoto_pool_deallocate(KevItemSetGoto* itemsetgoto) {
   if (itemsetgoto) {
     union KevItemSetGotoPool* freed_node = (union KevItemSetGotoPool*)itemsetgoto;
     freed_node->next = itemsetgoto_pool;

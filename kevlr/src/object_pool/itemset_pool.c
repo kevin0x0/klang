@@ -9,11 +9,14 @@ union KevItemSetPool {
 
 static union KevItemSetPool* itemset_pool = NULL;
 
-inline KevItemSet* kev_itemset_pool_acquire(void) {
+static inline KevItemSet* kev_itemset_pool_acquire(void);
+
+
+static inline KevItemSet* kev_itemset_pool_acquire(void) {
   return (KevItemSet*)malloc(sizeof (union KevItemSetPool));
 }
 
-inline KevItemSet* kev_itemset_pool_allocate(void) {
+KevItemSet* kev_itemset_pool_allocate(void) {
   if (itemset_pool) {
     KevItemSet* retval = &itemset_pool->itemset;
     itemset_pool = itemset_pool->next;
@@ -23,7 +26,7 @@ inline KevItemSet* kev_itemset_pool_allocate(void) {
   }
 }
 
-inline void kev_itemset_pool_deallocate(KevItemSet* itemset) {
+void kev_itemset_pool_deallocate(KevItemSet* itemset) {
   if (itemset) {
     union KevItemSetPool* freed_node = (union KevItemSetPool*)itemset;
     freed_node->next = itemset_pool;

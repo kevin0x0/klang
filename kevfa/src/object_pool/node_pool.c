@@ -9,11 +9,14 @@ union KevGraphNodePool {
 
 static union KevGraphNodePool* graph_node_pool = NULL;
 
-inline KevGraphNode* kev_graph_node_pool_acquire(void) {
+static inline KevGraphNode* kev_graph_node_pool_acquire(void);
+
+
+static inline KevGraphNode* kev_graph_node_pool_acquire(void) {
   return (KevGraphNode*)malloc(sizeof (union KevGraphNodePool));
 }
 
-inline KevGraphNode* kev_graph_node_pool_allocate(void) {
+KevGraphNode* kev_graph_node_pool_allocate(void) {
   if (graph_node_pool) {
     KevGraphNode* retval = &graph_node_pool->graph_node;
     graph_node_pool = graph_node_pool->next;
@@ -23,7 +26,7 @@ inline KevGraphNode* kev_graph_node_pool_allocate(void) {
   }
 }
 
-inline void kev_graph_node_pool_deallocate(KevGraphNode* graph_node) {
+void kev_graph_node_pool_deallocate(KevGraphNode* graph_node) {
   if (graph_node) {
     union KevGraphNodePool* freed_node = (union KevGraphNodePool*)graph_node;
     freed_node->next = graph_node_pool;

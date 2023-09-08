@@ -120,7 +120,7 @@ bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBit
   }
 
   for (size_t i = 0; i < kev_addrarray_size(symbols); ++i) {
-    KevSymbol* head = kev_addrarray_visit(symbols, i);
+    KevSymbol* head = (KevSymbol*)kev_addrarray_visit(symbols, i);
     size_t head_index = head->tmp_id;
     for (KevRuleNode* node = head->rules; node; node = node->next) {
       KevRule* rule = node->rule;

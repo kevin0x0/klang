@@ -40,7 +40,7 @@ void kev_addrarray_delete(KevAddrArray* array) {
   free(array);
 }
 
-inline bool kev_addrarray_expand(KevAddrArray* array) {
+bool kev_addrarray_expand(KevAddrArray* array) {
   size_t new_size = kev_addrarray_size(array) * 2;
   void** new_array = (void**)realloc(array->begin, sizeof (void*) * new_size);
   if (!new_array) return false;

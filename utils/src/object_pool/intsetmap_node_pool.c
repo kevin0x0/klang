@@ -9,11 +9,14 @@ union KevIntSetMapNodePool {
 
 static union KevIntSetMapNodePool* intsetmap_node_pool = NULL;
 
-inline KevIntSetMapNode* kev_intsetmap_node_pool_acquire(void) {
+static inline KevIntSetMapNode* kev_intsetmap_node_pool_acquire(void);
+
+
+static inline KevIntSetMapNode* kev_intsetmap_node_pool_acquire(void) {
   return (KevIntSetMapNode*)malloc(sizeof (union KevIntSetMapNodePool));
 }
 
-inline KevIntSetMapNode* kev_intsetmap_node_pool_allocate(void) {
+KevIntSetMapNode* kev_intsetmap_node_pool_allocate(void) {
   if (intsetmap_node_pool) {
     KevIntSetMapNode* retval = &intsetmap_node_pool->intsetmap_node;
     intsetmap_node_pool = intsetmap_node_pool->next;
@@ -23,7 +26,7 @@ inline KevIntSetMapNode* kev_intsetmap_node_pool_allocate(void) {
   }
 }
 
-inline void kev_intsetmap_node_pool_deallocate(KevIntSetMapNode* intsetmap_node) {
+void kev_intsetmap_node_pool_deallocate(KevIntSetMapNode* intsetmap_node) {
   if (intsetmap_node) {
     union KevIntSetMapNodePool* freed_node = (union KevIntSetMapNodePool*)intsetmap_node;
     freed_node->next = intsetmap_node_pool;

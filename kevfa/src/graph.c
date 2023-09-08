@@ -15,7 +15,7 @@ static void kev_graph_edgelist_delete(KevGraphEdgeList* edges) {
   }
 }
 
-inline bool kev_graph_init(KevGraph* graph, KevGraphNodeList* nodelist) {
+bool kev_graph_init(KevGraph* graph, KevGraphNodeList* nodelist) {
   if (!graph) return false;
 
   graph->head = nodelist;
@@ -78,7 +78,7 @@ bool kev_graph_merge(KevGraph* dest, KevGraph* src) {
   return true;
 }
 
-inline KevGraphNode* kev_graphnode_create(KevGraphNodeId node_id) {
+KevGraphNode* kev_graphnode_create(KevGraphNodeId node_id) {
   KevGraphNode* node = kev_graph_node_pool_allocate();
   if (node) {
     node->id = node_id;
@@ -89,7 +89,7 @@ inline KevGraphNode* kev_graphnode_create(KevGraphNodeId node_id) {
   return node;
 }
 
-inline void kev_graphnode_delete(KevGraphNode* node) {
+void kev_graphnode_delete(KevGraphNode* node) {
   if (!node) return;
   kev_graph_edgelist_delete(node->edges);
   kev_graph_edgelist_delete(node->epsilons);
@@ -115,7 +115,7 @@ bool kev_graphnode_connect_epsilon(KevGraphNode* from, KevGraphNode* to) {
   return true;
 }
 
-inline static void kev_nodelist_free(KevGraphNodeList* lst) {
+static inline void kev_nodelist_free(KevGraphNodeList* lst) {
   while (lst) {
     KevGraphNodeList* tmp = lst->next;
     kev_graph_node_pool_deallocate(lst);

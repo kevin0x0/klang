@@ -222,7 +222,7 @@ KevSymbol** kev_lr_util_get_symbol_array(KevSymbol* start, KevSymbol** ends, siz
   size_t curr = 0;
 
   while (curr != kev_addrarray_size(&array)) {
-    KevSymbol* symbol = kev_addrarray_visit(&array, curr++);
+    KevSymbol* symbol = (KevSymbol*)kev_addrarray_visit(&array, curr++);
     KevRuleNode* rule = symbol->rules;
     for (; rule; rule = rule->next) {
       KevSymbol** rule_body = rule->rule->body;
@@ -279,7 +279,7 @@ void kev_lr_util_symbol_array_partition(KevSymbol** array, size_t size) {
 KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts, size_t symbol_no, size_t terminal_no, KevSymbol* start, KevSymbol** ends, size_t ends_no) {
   KevBitSet curr_follow;
   if (!kev_bitset_init(&curr_follow, terminal_no + 1))
-    return false;
+    return NULL;
   KevBitSet** follows = (KevBitSet**)malloc(sizeof (KevBitSet*) * symbol_no);
   if (!follows) {
     kev_bitset_destroy(&curr_follow);

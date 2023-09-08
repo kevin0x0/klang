@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
 
   clock_t t = clock();
   for (size_t i = 0; i < 1000; ++i) {
-    KevLRCollection* collec = kev_lr_collection_create_lalr(E, &end, 1);
+    KevLRCollection* collec = kev_lr_collection_create_lr1(E, &end, 1);
     //kev_lr_print_collection(stdout, collec, true);
 
     //KevLRTable* table = kev_lr_table_create(collec, NULL);

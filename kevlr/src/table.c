@@ -105,7 +105,7 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
   /* for non-kernel item */
   size_t closure_size = kev_addrarray_size(closure_symbols);
   for (size_t i = 0; i < closure_size; ++i) {
-    KevSymbol* head = kev_addrarray_visit(closure_symbols, i);
+    KevSymbol* head = (KevSymbol*)kev_addrarray_visit(closure_symbols, i);
     KevBitSet* la = las[head->tmp_id];
     for (KevRuleNode* node = head->rules; node; node = node->next) {
       KevRule* rule = node->rule;

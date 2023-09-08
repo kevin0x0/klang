@@ -26,8 +26,8 @@ typedef struct tagKevLALRCollection {
 static bool kev_lalr_get_all_itemsets(KevItemSet* start_iset, KevLALRCollection* collec);
 static bool kev_lalr_do_lookahead_propagation(KevLookaheadPropagation* propagation);
 static bool kev_lalr_merge_gotos(KevItemSetSet* iset_set, KevAddrArray* itemset_array, KevLALRCollection* collec, KevItemSet* itemset);
-static bool kev_lalr_merge_itemset(KevItemSet* new, KevItemSet* old, KevItemSet* itemset, KevLALRCollection* collec);
-static bool kev_lalr_add_new_itemset(KevItemSet* new, KevItemSetSet* iset_set, KevItemSet* itemset, KevLALRCollection* collec);
+static bool kev_lalr_merge_itemset(KevItemSet* new_itemset, KevItemSet* old_itemset, KevItemSet* itemset, KevLALRCollection* collec);
+static bool kev_lalr_add_new_itemset(KevItemSet* new_itemset, KevItemSetSet* iset_set, KevItemSet* itemset, KevLALRCollection* collec);
 static bool kev_lalr_get_itemset(KevItemSet* itemset, KevItemSetClosure* closure, KevBitSet** firsts, size_t epsilon, KevGotoMap* goto_container);
 /* initialize lookahead for kernel items in itemset */
 static inline bool kev_lalr_init_kitem_la(KevItemSet* itemset, size_t epsilon);
@@ -146,7 +146,7 @@ static bool kev_lalr_get_all_itemsets(KevItemSet* start_iset, KevLALRCollection*
   KevBitSet** firsts = collec->firsts;
   size_t terminal_no = collec->terminal_no;
   for (size_t i = 0; i < kev_addrarray_size(itemset_array); ++i) {
-    KevItemSet* itemset = kev_addrarray_visit(itemset_array, i);
+    KevItemSet* itemset = (KevItemSet*)kev_addrarray_visit(itemset_array, i);
     if (!kev_lalr_get_itemset(itemset, &closure, firsts, terminal_no, goto_container)) {
       kev_lalr_destroy_itemset_array(itemset_array);
       kev_gotomap_delete(goto_container);
@@ -254,10 +254,10 @@ static bool kev_lalr_itemset_equal(KevItemSet* itemset1, KevItemSet* itemset2) {
   return !(kitem1 || kitem2);
 }
 
-static bool kev_lalr_merge_itemset(KevItemSet* new, KevItemSet* old, KevItemSet* itemset, KevLALRCollection* collec) {
+static bool kev_lalr_merge_itemset(KevItemSet* new_itemset, KevItemSet* old_itemset, KevItemSet* itemset, KevLALRCollection* collec) {
   KevLookaheadPropagation* propagation = collec->propagation;
-  KevItem* new_kitem = new->items;
-  KevItem* old_kitem = old->items;
+  KevItem* new_kitem = new_itemset->items;
+  KevItem* old_kitem = old_itemset->items;
   size_t epsilon = collec->terminal_no;
   for (;old_kitem; old_kitem = old_kitem->next, new_kitem = new_kitem->next) {
     KevItem* kitem_in_itemset = itemset->items;
@@ -282,9 +282,9 @@ static bool kev_lalr_merge_itemset(KevItemSet* new, KevItemSet* old, KevItemSet*
   return true;
 }
 
-static bool kev_lalr_add_new_itemset(KevItemSet* new, KevItemSetSet* iset_set, KevItemSet* itemset, KevLALRCollection* collec) {
+static bool kev_lalr_add_new_itemset(KevItemSet* new_itemset, KevItemSetSet* iset_set, KevItemSet* itemset, KevLALRCollection* collec) {
   KevLookaheadPropagation* propagation = collec->propagation;
-  for (KevItem* kitem = new->items; kitem; kitem = kitem->next) {
+  for (KevItem* kitem = new_itemset->items; kitem; kitem = kitem->next) {
     KevItem* kitem_in_itemset = itemset->items;
     KevBitSet* la = kitem->lookahead;
     for (size_t i = collec->terminal_no + 1; kitem_in_itemset; kitem_in_itemset = kitem_in_itemset->next, ++i) {
@@ -301,7 +301,7 @@ static bool kev_lalr_add_new_itemset(KevItemSet* new, KevItemSetSet* iset_set, K
     }
   }
   collec->propagation = propagation;
-  return kev_itemsetset_insert(iset_set, new);
+  return kev_itemsetset_insert(iset_set, new_itemset);
 }
 
 static inline KevLookaheadPropagation* kev_lalr_propagation_create(KevBitSet* from, KevBitSet* to) {

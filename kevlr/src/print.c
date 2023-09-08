@@ -34,7 +34,7 @@ void kev_lr_print_itemset_with_closure(FILE* out, KevLRCollection* collec, KevIt
   KevAddrArray* symbols = closure->symbols;
   KevBitSet** las = closure->lookaheads;
   for (size_t i = 0; i < kev_addrarray_size(symbols); ++i) {
-    KevSymbol* head = kev_addrarray_visit(symbols, i);
+    KevSymbol* head = (KevSymbol*)kev_addrarray_visit(symbols, i);
     size_t head_index = head->tmp_id;
     for (KevRuleNode* node = head->rules; node; node = node->next) {
       KevRule* rule = node->rule;
@@ -60,7 +60,7 @@ bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemse
   KevAddrArray* symbols = closure->symbols;
   KevBitSet** las = closure->lookaheads;
   for (size_t i = 0; i < kev_addrarray_size(symbols); ++i) {
-    KevSymbol* head = kev_addrarray_visit(symbols, i);
+    KevSymbol* head = (KevSymbol*)kev_addrarray_visit(symbols, i);
     size_t head_index = head->tmp_id;
     for (KevRuleNode* node = head->rules; node; node = node->next) {
       KevRule* rule = node->rule;
@@ -226,7 +226,7 @@ void kev_lr_print_action_table(FILE* out, KevLRTable* table) {
   for (size_t i = 0; i < table->itemset_no; ++i) {
     fprintf(out, num_format, (int)i);
     for (size_t j = 0; j < table->table_symbol_no; ++j) {
-      char* action = NULL;
+      const char* action = NULL;
       switch (table->entries[i][j].action) {
         case KEV_LR_ACTION_ACC: action = "ACC"; break;
         case KEV_LR_ACTION_RED: action = "RED"; break;

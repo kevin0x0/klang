@@ -9,11 +9,14 @@ union KevIntListMapNodePool {
 
 static union KevIntListMapNodePool* intlistmap_node_pool = NULL;
 
-inline KevIntListMapNode* kev_intlistmap_node_pool_acquire(void) {
+static inline KevIntListMapNode* kev_intlistmap_node_pool_acquire(void);
+
+
+static inline KevIntListMapNode* kev_intlistmap_node_pool_acquire(void) {
   return (KevIntListMapNode*)malloc(sizeof (union KevIntListMapNodePool));
 }
 
-inline KevIntListMapNode* kev_intlistmap_node_pool_allocate(void) {
+KevIntListMapNode* kev_intlistmap_node_pool_allocate(void) {
   if (intlistmap_node_pool) {
     KevIntListMapNode* retval = &intlistmap_node_pool->intlistmap_node;
     intlistmap_node_pool = intlistmap_node_pool->next;
@@ -23,7 +26,7 @@ inline KevIntListMapNode* kev_intlistmap_node_pool_allocate(void) {
   }
 }
 
-inline void kev_intlistmap_node_pool_deallocate(KevIntListMapNode* intlistmap_node) {
+void kev_intlistmap_node_pool_deallocate(KevIntListMapNode* intlistmap_node) {
   if (intlistmap_node) {
     union KevIntListMapNodePool* freed_node = (union KevIntListMapNodePool*)intlistmap_node;
     freed_node->next = intlistmap_node_pool;

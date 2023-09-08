@@ -26,7 +26,7 @@ void kev_setarray_destroy(KevSetArray* array) {
   }
 }
 
-inline bool kev_setarray_expand(KevSetArray* array) {
+bool kev_setarray_expand(KevSetArray* array) {
   size_t new_size = kev_setarray_size(array) * 2;
   KevBitSet** new_array = (KevBitSet**)realloc(array->begin, sizeof (KevBitSet*) * new_size);
   if (!new_array) return false;

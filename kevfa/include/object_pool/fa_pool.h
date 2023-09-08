@@ -3,7 +3,6 @@
 
 #include "kevfa/include/finite_automaton.h"
 
-KevFA* kev_fa_pool_acquire(void);
 KevFA* kev_fa_pool_allocate(void);
 void kev_fa_pool_deallocate(KevFA* fa);
 void kev_fa_pool_free(void);

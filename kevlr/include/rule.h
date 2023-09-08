@@ -6,7 +6,7 @@
 #define KEV_LR_SYMBOL_TERMINAL    (0)
 #define KEV_LR_SYMBOL_NONTERMINAL (1)
 
-typedef int64_t KevSymbolID;
+typedef size_t KevSymbolID;
 struct tagKevRule;
 struct tagKevRuleNode;
 

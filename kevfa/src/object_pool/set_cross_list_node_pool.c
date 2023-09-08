@@ -9,11 +9,13 @@ union KevSetCrossListNodePool {
 
 static union KevSetCrossListNodePool* set_cross_list_node_pool = NULL;
 
-inline KevSetCrossListNode* kev_set_cross_list_node_pool_acquire(void) {
+static inline KevSetCrossListNode* kev_set_cross_list_node_pool_acquire(void);
+
+static inline KevSetCrossListNode* kev_set_cross_list_node_pool_acquire(void) {
   return (KevSetCrossListNode*)malloc(sizeof (union KevSetCrossListNodePool));
 }
 
-inline KevSetCrossListNode* kev_set_cross_list_node_pool_allocate(void) {
+KevSetCrossListNode* kev_set_cross_list_node_pool_allocate(void) {
   if (set_cross_list_node_pool) {
     KevSetCrossListNode* retval = &set_cross_list_node_pool->set_cross_list_node;
     set_cross_list_node_pool = set_cross_list_node_pool->next;
@@ -23,7 +25,7 @@ inline KevSetCrossListNode* kev_set_cross_list_node_pool_allocate(void) {
   }
 }
 
-inline void kev_set_cross_list_node_pool_deallocate(KevSetCrossListNode* set_cross_list_node) {
+void kev_set_cross_list_node_pool_deallocate(KevSetCrossListNode* set_cross_list_node) {
   if (set_cross_list_node) {
     union KevSetCrossListNodePool* freed_node = (union KevSetCrossListNodePool*)set_cross_list_node;
     freed_node->next = set_cross_list_node_pool;

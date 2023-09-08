@@ -9,11 +9,14 @@ union KevGraphEdgePool {
 
 static union KevGraphEdgePool* graph_edge_pool = NULL;
 
-inline KevGraphEdge* kev_graph_edge_pool_acquire(void) {
+static inline KevGraphEdge* kev_graph_edge_pool_acquire(void);
+
+
+static inline KevGraphEdge* kev_graph_edge_pool_acquire(void) {
   return (KevGraphEdge*)malloc(sizeof (union KevGraphEdgePool));
 }
 
-inline KevGraphEdge* kev_graph_edge_pool_allocate(void) {
+KevGraphEdge* kev_graph_edge_pool_allocate(void) {
   if (graph_edge_pool) {
     KevGraphEdge* retval = &graph_edge_pool->graph_edge;
     graph_edge_pool = graph_edge_pool->next;
@@ -23,7 +26,7 @@ inline KevGraphEdge* kev_graph_edge_pool_allocate(void) {
   }
 }
 
-inline void kev_graph_edge_pool_deallocate(KevGraphEdge* graph_edge) {
+void kev_graph_edge_pool_deallocate(KevGraphEdge* graph_edge) {
   if (graph_edge) {
     union KevGraphEdgePool* freed_node = (union KevGraphEdgePool*)graph_edge;
     freed_node->next = graph_edge_pool;

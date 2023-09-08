@@ -126,7 +126,7 @@ static bool kev_slr_get_all_itemsets(KevItemSet* start_iset, KevSLRCollection* c
   KevBitSet** firsts = collec->firsts;
   size_t terminal_no = collec->terminal_no;
   for (size_t i = 0; i < kev_addrarray_size(itemset_array); ++i) {
-    KevItemSet* itemset = kev_addrarray_visit(itemset_array, i);
+    KevItemSet* itemset = (KevItemSet*)kev_addrarray_visit(itemset_array, i);
     if (!kev_slr_get_itemset(itemset, &closure, firsts, collec->follows, terminal_no, goto_container)) {
       kev_slr_destroy_itemset_array(itemset_array);
       kev_gotomap_delete(goto_container);

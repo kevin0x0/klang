@@ -9,11 +9,14 @@ union KevFAPool {
 
 static union KevFAPool* fa_pool = NULL;
 
-inline KevFA* kev_fa_pool_acquire(void) {
+static inline KevFA* kev_fa_pool_acquire(void);
+
+
+static inline KevFA* kev_fa_pool_acquire(void) {
   return (KevFA*)malloc(sizeof (union KevFAPool));
 }
 
-inline KevFA* kev_fa_pool_allocate(void) {
+KevFA* kev_fa_pool_allocate(void) {
   if (fa_pool) {
     KevFA* retval = &fa_pool->fa;
     fa_pool = fa_pool->next;
@@ -23,7 +26,7 @@ inline KevFA* kev_fa_pool_allocate(void) {
   }
 }
 
-inline void kev_fa_pool_deallocate(KevFA* fa) {
+void kev_fa_pool_deallocate(KevFA* fa) {
   if (fa) {
     union KevFAPool* freed_node = (union KevFAPool*)fa;
     freed_node->next = fa_pool;

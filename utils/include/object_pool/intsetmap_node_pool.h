@@ -3,7 +3,6 @@
 
 #include "utils/include/hashmap/intset_map.h"
 
-KevIntSetMapNode* kev_intsetmap_node_pool_acquire(void);
 KevIntSetMapNode* kev_intsetmap_node_pool_allocate(void);
 void kev_intsetmap_node_pool_deallocate(KevIntSetMapNode* intsetmap_node);
 void kev_intsetmap_node_pool_free(void);

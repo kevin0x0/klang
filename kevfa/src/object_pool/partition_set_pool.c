@@ -9,11 +9,14 @@ union KevPartitionSetPool {
 
 static union KevPartitionSetPool* partition_set_pool = NULL;
 
-inline KevPartitionSet* kev_partition_set_pool_acquire(void) {
+static inline KevPartitionSet* kev_partition_set_pool_acquire(void);
+
+
+static inline KevPartitionSet* kev_partition_set_pool_acquire(void) {
   return (KevPartitionSet*)malloc(sizeof (union KevPartitionSetPool));
 }
 
-inline KevPartitionSet* kev_partition_set_pool_allocate(void) {
+KevPartitionSet* kev_partition_set_pool_allocate(void) {
   if (partition_set_pool) {
     KevPartitionSet* retval = &partition_set_pool->partition_set;
     partition_set_pool = partition_set_pool->next;
@@ -23,7 +26,7 @@ inline KevPartitionSet* kev_partition_set_pool_allocate(void) {
   }
 }
 
-inline void kev_partition_set_pool_deallocate(KevPartitionSet* partition_set) {
+void kev_partition_set_pool_deallocate(KevPartitionSet* partition_set) {
   if (partition_set) {
     union KevPartitionSetPool* freed_node = (union KevPartitionSetPool*)partition_set;
     freed_node->next = partition_set_pool;
