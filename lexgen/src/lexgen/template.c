@@ -62,14 +62,13 @@ static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* env_var
   char buffer[1024];
   int ch = kev_template_read_id(tmpl, buffer, 1024);
   KevStringMapNode* strnode = kev_strmap_search(env_var, buffer);
-  KevFuncMapNode* funcnode = NULL;
+  KevFuncObject* funcobj = NULL;
   if (strnode) {
     fputs(strnode->value, output);
   } else {
-    funcnode = kev_funcmap_search(funcs, buffer);
-    if (funcnode) {
-      KevFuncObject* funcobj = (KevFuncObject*)funcnode->value;
-      ((void (*)(FILE*, void*))funcobj->func)(output, funcobj->p_object);
+    funcobj = kev_funcmap_search(funcs, buffer);
+    if (funcobj) {
+      ((void (*)(FILE*, void*))funcobj->func)(output, funcobj->object);
     }
   }
   while (ch == ' ' || ch == '\t' || ch == '\n')
@@ -85,7 +84,7 @@ static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* env_var
     buffer[2] = '\0';
     kev_throw_error("template: ", "unexpected ", buffer);
   }
-  if (strnode || funcnode)
+  if (strnode || funcobj)
     kev_template_convert_plain_no_output(tmpl);
   else
     kev_template_convert_plain(output, tmpl, env_var, funcs);

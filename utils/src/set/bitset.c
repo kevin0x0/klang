@@ -103,6 +103,7 @@ KevBitSet* kev_bitset_create_copy(KevBitSet* src) {
 }
 
 void kev_bitset_delete(KevBitSet* bitset) {
+  if (!bitset) return;
   free(bitset->bits);
   free(bitset);
 }

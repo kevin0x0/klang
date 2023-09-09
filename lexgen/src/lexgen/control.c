@@ -77,27 +77,27 @@ static KevFuncMap* kev_lexgen_control_get_funcmap(KevPatternBinary* binary_info,
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "callback-array",
-      func_group->output_callback, binary_info)) {
+      (void*)func_group->output_callback, binary_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "info-array",
-      func_group->output_info, binary_info)) {
+      (void*)func_group->output_info, binary_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "macro-definition",
-      func_group->output_macro, binary_info)) {
+      (void*)func_group->output_macro, binary_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "transition-table",
-      func_group->output_table, binary_info)) {
+      (void*)func_group->output_table, binary_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "pattern-mapping",
-      func_group->output_pattern_mapping, binary_info)) {
+      (void*)func_group->output_pattern_mapping, binary_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "start-state",
-      func_group->output_start, binary_info)) {
+      (void*)func_group->output_start, binary_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   return funcs;

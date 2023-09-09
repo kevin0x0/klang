@@ -23,7 +23,7 @@ GEN_INC_DIR = $(INC_DIR)general/
 
 
 
-$(LIB_DIR)libutils.a : $(LIB_DIR)dir.o $(LIB_DIR)intsetmap_node_pool.o $(LIB_DIR)intset_map.o $(LIB_DIR)setint_map.o $(LIB_DIR)str_map.o $(LIB_DIR)address_map.o $(LIB_DIR)bitset.o $(LIB_DIR)hashset.o $(LIB_DIR)set_array.o $(LIB_DIR)int_queue.o $(LIB_DIR)addr_queue.o $(LIB_DIR)addr_array.o $(LIB_DIR)kev_string.o | create_lib_dir
+$(LIB_DIR)libutils.a : $(LIB_DIR)dir.o $(LIB_DIR)intsetmap_node_pool.o $(LIB_DIR)intset_map.o $(LIB_DIR)setint_map.o $(LIB_DIR)str_map.o $(LIB_DIR)strx_map.o $(LIB_DIR)func_map.o $(LIB_DIR)address_map.o $(LIB_DIR)bitset.o $(LIB_DIR)hashset.o $(LIB_DIR)set_array.o $(LIB_DIR)int_queue.o $(LIB_DIR)addr_queue.o $(LIB_DIR)addr_array.o $(LIB_DIR)kev_string.o | create_lib_dir
 	$(AR) $@ $^
 
 
@@ -46,6 +46,12 @@ $(LIB_DIR)setint_map.o : $(HMAP_DIR)setint_map.c $(HMAP_INC_DIR)setint_map.h $(S
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(LIB_DIR)str_map.o : $(HMAP_DIR)str_map.c $(HMAP_INC_DIR)str_map.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)strx_map.o : $(HMAP_DIR)strx_map.c $(HMAP_INC_DIR)strx_map.h $(STR_INC_DIR)kev_string.h $(GEN_INC_DIR)global_def.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)func_map.o : $(HMAP_DIR)func_map.c $(HMAP_INC_DIR)func_map.h $(HMAP_INC_DIR)strx_map.h $(STR_INC_DIR)kev_string.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(LIB_DIR)bitset.o : $(SET_DIR)bitset.c $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h | create_lib_dir
