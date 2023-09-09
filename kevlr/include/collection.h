@@ -26,9 +26,9 @@ void kev_lr_collection_delete(KevLRCollection* collec);
 static inline KevItemSet* kev_lr_collection_get_itemset_by_index(KevLRCollection* collec, size_t index);
 static inline KevBitSet* kev_lr_collection_get_firstset_by_index(KevLRCollection* collec, size_t index);
 static inline size_t kev_lr_collection_get_itemset_no(KevLRCollection* collec);
-/* A augmented grammar nonterminal symbol is included */
+/* An augmented grammar nonterminal symbol is included */
 static inline size_t kev_lr_collection_get_symbol_no(KevLRCollection* collec);
-/* A augmented grammar nonterminal symbol is excluded */
+/* An augmented grammar nonterminal symbol is excluded */
 static inline size_t kev_lr_collection_get_user_symbol_no(KevLRCollection* collec);
 static inline size_t kev_lr_collection_get_terminal_no(KevLRCollection* collec);
 static inline KevSymbol** kev_lr_collection_get_symbols(KevLRCollection* collec);

@@ -99,7 +99,7 @@ bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBit
     if (kitem->dot == kitem->rule->bodylen)
       continue;
     KevSymbol* symbol = kitem->rule->body[kitem->dot];
-    if (symbol->kind == KEV_LR_SYMBOL_TERMINAL)
+    if (symbol->kind == KEV_LR_TERMINAL)
       continue;
     KevBitSet* la = kev_lr_get_kernel_item_follows(kitem, firsts, epsilon);
     if (!la) return false;
@@ -126,7 +126,7 @@ bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBit
       KevRule* rule = node->rule;
       if (rule->bodylen == 0) continue;
       KevSymbol* symbol = rule->body[0];
-      if (symbol->kind == KEV_LR_SYMBOL_TERMINAL)
+      if (symbol->kind == KEV_LR_TERMINAL)
         continue;
       KevBitSet* la = kev_lr_get_non_kernel_item_follows(rule, las[head_index], firsts, epsilon);
       if (!la) return false;
@@ -166,7 +166,7 @@ static bool kev_lr_closure_propagate(KevItemSet* itemset, KevItemSetClosure* clo
         if (len == 0) continue;
         KevSymbol** body = node->rule->body;
         for (; i < len; ++i) {
-          if (body[i]->kind == KEV_LR_SYMBOL_TERMINAL || 
+          if (body[i]->kind == KEV_LR_TERMINAL || 
               kev_bitset_has_element(las[body[i]->tmp_id], epsilon))
             break;
         }
@@ -188,7 +188,7 @@ static KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** fir
   KevBitSet* follows = kev_bitset_create(epsilon + 3);
   if (!follows) return NULL;
   for (size_t i = kitem->dot + 1; i < len; ++i) {
-    if (rulebody[i]->kind == KEV_LR_SYMBOL_TERMINAL) {
+    if (rulebody[i]->kind == KEV_LR_TERMINAL) {
       kev_bitset_set(follows, rulebody[i]->tmp_id);
       return follows;
     }
@@ -216,7 +216,7 @@ static KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* l
   KevBitSet* follows = kev_bitset_create(epsilon + 3);
   if (!follows) return NULL;
   for (size_t i = 1; i < len; ++i) {
-    if (rulebody[i]->kind == KEV_LR_SYMBOL_TERMINAL) {
+    if (rulebody[i]->kind == KEV_LR_TERMINAL) {
       kev_bitset_set(follows, rulebody[i]->tmp_id);
       return follows;
     }

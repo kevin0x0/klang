@@ -87,7 +87,7 @@ static void kev_lr_util_compute_first(KevBitSet** firsts, KevSymbol* symbol, siz
       size_t i = 0;
       bool first_has_epsilon = kev_bitset_has_element(first, epsilon);
       for (; i < bodylen; ++i) {
-        if (body[i]->kind == KEV_LR_SYMBOL_TERMINAL) {
+        if (body[i]->kind == KEV_LR_TERMINAL) {
           kev_bitset_set(first, body[i]->tmp_id);
           break;
         }
@@ -141,7 +141,7 @@ KevBitSet** kev_lr_util_compute_firsts(KevSymbol** symbols, size_t symbol_no, si
 }
 
 KevSymbol* kev_lr_util_augment(KevSymbol* start) {
-  KevSymbol* new_start = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, KEV_LR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME);
+  KevSymbol* new_start = kev_lr_symbol_create(KEV_LR_NONTERMINAL, KEV_LR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME);
   if (!new_start) return NULL;
   KevRule* start_rule = kev_lr_rule_create(new_start, &start, 1);
   if (!start_rule) {
@@ -187,7 +187,7 @@ KevItemSet* kev_lr_util_get_start_itemset(KevSymbol* start, KevSymbol** lookahea
 size_t kev_lr_util_label_symbols(KevSymbol** symbols, size_t symbol_no) {
   size_t number = 0;
   size_t i = 0;
-  while (symbols[i]->kind == KEV_LR_SYMBOL_TERMINAL) {
+  while (symbols[i]->kind == KEV_LR_TERMINAL) {
     symbols[i]->tmp_id = i;
     ++i;
   }
@@ -243,7 +243,7 @@ KevSymbol** kev_lr_util_get_symbol_array(KevSymbol* start, KevSymbol** ends, siz
   for (size_t i = 0; i < ends_no; ++i) {
     if (kev_hashset_has(&set, ends[i]))
       continue;
-    if (ends[i]->kind == KEV_LR_SYMBOL_NONTERMINAL) {
+    if (ends[i]->kind == KEV_LR_NONTERMINAL) {
       kev_hashset_destroy(&set);
       kev_addrarray_destroy(&array);
       return NULL;
@@ -265,9 +265,9 @@ void kev_lr_util_symbol_array_partition(KevSymbol** array, size_t size) {
   KevSymbol** left = array;
   KevSymbol** right = array + size - 1;
   while (left < right) {
-    while (left < right && (*left)->kind == KEV_LR_SYMBOL_TERMINAL)
+    while (left < right && (*left)->kind == KEV_LR_TERMINAL)
       ++left;
-    while (left < right && (*right)->kind == KEV_LR_SYMBOL_NONTERMINAL)
+    while (left < right && (*right)->kind == KEV_LR_NONTERMINAL)
       --right;
     if (left >= right) break;
     KevSymbol* tmp = *left;
@@ -316,7 +316,7 @@ KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts,
         do {
           --i;
           KevSymbol* symbol = body[i];
-          if (symbol->kind == KEV_LR_SYMBOL_TERMINAL) {
+          if (symbol->kind == KEV_LR_TERMINAL) {
             kev_bitset_make_empty(&curr_follow);
             kev_bitset_set(&curr_follow, symbol->tmp_id);
           } else {

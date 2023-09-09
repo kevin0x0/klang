@@ -3,8 +3,8 @@
 
 #include "utils/include/general/global_def.h"
 
-#define KEV_LR_SYMBOL_TERMINAL    (0)
-#define KEV_LR_SYMBOL_NONTERMINAL (1)
+#define KEV_LR_TERMINAL     (0)
+#define KEV_LR_NONTERMINAL  (1)
 
 typedef size_t KevSymbolID;
 struct tagKevRule;
@@ -36,5 +36,45 @@ void kev_lr_symbol_delete(KevSymbol* symbol);
 KevRule* kev_lr_rule_create(KevSymbol* head, KevSymbol** body, size_t body_length);
 KevRule* kev_lr_rule_create_move(KevSymbol* head, KevSymbol** body, size_t body_length);
 void kev_lr_rule_delete(KevRule* rule);
+
+/* get method */
+static inline int kev_lr_symbol_get_type(KevSymbol* symbol);
+static inline char* kev_lr_symbol_get_name(KevSymbol* symbol);
+static inline KevSymbolID kev_lr_symbol_get_id(KevSymbol* symbol);
+
+static inline KevSymbol* kev_lr_rule_get_head(KevRule* rule);
+static inline KevSymbol** kev_lr_rule_get_body(KevRule* rule);
+static inline size_t kev_lr_rule_get_bodylen(KevRule* rule);
+
+/* set method */
+static inline void kev_lr_symbol_set_id(KevSymbol* symbol, KevSymbolID id);
+
+static inline int kev_lr_symbol_get_type(KevSymbol* symbol) {
+  return symbol->kind;
+}
+
+static inline char* kev_lr_symbol_get_name(KevSymbol* symbol) {
+  return symbol->name;
+}
+
+static inline KevSymbolID kev_lr_symbol_get_id(KevSymbol* symbol) {
+  return symbol->id;
+}
+
+static inline void kev_lr_symbol_set_id(KevSymbol* symbol, KevSymbolID id) {
+  symbol->id = id;
+}
+
+static inline KevSymbol* kev_lr_rule_get_head(KevRule* rule) {
+  return rule->head;
+}
+
+static inline KevSymbol** kev_lr_rule_get_body(KevRule* rule) {
+  return rule->body;
+}
+
+static inline size_t kev_lr_rule_get_bodylen(KevRule* rule) {
+  return rule->bodylen;
+}
 
 #endif

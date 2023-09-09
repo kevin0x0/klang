@@ -11,7 +11,6 @@ static inline void kev_lr_conflict_set_shifting(KevLRConflict* conflict);
 
 static inline KevLRConflictCallback kev_lr_confhandler_shifting_callback;
 static inline KevLRConflictCallback kev_lr_confhandler_reducing_callback;
-/* TODO: immplement priority handler callback */
 KevLRConflictCallback kev_lr_confhandler_priority_callback;
 
 
