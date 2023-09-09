@@ -13,7 +13,7 @@ struct tagKevRuleNode;
 typedef struct tagKevSymbol {
   char* name;
   KevSymbolID id;
-  KevSymbolID tmp_id;
+  size_t index;
   int kind;
   struct tagKevRuleNode* rules;
 } KevSymbol;

@@ -35,7 +35,7 @@ void kev_lr_print_itemset_with_closure(FILE* out, KevLRCollection* collec, KevIt
   KevBitSet** las = closure->lookaheads;
   for (size_t i = 0; i < kev_addrarray_size(symbols); ++i) {
     KevSymbol* head = (KevSymbol*)kev_addrarray_visit(symbols, i);
-    size_t head_index = head->tmp_id;
+    size_t head_index = head->index;
     for (KevRuleNode* node = head->rules; node; node = node->next) {
       KevRule* rule = node->rule;
       kev_lr_print_non_kernel_item(out, collec, rule, las[head_index]);
@@ -61,7 +61,7 @@ bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemse
   KevBitSet** las = closure->lookaheads;
   for (size_t i = 0; i < kev_addrarray_size(symbols); ++i) {
     KevSymbol* head = (KevSymbol*)kev_addrarray_visit(symbols, i);
-    size_t head_index = head->tmp_id;
+    size_t head_index = head->index;
     for (KevRuleNode* node = head->rules; node; node = node->next) {
       KevRule* rule = node->rule;
       kev_lr_print_non_kernel_item(out, collec, rule, las[head_index]);
@@ -105,8 +105,8 @@ bool kev_lr_print_symbols(FILE* out, KevLRCollection* collec) {
   KevSymbol** symbol_arrry = (KevSymbol**)malloc(sizeof(KevSymbol*) * user_symbol_no);
   if (!symbol_arrry) return false;
   KevSymbol** symbols = kev_lr_collection_get_symbols(collec);
-  memcpy(symbol_arrry, symbols, sizeof (KevSymbol*) * (collec->start->tmp_id));
-  memcpy(symbol_arrry, symbols + collec->start->tmp_id + 1, sizeof (KevSymbol*) * (user_symbol_no - collec->start->tmp_id));
+  memcpy(symbol_arrry, symbols, sizeof (KevSymbol*) * (collec->start->index));
+  memcpy(symbol_arrry, symbols + collec->start->index + 1, sizeof (KevSymbol*) * (user_symbol_no - collec->start->index));
   qsort(symbol_arrry, user_symbol_no, sizeof (KevSymbol*), kev_symbol_compare);
   size_t width = 0;
   for (size_t i = 0; i < user_symbol_no; ++i) {

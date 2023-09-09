@@ -196,7 +196,7 @@ bool kev_slr_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure, Kev
     KevSymbol* symbol = rule->body[kitem->dot];
     KevItem* item = kev_lr_item_create(rule, kitem->dot + 1);
     if (!item) return false;
-    if (!(item->lookahead = kev_bitset_create_copy(follows[rule->head->tmp_id]))) {
+    if (!(item->lookahead = kev_bitset_create_copy(follows[rule->head->index]))) {
       kev_lr_item_delete(item);
       return false;
     }
@@ -229,7 +229,7 @@ bool kev_slr_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure, Kev
       KevSymbol* symbol = rule->body[0];
       KevItem* item = kev_lr_item_create(rule, 1);
       if (!item) return false;
-      if (!(item->lookahead = kev_bitset_create_copy(follows[rule->head->tmp_id]))) {
+      if (!(item->lookahead = kev_bitset_create_copy(follows[rule->head->index]))) {
         kev_lr_item_delete(item);
         return false;
       }

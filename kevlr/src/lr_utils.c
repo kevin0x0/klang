@@ -53,7 +53,7 @@ bool kev_lr_util_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure,
       KevSymbol* symbol = rule->body[0];
       KevItem* item = kev_lr_item_create(rule, 1);
       if (!item) return false;
-      if (!(item->lookahead = kev_bitset_create_copy(las[head->tmp_id]))) {
+      if (!(item->lookahead = kev_bitset_create_copy(las[head->index]))) {
         kev_lr_item_delete(item);
         return false;
       }
@@ -79,7 +79,7 @@ bool kev_lr_util_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure,
 }
 
 static void kev_lr_util_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon) {
-  KevBitSet* first = firsts[symbol->tmp_id];
+  KevBitSet* first = firsts[symbol->index];
     for (KevRuleNode* node = symbol->rules; node; node = node->next) {
       KevRule* rule = node->rule;
       size_t bodylen = rule->bodylen;
@@ -88,10 +88,10 @@ static void kev_lr_util_compute_first(KevBitSet** firsts, KevSymbol* symbol, siz
       bool first_has_epsilon = kev_bitset_has_element(first, epsilon);
       for (; i < bodylen; ++i) {
         if (body[i]->kind == KEV_LR_TERMINAL) {
-          kev_bitset_set(first, body[i]->tmp_id);
+          kev_bitset_set(first, body[i]->index);
           break;
         }
-        KevBitSet* curr = firsts[body[i]->tmp_id];
+        KevBitSet* curr = firsts[body[i]->index];
         /* all first sets has same size, so union will never fail */
         kev_bitset_union(first, curr);
         if (!kev_bitset_has_element(curr, epsilon)) {
@@ -155,7 +155,7 @@ KevBitSet* kev_lr_util_symbols_to_bitset(KevSymbol** symbols, size_t length) {
   KevBitSet* set = kev_bitset_create(1);
   if (!set) return NULL;
   for (size_t i = 0; i < length; ++i) {
-    if (!kev_bitset_set(set, symbols[i]->tmp_id)) {
+    if (!kev_bitset_set(set, symbols[i]->index)) {
       kev_bitset_delete(set);
       return NULL;
     }
@@ -188,12 +188,12 @@ size_t kev_lr_util_label_symbols(KevSymbol** symbols, size_t symbol_no) {
   size_t number = 0;
   size_t i = 0;
   while (symbols[i]->kind == KEV_LR_TERMINAL) {
-    symbols[i]->tmp_id = i;
+    symbols[i]->index = i;
     ++i;
   }
   number = i;
   for (; i < symbol_no; ++i)
-    symbols[i]->tmp_id = i;
+    symbols[i]->index = i;
   return number;
 }
 
@@ -298,7 +298,7 @@ KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts,
     }
   }
   for (size_t i = 0; i < ends_no; ++i)
-    kev_bitset_set(follows[start->tmp_id], ends[i]->tmp_id);
+    kev_bitset_set(follows[start->index], ends[i]->index);
 
   bool loop = true;
   size_t epsilon = terminal_no;
@@ -306,7 +306,7 @@ KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts,
     loop = false;
     for (size_t i = 0; i < symbol_no; ++i) {
       KevSymbol* head = symbols[i];
-      KevBitSet* head_follow = follows[head->tmp_id];
+      KevBitSet* head_follow = follows[head->index];
       for (KevRuleNode* rulenode = head->rules; rulenode; rulenode = rulenode->next) {
         KevSymbol** body = rulenode->rule->body;
         size_t len = rulenode->rule->bodylen;
@@ -318,15 +318,15 @@ KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts,
           KevSymbol* symbol = body[i];
           if (symbol->kind == KEV_LR_TERMINAL) {
             kev_bitset_make_empty(&curr_follow);
-            kev_bitset_set(&curr_follow, symbol->tmp_id);
+            kev_bitset_set(&curr_follow, symbol->index);
           } else {
-            if (kev_bitset_changed_after_shrinking_union(follows[symbol->tmp_id], &curr_follow))
+            if (kev_bitset_changed_after_shrinking_union(follows[symbol->index], &curr_follow))
               loop = true;
-            if (kev_bitset_has_element(firsts[symbol->tmp_id], epsilon)) {
-              kev_bitset_union(&curr_follow, firsts[symbol->tmp_id]);
+            if (kev_bitset_has_element(firsts[symbol->index], epsilon)) {
+              kev_bitset_union(&curr_follow, firsts[symbol->index]);
               kev_bitset_clear(&curr_follow, epsilon);
             } else {
-              kev_bitset_assign(&curr_follow, firsts[symbol->tmp_id]);
+              kev_bitset_assign(&curr_follow, firsts[symbol->index]);
             }
           }
         } while (i != 0);

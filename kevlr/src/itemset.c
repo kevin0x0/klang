@@ -46,7 +46,7 @@ void kev_lr_closure_destroy(KevItemSetClosure* closure) {
   KevAddrArray* symbols = closure->symbols;
   size_t size = kev_addrarray_size(symbols);
   for (size_t i = 0; i < size; ++i) {
-    size_t index = ((KevSymbol*)kev_addrarray_visit(symbols, i))->tmp_id;
+    size_t index = ((KevSymbol*)kev_addrarray_visit(symbols, i))->index;
     kev_bitset_delete(closure->lookaheads[index]);
   }
   free(closure->lookaheads);
@@ -60,7 +60,7 @@ void kev_lr_closure_make_empty(KevItemSetClosure* closure) {
   KevBitSet** las = closure->lookaheads;
   KevAddrArray* symbols = closure->symbols;
   for (size_t i = 0; i < size; ++i) {
-    size_t index = ((KevSymbol*)kev_addrarray_visit(closure->symbols, i))->tmp_id;
+    size_t index = ((KevSymbol*)kev_addrarray_visit(closure->symbols, i))->index;
     kev_bitset_delete(las[index]);
     las[index] = NULL;
   }
@@ -103,7 +103,7 @@ bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBit
       continue;
     KevBitSet* la = kev_lr_get_kernel_item_follows(kitem, firsts, epsilon);
     if (!la) return false;
-    size_t index = symbol->tmp_id;
+    size_t index = symbol->index;
     if (las[index]) {
       if (!kev_bitset_union(las[index], la)) {
         kev_bitset_delete(la);
@@ -121,7 +121,7 @@ bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBit
 
   for (size_t i = 0; i < kev_addrarray_size(symbols); ++i) {
     KevSymbol* head = (KevSymbol*)kev_addrarray_visit(symbols, i);
-    size_t head_index = head->tmp_id;
+    size_t head_index = head->index;
     for (KevRuleNode* node = head->rules; node; node = node->next) {
       KevRule* rule = node->rule;
       if (rule->bodylen == 0) continue;
@@ -130,7 +130,7 @@ bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBit
         continue;
       KevBitSet* la = kev_lr_get_non_kernel_item_follows(rule, las[head_index], firsts, epsilon);
       if (!la) return false;
-      size_t index = symbol->tmp_id;
+      size_t index = symbol->index;
       if (las[index]) {
         if (!kev_bitset_union(las[index], la)) {
           kev_bitset_delete(la);
@@ -167,13 +167,13 @@ static bool kev_lr_closure_propagate(KevItemSet* itemset, KevItemSetClosure* clo
         KevSymbol** body = node->rule->body;
         for (; i < len; ++i) {
           if (body[i]->kind == KEV_LR_TERMINAL || 
-              kev_bitset_has_element(las[body[i]->tmp_id], epsilon))
+              kev_bitset_has_element(las[body[i]->index], epsilon))
             break;
         }
         if (i != len) continue;
-        if (!kev_bitset_is_subset(las[symbol->tmp_id], las[body[0]->tmp_id])) {
+        if (!kev_bitset_is_subset(las[symbol->index], las[body[0]->index])) {
           propagated = true;
-          if (!kev_bitset_union(las[body[0]->tmp_id], las[symbol->tmp_id]))
+          if (!kev_bitset_union(las[body[0]->index], las[symbol->index]))
             return false;
         }
       }
@@ -189,10 +189,10 @@ static KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** fir
   if (!follows) return NULL;
   for (size_t i = kitem->dot + 1; i < len; ++i) {
     if (rulebody[i]->kind == KEV_LR_TERMINAL) {
-      kev_bitset_set(follows, rulebody[i]->tmp_id);
+      kev_bitset_set(follows, rulebody[i]->index);
       return follows;
     }
-    KevBitSet* set = firsts[rulebody[i]->tmp_id];
+    KevBitSet* set = firsts[rulebody[i]->index];
     if (!kev_bitset_union(follows, set)) {
       kev_bitset_delete(follows);
       return NULL;
@@ -217,10 +217,10 @@ static KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* l
   if (!follows) return NULL;
   for (size_t i = 1; i < len; ++i) {
     if (rulebody[i]->kind == KEV_LR_TERMINAL) {
-      kev_bitset_set(follows, rulebody[i]->tmp_id);
+      kev_bitset_set(follows, rulebody[i]->index);
       return follows;
     }
-    KevBitSet* set = firsts[rulebody[i]->tmp_id];
+    KevBitSet* set = firsts[rulebody[i]->index];
     if (!kev_bitset_union(follows, set)) {
       kev_bitset_delete(follows);
       return NULL;
