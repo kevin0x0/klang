@@ -9,38 +9,38 @@ bool conflict_report(void* object, KevLRConflict* conflict, KevLRCollection* col
 }
 
 int main(int argc, char** argv) {
-  KevSymbol* end = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "$");
-  KevSymbol* id = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "id");
-  KevSymbol* plus = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "+");
-  KevSymbol* minus = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "-");
-  KevSymbol* mul = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "*");
-  KevSymbol* div = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "/");
-  KevSymbol* op5 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "|");
-  KevSymbol* op6 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "&");
-  KevSymbol* op7 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "^");
-  KevSymbol* op8 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "||");
-  KevSymbol* op9 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "&&");
-  KevSymbol* op10 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "<<");
-  KevSymbol* op11 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, ">>");
-  KevSymbol* op12 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "<");
-  KevSymbol* op13 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, ">");
-  KevSymbol* op14 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, ">=");
-  KevSymbol* op15 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "<=");
-  KevSymbol* op16 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "==");
-  KevSymbol* op17 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "!=");
-  KevSymbol* op18 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "=");
-  KevSymbol* op19 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "->");
-  KevSymbol* op20 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "[");
-  KevSymbol* op21 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "]");
-  KevSymbol* op22 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, ".");
-  KevSymbol* op23 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "++");
-  KevSymbol* op24 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "--");
-  KevSymbol* op25 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "!");
-  KevSymbol* op26 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "~");
-  KevSymbol* op27 = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "&");
-  KevSymbol* openp = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "(");
-  KevSymbol* closep = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, ")");
-  KevSymbol* E = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, "E");
+  KevSymbol* end = kev_lr_symbol_create(KEV_LR_TERMINAL, "$");
+  KevSymbol* id = kev_lr_symbol_create(KEV_LR_TERMINAL, "id");
+  KevSymbol* plus = kev_lr_symbol_create(KEV_LR_TERMINAL, "+");
+  KevSymbol* minus = kev_lr_symbol_create(KEV_LR_TERMINAL, "-");
+  KevSymbol* mul = kev_lr_symbol_create(KEV_LR_TERMINAL, "*");
+  KevSymbol* div = kev_lr_symbol_create(KEV_LR_TERMINAL, "/");
+  KevSymbol* op5 = kev_lr_symbol_create(KEV_LR_TERMINAL, "|");
+  KevSymbol* op6 = kev_lr_symbol_create(KEV_LR_TERMINAL, "&");
+  KevSymbol* op7 = kev_lr_symbol_create(KEV_LR_TERMINAL, "^");
+  KevSymbol* op8 = kev_lr_symbol_create(KEV_LR_TERMINAL, "||");
+  KevSymbol* op9 = kev_lr_symbol_create(KEV_LR_TERMINAL, "&&");
+  KevSymbol* op10 = kev_lr_symbol_create(KEV_LR_TERMINAL, "<<");
+  KevSymbol* op11 = kev_lr_symbol_create(KEV_LR_TERMINAL, ">>");
+  KevSymbol* op12 = kev_lr_symbol_create(KEV_LR_TERMINAL, "<");
+  KevSymbol* op13 = kev_lr_symbol_create(KEV_LR_TERMINAL, ">");
+  KevSymbol* op14 = kev_lr_symbol_create(KEV_LR_TERMINAL, ">=");
+  KevSymbol* op15 = kev_lr_symbol_create(KEV_LR_TERMINAL, "<=");
+  KevSymbol* op16 = kev_lr_symbol_create(KEV_LR_TERMINAL, "==");
+  KevSymbol* op17 = kev_lr_symbol_create(KEV_LR_TERMINAL, "!=");
+  KevSymbol* op18 = kev_lr_symbol_create(KEV_LR_TERMINAL, "=");
+  KevSymbol* op19 = kev_lr_symbol_create(KEV_LR_TERMINAL, "->");
+  KevSymbol* op20 = kev_lr_symbol_create(KEV_LR_TERMINAL, "[");
+  KevSymbol* op21 = kev_lr_symbol_create(KEV_LR_TERMINAL, "]");
+  KevSymbol* op22 = kev_lr_symbol_create(KEV_LR_TERMINAL, ".");
+  KevSymbol* op23 = kev_lr_symbol_create(KEV_LR_TERMINAL, "++");
+  KevSymbol* op24 = kev_lr_symbol_create(KEV_LR_TERMINAL, "--");
+  KevSymbol* op25 = kev_lr_symbol_create(KEV_LR_TERMINAL, "!");
+  KevSymbol* op26 = kev_lr_symbol_create(KEV_LR_TERMINAL, "~");
+  KevSymbol* op27 = kev_lr_symbol_create(KEV_LR_TERMINAL, "&");
+  KevSymbol* openp = kev_lr_symbol_create(KEV_LR_TERMINAL, "(");
+  KevSymbol* closep = kev_lr_symbol_create(KEV_LR_TERMINAL, ")");
+  KevSymbol* E = kev_lr_symbol_create(KEV_LR_NONTERMINAL, "E");
 
   KevSymbol* body1[] = { E, plus, E };
   KevSymbol* body2[] = { E, minus, E };
@@ -255,13 +255,13 @@ int main(int argc, char** argv) {
 
 
 
-  //KevSymbol* S = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, "S");
-  //KevSymbol* L = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, "L");
-  //KevSymbol* R = kev_lr_symbol_create(KEV_LR_SYMBOL_NONTERMINAL, "R");
-  //KevSymbol* id = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "id");
-  //KevSymbol* star = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "*");
-  //KevSymbol* assign = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "=");
-  //KevSymbol* end = kev_lr_symbol_create(KEV_LR_SYMBOL_TERMINAL, "$");
+  //KevSymbol* S = kev_lr_symbol_create(KEV_LR_NONTERMINAL, "S");
+  //KevSymbol* L = kev_lr_symbol_create(KEV_LR_NONTERMINAL, "L");
+  //KevSymbol* R = kev_lr_symbol_create(KEV_LR_NONTERMINAL, "R");
+  //KevSymbol* id = kev_lr_symbol_create(KEV_LR_TERMINAL, "id");
+  //KevSymbol* star = kev_lr_symbol_create(KEV_LR_TERMINAL, "*");
+  //KevSymbol* assign = kev_lr_symbol_create(KEV_LR_TERMINAL, "=");
+  //KevSymbol* end = kev_lr_symbol_create(KEV_LR_TERMINAL, "$");
   //KevSymbol* body1[3] = { L, assign, R };
   //KevSymbol* body2[2] = { star, R };
   //KevRule* rule1 = kev_lr_rule_create(S, &R, 1);
