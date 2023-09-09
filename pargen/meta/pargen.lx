@@ -1,7 +1,7 @@
 def declare (KEV_PTK_DECL):
   $decl
 
-comment = $#[^\n\xFF]*
+comment = $#[^\n\r\xFF]*
 
 def identifier (KEV_PTK_ID):
   (kev_plex_simple_id)  $[A-Za-z_\-][A-Za-z0-9_\-]*
@@ -34,6 +34,9 @@ def ':' (KEV_PTK_COLON):
 def ';' (KEV_PTK_SEMI):
   $;
 
+def '|' (KEV_PTK_BAR):
+  $\|
+
 def '=' (KEV_PTK_ASSIGN):
   $=
 
@@ -41,7 +44,7 @@ def '%' (KEV_PTK_ENV):
   $%
 
 def blanks (KEV_PTK_BLKS):
-  $([\ \n\t] | [:comment:])+
+  $([\ \n\t\r] | [:comment:])+
 
 def number (KEV_PTK_NUM):
   (kev_plex_num) $[0-9]+

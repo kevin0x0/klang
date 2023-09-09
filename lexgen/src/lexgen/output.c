@@ -14,49 +14,36 @@
 static void kev_lexgen_output_table_rust(FILE* output, KevPatternBinary* binary_info);
 static void kev_lexgen_output_pattern_mapping_rust(FILE* output, KevPatternBinary* binary_info);
 static void kev_lexgen_output_start_rust(FILE* output, KevPatternBinary* binary_info);
-static char* kev_lexgen_output_callback_rust(KevPatternBinary* binary_info);
-static char* kev_lexgen_output_info_rust(KevPatternBinary* binary_info);
-static char* kev_lexgen_output_macro_rust(KevPatternBinary* binary_info);
+static void kev_lexgen_output_callback_rust(FILE* output, KevPatternBinary* binary_info);
+static void kev_lexgen_output_info_rust(FILE* output, KevPatternBinary* binary_info);
+static void kev_lexgen_output_macro_rust(FILE* output, KevPatternBinary* binary_info);
 
 static void kev_lexgen_output_table_c_cpp(FILE* output, KevPatternBinary* binary_info);
 static void kev_lexgen_output_pattern_mapping_c_cpp(FILE* output, KevPatternBinary* binary_info);
 static void kev_lexgen_output_start_c_cpp(FILE* output, KevPatternBinary* binary_info);
-static char* kev_lexgen_output_callback_c_cpp(KevPatternBinary* binary_info);
-static char* kev_lexgen_output_info_c_cpp(KevPatternBinary* binary_info);
-static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info);
+static void kev_lexgen_output_callback_c_cpp(FILE* output, KevPatternBinary* binary_info);
+static void kev_lexgen_output_info_c_cpp(FILE* output, KevPatternBinary* binary_info);
+static void kev_lexgen_output_macro_c_cpp(FILE* output, KevPatternBinary* binary_info);
 
-/* convert 'str' to escape string to 'output' buffer,
- * return pointer of next position in buffer
- */
-static char* kev_lexgen_output_escape_string(char* output, const char* str);
-
-void kev_lexgen_output_set_func(KevOutputFunc* func_group, const char* language) {
+void kev_lexgen_output_set_func(KevOutputFuncGroup* func_group, const char* language) {
   if (strcmp(language, "rust") == 0) {
-    func_group->output_table = kev_lexgen_output_table_rust;
-    func_group->output_pattern_mapping = kev_lexgen_output_pattern_mapping_rust;
-    func_group->output_start = kev_lexgen_output_start_rust;
-    func_group->output_callback = kev_lexgen_output_callback_rust;
-    func_group->output_info = kev_lexgen_output_info_rust;
-    func_group->output_macro = kev_lexgen_output_macro_rust;
+    func_group->output_table = (KevOutputFunc*)kev_lexgen_output_table_rust;
+    func_group->output_pattern_mapping = (KevOutputFunc*)kev_lexgen_output_pattern_mapping_rust;
+    func_group->output_start = (KevOutputFunc*)kev_lexgen_output_start_rust;
+    func_group->output_callback = (KevOutputFunc*)kev_lexgen_output_callback_rust;
+    func_group->output_info = (KevOutputFunc*)kev_lexgen_output_info_rust;
+    func_group->output_macro = (KevOutputFunc*)kev_lexgen_output_macro_rust;
   } else if (strcmp(language, "c") == 0 ||
            strcmp(language, "cpp") == 0) {
-    func_group->output_table = kev_lexgen_output_table_c_cpp;
-    func_group->output_pattern_mapping = kev_lexgen_output_pattern_mapping_c_cpp;
-    func_group->output_start = kev_lexgen_output_start_c_cpp;
-    func_group->output_callback = kev_lexgen_output_callback_c_cpp;
-    func_group->output_info = kev_lexgen_output_info_c_cpp;
-    func_group->output_macro = kev_lexgen_output_macro_c_cpp;
+    func_group->output_table = (KevOutputFunc*)kev_lexgen_output_table_c_cpp;
+    func_group->output_pattern_mapping = (KevOutputFunc*)kev_lexgen_output_pattern_mapping_c_cpp;
+    func_group->output_start = (KevOutputFunc*)kev_lexgen_output_start_c_cpp;
+    func_group->output_callback = (KevOutputFunc*)kev_lexgen_output_callback_c_cpp;
+    func_group->output_info = (KevOutputFunc*)kev_lexgen_output_info_c_cpp;
+    func_group->output_macro = (KevOutputFunc*)kev_lexgen_output_macro_c_cpp;
   } else {
     kev_throw_error("output:", "unsupported language: ", language);
   }
-}
-
-static char* kev_lexgen_output_escape_string(char* output, const char* str) {
-  if (!str) sprintf(output, "NULL");
-  char* bufpos = output;
-  while (*str != '\0')
-    *bufpos++ = *str++;
-  return bufpos;
 }
 
 void kev_lexgen_output_help(void) {
@@ -75,13 +62,13 @@ void kev_lexgen_output_help(void) {
   free(resources_dir);
 }
 
-void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_var) {
+void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_var, KevStrXMap* funcs) {
   if (options->strs[KEV_LEXGEN_OUT_SRC_PATH]) {
     char* src_tmpl_path = options->strs[KEV_LEXGEN_SRC_TMPL_PATH];
     FILE* tmpl = fopen(src_tmpl_path, "r");
     if (!tmpl)
       kev_throw_error("output:", "can not open file: ", src_tmpl_path);
-    kev_template_convert(output, tmpl, env_var);
+    kev_template_convert(output, tmpl, env_var, funcs);
     fclose(tmpl);
   }
   /* some languages like C/C++ need a header */
@@ -93,28 +80,25 @@ void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_
       kev_throw_error("output:", "can not open file: ", inc_tmpl_path);
     if (!inc_output)
       kev_throw_error("output:", "can not open file: ", options->strs[KEV_LEXGEN_OUT_INC_PATH]);
-    kev_template_convert(inc_output, tmpl, env_var);
+    kev_template_convert(inc_output, tmpl, env_var, funcs);
     fclose(tmpl);
     fclose(inc_output);
   }
 }
 
-static char* kev_lexgen_output_macro_rust(KevPatternBinary* binary_info) {
+static void kev_lexgen_output_callback_rust(FILE* output, KevPatternBinary* binary_info) {
   /* TODO: support rust */
   kev_throw_error("output:", "rust is currently not supported", NULL);
-  return NULL;
 }
 
-static char* kev_lexgen_output_info_rust(KevPatternBinary* binary_info) {
+static void kev_lexgen_output_info_rust(FILE* output, KevPatternBinary* binary_info) {
   /* TODO: support rust */
   kev_throw_error("output:", "rust is currently not supported", NULL);
-  return NULL;
 }
 
-static char* kev_lexgen_output_callback_rust(KevPatternBinary* binary_info) {
+static void kev_lexgen_output_macro_rust(FILE* output, KevPatternBinary* binary_info) {
   /* TODO: support rust */
   kev_throw_error("output:", "rust is currently not supported", NULL);
-  return NULL;
 }
 
 static void kev_lexgen_output_table_rust(FILE* output, KevPatternBinary* binary_info) {
@@ -282,82 +266,46 @@ static void kev_lexgen_output_start_c_cpp(FILE* output, KevPatternBinary* binary
   fprintf(output, "}\n\n");
 }
 
-static char* kev_lexgen_output_callback_c_cpp(KevPatternBinary* binary_info) {
+static void kev_lexgen_output_callback_c_cpp(FILE* output, KevPatternBinary* binary_info) {
   char** callbacks = binary_info->callbacks;
-  size_t buflen = 256;
   for (size_t i = 0; i < binary_info->dfa_state_no; ++i) {
     if (callbacks[i])
-      buflen += 2 * strlen(callbacks[i]) + 15;
-    else
-      buflen += 4 + 4;
+      fprintf(output, "Callback %s;\n", callbacks[i]);
   }
 
-  char* output = (char*)malloc(sizeof (char) * buflen);
-  if (!output)
-    kev_throw_error("output:", "out of memory", NULL);
-  char* bufpos = output;
-  for (size_t i = 0; i < binary_info->dfa_state_no; ++i) {
-    if (callbacks[i])
-      bufpos += sprintf(bufpos, "Callback %s;\n", callbacks[i]);
-  }
-
-  bufpos += sprintf(bufpos, "static Callback* callbacks[%d] = {", (int)binary_info->dfa_state_no);
+  fprintf(output, "static Callback* callbacks[%d] = {", (int)binary_info->dfa_state_no);
   for(size_t i = 0; i < binary_info->dfa_state_no; ++i) {
-    bufpos += sprintf(bufpos, "\n  %s,", callbacks[i] ? callbacks[i] : "NULL");
+    fprintf(output, "\n  %s,", callbacks[i] ? callbacks[i] : "NULL");
   }
-  bufpos += sprintf(bufpos, "\n};\n\n");
-  bufpos += sprintf(bufpos, "Callback** kev_lexgen_get_callbacks(void) {\n");
-  bufpos += sprintf(bufpos, "  return callbacks;\n");
-  bufpos += sprintf(bufpos, "}\n\n");
-  return output;
+  fprintf(output, "\n};\n\n");
+  fprintf(output, "Callback** kev_lexgen_get_callbacks(void) {\n");
+  fprintf(output, "  return callbacks;\n");
+  fprintf(output, "}\n\n");
 }
 
-static char* kev_lexgen_output_info_c_cpp(KevPatternBinary* binary_info) {
-  size_t buflen = 256;
+static void kev_lexgen_output_info_c_cpp(FILE* output, KevPatternBinary* binary_info) {
   char** infos = binary_info->infos;
+  fprintf(output, "static const char* info[%d] = {\n", (int)binary_info->pattern_no);
   for (size_t i = 0; i < binary_info->pattern_no; ++i) {
-    buflen += 2 * strlen(infos[i]) + 6;
+    fprintf(output, "  \"");
+    fprintf(output, infos[i] ? infos[i] : "NULL");
+    fprintf(output, "\",\n");
   }
-  char* output = (char*)malloc(sizeof (char) * buflen);
-  char* bufpos = output;
-  if (!output)
-    kev_throw_error("output:", "out of memory", NULL);
-  bufpos += sprintf(bufpos, "static const char* info[%d] = {\n", (int)binary_info->pattern_no);
-  for (size_t i = 0; i < binary_info->pattern_no; ++i) {
-    bufpos += sprintf(bufpos, "  \"");
-    bufpos = kev_lexgen_output_escape_string(bufpos, infos[i]);
-    bufpos += sprintf(bufpos, "\",\n");
-  }
-  bufpos += sprintf(bufpos, "};\n\n");
-  bufpos += sprintf(bufpos, "const char** kev_lexgen_get_info(void) {\n");
-  bufpos += sprintf(bufpos, "  return info;\n");
-  bufpos += sprintf(bufpos, "}\n\n");
-  return output;
+  fprintf(output, "};\n\n");
+  fprintf(output, "const char** kev_lexgen_get_info(void) {\n");
+  fprintf(output, "  return info;\n");
+  fprintf(output, "}\n\n");
 }
-static char* kev_lexgen_output_macro_c_cpp(KevPatternBinary* binary_info) {
-  size_t buflen = 1;
+static void kev_lexgen_output_macro_c_cpp(FILE* output, KevPatternBinary* binary_info) {
   KevAddrArray** macros = binary_info->macros;
   int* macro_ids = binary_info->macro_ids;
   for (size_t i = 0; i < binary_info->pattern_no; ++i) {
     size_t arrlen = kev_addrarray_size(macros[i]);
     for (size_t j = 0; j < arrlen; ++j) {
       const char* macro_name = (const char*)kev_addrarray_visit(macros[i], j);
-      buflen += strlen(macro_name) + 22 + sizeof (macro_ids[0]) * 8 / 2; /* log(10, 2) < 0.5, * 0.5 -> / 2 */
+      fprintf(output, "#define ");
+      fprintf(output, "%s (%d)\n", macro_name, (int)macro_ids[i]);
     }
   }
-  char* output = (char*)malloc(sizeof (char) * buflen);
-  char* bufpos = output;
-  if (!output)
-    kev_throw_error("output:", "out of memory", NULL);
-  *bufpos = '\0';
-  for (size_t i = 0; i < binary_info->pattern_no; ++i) {
-    size_t arrlen = kev_addrarray_size(macros[i]);
-    for (size_t j = 0; j < arrlen; ++j) {
-      const char* macro_name = (const char*)kev_addrarray_visit(macros[i], j);
-      bufpos += sprintf(bufpos, "#define ");
-      bufpos += sprintf(bufpos, "%s (%d)\n", macro_name, (int)macro_ids[i]);
-    }
-  }
-  return output;
 }
 

@@ -1,13 +1,15 @@
 #ifndef KEVCC_LEXGEN_INCLUDE_LEXGEN_TEMPLATE_H
 #define KEVCC_LEXGEN_INCLUDE_LEXGEN_TEMPLATE_H
 
-#include "lexgen/include/lexgen/options.h"
 #include "utils/include/hashmap/str_map.h"
+#include "utils/include/hashmap/func_map.h"
 
 #include <stdio.h>
 
-/* parse template file 'tmpl' and output result to 'output'
- * 'env_var' store the environment variables. */
-void kev_template_convert(FILE* output, FILE* tmpl, KevStringMap* env_var);
+
+/* parse template file 'tmpl' and output result to 'output'. 'env_var' contains
+ * the environment variables. 'funcs' contains functions. */
+void kev_template_convert(FILE* output, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs);
+
 
 #endif

@@ -35,6 +35,7 @@ typedef struct tagKevPLexer {
   int* pattern_mapping;
   uint8_t start;
   Callback** callbacks;
+  size_t err_count;
 } KevPLexer;
 
 bool kev_pargenlexer_init(KevPLexer* lex,FILE* infile);

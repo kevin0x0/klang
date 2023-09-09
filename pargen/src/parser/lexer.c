@@ -4,6 +4,7 @@
 
 bool kev_pargenlexer_init(KevPLexer* lex,FILE* infile) {
   if (!lex) return false;
+  lex->err_count = 0;
   lex->currpos = 0;
   lex->infile = NULL;
   lex->buf = (uint8_t*)malloc(sizeof (uint8_t) * KEV_PLEX_BUF_SIZE);
@@ -21,6 +22,7 @@ bool kev_pargenlexer_init(KevPLexer* lex,FILE* infile) {
 void kev_pargenlexer_destroy(KevPLexer* lex) {
   if (!lex) return;
   free(lex->buf);
+  lex->err_count = 0;
   lex->buf = NULL;
   lex->infile = NULL;
   lex->currtoken.begin = 0;

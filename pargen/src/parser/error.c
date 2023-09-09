@@ -1,8 +1,10 @@
 #include "pargen/include/parser/error.h"
 
-void kev_parser_error_report(FILE* out, FILE* infile, size_t begin, const char* info) {
+void kev_parser_throw_error(FILE* out, FILE* infile, size_t begin, const char* info1, const char* info2) {
   if (!infile) {
-    fprintf(out, "%s", info);
+    fprintf(out, "%s", info1);
+    if (info2)
+      fprintf(out, "%s", info2);
     return;
   }
 
@@ -23,7 +25,9 @@ void kev_parser_error_report(FILE* out, FILE* infile, size_t begin, const char* 
       line_no++;
     }
   }
-  fprintf(out, "error in line %u: %s\n", (unsigned int)line_no, info);
+  fprintf(out, "error in line %u: %s\n", (unsigned int)line_no, info1);
+  if (info2)
+    fprintf(out, "%s", info2);
   fseek(infile, line_begin, SEEK_SET);
   int ch = 0;
   while ((ch = fgetc(infile)) != '\n' && ch != EOF) {

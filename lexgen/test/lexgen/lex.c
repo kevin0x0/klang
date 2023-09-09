@@ -1,3 +1,9 @@
+
+#include "lex.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <stdint.h>
 #include <stddef.h>
 static uint8_t transition[105][256] = {
@@ -2002,99 +2008,7 @@ uint8_t (*kev_lexgen_get_transition_table(void))[256] {
   return transition;
 }
 
-static int pattern_mapping[105] = {
-   -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34,  48,  45,  22,  36,
-    21,  44,  44,  44,  44,  44,  44,  44,  44,  44,  44,  20,  19,  26,  31,  25,
-    33,  32,  30,  35,  28,  34,  27,  29,  24,  23,  38,  47,  45,  45,  37,  44,
-    18,  44,  44,  44,  44,  44,  44,  14,  44,  44,  44,   1,   5,  44,  44,   4,
-    44,  44,  43,  40,  42,  39,  41,  46,  45,  45,  44,  17,  16,  15,  44,   7,
-    44,  13,  12,  11,   3,  44,  44,  44,  44,  44,  44,   2,  44,  44,  44,   0,
-    44,  44,  44,   8,  10,   6,  44,  44,   9,
-};
 
-int* kev_lexgen_get_pattern_mapping(void) {
-  return pattern_mapping;
-}
-
-static size_t start = 11;
-
-size_t kev_lexgen_get_start_state(void) {
-  return start;
-}
-
-
-#include "lex.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-
-TransTab kev_lexgen_get_transition_table(void);
-int* kev_lexgen_get_pattern_mapping(void);
-size_t kev_lexgen_get_start_state(void);
-const char** kev_lexgen_get_info(void);
-Callback** kev_lexgen_get_callbacks(void);
-
-bool lex_init(tokenizer* lex, char* filepath) {
-  if (!lex) return false;
-  lex->buffer = NULL;
-  lex->table = kev_lexgen_get_transition_table();
-  lex->patterns = kev_lexgen_get_pattern_mapping();
-  lex->start_state = kev_lexgen_get_start_state();
-  lex->callbacks = kev_lexgen_get_callbacks();
-  if (!filepath) return false;
-  FILE* file = fopen(filepath, "rb");
-  if (!file) return false;
-  fseek(file, 0, SEEK_END);
-  size_t filesize = ftell(file);
-  fseek(file, 0, SEEK_SET);
-  uint8_t* buffer = (uint8_t*)malloc(sizeof (uint8_t) * (filesize + 2));
-  if (!buffer) {
-    fclose(file);
-    return false;
-  }
-  if (fread(buffer, sizeof (uint8_t), filesize, file) == 0) {
-    free(buffer);
-    fclose(file);
-    return false;
-  }
-  fclose(file);
-  buffer[filesize] = '\0';
-  buffer[filesize + 1] = '\0';
-  lex->buffer = buffer;
-  return true;
-}
-
-void lex_destroy(tokenizer* lex) {
-  if (lex) {
-    free(lex->buffer);
-    lex->buffer = NULL;
-  }
-}
-
-void lex_next(tokenizer* lex, Token* token) {
-  uint8_t (*table)[256] = lex->table;
-  uint8_t state = lex->start_state;
-  uint8_t next_state = 0;
-  uint8_t* curpos = lex->buffer + token->end;
-  uint8_t ch = *curpos;
-  
-  while (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r')
-    ch = *++curpos;
-  
-  while ((next_state = table[state][ch]) != LEX_DEAD) {
-    ch = *++curpos;
-    state = next_state;
-  }
-  token->begin = token->end;
-  token->end = curpos - lex->buffer;
-  token->kind = lex->patterns[state];
-  if (lex->callbacks[state])
-    lex->callbacks[state](token, lex->buffer + token->begin);
-}
-
-const char* lex_get_info(tokenizer* lex, int kind) {
-  return kev_lexgen_get_info()[kind];
-}
 
 static Callback* callbacks[105] = {
   NULL,
@@ -2267,5 +2181,97 @@ const char** kev_lexgen_get_info(void) {
 }
 
 
+
+static size_t start = 11;
+
+size_t kev_lexgen_get_start_state(void) {
+  return start;
+}
+
+
+
+static int pattern_mapping[105] = {
+   -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34, -34,  48,  45,  22,  36,
+    21,  44,  44,  44,  44,  44,  44,  44,  44,  44,  44,  20,  19,  26,  31,  25,
+    33,  32,  30,  35,  28,  34,  27,  29,  24,  23,  38,  47,  45,  45,  37,  44,
+    18,  44,  44,  44,  44,  44,  44,  14,  44,  44,  44,   1,   5,  44,  44,   4,
+    44,  44,  43,  40,  42,  39,  41,  46,  45,  45,  44,  17,  16,  15,  44,   7,
+    44,  13,  12,  11,   3,  44,  44,  44,  44,  44,  44,   2,  44,  44,  44,   0,
+    44,  44,  44,   8,  10,   6,  44,  44,   9,
+};
+
+int* kev_lexgen_get_pattern_mapping(void) {
+  return pattern_mapping;
+}
+
+
+
+TransTab kev_lexgen_get_transition_table(void);
+int* kev_lexgen_get_pattern_mapping(void);
+size_t kev_lexgen_get_start_state(void);
+const char** kev_lexgen_get_info(void);
+Callback** kev_lexgen_get_callbacks(void);
+
+bool lex_init(tokenizer* lex, char* filepath) {
+  if (!lex) return false;
+  lex->buffer = NULL;
+  lex->table = kev_lexgen_get_transition_table();
+  lex->patterns = kev_lexgen_get_pattern_mapping();
+  lex->start_state = kev_lexgen_get_start_state();
+  lex->callbacks = kev_lexgen_get_callbacks();
+  if (!filepath) return false;
+  FILE* file = fopen(filepath, "rb");
+  if (!file) return false;
+  fseek(file, 0, SEEK_END);
+  size_t filesize = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  uint8_t* buffer = (uint8_t*)malloc(sizeof (uint8_t) * (filesize + 2));
+  if (!buffer) {
+    fclose(file);
+    return false;
+  }
+  if (fread(buffer, sizeof (uint8_t), filesize, file) == 0) {
+    free(buffer);
+    fclose(file);
+    return false;
+  }
+  fclose(file);
+  buffer[filesize] = '\0';
+  buffer[filesize + 1] = '\0';
+  lex->buffer = buffer;
+  return true;
+}
+
+void lex_destroy(tokenizer* lex) {
+  if (lex) {
+    free(lex->buffer);
+    lex->buffer = NULL;
+  }
+}
+
+void lex_next(tokenizer* lex, Token* token) {
+  uint8_t (*table)[256] = lex->table;
+  uint8_t state = lex->start_state;
+  uint8_t next_state = 0;
+  uint8_t* curpos = lex->buffer + token->end;
+  uint8_t ch = *curpos;
+  
+  while (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r')
+    ch = *++curpos;
+  
+  while ((next_state = table[state][ch]) != LEX_DEAD) {
+    ch = *++curpos;
+    state = next_state;
+  }
+  token->begin = token->end;
+  token->end = curpos - lex->buffer;
+  token->kind = lex->patterns[state];
+  if (lex->callbacks[state])
+    lex->callbacks[state](token, lex->buffer + token->begin);
+}
+
+const char* lex_get_info(tokenizer* lex, int kind) {
+  return kev_lexgen_get_info()[kind];
+}
 
 

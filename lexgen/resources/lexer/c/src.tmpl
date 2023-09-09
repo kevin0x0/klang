@@ -1,10 +1,18 @@
-$r src-pre  $:$;
-
-$c !no-source $:
+$r src-pre  $:$;$c !no-source $:
 #include "$r include-path $:inc.h$;"
 
 #include <stdio.h>
 #include <stdlib.h>
+
+$r transition-table $:$;
+
+$r callback-array $:$;
+
+$r info-array $:$;
+
+$r start-state $:$;
+
+$r pattern-mapping $:$;
 
 TransTab kev_lexgen_get_transition_table(void);
 int* kev_lexgen_get_pattern_mapping(void);
@@ -73,15 +81,7 @@ void $r function-prefix $:lex$;_next($r lexer-name $:Lex$;* lex, Token* token) {
 const char* $r function-prefix $:lex$;_get_info($r lexer-name $:Lex$;* lex, int kind) {
   return kev_lexgen_get_info()[kind];
 }
-
-$r callback-array $:$;
-
-$r info-array $:$;
-
 $|
-
 $r info-array $:$;
-
 $;
-
 $r inc-post $:$;

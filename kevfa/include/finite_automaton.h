@@ -59,7 +59,7 @@ static inline bool kev_nfa_kleene(KevFA* nfa);
 bool kev_nfa_positive(KevFA* nfa);
 /* Given an array of pointers to NFAs, use the subset construction algorithm
  * to convert the union of these NFAs into a DFA and return a pointer to the
- * resulting DFA. The array of NFA pointers must be terminated with a NULL pointer.
+ * resulting DFA. The array of NFA pointers should terminate with a NULL pointer.
  * If the "p_accept_state_mapping_array" parameter is not NULL, it will point
  * to an array that records which NFA each accepting state in the DFA corresponds to.
  * For example, if this array is named "acc_state_mapping" and acc_state_mapping[2] = 0,

@@ -99,3 +99,4 @@ static inline void lex_token_init(Token* token) {
 
 #endif
 
+
