@@ -5,7 +5,6 @@ CFLAGS = -Wall $(OPTIMIZE) -I $(ROOT_DIR)
 
 PARGEN_DIR = $(ROOT_DIR)pargen/
 UTILS_DIR = $(ROOT_DIR)utils/
-KEVLR_DIR = $(ROOT_DIR)kevlr/
 
 INC_DIR = $(PARGEN_DIR)include/
 SRC_DIR = $(PARGEN_DIR)src/
@@ -19,8 +18,8 @@ UTILS_INC = $(UTILS_DIR)include/
 
 
 
-test.exe : test.c $(BIN_DIR)parser.o $(BIN_DIR)error.o $(BIN_DIR)lexer.o $(BIN_DIR)lextab.o
-	$(CC) -o $@ $^ $(CFLAGS) -L $(UTILS_DIR)lib/ -lutils -L $(KEVLR_DIR)lib/ -lkevlr
+test.exe : test.c $(BIN_DIR)error.o $(BIN_DIR)lexer.o $(BIN_DIR)lextab.o
+	$(CC) -o $@ $^ $(CFLAGS) -L $(UTILS_DIR)lib/ -lutils
 
 .PHONY: clean
 

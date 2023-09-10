@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#define KEV_PLEX_BUF_SIZE   (4096)
+#define KEV_PLEX_BUF_SIZE   (65536)
 #define KEV_PLEX_DEAD       (255)
 #define KEV_PLEX_NONACC     (-1)
 
@@ -43,6 +43,9 @@ void kev_pargenlexer_destroy(KevPLexer* lex);
  
 void kev_pargenlexer_next(KevPLexer* lex);
 const char* kev_pargenlexer_info(int kind);
+
+/* free lex->currtoken.attr.str if needed */
+void kev_pargenlexer_free_attr(KevPLexer* lex);
 
 uint8_t (*kev_lexgen_get_transition_table(void))[256];
 int* kev_lexgen_get_pattern_mapping(void);

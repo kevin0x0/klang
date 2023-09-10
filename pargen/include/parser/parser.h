@@ -9,6 +9,14 @@
 
 #include <stdio.h>
 
+#define KEV_ACTFUNC_FUNCNAME  (0)
+#define KEV_ACTFUNC_FUNCDEF   (1)
+
+
+typedef struct tagKevActionFunc {
+  int type;
+  char* content;
+} KevActionFunc;
 
 /* pargen parser state */
 typedef struct tagKevPParserState {

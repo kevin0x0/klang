@@ -1,17 +1,15 @@
 #include "pargen/include/parser/lexer.h"
-#include "pargen/include/parser/partokens.h"
+#include "pargen/include/parser/parser.h"
 
-int main(int argc, char *argv[]) {
+
+int main(int argc, char** argv) {
+  KevPParserState pstate;
   KevPLexer lex;
-  FILE* file = fopen("test.txt", "r");
-  kev_pargenlexer_init(&lex, file);
-
-  do {
-    kev_pargenlexer_next(&lex);
-    printf("%s\n", kev_pargenlexer_info(lex.currtoken.kind));
-  } while (lex.currtoken.kind != KEV_PTK_END);
-
+  FILE* infile = fopen("test.txt", "r");
+  kev_pargenlexer_init(&lex, infile);
+  kev_pargenparser_init(&pstate);
+  kev_pargenparser_parse(&pstate, &lex);
+  kev_pargenparser_destroy(&pstate);
   kev_pargenlexer_destroy(&lex);
-  fclose(file);
   return 0;
 }

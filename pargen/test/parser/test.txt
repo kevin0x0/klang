@@ -1,1 +1,4 @@
-@@@@@@@@@@@@@
+decl n: expr;
+decl t: id, num, '+';
+
+expr : expr '+' expr;

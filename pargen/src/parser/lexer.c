@@ -58,3 +58,7 @@ const char* kev_pargenlexer_info(int kind) {
   return kev_lexgen_get_info()[kind];
 }
 
+void kev_pargenlexer_free_attr(KevPLexer* lex) {
+  if (lex->currtoken.kind == KEV_PTK_ID || lex->currtoken.kind == KEV_PTK_STR)
+    free(lex->currtoken.attr.str);
+}

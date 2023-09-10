@@ -1,14 +1,18 @@
+import "charset/unicode
+
 def declare (KEV_PTK_DECL):
   $decl
 
-comment = $#[^\n\r\xFF]*
+comment = $#[^\nxFF]*
+func-name = $([A-Za-z_] | [:uni-non-ascii:])([A-Za-z0-9_] | [:uni-non-ascii:])*
 
 def identifier (KEV_PTK_ID):
-  (kev_plex_simple_id)  $[A-Za-z_\-][A-Za-z0-9_\-]*
+  (kev_plex_simple_id)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])*
   (kev_plex_str_id)     $'([^'\\\xFF] | \\[^\xFF])*'
 
 def string (KEV_PTK_STR):
-  (kev_plex_str)  $"([^"\\\xFF] | \\[^\xFF])*"
+  (kev_plex_str)        $"([^"\\\xFF] | \\[^\xFF])*"
+  (kev_plex_simple_str) $`([^"\xFF] | \\[^\xFF])*`
 
 def '(' (KEV_PTK_LP):
   $\(
@@ -28,6 +32,9 @@ def '{' (KEV_PTK_LBC):
 def '}' (KEV_PTK_RBC):
   $\}
 
+def ',' (KEV_PTK_COMMA):
+  $,
+
 def ':' (KEV_PTK_COLON):
   $:
 
@@ -44,7 +51,7 @@ def '%' (KEV_PTK_ENV):
   $%
 
 def blanks (KEV_PTK_BLKS):
-  $([\ \n\t\r] | [:comment:])+
+  $([\ \n\t] | [:comment:])+
 
 def number (KEV_PTK_NUM):
   (kev_plex_num) $[0-9]+
@@ -53,4 +60,3 @@ def end (KEV_PTK_END):
   $\xFF
 
 %error-handler = "kev_plex_err
-

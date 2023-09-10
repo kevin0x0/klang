@@ -11,14 +11,15 @@
 #define KEV_PTK_RBE (6)
 #define KEV_PTK_LBC (7)
 #define KEV_PTK_RBC (8)
-#define KEV_PTK_COLON (9)
-#define KEV_PTK_SEMI (10)
-#define KEV_PTK_BAR (11)
-#define KEV_PTK_ASSIGN (12)
-#define KEV_PTK_ENV (13)
-#define KEV_PTK_BLKS (14)
-#define KEV_PTK_NUM (15)
-#define KEV_PTK_END (16)
+#define KEV_PTK_COMMA (9)
+#define KEV_PTK_COLON (10)
+#define KEV_PTK_SEMI (11)
+#define KEV_PTK_BAR (12)
+#define KEV_PTK_ASSIGN (13)
+#define KEV_PTK_ENV (14)
+#define KEV_PTK_BLKS (15)
+#define KEV_PTK_NUM (16)
+#define KEV_PTK_END (17)
 
 
 
