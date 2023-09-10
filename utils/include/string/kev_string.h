@@ -8,7 +8,6 @@ char* kev_str_concat(const char* str1, const char* str2);
 char* kev_str_copy_len(const char* str, size_t len);
 char* kev_str_concat_len(const char* str1, const char* str2, size_t len1, size_t len2);
 char* kev_trunc_leaf(const char* path);
-char* kev_get_relpath(const char* from, const char* to);
 static inline size_t kev_str_prefix(const char* prefix, const char* str);
 
 static inline size_t kev_str_prefix(const char* prefix, const char* str) {

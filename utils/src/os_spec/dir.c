@@ -37,3 +37,26 @@ char* kev_get_bin_dir(void) {
   return buf;
 }
 
+char* kev_get_relpath(const char* from, const char* to) {
+  size_t i = 0;
+  while (from[i] == to[i] && from[i] != '\0')
+    i++;
+  while (i != 0 && from[--i] != '/' && from[i] != '\\')
+    continue;
+  if (i != 0) ++i;
+  size_t dir_depth = 0;
+  for (size_t j = i; from[j] != '\0'; ++j) {
+    if (from[j] == '/' || from[j] == '\\')
+      dir_depth++;
+  }
+  char* relpath = (char*)malloc(sizeof (char) * (dir_depth * 3 + strlen(to) + 1));
+  if (!relpath) return NULL;
+  for (size_t j = 0; j < dir_depth; ++j) {
+    relpath[j * 3] = '.';
+    relpath[j * 3 + 1] = '.';
+    relpath[j * 3 + 2] = '/';
+  }
+  relpath[dir_depth * 3] = '\0';
+  strcat(relpath, to + i);
+  return relpath;
+}
