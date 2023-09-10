@@ -84,14 +84,15 @@ void kev_pargenparser_destroy(KevPParserState* parser_state) {
 
 void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex) {
   kev_pargenparser_next_nonblank(lex);
-  if (lex->currtoken.kind == KEV_PTK_ID) {
-    kev_pargenparser_statement_rules(parser_state, lex);
-  } else if (lex->currtoken.kind == KEV_PTK_DECL) {
-    kev_pargenparser_statement_declare(parser_state, lex);
-  } else {
-    kev_error_report(lex, "expected: ", "identifier or keyword decl");
+  while (lex->currtoken.kind != KEV_PTK_END) {
+    if (lex->currtoken.kind == KEV_PTK_ID) {
+      kev_pargenparser_statement_rules(parser_state, lex);
+    } else if (lex->currtoken.kind == KEV_PTK_DECL) {
+      kev_pargenparser_statement_declare(parser_state, lex);
+    } else {
+      kev_error_report(lex, "expected: ", "identifier or keyword decl");
+    }
   }
-  kev_pargenparser_match(parser_state, lex, KEV_PTK_END);
 }
 
 static void kev_pargenparser_statement_rules(KevPParserState* parser_state, KevPLexer* lex) {
