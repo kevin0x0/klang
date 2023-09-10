@@ -25,9 +25,10 @@ void kev_parser_throw_error(FILE* out, FILE* infile, size_t begin, const char* i
       line_no++;
     }
   }
-  fprintf(out, "error in line %u: %s\n", (unsigned int)line_no, info1);
+  fprintf(out, "error in line %u: %s", (unsigned int)line_no, info1);
   if (info2)
     fprintf(out, "%s", info2);
+  fputc('\n', out);
   fseek(infile, line_begin, SEEK_SET);
   int ch = 0;
   while ((ch = fgetc(infile)) != '\n' && ch != EOF) {
