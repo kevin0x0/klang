@@ -8,7 +8,7 @@ def id (KEV_LTK_ID, 2):
   $[A-Za-z_\-][A-Za-z0-9_\-]*
 
 def regex (KEV_LTK_REGEX, 3):
-  $$\ *[^\r\n\xFF]*
+  $$\ *[^\n\xFF]*
 
 def assign (KEV_LTK_ASSIGN, 4):
   $=
@@ -17,7 +17,7 @@ def colon (KEV_LTK_COLON, 5):
   $:
 
 def blanks (KEV_LTK_BLANKS, 6):
-  $([\ \t\n\r]*#[^\n\xFF\r]*)+[\ \t\n\r]* | [\ \t\n\r]+
+  $([\ \t\n]*#[^\n\xFF]*)+[\ \t\n]* | [\ \t\n]+
 
 def open_paren (KEV_LTK_OPEN_PAREN, 7):
   $\(
@@ -32,7 +32,7 @@ def end (KEV_LTK_END, 10):
   $\xFF
 
 def str (KEV_LTK_STR, 11):
-  $"[^\n\xFF\r]* | '([^'\\\xFF] | \\[^\xFF])+' | !([^\n\xFF] | \n[^\n\xFF\r])*(\n\n)?
+  $"[^\n\xFF]* | '([^'\\\xFF] | \\[^\xFF])+' | !([^\n\xFF] | \n[^\n\xFF])*(\n\n)?
 
 def number (KEV_LTK_NUM, 12):
   $[0-9]+
