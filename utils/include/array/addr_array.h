@@ -20,6 +20,7 @@ static inline void kev_addrarray_make_empty(KevAddrArray* array);
 bool kev_addrarray_expand(KevAddrArray* array);
 static inline void* kev_addrarray_visit(KevAddrArray* array, size_t index);
 static inline size_t kev_addrarray_size(KevAddrArray* array);
+static inline void** kev_addrarray_steal(KevAddrArray* array);
 
 static inline size_t kev_addrarray_size(KevAddrArray* array) {
   return array->current - array->begin;
@@ -44,6 +45,14 @@ static inline void* kev_addrarray_visit(KevAddrArray* array, size_t index) {
 
 static inline void kev_addrarray_make_empty(KevAddrArray* array) {
   array->current = array->begin;
+}
+
+static inline void** kev_addrarray_steal(KevAddrArray* array) {
+  void** ret = array->begin;
+  array->begin = NULL;
+  array->current = NULL;
+  array->end = NULL;
+  return ret;
 }
 
 #endif
