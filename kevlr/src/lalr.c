@@ -166,12 +166,9 @@ static bool kev_lalr_get_all_itemsets(KevItemSet* start_iset, KevLALRCollection*
   kev_gotomap_delete(goto_container);
   kev_itemsetset_delete(iset_set);
   kev_lr_closure_destroy(&closure);
-  /* steal resources from itemset_array */
-  collec->itemsets = (KevItemSet**)itemset_array->begin;
   collec->itemset_no = kev_addrarray_size(itemset_array);
-  itemset_array->begin = NULL;
-  itemset_array->end = NULL;
-  itemset_array->current = NULL;
+  /* steal resources from itemset_array */
+  collec->itemsets = (KevItemSet**)kev_addrarray_steal(itemset_array);
   kev_addrarray_delete(itemset_array);
   return true;
 }
