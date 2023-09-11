@@ -18,8 +18,8 @@ static void kev_intsetmap_rehash(KevIntSetMap* to, KevIntSetMap* from) {
     KevIntSetMapNode* node = from_array[i].map_node_list;
     while (node) {
       KevIntSetMapNode* tmp = node->next;
-      size_t hash_val = kev_intsetmap_hashing(node->key);
-      size_t index = hash_val & mask;
+      size_t hashval = kev_intsetmap_hashing(node->key);
+      size_t index = hashval & mask;
       node->next = to_array[index].map_node_list;
       to_array[index].map_node_list = node;
       if (node->next == NULL) {

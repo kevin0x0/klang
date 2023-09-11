@@ -11,12 +11,12 @@
 
 inline static size_t kev_strxmap_hashing(const char* key) {
   if (!key) return 0;
-  size_t hash_val = 0;
+  size_t hashval = 0;
   size_t count = 0;
   while (*key != '\0' && count++ < 8) {
-    hash_val ^= ((size_t)*key++ << (hash_val & 0x3F));
+    hashval ^= ((size_t)*key++ << (hashval & 0x3F));
   }
-  return hash_val;
+  return hashval;
 }
 
 static void kev_strxmap_rehash(KevStrXMap* to, KevStrXMap* from) {
@@ -30,8 +30,8 @@ static void kev_strxmap_rehash(KevStrXMap* to, KevStrXMap* from) {
     KevStrXMapNode* node = from_array[i].map_node_list;
     while (node) {
       KevStrXMapNode* tmp = node->next;
-      size_t hash_val = kev_strxmap_hashing(node->key);
-      size_t index = hash_val & mask;
+      size_t hashval = node->hashval;
+      size_t index = hashval & mask;
       node->next = to_array[index].map_node_list;
       to_array[index].map_node_list = node;
       if (node->next == NULL) {
@@ -139,8 +139,10 @@ bool kev_strxmap_insert(KevStrXMap* map, const char* key, void* value) {
   KevStrXMapNode* new_node = (KevStrXMapNode*)malloc(sizeof (KevStrXMapNode));
   if (!new_node) return false;
 
-  size_t index = (map->capacity - 1) & kev_strxmap_hashing(key);
+  size_t hashval = kev_strxmap_hashing(key);
+  size_t index = (map->capacity - 1) & hashval;
   new_node->key = kev_str_copy(key);
+  new_node->hashval = hashval;
   new_node->value = value;
   if (!new_node->key) {
     free(new_node->key);
@@ -157,17 +159,20 @@ bool kev_strxmap_insert(KevStrXMap* map, const char* key, void* value) {
 }
 
 KevStrXMapNode* kev_strxmap_search(KevStrXMap* map, const char* key) {
-  size_t index = (map->capacity - 1) & kev_strxmap_hashing(key);
+  size_t hashval = kev_strxmap_hashing(key);
+  size_t index = (map->capacity - 1) & hashval;
   KevStrXMapNode* node = map->array[index].map_node_list;
   for (; node; node = node->next) {
-    if (strcmp(node->key, key) == 0) break;
+    if (node->hashval == hashval &&
+        strcmp(node->key, key) == 0)
+      break;
   }
   return node;
 }
 
 KevStrXMapNode* kev_strxmap_iterate_next(KevStrXMap* map, KevStrXMapNode* current) {
   if (current->next) return current->next;
-  size_t index = (map->capacity - 1) & kev_strxmap_hashing(current->key);
+  size_t index = (map->capacity - 1) & current->hashval;
   KevStrXMapBucket* current_bucket = &map->array[index];
   if (current_bucket->next)
     return current_bucket->next->map_node_list;

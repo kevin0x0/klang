@@ -3,6 +3,7 @@
 
 #include "pargen/include/parser/lexer.h"
 #include "kevlr/include/lr.h"
+#include "kevlr/include/hashmap/priority_map.h"
 #include "utils/include/array/addr_array.h"
 #include "utils/include/hashmap/str_map.h"
 #include "utils/include/hashmap/strx_map.h"
@@ -27,6 +28,7 @@ typedef struct tagKevPParserState {
   size_t next_priority;
   size_t err_count;
   KevSymbol* default_symbol;
+  KevPrioMap* priorities;
 } KevPParserState;
 
 bool kev_pargenparser_init(KevPParserState* parser_state);

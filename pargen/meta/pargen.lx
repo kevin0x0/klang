@@ -12,7 +12,7 @@ def identifier (KEV_PTK_ID):
 
 def string (KEV_PTK_STR):
   (kev_plex_str)        $"([^"\\\xFF] | \\[^\xFF])*"
-  (kev_plex_simple_str) $`([^"\xFF] | \\[^\xFF])*`
+  (kev_plex_simple_str) $`[^`]*`
 
 def '(' (KEV_PTK_LP):
   $\(

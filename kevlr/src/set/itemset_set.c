@@ -21,8 +21,8 @@ static void kev_itemsetset_rehash(KevItemSetSet* to, KevItemSetSet* from) {
     KevItemSetSetNode* node = from_array[i];
     while (node) {
       KevItemSetSetNode* tmp = node->next;
-      size_t hash_val = kev_itemsetset_hashing(node->element);
-      size_t index = hash_val & mask;
+      size_t hashval = node->hashval;
+      size_t index = hashval & mask;
       node->next = to_array[index];
       to_array[index] = node;
       node = tmp;
@@ -112,8 +112,10 @@ bool kev_itemsetset_insert(KevItemSetSet* set, KevItemSet* element) {
   KevItemSetSetNode* new_node = (KevItemSetSetNode*)malloc(sizeof (*new_node));
   if (!new_node) return false;
 
-  size_t index = (set->capacity - 1) & kev_itemsetset_hashing(element);
+  size_t hashval = kev_itemsetset_hashing(element);
+  size_t index = (set->capacity - 1) & hashval;
   new_node->element = element;
+  new_node->hashval = hashval;
   new_node->next = set->array[index];
   set->array[index] = new_node;
   set->size++;
@@ -121,10 +123,12 @@ bool kev_itemsetset_insert(KevItemSetSet* set, KevItemSet* element) {
 }
 
 KevItemSetSetNode* kev_itemsetset_search(KevItemSetSet* set, KevItemSet* element) {
-  size_t index = (set->capacity - 1) & kev_itemsetset_hashing(element);
+  size_t hashval = kev_itemsetset_hashing(element);
+  size_t index = (set->capacity - 1) & hashval;
   KevItemSetSetNode* node = set->array[index];
   while (node) {
-    if (set->equal(element, node->element))
+    if (node->hashval == hashval &&
+        set->equal(element, node->element))
       break;
     node = node->next;
   }

@@ -32,20 +32,23 @@ bool kev_pargenparser_init(KevPParserState* parser_state) {
   parser_state->redact = kev_addrarray_create();
   parser_state->symbols = kev_strxmap_create(64);
   parser_state->env_var = kev_strmap_create(16);
+  parser_state->priorities = kev_priomap_create(32);
   parser_state->default_symbol = kev_lr_symbol_create(KEV_LR_NONTERMINAL, NULL);
   parser_state->err_count = 0;
   parser_state->next_priority = 0;
   if (!parser_state->rules || !parser_state->symbols || !parser_state->redact ||
-      !parser_state->env_var || !parser_state->default_symbol) {
+      !parser_state->env_var || !parser_state->default_symbol || !parser_state->priorities) {
     kev_addrarray_delete(parser_state->rules);
     kev_addrarray_delete(parser_state->redact);
     kev_strxmap_delete(parser_state->symbols);
     kev_strmap_delete(parser_state->env_var);
+    kev_priomap_delete(parser_state->priorities);
     kev_lr_symbol_delete(parser_state->default_symbol);
     parser_state->rules = NULL;
     parser_state->symbols = NULL;
     parser_state->redact = NULL;
     parser_state->env_var = NULL;
+    parser_state->priorities = NULL;
     return false;
   }
   return true;
@@ -54,9 +57,9 @@ bool kev_pargenparser_init(KevPParserState* parser_state) {
 void kev_pargenparser_destroy(KevPParserState* parser_state) {
   if (!parser_state) return;
   /* parser_state->rules and parser_state->redact have same rule number */
-  size_t rule_no = kev_addrarray_size(parser_state->redact);
+  size_t rule_no = kev_addrarray_size(parser_state->rules);
   for (size_t i = 0; i < rule_no; ++i) {
-    kev_lr_rule_delete((KevRule*)kev_addrarray_visit(parser_state->redact, i));
+    kev_lr_rule_delete((KevRule*)kev_addrarray_visit(parser_state->rules, i));
     KevActionFunc* actfunc = (KevActionFunc*)kev_addrarray_visit(parser_state->redact, i);
     if (actfunc) {
       free(actfunc->content);
@@ -72,11 +75,13 @@ void kev_pargenparser_destroy(KevPParserState* parser_state) {
   kev_addrarray_delete(parser_state->redact);
   kev_strxmap_delete(parser_state->symbols);
   kev_strmap_delete(parser_state->env_var);
+  kev_priomap_delete(parser_state->priorities);
   kev_lr_symbol_delete(parser_state->default_symbol);
   parser_state->rules = NULL;
   parser_state->symbols = NULL;
   parser_state->redact = NULL;
   parser_state->env_var = NULL;
+  parser_state->priorities = NULL;
   parser_state->default_symbol = NULL;
   parser_state->err_count = 0;
   parser_state->next_priority = 0;
@@ -115,12 +120,9 @@ static void kev_pargenparser_statement_rules(KevPParserState* parser_state, KevP
     size_t bodylen = 0;
     KevActionFunc* actfunc = NULL;
     KevSymbol** rulebody = kev_pargenparser_statement_rulebody(parser_state, lex, &bodylen, &actfunc);
-    KevRule* rule = kev_pargenparser_rule_create_move(parser_state, head, rulebody, bodylen, actfunc);
-    if (!rule) {
+    if (!kev_pargenparser_rule_create_move(parser_state, head, rulebody, bodylen, actfunc)) {
       kev_error_report(lex, "out of memory", "");
       parser_state->err_count++;
-    } else {
-      kev_addrarray_push_back(parser_state->rules, rule);
     }
   } while (lex->currtoken.kind == KEV_PTK_BAR);
   kev_pargenparser_match(parser_state, lex, KEV_PTK_SEMI);
@@ -157,20 +159,16 @@ static KevSymbol** kev_pargenparser_statement_rulebody(KevPParserState* parser_s
           kev_error_report(lex, "out of memory", NULL);
           parser_state->err_count++;
         }
-
       } else {
         *p_actfunc = actfunc;
       }
     } else {
       break;
     }
-    kev_pargenparser_next_nonblank(lex);
   }
   *p_bodylen = kev_addrarray_size(&symarr);
-  KevSymbol** body = (KevSymbol**)symarr.begin;
-  symarr.begin = NULL;
-  symarr.current = NULL;
-  symarr.end = NULL;
+  KevSymbol** body = (KevSymbol**)kev_addrarray_steal(&symarr);
+  kev_addrarray_destroy(&symarr);
   return body;
 }
 static KevSymbol* kev_pargenparser_statement_symbol(KevPParserState* parser_state, KevPLexer* lex) {
@@ -221,17 +219,20 @@ static KevRule* kev_pargenparser_rule_create_move(KevPParserState* parser_state,
   KevRule* rule = kev_lr_rule_create_move(head, body, bodylen);
   if (!rule) {
     free(body);
+    free(actfunc->content);
     free(actfunc);
     return NULL;
   }
   if (!kev_addrarray_push_back(parser_state->rules, rule)) {
     kev_lr_rule_delete(rule);
+    free(actfunc->content);
     free(actfunc);
     return NULL;
   }
   if (!kev_addrarray_push_back(parser_state->redact, actfunc)) {
     kev_addrarray_pop_back(parser_state->rules);
     kev_lr_rule_delete(rule);
+    free(actfunc->content);
     free(actfunc);
     return NULL;
   }

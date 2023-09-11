@@ -22,8 +22,8 @@ static void kev_priomap_rehash(KevPrioMap* to, KevPrioMap* from) {
     KevPrioMapNode* node = from_array[i].map_node_list;
     while (node) {
       KevPrioMapNode* tmp = node->next;
-      size_t hash_val = kev_priomap_hashing(node->symbol, node->pos);
-      size_t index = hash_val & mask;
+      size_t hashval = kev_priomap_hashing(node->symbol, node->pos);
+      size_t index = hashval & mask;
       node->next = to_array[index].map_node_list;
       to_array[index].map_node_list = node;
       if (node->next == NULL) {

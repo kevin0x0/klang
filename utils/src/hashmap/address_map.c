@@ -16,8 +16,8 @@ static void kev_addressmap_rehash(KevAddressMap* to, KevAddressMap* from) {
     KevAddressMapNode* node = from_array[i];
     while (node) {
       KevAddressMapNode* tmp = node->next;
-      size_t hash_val = kev_addressmap_hashing(node->key);
-      size_t index = hash_val & mask;
+      size_t hashval = kev_addressmap_hashing(node->key);
+      size_t index = hashval & mask;
       node->next = to_array[index];
       to_array[index] = node;
       node = tmp;

@@ -7,6 +7,7 @@
 typedef struct tagKevSetIntMapNode {
   KevBitSet* key;
   size_t value;
+  size_t hashval;
   struct tagKevSetIntMapNode* next;
 } KevSetIntMapNode;
 

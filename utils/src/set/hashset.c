@@ -16,8 +16,8 @@ static void kev_hashset_rehash(KevHashSet* to, KevHashSet* from) {
     KevHashSetNode* node = from_array[i];
     while (node) {
       KevHashSetNode* tmp = node->next;
-      size_t hash_val = kev_hashset_hashing(node->element);
-      size_t index = hash_val & mask;
+      size_t hashval = kev_hashset_hashing(node->element);
+      size_t index = hashval & mask;
       node->next = to_array[index];
       to_array[index] = node;
       node = tmp;

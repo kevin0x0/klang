@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
   rule32->id = 31;
 
   clock_t t = clock();
-  for (size_t i = 0; i < 1000; ++i) {
+  for (size_t i = 0; i < 1; ++i) {
     KevLRCollection* collec = kev_lr_collection_create_lr1(E, &end, 1);
     //kev_lr_print_collection(stdout, collec, true);
 

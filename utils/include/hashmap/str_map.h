@@ -6,6 +6,7 @@
 typedef struct tagKevStringMapNode {
   char* key;
   char* value;
+  size_t hashval;
   struct tagKevStringMapNode* next;
 } KevStringMapNode;
 

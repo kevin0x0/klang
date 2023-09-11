@@ -6,11 +6,11 @@ inline static size_t kev_setintmap_hashing(KevBitSet* key) {
   if (!key) return 0;
   size_t length = key->length;
   size_t* bits = key->bits;
-  size_t hashing_value = 0;
+  size_t hashval = 0;
   for (size_t i = 0; i < length; ++i) {
-    hashing_value += bits[i] >> (hashing_value & 0x3F);
+    hashval += bits[i] >> (hashval & 0x3F);
   }
-  return hashing_value;
+  return hashval;
 }
 
 static void kev_setintmap_rehash(KevSetIntMap* to, KevSetIntMap* from) {
@@ -23,8 +23,8 @@ static void kev_setintmap_rehash(KevSetIntMap* to, KevSetIntMap* from) {
     KevSetIntMapNode* node = from_array[i];
     while (node) {
       KevSetIntMapNode* tmp = node->next;
-      size_t hash_val = kev_setintmap_hashing(node->key);
-      size_t index = hash_val & mask;
+      size_t hashval = node->hashval;
+      size_t index = hashval & mask;
       node->next = to_array[index];
       to_array[index] = node;
       node = tmp;
@@ -105,9 +105,11 @@ bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, size_t value) {
   KevSetIntMapNode* new_node = (KevSetIntMapNode*)malloc(sizeof (KevSetIntMapNode));
   if (!new_node) return false;
 
-  size_t index = (map->capacity - 1) & kev_setintmap_hashing(key);
+  size_t hashval = kev_setintmap_hashing(key);
+  size_t index = (map->capacity - 1) & hashval;
   new_node->key = key;
   new_node->value = value;
+  new_node->hashval = hashval;
   new_node->next = map->array[index];
   map->array[index] = new_node;
   map->size++;
@@ -115,10 +117,14 @@ bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, size_t value) {
 }
 
 KevSetIntMapNode* kev_setintmap_search(KevSetIntMap* map, KevBitSet* key) {
-  size_t index = (map->capacity - 1) & kev_setintmap_hashing(key);
+  size_t hashval = kev_setintmap_hashing(key);
+  size_t index = (map->capacity - 1) & hashval;
   KevSetIntMapNode* node = map->array[index];
   for (; node; node = node->next) {
-    if (kev_bitset_equal(node->key, key)) break;
+    if (node->hashval == hashval &&
+        kev_bitset_equal(node->key, key)) {
+      break;
+    }
   }
   return node;
 }

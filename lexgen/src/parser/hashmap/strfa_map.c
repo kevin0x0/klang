@@ -5,12 +5,12 @@
 
 inline static size_t kev_strfamap_hashing(char* key) {
   if (!key) return 0;
-  size_t hash_val = 0;
+  size_t hashval = 0;
   size_t count = 0;
   while (*key != '\0' && count++ < 8) {
-    hash_val ^= ((size_t)*key++ << (hash_val & 0x3F));
+    hashval ^= ((size_t)*key++ << (hashval & 0x3F));
   }
-  return hash_val;
+  return hashval;
 }
 
 static void kev_strfamap_rehash(KevStringFaMap* to, KevStringFaMap* from) {
@@ -24,8 +24,8 @@ static void kev_strfamap_rehash(KevStringFaMap* to, KevStringFaMap* from) {
     KevStringFaMapNode* node = from_array[i].map_node_list;
     while (node) {
       KevStringFaMapNode* tmp = node->next;
-      size_t hash_val = kev_strfamap_hashing(node->key);
-      size_t index = hash_val & mask;
+      size_t hashval = node->hashval;
+      size_t index = hashval & mask;
       node->next = to_array[index].map_node_list;
       to_array[index].map_node_list = node;
       if (node->next == NULL) {
@@ -132,8 +132,10 @@ bool kev_strfamap_insert(KevStringFaMap* map, char* key, KevFA* value) {
   KevStringFaMapNode* new_node = (KevStringFaMapNode*)malloc(sizeof (KevStringFaMapNode));
   if (!new_node) return false;
 
-  size_t index = (map->capacity - 1) & kev_strfamap_hashing(key);
+  size_t hashval = kev_strfamap_hashing(key);
+  size_t index = (map->capacity - 1) & hashval;
   new_node->key = key;
+  new_node->hashval = hashval;
   new_node->value = value;
   new_node->next = map->array[index].map_node_list;
   map->array[index].map_node_list = new_node;
@@ -146,10 +148,12 @@ bool kev_strfamap_insert(KevStringFaMap* map, char* key, KevFA* value) {
 }
 
 KevStringFaMapNode* kev_strfamap_search(KevStringFaMap* map, char* key) {
-  size_t index = (map->capacity - 1) & kev_strfamap_hashing(key);
+  size_t hashval = kev_strfamap_hashing(key);
+  size_t index = (map->capacity - 1) & hashval;
   KevStringFaMapNode* node = map->array[index].map_node_list;
   while (node) {
-    if (strcmp(node->key, key) == 0)
+    if (node->hashval == hashval &&
+        strcmp(node->key, key) == 0)
       break;
     node = node->next;
   }
@@ -170,7 +174,7 @@ void kev_strfamap_make_empty(KevStringFaMap* map) {
 
 KevStringFaMapNode* kev_strfamap_iterate_next(KevStringFaMap* map, KevStringFaMapNode* current) {
   if (current->next) return current->next;
-  size_t index = (map->capacity - 1) & kev_strfamap_hashing(current->key);
+  size_t index = (map->capacity - 1) & current->hashval;
   KevStringFaMapBucket* current_bucket = &map->array[index];
   if (current_bucket->next)
     return current_bucket->next->map_node_list;

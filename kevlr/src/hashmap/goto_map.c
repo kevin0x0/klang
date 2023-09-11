@@ -23,8 +23,8 @@ static void kev_gotomap_rehash(KevGotoMap* to, KevGotoMap* from) {
     KevGotoMapNode* node = from_array[i].map_node_list;
     while (node) {
       KevGotoMapNode* tmp = node->next;
-      size_t hash_val = kev_gotomap_hashing(node->key);
-      size_t index = hash_val & mask;
+      size_t hashval = kev_gotomap_hashing(node->key);
+      size_t index = hashval & mask;
       node->next = to_array[index].map_node_list;
       to_array[index].map_node_list = node;
       if (node->next == NULL) {

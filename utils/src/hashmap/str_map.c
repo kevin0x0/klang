@@ -11,12 +11,12 @@
 
 inline static size_t kev_strmap_hashing(const char* key) {
   if (!key) return 0;
-  size_t hash_val = 0;
+  size_t hashval = 0;
   size_t count = 0;
   while (*key != '\0' && count++ < 8) {
-    hash_val ^= ((size_t)*key++ << (hash_val & 0x3F));
+    hashval ^= ((size_t)*key++ << (hashval & 0x3F));
   }
-  return hash_val;
+  return hashval;
 }
 
 static void kev_strmap_rehash(KevStringMap* to, KevStringMap* from) {
@@ -30,8 +30,8 @@ static void kev_strmap_rehash(KevStringMap* to, KevStringMap* from) {
     KevStringMapNode* node = from_array[i].map_node_list;
     while (node) {
       KevStringMapNode* tmp = node->next;
-      size_t hash_val = kev_strmap_hashing(node->key);
-      size_t index = hash_val & mask;
+      size_t hashval = node->hashval;
+      size_t index = hashval & mask;
       node->next = to_array[index].map_node_list;
       to_array[index].map_node_list = node;
       if (node->next == NULL) {
@@ -140,8 +140,10 @@ bool kev_strmap_insert(KevStringMap* map, const char* key, const char* value) {
   KevStringMapNode* new_node = (KevStringMapNode*)malloc(sizeof (KevStringMapNode));
   if (!new_node) return false;
 
-  size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
+  size_t hashval = kev_strmap_hashing(key);
+  size_t index = (map->capacity - 1) & hashval;
   new_node->key = kev_str_copy(key);
+  new_node->hashval = hashval;
   new_node->value = kev_str_copy(value);
   if (!new_node->key || !new_node->value) {
     free(new_node->key);
@@ -165,8 +167,10 @@ bool kev_strmap_insert_move(KevStringMap* map, const char* key, char* value) {
   KevStringMapNode* new_node = (KevStringMapNode*)malloc(sizeof (KevStringMapNode));
   if (!new_node) return false;
 
-  size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
+  size_t hashval = kev_strmap_hashing(key);
+  size_t index = (map->capacity - 1) & hashval;
   new_node->key = kev_str_copy(key);
+  new_node->hashval = hashval;
   new_node->value = value;
   if (!new_node->key || !new_node->value) {
     free(new_node->key);
@@ -183,17 +187,20 @@ bool kev_strmap_insert_move(KevStringMap* map, const char* key, char* value) {
 }
 
 KevStringMapNode* kev_strmap_search(KevStringMap* map, const char* key) {
-  size_t index = (map->capacity - 1) & kev_strmap_hashing(key);
+  size_t  hashval = kev_strmap_hashing(key);
+  size_t index = (map->capacity - 1) & hashval;
   KevStringMapNode* node = map->array[index].map_node_list;
   for (; node; node = node->next) {
-    if (strcmp(node->key, key) == 0) break;
+    if (node->hashval == hashval &&
+        strcmp(node->key, key) == 0)
+      break;
   }
   return node;
 }
 
 KevStringMapNode* kev_strmap_iterate_next(KevStringMap* map, KevStringMapNode* current) {
   if (current->next) return current->next;
-  size_t index = (map->capacity - 1) & kev_strmap_hashing(current->key);
+  size_t index = (map->capacity - 1) & current->hashval;
   KevStringMapBucket* current_bucket = &map->array[index];
   if (current_bucket->next)
     return current_bucket->next->map_node_list;

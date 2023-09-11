@@ -6,6 +6,7 @@
 
 typedef struct tagKevItemSetSetNode {
   KevItemSet* element;
+  size_t hashval;
   struct tagKevItemSetSetNode* next;
 } KevItemSetSetNode;
 
