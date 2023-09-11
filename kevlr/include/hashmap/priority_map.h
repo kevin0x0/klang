@@ -4,7 +4,7 @@
 #include "kevlr/include/rule.h"
 #include "utils/include/general/global_def.h"
 
-#define KEV_LR_SYMBOL_POS_POSTFIX (-1)
+#define KEV_LR_PRIOPOS_POSTFIX  (-1)
 
 typedef int KevPrioPos;
 

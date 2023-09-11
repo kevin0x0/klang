@@ -7,12 +7,12 @@ static KevLRConflictHandler struct_shifting = { .object = NULL, .callback = kev_
 KevLRConflictHandler* kev_lr_confhandler_shifting = &struct_shifting;
 
 bool kev_lr_confhandler_priority_callback(void* object, KevLRConflict* conflict, KevLRCollection* collec) {
-  /* this handler can not handle reducing-reducing conflict */
+  /* this handler callback can not handle reducing-reducing conflict */
   if (kev_lr_conflict_RR(conflict)) return false;
   KevPrioMap* priomap = (KevPrioMap*)object;
   KevSymbol* postfix_operator = conflict->symbol;
   /* find the priority of the postfix operator */
-  KevPrioMapNode* mapnode = kev_priomap_search(priomap, postfix_operator, KEV_LR_SYMBOL_POS_POSTFIX);
+  KevPrioMapNode* mapnode = kev_priomap_search(priomap, postfix_operator, KEV_LR_PRIOPOS_POSTFIX);
   if (!mapnode) return false;
   size_t postfix_prio = mapnode->priority;
   /* find the priority of the operator in the reduced rule(not after the rule). */
