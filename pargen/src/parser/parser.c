@@ -1,4 +1,5 @@
 #include "pargen/include/parser/parser.h"
+#include "kevlr/include/hashmap/priority_map.h"
 #include "pargen/include/parser/error.h"
 #include "kevlr/include/lr.h"
 #include "utils/include/string/kev_string.h"
@@ -12,6 +13,11 @@ static KevSymbol** kev_pargenparser_statement_rulebody(KevPParserState* parser_s
                                                        size_t* p_bodylen, KevActionFunc** actfunc);
 static KevSymbol* kev_pargenparser_statement_symbol(KevPParserState* parser_state, KevPLexer* lex);
 static KevActionFunc* kev_pargenlexer_statement_actfunc(KevPParserState* parser_state, KevPLexer* lex);
+static void kev_pargenparser_statement_set(KevPParserState* parser_state, KevPLexer* lex);
+static void kev_pargenparser_statement_set_prio(KevPParserState* parser_state, KevPLexer* lex);
+static void kev_pargenparser_statement_set_asso(KevPParserState* parser_state, KevPLexer* lex);
+static void kev_pargenparser_statement_set_id(KevPParserState* parser_state, KevPLexer* lex);
+static KevPrioPos kev_pargenparser_statement_sympos(KevPParserState* parser_state, KevPLexer* lex);
 
 static void kev_pargenparser_match(KevPParserState* parser_state, KevPLexer* lex, int kind);
 static inline void kev_pargenparser_guarantee(KevPParserState* parser_state, KevPLexer* lex, int kind);
@@ -88,6 +94,7 @@ void kev_pargenparser_destroy(KevPParserState* parser_state) {
 }
 
 void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex) {
+  parser_state->err_count = 0;
   kev_pargenparser_next_nonblank(lex);
   while (lex->currtoken.kind != KEV_PTK_END) {
     if (lex->currtoken.kind == KEV_PTK_ID) {
@@ -96,8 +103,10 @@ void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex) {
       kev_pargenparser_statement_declare(parser_state, lex);
     } else {
       kev_error_report(lex, "expected: ", "identifier or keyword decl");
+      parser_state->err_count++;
     }
   }
+  parser_state->err_count += lex->err_count;
 }
 
 static void kev_pargenparser_statement_rules(KevPParserState* parser_state, KevPLexer* lex) {
@@ -313,4 +322,66 @@ static void kev_pargenparser_statement_declare(KevPParserState* parser_state, Ke
     }
   }
   kev_pargenparser_match(parser_state, lex, KEV_PTK_SEMI);
+}
+
+static void kev_pargenparser_statement_set(KevPParserState* parser_state, KevPLexer* lex) {
+  kev_pargenparser_next_nonblank(lex);
+  kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
+  if (kev_str_prefix(lex->currtoken.attr.str, "priority")) {
+    kev_pargenparser_statement_set_prio(parser_state, lex);
+  } else if (kev_str_prefix(lex->currtoken.attr.str, "associativity")) {
+    kev_pargenparser_statement_set_asso(parser_state, lex);
+  } else if (kev_str_prefix(lex->currtoken.attr.str, "id")) {
+    kev_pargenparser_statement_set_id(parser_state, lex);
+  } else {
+
+  }
+}
+
+static void kev_pargenparser_statement_set_prio(KevPParserState* parser_state, KevPLexer* lex) {
+  kev_pargenparser_next_nonblank(lex);
+  kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
+  while (lex->currtoken.kind == KEV_PTK_ID) {
+    /* parser_state->default_symbol is returned when the read symbol is not defined */
+    KevSymbol* symbol = kev_pargenparser_statement_symbol(parser_state, lex);
+    KevPrioPos sympos = kev_pargenparser_statement_sympos(parser_state, lex);
+    bool keep_priority = false;
+    if (lex->currtoken.kind == KEV_PTK_EQUAL)
+      keep_priority = true;
+    else if (lex->currtoken.kind != KEV_PTK_LESS  &&
+             lex->currtoken.kind != KEV_PTK_COMMA &&
+             lex->currtoken.kind != KEV_PTK_SEMI) {
+      kev_error_report(lex, "expected: ", "= or <");
+      parser_state->err_count++;
+      kev_pargenparser_recover(parser_state, lex, KEV_PTK_SEMI);
+    }
+
+    /* only set priority when the  symbol is defined */
+    if (symbol != parser_state->default_symbol) {
+      if (!kev_priomap_search(parser_state->priorities, symbol, sympos)) {
+        /* previously the priority of the symbol in this position is not defined */
+        if (!kev_priomap_insert(parser_state->priorities, symbol, sympos, parser_state->next_priority)) {
+          kev_error_report(lex, "out of memory", NULL);
+            parser_state->err_count++;
+        }
+        if (!keep_priority)
+          parser_state->next_priority += 2; /* this increases by 2 each time */
+      } else {  /* it has been defined */
+        kev_error_report(lex, "redefined priority: ", kev_lr_symbol_get_name(symbol));
+        parser_state->err_count++;
+      }
+    }
+    if (lex->currtoken.kind != KEV_PTK_SEMI)
+      kev_pargenparser_next_nonblank(lex);
+  }
+  kev_pargenparser_match(parser_state, lex, KEV_PTK_SEMI);
+}
+
+static void kev_pargenparser_statement_set_asso(KevPParserState* parser_state, KevPLexer* lex) {
+}
+
+static void kev_pargenparser_statement_set_id(KevPParserState* parser_state, KevPLexer* lex) {
+}
+
+static KevPrioPos kev_pargenparser_statement_sympos(KevPParserState* parser_state, KevPLexer* lex) {
 }

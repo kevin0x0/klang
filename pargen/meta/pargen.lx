@@ -44,8 +44,11 @@ def ';' (KEV_PTK_SEMI):
 def '|' (KEV_PTK_BAR):
   $\|
 
-def '=' (KEV_PTK_ASSIGN):
+def '=' (KEV_PTK_ASSIGN, KEV_PTK_EQUAL):
   $=
+
+def '<' (KEV_PTK_LESS):
+  $<
 
 def '%' (KEV_PTK_ENV):
   $%

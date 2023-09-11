@@ -16,10 +16,12 @@
 #define KEV_PTK_SEMI (11)
 #define KEV_PTK_BAR (12)
 #define KEV_PTK_ASSIGN (13)
-#define KEV_PTK_ENV (14)
-#define KEV_PTK_BLKS (15)
-#define KEV_PTK_NUM (16)
-#define KEV_PTK_END (17)
+#define KEV_PTK_EQUAL (13)
+#define KEV_PTK_LESS (14)
+#define KEV_PTK_ENV (15)
+#define KEV_PTK_BLKS (16)
+#define KEV_PTK_NUM (17)
+#define KEV_PTK_END (18)
 
 
 
