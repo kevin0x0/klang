@@ -21,6 +21,6 @@
 typedef struct tagKevOptions {
   int opts[KEV_LEXGEN_OPT_NO];
   char* strs[KEV_LEXGEN_STR_NO];
-} KevOptions;
+} KevLOptions;
 
 #endif

@@ -3,7 +3,7 @@
 #include "lexgen/include/lexgen/options.h"
 
 int main(int argc, char **argv) {
-  KevOptions options;
+  KevLOptions options;
   kev_lexgen_get_options(argc, argv, &options);
   kev_lexgen_control(&options);
   kev_lexgen_destroy_options(&options);

@@ -14,15 +14,15 @@
 static int kev_lexgen_control_parse(FILE* input, KevLParserState* parser_state);
 /* Set environment variable after parsing the lexical description file.
  * It set some variables according to some other variables set in the file. */
-static void kev_lexgen_control_set_env_var_post(KevOptions* options, KevStringMap* env_var);
+static void kev_lexgen_control_set_env_var_post(KevLOptions* options, KevStringMap* env_var);
 /* Set environment variable before parsing the lexical description file. */
-static void kev_lexgen_control_set_env_var_pre(KevOptions* options, KevStringMap* env_var);
+static void kev_lexgen_control_set_env_var_pre(KevLOptions* options, KevStringMap* env_var);
 /* Set variables whose value is the transition table or token infos after
  * generating DFA and converting it to table. These variables used in the
  * template file. */
 static KevFuncMap* kev_lexgen_control_get_funcmap(KevPatternBinary* binary_info, KevOutputFuncGroup* func_group);
 
-void kev_lexgen_control(KevOptions* options) {
+void kev_lexgen_control(KevLOptions* options) {
   /* show help if specified */
   if (options->opts[KEV_LEXGEN_OPT_HELP]) {
     kev_lexgen_output_help();
@@ -115,7 +115,7 @@ static int kev_lexgen_control_parse(FILE* input, KevLParserState* parser_state) 
   return error_number;
 }
 
-static void kev_lexgen_control_set_env_var_post(KevOptions* options, KevStringMap* env_var) {
+static void kev_lexgen_control_set_env_var_post(KevLOptions* options, KevStringMap* env_var) {
   KevStringMapNode* node = kev_strmap_search(env_var, "state-length");
   /* check state-length */
   if (node) {
@@ -142,7 +142,7 @@ static void kev_lexgen_control_set_env_var_post(KevOptions* options, KevStringMa
   }
 }
 
-static void kev_lexgen_control_set_env_var_pre(KevOptions* options, KevStringMap* env_var) {
+static void kev_lexgen_control_set_env_var_pre(KevLOptions* options, KevStringMap* env_var) {
   /* set include path for C/C++ header */
   if (options->strs[KEV_LEXGEN_OUT_INC_PATH]) {
     char* relpath = kev_get_relpath(options->strs[KEV_LEXGEN_OUT_SRC_PATH],

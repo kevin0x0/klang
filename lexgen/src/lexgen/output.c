@@ -62,7 +62,7 @@ void kev_lexgen_output_help(void) {
   free(resources_dir);
 }
 
-void kev_lexgen_output_src(FILE* output, KevOptions* options, KevStringMap* env_var, KevStrXMap* funcs) {
+void kev_lexgen_output_src(FILE* output, KevLOptions* options, KevStringMap* env_var, KevStrXMap* funcs) {
   if (options->strs[KEV_LEXGEN_OUT_SRC_PATH]) {
     char* src_tmpl_path = options->strs[KEV_LEXGEN_SRC_TMPL_PATH];
     FILE* tmpl = fopen(src_tmpl_path, "r");

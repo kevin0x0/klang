@@ -12,17 +12,17 @@
 #include <string.h>
 
 /* handle kev-value pair options */
-static void kev_lexgen_set_kv_pair(char* arg, KevOptions* options);
+static void kev_lexgen_set_kv_pair(char* arg, KevLOptions* options);
 /* set value for options before resolve argv */
-static void kev_lexgen_set_pre(KevOptions* options);
+static void kev_lexgen_set_pre(KevLOptions* options);
 /* set value for options after resolve argv */
-static void kev_lexgen_set_post(KevOptions* options);
+static void kev_lexgen_set_post(KevLOptions* options);
 /* get a copy of 'str' */
 static char* copy_string(const char* str);
 /* get value in a key-value pair */
 static const char* kev_get_value(const char* arg, const char* prefix);
 
-void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
+void kev_lexgen_get_options(int argc, char** argv, KevLOptions* options) {
   kev_lexgen_set_pre(options);
   for (int i = 1; i < argc; ++i) {
     char* arg = argv[i];
@@ -71,7 +71,7 @@ static char* copy_string(const char* str) {
   return ret;
 }
 
-static void kev_lexgen_set_kv_pair(char* arg, KevOptions* options) {
+static void kev_lexgen_set_kv_pair(char* arg, KevLOptions* options) {
   if (arg[0] != '-')
     kev_throw_error("command line parser:", "not an option: ", arg);
   const char* value = NULL;
@@ -84,7 +84,7 @@ static void kev_lexgen_set_kv_pair(char* arg, KevOptions* options) {
   }
 }
 
-static void kev_lexgen_set_pre(KevOptions* options) {
+static void kev_lexgen_set_pre(KevLOptions* options) {
   for (size_t i = 0; i < KEV_LEXGEN_STR_NO; ++i)
     options->strs[i] = NULL;
   options->opts[KEV_LEXGEN_OPT_HELP] = KEV_LEXGEN_OPT_FALSE;
@@ -95,7 +95,7 @@ static void kev_lexgen_set_pre(KevOptions* options) {
   options->strs[KEV_LEXGEN_SRC_TMPL_PATH] = NULL;
 }
 
-static void kev_lexgen_set_post(KevOptions* options) {
+static void kev_lexgen_set_post(KevLOptions* options) {
   char* resources_dir = kev_get_lexgen_resources_dir();
   if (!resources_dir)
     kev_throw_error("output:", "can not get resources directory", NULL);
@@ -126,7 +126,7 @@ static void kev_lexgen_set_post(KevOptions* options) {
   }
 }
 
-void kev_lexgen_destroy_options(KevOptions* options) {
+void kev_lexgen_destroy_options(KevLOptions* options) {
   for (size_t i = 0; i < KEV_LEXGEN_STR_NO; ++i)
     free(options->strs[i]);
 }
