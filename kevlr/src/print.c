@@ -1,4 +1,5 @@
 #include "kevlr/include/print.h"
+#include "kevlr/include/lr_utils.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -82,7 +83,6 @@ bool kev_lr_print_collection(FILE* out, KevLRCollection* collec, bool print_clos
     }
   }
 
-
   KevItemSetClosure* closure = kev_lr_closure_create(collec->symbol_no);
   if (!closure) return false;
   for (size_t i = 0; i < collec->itemset_no; ++i) {
@@ -102,15 +102,15 @@ bool kev_lr_print_collection(FILE* out, KevLRCollection* collec, bool print_clos
 
 bool kev_lr_print_symbols(FILE* out, KevLRCollection* collec) {
   size_t user_symbol_no = kev_lr_collection_get_user_symbol_no(collec);
-  KevSymbol** symbol_arrry = (KevSymbol**)malloc(sizeof(KevSymbol*) * user_symbol_no);
-  if (!symbol_arrry) return false;
+  KevSymbol** symbol_array = (KevSymbol**)malloc(sizeof(KevSymbol*) * user_symbol_no);
+  if (!symbol_array) return false;
   KevSymbol** symbols = kev_lr_collection_get_symbols(collec);
-  memcpy(symbol_arrry, symbols, sizeof (KevSymbol*) * (collec->start->index));
-  memcpy(symbol_arrry, symbols + collec->start->index + 1, sizeof (KevSymbol*) * (user_symbol_no - collec->start->index));
-  qsort(symbol_arrry, user_symbol_no, sizeof (KevSymbol*), kev_symbol_compare);
+  memcpy(symbol_array, symbols, sizeof (KevSymbol*) * (collec->start->index));
+  memcpy(symbol_array, symbols + collec->start->index + 1, sizeof (KevSymbol*) * (user_symbol_no - collec->start->index));
+  qsort(symbol_array, user_symbol_no, sizeof (KevSymbol*), kev_symbol_compare);
   size_t width = 0;
   for (size_t i = 0; i < user_symbol_no; ++i) {
-    size_t namelen = symbol_arrry[i] ? strlen(symbol_arrry[i]->name) : (sizeof ("<no name>") / sizeof ("<no name>"[0]) - 1);
+    size_t namelen = symbol_array[i] ? strlen(symbol_array[i]->name) : (sizeof ("<no name>") / sizeof ("<no name>"[0]) - 1);
     if (namelen > width) width = namelen;
   }
   width = kev_max(width, (sizeof ("SYMBOLS") / sizeof ("SYMBOLS")[0]) - 1);
@@ -123,15 +123,21 @@ bool kev_lr_print_symbols(FILE* out, KevLRCollection* collec) {
   for (size_t i = 0; i < 10; ++i)
     fprintf(out, num_format, (int)i);
 
-  for (size_t i = 0; i < user_symbol_no; ++i) {
-    if (i % 10 == 0) {
+  size_t max_id = kev_lr_util_symbol_max_id(collec);
+  for (size_t id = 0, i = 0; id <= max_id; ++id) {
+    if (id % 10 == 0) {
       fputc('\n', out);
-      fprintf(out, num_format, (int)i);
+      fprintf(out, num_format, (int)id);
     }
-    fprintf(out, str_format, symbol_arrry[i]->name ? symbol_arrry[i]->name : "<no name>");
+    if (symbol_array[i]->id == id) {
+      fprintf(out, str_format, symbol_array[i]->name ? symbol_array[i]->name : "<no name>");
+      ++i;
+    } else {
+      fprintf(out, str_format, "");
+    }
   }
   fputc('\n', out);
-  free(symbol_arrry);
+  free(symbol_array);
   return true;
 }
 

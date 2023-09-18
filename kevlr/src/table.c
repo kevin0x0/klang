@@ -188,7 +188,7 @@ void kev_lr_conflict_delete(KevLRConflict* conflict) {
 
 void kev_lr_table_delete(KevLRTable* table) {
   if (!table) return;
-  free(table->entries[0]);
+  if (table->entries) free(table->entries[0]);
   free(table->entries);
   KevLRConflict* conflict = table->conflicts;
   while (conflict) {
