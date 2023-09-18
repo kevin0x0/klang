@@ -164,16 +164,6 @@ static void kev_lexgen_control_set_env_var_pre(KevOptions* options, KevStringMap
   }
   free(resources_dir);
 
-  /* these variables are used to control whether to generate source */
-  if (options->opts[KEV_LEXGEN_OPT_TAB_ONLY] == KEV_LEXGEN_OPT_TRUE) {
-    /* "The values of these two variables are not important,
-     * it is only necessary to ensure that these two variables
-     * have been defined. */
-    if (!kev_strmap_update(env_var , "no-source", "enable") ||
-        !kev_strmap_update(env_var , "no-header", "enable"))
-      kev_throw_error("control:", "out of memory", NULL);
-  }
-
   /* preset charset */
   if (!kev_strmap_update(env_var, "encoding", "utf-8")) {
     kev_throw_error("control:", "out of memory", NULL);

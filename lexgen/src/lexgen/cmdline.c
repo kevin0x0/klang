@@ -53,8 +53,6 @@ void kev_lexgen_get_options(int argc, char** argv, KevOptions* options) {
         kev_throw_error("command line parser:", "missing header template path: ", "--inc-template <path>");
     free(options->strs[KEV_LEXGEN_INC_TMPL_PATH]);
     options->strs[KEV_LEXGEN_INC_TMPL_PATH] = copy_string(argv[i]);
-    } else if (strcmp(arg, "--table-only") == 0) {
-      options->opts[KEV_LEXGEN_OPT_TAB_ONLY] = KEV_LEXGEN_OPT_TRUE;
     } else {
       kev_lexgen_set_kv_pair(arg, options);
     }
@@ -90,7 +88,6 @@ static void kev_lexgen_set_pre(KevOptions* options) {
   for (size_t i = 0; i < KEV_LEXGEN_STR_NO; ++i)
     options->strs[i] = NULL;
   options->opts[KEV_LEXGEN_OPT_HELP] = KEV_LEXGEN_OPT_FALSE;
-  options->opts[KEV_LEXGEN_OPT_TAB_ONLY] = KEV_LEXGEN_OPT_FALSE;
   options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("c");
   options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("c");
   options->strs[KEV_LEXGEN_OUT_SRC_PATH] = copy_string("lex.out");
