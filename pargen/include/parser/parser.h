@@ -27,7 +27,10 @@ typedef struct tagKevPParserState {
   KevAddrArray* redact; /* reducing action */
   size_t next_priority;
   size_t err_count;
-  KevSymbol* default_symbol;
+  KevSymbol* start;
+  KevAddrArray* end_symbols;
+  KevSymbol* default_symbol_nt;
+  KevSymbol* default_symbol_t;
   KevPrioMap* priorities;
 } KevPParserState;
 

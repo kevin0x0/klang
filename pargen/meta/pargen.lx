@@ -1,10 +1,13 @@
 import "charset/unicode
 
+comment = $#[^\nxFF]*
+func-name = $([A-Za-z_] | [:uni-non-ascii:])([A-Za-z0-9_] | [:uni-non-ascii:])*
+
 def declare (KEV_PTK_DECL):
   $decl
 
-comment = $#[^\nxFF]*
-func-name = $([A-Za-z_] | [:uni-non-ascii:])([A-Za-z0-9_] | [:uni-non-ascii:])*
+def set (KEV_PTK_SET):
+  $set
 
 def identifier (KEV_PTK_ID):
   (kev_plex_simple_id)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])*

@@ -1,0 +1,37 @@
+ ACTION      0      1      2      3      4      5      6      7      8
+      0    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    SHI
+             4      1      2                    3                    5
+      1    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    SHI
+             4      1      2                    3                    6
+      2    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    SHI
+             4      1      2                    3                    7
+      3    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    SHI
+             4      1      2                    3                    8
+      4    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
+                    0      0      0      0             0      0       
+      5    ERR    SHI    SHI    SHI    SHI    ERR    ERR    ACC    ERR
+                    9     10     11     12                            
+      6    ERR    RED    RED    SHI    SHI    ERR    RED    RED    ERR
+                    0      0      6      6             0      0       
+      7    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
+                    0      0      0      0             0      0       
+      8    ERR    SHI    SHI    SHI    SHI    ERR    SHI    ERR    ERR
+                    9     10     11     12            13              
+      9    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    SHI
+             4      1      2                    3                   14
+     10    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    SHI
+             4      1      2                    3                   15
+     11    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    SHI
+             4      1      2                    3                   16
+     12    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    SHI
+             4      1      2                    3                   17
+     13    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
+                    0      0      0      0             0      0       
+     14    ERR    RED    RED    SHI    SHI    ERR    RED    RED    ERR
+                    0      0     14     14             0      0       
+     15    ERR    RED    RED    SHI    SHI    ERR    RED    RED    ERR
+                    0      0     15     15             0      0       
+     16    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
+                    0      0      0      0             0      0       
+     17    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
+                    0      0      0      0             0      0       

@@ -1,4 +1,0 @@
-decl n: expr;
-decl t: id, num, '+';
-
-expr : expr '+' expr  ` $0 = $1 + $2; `;
