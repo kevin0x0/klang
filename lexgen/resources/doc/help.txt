@@ -12,7 +12,6 @@ Options:
                                    file.
   --it --inc-tmpl <path>           Specify template file for generating header
                                    file.
-  --table-only                     Only generate the transition table.
   -l=<value> --lang[uage]=<value>  Specify language.
     c                              This is the default value.
     cpp
