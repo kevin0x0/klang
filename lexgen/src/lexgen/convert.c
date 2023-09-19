@@ -3,53 +3,53 @@
 
 #include <stdlib.h>
 
-static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, KevLParserState* parser_state,
+static void kev_lexgen_convert_pattern_mapping(KevLTableInfos* table_info, KevLParserState* parser_state,
                                                size_t* acc_mapping);
-static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
+static void kev_lexgen_convert_callback_array(KevLTableInfos* table_info,
                                               KevLParserState* parser_state, size_t* acc_mapping);
-static void kev_lexgen_convert_generate(KevPatternBinary* binary_info, KevLParserState* parser_state, KevFA** p_min_dfa,
+static void kev_lexgen_convert_generate(KevLTableInfos* table_info, KevLParserState* parser_state, KevFA** p_min_dfa,
                                         size_t** p_acc_mapping);
-static void kev_lexgen_convert_infos(KevPatternBinary* binary_info, KevLParserState* parser_state);
-static void kev_lexgen_convert_macro_array(KevPatternBinary* binary_info, KevLParserState* parser_state);
-static void kev_lexgen_convert_table(KevPatternBinary* binary_info, KevLParserState* parser_state, KevFA* dfa);
+static void kev_lexgen_convert_infos(KevLTableInfos* table_info, KevLParserState* parser_state);
+static void kev_lexgen_convert_macro_array(KevLTableInfos* table_info, KevLParserState* parser_state);
+static void kev_lexgen_convert_table(KevLTableInfos* table_info, KevLParserState* parser_state, KevFA* dfa);
 
 static uint8_t (*kev_lexgen_convert_table_256_u8(KevFA* dfa))[256];
 static uint8_t (*kev_lexgen_convert_table_128_u8(KevFA* dfa))[128];
 static uint16_t (*kev_lexgen_convert_table_256_u16(KevFA* dfa))[256];
 static uint16_t (*kev_lexgen_convert_table_128_u16(KevFA* dfa))[128];
 
-void kev_lexgen_convert(KevPatternBinary* binary_info, KevLParserState* parser_state) {
+void kev_lexgen_convert(KevLTableInfos* table_info, KevLParserState* parser_state) {
   KevFA* dfa;
   size_t* acc_mapping;
-  kev_lexgen_convert_generate(binary_info, parser_state, &dfa, &acc_mapping);
-  kev_lexgen_convert_callback_array(binary_info, parser_state, acc_mapping);
-  kev_lexgen_convert_pattern_mapping(binary_info, parser_state, acc_mapping);
+  kev_lexgen_convert_generate(table_info, parser_state, &dfa, &acc_mapping);
+  kev_lexgen_convert_callback_array(table_info, parser_state, acc_mapping);
+  kev_lexgen_convert_pattern_mapping(table_info, parser_state, acc_mapping);
   free(acc_mapping);
-  kev_lexgen_convert_table(binary_info, parser_state, dfa);
+  kev_lexgen_convert_table(table_info, parser_state, dfa);
   kev_fa_delete(dfa);
-  kev_lexgen_convert_infos(binary_info, parser_state);
-  kev_lexgen_convert_macro_array(binary_info, parser_state);
+  kev_lexgen_convert_infos(table_info, parser_state);
+  kev_lexgen_convert_macro_array(table_info, parser_state);
 }
 
-void kev_lexgen_convert_destroy(KevPatternBinary* binary_info) {
-  if (!binary_info) return;
-  free(binary_info->macros);
-  free(binary_info->callbacks);
-  free(binary_info->infos);
-  free(binary_info->table);
-  free(binary_info->pattern_mapping);
-  binary_info->macros = NULL;
-  binary_info->callbacks = NULL;
-  binary_info->infos = NULL;
-  binary_info->table = NULL;
-  binary_info->pattern_mapping = NULL;
+void kev_lexgen_convert_destroy(KevLTableInfos* table_info) {
+  if (!table_info) return;
+  free(table_info->macros);
+  free(table_info->callbacks);
+  free(table_info->infos);
+  free(table_info->table);
+  free(table_info->pattern_mapping);
+  table_info->macros = NULL;
+  table_info->callbacks = NULL;
+  table_info->infos = NULL;
+  table_info->table = NULL;
+  table_info->pattern_mapping = NULL;
 }
 
-static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
+static void kev_lexgen_convert_callback_array(KevLTableInfos* table_info,
                                               KevLParserState* parser_state, size_t* acc_mapping) {
-  size_t non_acc_no = binary_info->dfa_non_acc_no;
-  size_t state_no = binary_info->dfa_state_no;
-  size_t nfa_no = binary_info->nfa_no;
+  size_t non_acc_no = table_info->dfa_non_acc_no;
+  size_t state_no = table_info->dfa_state_no;
+  size_t nfa_no = table_info->nfa_no;
   KevPatternList* list = &parser_state->list;
   KevStringMap* env_var = &parser_state->env_var;
 
@@ -81,14 +81,14 @@ static void kev_lexgen_convert_callback_array(KevPatternBinary* binary_info,
     callbacks[i] = func_names[acc_mapping[i - non_acc_no]];;
   }
   free(func_names);
-  binary_info->callbacks = callbacks;
+  table_info->callbacks = callbacks;
 }
 
-static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, KevLParserState* parser_state,
+static void kev_lexgen_convert_pattern_mapping(KevLTableInfos* table_info, KevLParserState* parser_state,
                                                size_t* acc_mapping) {
-  size_t non_acc_state_no = binary_info->dfa_non_acc_no;
-  size_t nfa_no = binary_info->nfa_no;
-  size_t state_no = binary_info->dfa_state_no;
+  size_t non_acc_state_no = table_info->dfa_non_acc_no;
+  size_t nfa_no = table_info->nfa_no;
+  size_t state_no = table_info->dfa_state_no;
   KevPatternList* list = &parser_state->list;
   KevStringMap* env_var = &parser_state->env_var;
   int error_id = -1;
@@ -118,13 +118,13 @@ static void kev_lexgen_convert_pattern_mapping(KevPatternBinary* binary_info, Ke
   for (size_t i = non_acc_state_no; i < state_no; ++i)
     pattern_mapping[i] = (int)nfa_to_pattern[acc_mapping[i - non_acc_state_no]];
   free(nfa_to_pattern);
-  binary_info->pattern_mapping = pattern_mapping;
+  table_info->pattern_mapping = pattern_mapping;
 }
 
-static void kev_lexgen_convert_macro_array(KevPatternBinary* binary_info, KevLParserState* parser_state) {
+static void kev_lexgen_convert_macro_array(KevLTableInfos* table_info, KevLParserState* parser_state) {
   KevPattern* pattern = parser_state->list.head->next;
-  KevAddrArray** macros = (KevAddrArray**)malloc(sizeof (KevAddrArray*) * binary_info->pattern_no);
-  int* macro_ids = (int*)malloc(sizeof (int) * binary_info->pattern_no);
+  KevAddrArray** macros = (KevAddrArray**)malloc(sizeof (KevAddrArray*) * table_info->pattern_no);
+  int* macro_ids = (int*)malloc(sizeof (int) * table_info->pattern_no);
   if ( !macros || !macro_ids)
     kev_throw_error("convert:", "out of memory", NULL);
 
@@ -134,11 +134,11 @@ static void kev_lexgen_convert_macro_array(KevPatternBinary* binary_info, KevLPa
     macro_ids[i++] = (int)pattern->pattern_id;
     pattern = pattern->next;
   }
-  binary_info->macros = macros;
-  binary_info->macro_ids = macro_ids;
+  table_info->macros = macros;
+  table_info->macro_ids = macro_ids;
 }
 
-static void kev_lexgen_convert_generate(KevPatternBinary* patterns_info, KevLParserState* parser_state, KevFA** p_min_dfa,
+static void kev_lexgen_convert_generate(KevLTableInfos* patterns_info, KevLParserState* parser_state, KevFA** p_min_dfa,
                                         size_t** p_acc_mapping) {
   KevPatternList* list = & parser_state->list;
   size_t nfa_no = 0;
@@ -181,21 +181,21 @@ static void kev_lexgen_convert_generate(KevPatternBinary* patterns_info, KevLPar
   patterns_info->pattern_no = list->pattern_no;
 }
 
-static void kev_lexgen_convert_table(KevPatternBinary* binary_info, KevLParserState* parser_state, KevFA* dfa) {
+static void kev_lexgen_convert_table(KevLTableInfos* table_info, KevLParserState* parser_state, KevFA* dfa) {
   size_t alphabet_size = atoi(kev_strmap_search(&parser_state->env_var, "alphabet-size")->value);
   size_t length = atoi(kev_strmap_search(&parser_state->env_var, "state-length")->value);
   if (alphabet_size == 128 && length == 8) {
-    binary_info->table = kev_lexgen_convert_table_128_u8(dfa);
+    table_info->table = kev_lexgen_convert_table_128_u8(dfa);
   } else if (alphabet_size == 128 && length == 16) {
-    binary_info->table = kev_lexgen_convert_table_128_u16(dfa);
+    table_info->table = kev_lexgen_convert_table_128_u16(dfa);
   } else if (alphabet_size == 256 && length == 8) {
-    binary_info->table = kev_lexgen_convert_table_256_u8(dfa);
+    table_info->table = kev_lexgen_convert_table_256_u8(dfa);
   } else if (alphabet_size == 256 && length == 16) {
-    binary_info->table = kev_lexgen_convert_table_256_u16(dfa);
+    table_info->table = kev_lexgen_convert_table_256_u16(dfa);
   } else {
     kev_throw_error("convert:", "internal error occurred in kev_lexgen_output_table()", NULL);
   }
-  if (!binary_info->table) {
+  if (!table_info->table) {
     const char* info = NULL;
     if (alphabet_size == 128 || length == 8) {
       info = "failed to generate transition table, try to add:\n"
@@ -207,12 +207,12 @@ static void kev_lexgen_convert_table(KevPatternBinary* binary_info, KevLParserSt
     }
     kev_throw_error("convert:", info, NULL);
   }
-  binary_info->charset_size = alphabet_size;
-  binary_info->state_length = length;
+  table_info->charset_size = alphabet_size;
+  table_info->state_length = length;
 }
 
-static void kev_lexgen_convert_infos(KevPatternBinary* binary_info, KevLParserState* parser_state) {
-  char** infos = (char**)malloc(sizeof (char*) * binary_info->pattern_no);
+static void kev_lexgen_convert_infos(KevLTableInfos* table_info, KevLParserState* parser_state) {
+  char** infos = (char**)malloc(sizeof (char*) * table_info->pattern_no);
   if (!infos)
     kev_throw_error("convert:", "out of memory", NULL);
   KevPattern* pattern = parser_state->list.head->next;
@@ -221,7 +221,7 @@ static void kev_lexgen_convert_infos(KevPatternBinary* binary_info, KevLParserSt
     infos[i++] = pattern->name;
     pattern = pattern->next;
   }
-  binary_info->infos = infos;
+  table_info->infos = infos;
 }
 
 uint8_t (*kev_lexgen_convert_table_256_u8(KevFA* dfa))[256] {

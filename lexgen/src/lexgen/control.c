@@ -20,7 +20,7 @@ static void kev_lexgen_control_set_env_var_pre(KevLOptions* options, KevStringMa
 /* Set variables whose value is the transition table or token infos after
  * generating DFA and converting it to table. These variables used in the
  * template file. */
-static KevFuncMap* kev_lexgen_control_get_funcmap(KevPatternBinary* binary_info, KevOutputFuncGroup* func_group);
+static KevFuncMap* kev_lexgen_control_get_funcmap(KevLTableInfos* table_info, KevLOutputFuncGroup* func_group);
 
 void kev_lexgen_control(KevLOptions* options) {
   /* show help if specified */
@@ -51,53 +51,53 @@ void kev_lexgen_control(KevLOptions* options) {
   kev_lexgen_control_set_env_var_post(options, &parser_state.env_var);
 
   /* convert */
-  KevPatternBinary binary_info;
-  kev_lexgen_convert(&binary_info, &parser_state);
+  KevLTableInfos table_info;
+  kev_lexgen_convert(&table_info, &parser_state);
 
   /* output transition table */
   FILE* output = fopen(options->strs[KEV_LEXGEN_OUT_SRC_PATH], "w");
   if (!output) {
     kev_throw_error("control:", "can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
   }
-  KevOutputFuncGroup func_group;
+  KevLOutputFuncGroup func_group;
   kev_lexgen_output_set_func(&func_group, options->strs[KEV_LEXGEN_LANG_NAME]);
-  KevFuncMap* funcs = kev_lexgen_control_get_funcmap(&binary_info, &func_group);
+  KevFuncMap* funcs = kev_lexgen_control_get_funcmap(&table_info, &func_group);
   kev_lexgen_output_src(output, options, &parser_state.env_var, funcs);
   kev_funcmap_delete(funcs);
   fclose(output);
 
   /* free resources */
   kev_lexgenparser_destroy(&parser_state);
-  kev_lexgen_convert_destroy(&binary_info);
+  kev_lexgen_convert_destroy(&table_info);
 }
 
-static KevFuncMap* kev_lexgen_control_get_funcmap(KevPatternBinary* binary_info, KevOutputFuncGroup* func_group) {
+static KevFuncMap* kev_lexgen_control_get_funcmap(KevLTableInfos* table_info, KevLOutputFuncGroup* func_group) {
   KevFuncMap* funcs = kev_funcmap_create();
   if (!funcs) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "callback-array",
-      (void*)func_group->output_callback, binary_info)) {
+      (void*)func_group->output_callback, table_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "info-array",
-      (void*)func_group->output_info, binary_info)) {
+      (void*)func_group->output_info, table_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "macro-definition",
-      (void*)func_group->output_macro, binary_info)) {
+      (void*)func_group->output_macro, table_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "transition-table",
-      (void*)func_group->output_table, binary_info)) {
+      (void*)func_group->output_table, table_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "pattern-mapping",
-      (void*)func_group->output_pattern_mapping, binary_info)) {
+      (void*)func_group->output_pattern_mapping, table_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   if (!kev_funcmap_insert(funcs, "start-state",
-      (void*)func_group->output_start, binary_info)) {
+      (void*)func_group->output_start, table_info)) {
     kev_throw_error("control:", "out of memory", NULL);
   }
   return funcs;

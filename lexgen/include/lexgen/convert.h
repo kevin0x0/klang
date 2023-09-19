@@ -7,7 +7,7 @@
 
 /* this structure store the meory representation of transition table and
  * other infomation. */
-typedef struct tagPatternBinary {
+typedef struct tagLTableInfos {
   size_t pattern_no;
   size_t nfa_no;
   size_t dfa_non_acc_no;
@@ -21,11 +21,11 @@ typedef struct tagPatternBinary {
   void* table;
   size_t charset_size;
   size_t state_length;
-} KevPatternBinary;
+} KevLTableInfos;
 
 /* fill structure 'binary_info' according to infomation in 'parser_state' */
-void kev_lexgen_convert(KevPatternBinary* binary_info, KevLParserState* parser_state);
+void kev_lexgen_convert(KevLTableInfos* table_info, KevLParserState* parser_state);
 /* free resources */
-void kev_lexgen_convert_destroy(KevPatternBinary* binary_info);
+void kev_lexgen_convert_destroy(KevLTableInfos* table_info);
 
 #endif

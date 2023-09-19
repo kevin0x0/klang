@@ -18,7 +18,7 @@
 #define KEV_LEXGEN_STR_NO             (6)
 
 /* record options */
-typedef struct tagKevOptions {
+typedef struct tagKevLOptions {
   int opts[KEV_LEXGEN_OPT_NO];
   char* strs[KEV_LEXGEN_STR_NO];
 } KevLOptions;
