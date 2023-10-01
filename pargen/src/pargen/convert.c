@@ -78,7 +78,7 @@ static void kev_pargen_convert_rules_info(KevPTableInfo* table_info, KevPParserS
     KevRule* rule = (KevRule*)kev_addrarray_visit(parser_state->rules, i);
     rules_info[i].rulelen = kev_lr_rule_get_bodylen(rule);
     rules_info[i].head_id = kev_lr_symbol_get_id(kev_lr_rule_get_head(rule));
-    KevActionFunc* actfunc = kev_addrarray_visit(parser_state->redact, i);
+    KevActionFunc* actfunc = (KevActionFunc*)kev_addrarray_visit(parser_state->redact, i);
     if (actfunc) {
       rules_info[i].actfunc = actfunc->content;
       rules_info[i].func_type = actfunc->type;
@@ -97,7 +97,7 @@ static void kev_pargen_convert_symbols(KevPTableInfo* table_info, KevPParserStat
   for (KevStrXMapNode* node = kev_strxmap_iterate_begin(symbol_map);
        node != NULL;
        node = kev_strxmap_iterate_next(symbol_map, node)) {
-    KevSymbol* symbol = node->value;
+    KevSymbol* symbol = (KevSymbol*)node->value;
     symbol_name[kev_lr_symbol_get_id(symbol)] = kev_lr_symbol_get_name(symbol);
   }
 }

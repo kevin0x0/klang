@@ -10,7 +10,7 @@
 static int kev_lexgen_control_parse(FILE* input, KevLParserState* parser_state);
 /* Set environment variable after parsing the lexical description file.
  * It set some variables according to some other variables set in the file. */
-static void kev_lexgen_control_set_env_var_post(KevLOptions* options, KevStringMap* env_var);
+static void kev_lexgen_control_set_env_var_post(KevStringMap* env_var);
 /* Set environment variable before parsing the lexical description file. */
 static void kev_lexgen_control_set_env_var_pre(KevLOptions* options, KevStringMap* env_var);
 /* Set variables whose value is the transition table or token infos after
@@ -44,7 +44,7 @@ void kev_lexgen_control(KevLOptions* options) {
     sprintf(num_buf, "%d", error_number);
     kev_throw_error("control: ", num_buf, " error(s) detected.");
   }
-  kev_lexgen_control_set_env_var_post(options, &parser_state.env_var);
+  kev_lexgen_control_set_env_var_post(&parser_state.env_var);
 
   /* convert */
   KevLTableInfos table_info;
@@ -109,7 +109,7 @@ static int kev_lexgen_control_parse(FILE* input, KevLParserState* parser_state) 
   return error_number;
 }
 
-static void kev_lexgen_control_set_env_var_post(KevLOptions* options, KevStringMap* env_var) {
+static void kev_lexgen_control_set_env_var_post(KevStringMap* env_var) {
   KevStringMapNode* node = kev_strmap_search(env_var, "state-length");
   /* check state-length */
   if (node) {

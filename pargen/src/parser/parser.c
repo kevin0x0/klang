@@ -27,7 +27,7 @@ static void kev_pargenparser_statement_env_assign(KevPParserState* parser_state,
 
 static void kev_pargenparser_match(KevPParserState* parser_state, KevPLexer* lex, int kind);
 static inline void kev_pargenparser_guarantee(KevPParserState* parser_state, KevPLexer* lex, int kind);
-static void kev_pargenparser_recover(KevPParserState* parser_state, KevPLexer* lex, int kind);
+static void kev_pargenparser_recover(KevPLexer* lex, int kind);
 
 static char* kev_pargenparser_check_and_get_expr(KevPParserState* parser_state, KevPLexer* lex);
 
@@ -108,7 +108,7 @@ void kev_pargenparser_destroy(KevPParserState* parser_state) {
   }
 
   for (size_t i = 0; i < kev_addrarray_size(parser_state->confhandlers); ++i) {
-    KevConfHandler* handler = kev_addrarray_visit(parser_state->confhandlers, i);
+    KevConfHandler* handler = (KevConfHandler*)kev_addrarray_visit(parser_state->confhandlers, i);
     free (handler->handler_name);
     free (handler->attribute);
     free(handler);
@@ -176,7 +176,7 @@ static void kev_pargenparser_rules(KevPParserState* parser_state, KevPLexer* lex
   if (kev_lr_symbol_get_type(head) != KEV_LR_NONTERMINAL) {
     kev_error_report(lex, "expected: ", "terminal symbol");
     parser_state->err_count++;
-    kev_pargenparser_recover(parser_state, lex, KEV_PTK_SEMI);
+    kev_pargenparser_recover(lex, KEV_PTK_SEMI);
     return;
   }
   kev_pargenparser_match(parser_state, lex, KEV_PTK_COLON);
@@ -184,7 +184,7 @@ static void kev_pargenparser_rules(KevPParserState* parser_state, KevPLexer* lex
       lex->currtoken.kind != KEV_PTK_ID) {
     kev_error_report(lex, "unexpected: ", kev_pargenlexer_info(lex->currtoken.kind));
     parser_state->err_count++;
-    kev_pargenparser_recover(parser_state, lex, KEV_PTK_SEMI);
+    kev_pargenparser_recover(lex, KEV_PTK_SEMI);
     return;
   }
   while (true) {
@@ -210,7 +210,7 @@ static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevP
   if (!kev_addrarray_init(&symarr)) {
     kev_error_report(lex, "out of memory", NULL);
     parser_state->err_count++;
-    kev_pargenparser_recover(parser_state, lex, KEV_PTK_SEMI);
+    kev_pargenparser_recover(lex, KEV_PTK_SEMI);
     kev_pargenparser_next_nonblank(lex);
     *p_bodylen = 0;
     return NULL;
@@ -297,11 +297,11 @@ static inline void kev_pargenparser_guarantee(KevPParserState* parser_state, Kev
   if (lex->currtoken.kind != kind) {
     kev_error_report(lex, "expected: ", kev_pargenlexer_info(kind));
     parser_state->err_count++;
-    kev_pargenparser_recover(parser_state, lex, kind);
+    kev_pargenparser_recover(lex, kind);
   }
 }
 
-static void kev_pargenparser_recover(KevPParserState* parser_state, KevPLexer* lex, int kind) {
+static void kev_pargenparser_recover(KevPLexer* lex, int kind) {
   while (lex->currtoken.kind != kind && lex->currtoken.kind != KEV_PTK_END) {
     kev_pargenlexer_free_attr(lex);
     kev_pargenlexer_next(lex);
@@ -438,7 +438,7 @@ static void kev_pargenparser_statement_set(KevPParserState* parser_state, KevPLe
   } else {
     kev_error_report(lex, "unknown attribute: ", lex->currtoken.attr.str);
     parser_state->err_count++;
-    kev_pargenparser_recover(parser_state, lex, KEV_PTK_SEMI);
+    kev_pargenparser_recover(lex, KEV_PTK_SEMI);
     kev_pargenparser_next_nonblank(lex);
   }
 }
@@ -459,7 +459,7 @@ static void kev_pargenparser_statement_set_prio(KevPParserState* parser_state, K
              lex->currtoken.kind != KEV_PTK_SEMI) {
       kev_error_report(lex, "expected: ", "= or <");
       parser_state->err_count++;
-      kev_pargenparser_recover(parser_state, lex, KEV_PTK_SEMI);
+      kev_pargenparser_recover(lex, KEV_PTK_SEMI);
     }
 
     /* only set priority when the symbol is defined */

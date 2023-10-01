@@ -212,7 +212,7 @@ void kev_pargen_output_action_code(FILE* out, const char* code, char placeholder
         --ptr;  /* ptr will be increased in for loop */
       } else if ((*ptr | 0x20) >= 'a' && (*ptr | 0x20) <= 'z') {
         const char* begin = ptr++;
-        while (isalnum(*ptr) || *ptr == '_' || *ptr > 0x7F) ++ptr;
+        while (isalnum(*ptr) || *ptr == '_' || (uint8_t)*ptr > 0x7F) ++ptr;
         kev_pargen_output_simple_replace(out, begin, ptr, placeholder, fmt);
         --ptr;  /* ptr will be increased in for loop */
       } else {

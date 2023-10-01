@@ -4,7 +4,7 @@
 
 static KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon);
 static KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon);
-static bool kev_lr_closure_propagate(KevItemSet* itemset, KevItemSetClosure* closure, KevBitSet** firsts, size_t epsilon);
+static bool kev_lr_closure_propagate(KevItemSetClosure* closure, size_t epsilon);
 
 void kev_lr_itemset_delete(KevItemSet* itemset) {
   KevItem* item = itemset->items;
@@ -147,32 +147,33 @@ bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBit
     }
   }
 
-  return kev_lr_closure_propagate(itemset, closure, firsts, epsilon);
+  return kev_lr_closure_propagate(closure, epsilon);
 }
 
-static bool kev_lr_closure_propagate(KevItemSet* itemset, KevItemSetClosure* closure, KevBitSet** firsts, size_t epsilon) {
+static bool kev_lr_closure_propagate(KevItemSetClosure* closure, size_t epsilon) {
   KevAddrArray* symbols = closure->symbols;
   KevBitSet** las = closure->lookaheads;
   size_t symbol_array_size = kev_addrarray_size(symbols);
-  bool propagated = true;
-  while (propagated) {
-    propagated = false;
+  bool not_done = true;
+  while (not_done) {
+    not_done = false;
     for (size_t i = 0; i < symbol_array_size; ++i) {
       KevSymbol* symbol = (KevSymbol*)kev_addrarray_visit(symbols, i);
       KevRuleNode* node = symbol->rules;
       for (; node; node = node->next) {
-        size_t i = 0;
         size_t len = node->rule->bodylen;
-        if (len == 0) continue;
         KevSymbol** body = node->rule->body;
+        if (len == 0 || body[0]->kind == KEV_LR_TERMINAL)
+          continue;
+        size_t i = 1;
         for (; i < len; ++i) {
           if (body[i]->kind == KEV_LR_TERMINAL || 
-              kev_bitset_has_element(las[body[i]->index], epsilon))
+              !kev_bitset_has_element(las[body[i]->index], epsilon))
             break;
         }
         if (i != len) continue;
         if (!kev_bitset_is_subset(las[symbol->index], las[body[0]->index])) {
-          propagated = true;
+          not_done = true;
           if (!kev_bitset_union(las[body[0]->index], las[symbol->index]))
             return false;
         }

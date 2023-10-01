@@ -75,7 +75,7 @@ static bool kev_pargen_confhandler_interactive_callback(void* object, KevLRConfl
         continue;
       }
       KevItem* item = kev_lr_itemset_iter_begin(conflict_items);
-      for (size_t i = 0; i < num - 1; ++i) {
+      for (int i = 0; i < num - 1; ++i) {
         item = item ? kev_lr_itemset_iter_next(item) : item;
       }
       if (!item) {

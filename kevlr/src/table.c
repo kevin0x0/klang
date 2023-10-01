@@ -224,7 +224,7 @@ static KevLRTableEntry** kev_lr_table_get_initial_entries(size_t symbol_no, size
 }
 
 static bool kev_lr_conflict_create_and_add_item(KevLRConflict* conflict, KevRule* rule, size_t dot) {
-  KevItem* conflict_item = kev_lr_item_create(rule, rule->bodylen);
+  KevItem* conflict_item = kev_lr_item_create(rule, dot);
   if (!conflict_item) return false;
   kev_lr_conflict_add_item(conflict, conflict_item);
   return true;

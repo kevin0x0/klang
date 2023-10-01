@@ -199,6 +199,7 @@ static int kev_regex_escape(KevParser* parser) {
       error_type = KEV_REGEX_ERR_SYNTAX;
       kev_regex_set_error_info("unexpected \'\\0\'");
       number = -1;
+      break;
     }
     case '0': {
       char* pos = NULL;

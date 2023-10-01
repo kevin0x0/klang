@@ -16,7 +16,7 @@ typedef struct tagKevLR1Collection {
 } KevLR1Collection;
 
 static bool kev_lr1_get_all_itemsets(KevItemSet* start_iset, KevLR1Collection* collec);
-static bool kev_lr1_merge_gotos(KevItemSetSet* iset_set, KevAddrArray* itemset_array, KevLR1Collection* collec, KevItemSet* itemset);
+static bool kev_lr1_merge_gotos(KevItemSetSet* iset_set, KevAddrArray* itemset_array, KevItemSet* itemset);
 static bool kev_lr1_get_itemset(KevItemSet* itemset, KevItemSetClosure* closure, KevBitSet** firsts, size_t epsilon, KevGotoMap* goto_container);
 /* initialize lookahead for kernel items in itemset */
 
@@ -125,7 +125,7 @@ static bool kev_lr1_get_all_itemsets(KevItemSet* start_iset, KevLR1Collection* c
       kev_lr_closure_destroy(&closure);
       return false;
     }
-    if (!kev_lr1_merge_gotos(iset_set, itemset_array, collec, itemset)) {
+    if (!kev_lr1_merge_gotos(iset_set, itemset_array, itemset)) {
       kev_lr1_destroy_itemset_array(itemset_array);
       kev_gotomap_delete(goto_container);
       kev_itemsetset_delete(iset_set);
@@ -151,7 +151,7 @@ static void kev_lr1_destroy_itemset_array(KevAddrArray* itemset_array) {
   kev_addrarray_delete(itemset_array);
 }
 
-static bool kev_lr1_merge_gotos(KevItemSetSet* iset_set, KevAddrArray* itemset_array, KevLR1Collection* collec, KevItemSet* itemset) {
+static bool kev_lr1_merge_gotos(KevItemSetSet* iset_set, KevAddrArray* itemset_array, KevItemSet* itemset) {
   KevItemSetGoto* gotos = itemset->gotos;
   for (; gotos; gotos = gotos->next) {
     KevItemSet* target = gotos->itemset;
