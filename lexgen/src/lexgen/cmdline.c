@@ -86,9 +86,6 @@ static void kev_lexgen_set_pre(KevLOptions* options) {
   options->opts[KEV_LEXGEN_OPT_HELP] = KEV_LEXGEN_OPT_FALSE;
   options->strs[KEV_LEXGEN_LANG_NAME] = copy_string("c");
   options->strs[KEV_LEXGEN_OUT_SRC_PATH] = copy_string("lex.out");
-  options->strs[KEV_LEXGEN_OUT_INC_PATH] = NULL;
-  options->strs[KEV_LEXGEN_INC_TMPL_PATH] = NULL;
-  options->strs[KEV_LEXGEN_SRC_TMPL_PATH] = NULL;
 }
 
 static void kev_lexgen_set_post(KevLOptions* options) {
