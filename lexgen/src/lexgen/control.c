@@ -1,7 +1,3 @@
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "lexgen/include/lexgen/control.h"
 #include "lexgen/include/lexgen/output.h"
 #include "lexgen/include/lexgen/error.h"
@@ -55,16 +51,14 @@ void kev_lexgen_control(KevLOptions* options) {
   kev_lexgen_convert(&table_info, &parser_state);
 
   /* output transition table */
-  FILE* output = fopen(options->strs[KEV_LEXGEN_OUT_SRC_PATH], "w");
-  if (!output) {
-    kev_throw_error("control:", "can not open file: ", options->strs[KEV_LEXGEN_OUT_SRC_PATH]);
-  }
   KevLOutputFuncGroup func_group;
   kev_lexgen_output_set_func(&func_group, options->strs[KEV_LEXGEN_LANG_NAME]);
   KevFuncMap* funcs = kev_lexgen_control_get_funcmap(&table_info, &func_group);
-  kev_lexgen_output_src(output, options, &parser_state.env_var, funcs);
+  if (options->strs[KEV_LEXGEN_OUT_SRC_PATH])
+    kev_lexgen_output(options->strs[KEV_LEXGEN_OUT_SRC_PATH], options->strs[KEV_LEXGEN_SRC_TMPL_PATH], &parser_state.env_var, funcs);
+  if (options->strs[KEV_LEXGEN_OUT_INC_PATH])
+    kev_lexgen_output(options->strs[KEV_LEXGEN_OUT_INC_PATH], options->strs[KEV_LEXGEN_INC_TMPL_PATH], &parser_state.env_var, funcs);
   kev_funcmap_delete(funcs);
-  fclose(output);
 
   /* free resources */
   kev_lexgenparser_destroy(&parser_state);

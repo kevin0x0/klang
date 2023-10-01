@@ -1,0 +1,23 @@
+
+typedef struct tagActionEntry {
+  uint8_t action;
+  uint16_t info;
+} ActionEntry;
+
+typedef struct tagRuleInfo {
+  int head_id;
+  int bodylen;
+} RuleInfo;
+
+
+$r action-table $:$;
+
+$r goto-table $:$;
+
+$r rules-info $:$;
+
+$r callback-array $:$;
+
+$r symbol-array $:$;
+
+$r start-state $:$;

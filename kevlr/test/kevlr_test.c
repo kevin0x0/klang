@@ -3,8 +3,8 @@
 #include <time.h>
 
 bool conflict_report(void* object, KevLRConflict* conflict, KevLRCollection* collec) {
-  printf("All conflict items here:\n");
-  kev_lr_print_itemset(stdout, collec, conflict->conflct_items, false);
+  printf("%d, %d: All conflict items here:\n", conflict->itemset->id, conflict->symbol->id);
+  kev_lr_print_itemset(stdout, collec, conflict->conflict_items, false);
   return false;
 }
 
@@ -175,9 +175,10 @@ int main(int argc, char** argv) {
   rule32->id = 31;
 
   clock_t t = clock();
-  for (size_t i = 0; i < 1; ++i) {
-    KevLRCollection* collec = kev_lr_collection_create_lr1(E, &end, 1);
+  for (size_t i = 0; i < 1000; ++i) {
+    KevLRCollection* collec = kev_lr_collection_create_lalr(E, &end, 1);
     //kev_lr_print_collection(stdout, collec, true);
+    //KevLRConflictHandler handler = { NULL, conflict_report };
 
     //KevLRTable* table = kev_lr_table_create(collec, NULL);
     //kev_lr_print_goto_table(stdout, table);

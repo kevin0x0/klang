@@ -7,6 +7,7 @@ export KEVLR_DIR = $(ROOT_DIR)kevlr/
 export LEXGEN_DIR = $(ROOT_DIR)lexgen/
 export PARGEN_DIR = $(ROOT_DIR)pargen/
 export UTILS_DIR = $(ROOT_DIR)utils/
+export TEMPL_DIR = $(ROOT_DIR)template/
 export CFLAGS = -Wall $(OPTIMIZE) -I $(ROOT_DIR)
 export TARGET_LEXGEN_NAME = lexgen.exe
 export TARGET_PARGEN_NAME = pargen.exe
@@ -19,14 +20,18 @@ lexgen_t : kevfa_t
 pargen_t : kevlr_t
 	$(MAKE) -C $(PARGEN_DIR)
 
-kevfa_t : utils_t
+kevfa_t : utils_t template_t
 	$(MAKE) -C $(KEVFA_DIR)
 
-kevlr_t : utils_t
+kevlr_t : utils_t template_t
 	$(MAKE) -C $(KEVLR_DIR)
 
-utils_t :
+template_t : utils_t
+	$(MAKE) -C $(TEMPL_DIR)
+
+utils_t : 
 	$(MAKE) -C $(UTILS_DIR)
+
 
 .PHONY: clean
 clean :
@@ -35,3 +40,4 @@ clean :
 	$(MAKE) -C $(PARGEN_DIR) clean
 	$(MAKE) -C $(KEVFA_DIR) clean
 	$(MAKE) -C $(KEVLR_DIR) clean
+	$(MAKE) -C $(TEMPL_DIR) clean

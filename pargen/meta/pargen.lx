@@ -1,6 +1,6 @@
 import "charset/unicode
 
-comment = $#[^\nxFF]*
+comment = $#[^\n\xFF]*
 func-name = $([A-Za-z_] | [:uni-non-ascii:])([A-Za-z0-9_] | [:uni-non-ascii:])*
 
 def declare (KEV_PTK_DECL):
@@ -55,6 +55,9 @@ def '<' (KEV_PTK_LESS):
 
 def '%' (KEV_PTK_ENV):
   $%
+
+def '..' (KEV_PTK_CONCAT):
+  $\.\.
 
 def blanks (KEV_PTK_BLKS):
   $([\ \n\t] | [:comment:])+

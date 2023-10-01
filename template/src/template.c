@@ -1,15 +1,13 @@
-#include "lexgen/include/lexgen/template.h"
-#include "lexgen/include/lexgen/error.h"
-#include "utils/include/hashmap/strx_map.h"
+#include "template/include/template.h"
 
 #include <stdlib.h>
 
-static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs);
-static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs);
-static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs);
-static void kev_template_replace_no_output(FILE* tmpl);
-static void kev_template_convert_plain_no_output(FILE* tmpl);
-static void kev_template_condition_no_output(FILE* tmpl);
+static void kev_template_replace(FILE* out, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs);
+static void kev_template_convert_plain(FILE* out, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs);
+static void kev_template_condition(FILE* out, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs);
+static void kev_template_replace_no_out(FILE* tmpl);
+static void kev_template_convert_plain_no_out(FILE* tmpl);
+static void kev_template_condition_no_out(FILE* tmpl);
 
 static bool kev_template_expr_or(FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs);
 static bool kev_template_expr_and(FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs);
@@ -18,32 +16,38 @@ static bool kev_template_expr_unit(FILE* tmpl, KevStringMap* env_var, KevFuncMap
 static int kev_template_read_id(FILE* tmpl, char* buf, size_t buf_size);
 static int kev_template_next_non_blank(FILE* tmpl);
 
-void kev_template_convert(FILE* output, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs) {
-  kev_template_convert_plain(output, tmpl, env_var, funcs);
+
+
+static void kev_throw_error(const char* header, const char* info, const char* additional_info);
+
+
+
+void kev_template_convert(FILE* out, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs) {
+  kev_template_convert_plain(out, tmpl, env_var, funcs);
   if (fgetc(tmpl) != EOF)
     kev_throw_error("template: ", "trainling text", NULL);
 }
 
-static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs) {
+static void kev_template_convert_plain(FILE* out, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs) {
   int ch = 0;
   while ((ch = fgetc(tmpl)) != EOF) {
     if (ch == '$') {
       ch = fgetc(tmpl);
       switch (ch) {
         case 'r': {
-          kev_template_replace(output, tmpl, env_var, funcs);
+          kev_template_replace(out, tmpl, env_var, funcs);
           break;
         }
         case 'c': {
-          kev_template_condition(output, tmpl, env_var, funcs);
+          kev_template_condition(out, tmpl, env_var, funcs);
           break;
         }
         case '$': {
-          fputc('$', output);
+          fputc('$', out);
           break;
         }
         case ' ': case '\t': case '\n': {
-          fputc(ch, output);
+          fputc(ch, out);
           break;
         }
         default: {
@@ -53,22 +57,22 @@ static void kev_template_convert_plain(FILE* output, FILE* tmpl, KevStringMap* e
         }
       }
     } else {
-      fputc(ch, output);
+      fputc(ch, out);
     }
   }
 }
 
-static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs) {
+static void kev_template_replace(FILE* out, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs) {
   char buffer[1024];
   int ch = kev_template_read_id(tmpl, buffer, 1024);
   KevStringMapNode* strnode = kev_strmap_search(env_var, buffer);
   KevFuncObject* funcobj = NULL;
   if (strnode) {
-    fputs(strnode->value, output);
+    fputs(strnode->value, out);
   } else {
     funcobj = kev_funcmap_search(funcs, buffer);
     if (funcobj) {
-      ((void (*)(FILE*, void*))funcobj->func)(output, funcobj->object);
+      ((void (*)(FILE*, void*, KevStringMap*))funcobj->func)(out, funcobj->object, env_var);
     }
   }
   while (ch == ' ' || ch == '\t' || ch == '\n')
@@ -85,14 +89,14 @@ static void kev_template_replace(FILE* output, FILE* tmpl, KevStringMap* env_var
     kev_throw_error("template: ", "unexpected ", buffer);
   }
   if (strnode || funcobj)
-    kev_template_convert_plain_no_output(tmpl);
+    kev_template_convert_plain_no_out(tmpl);
   else
-    kev_template_convert_plain(output, tmpl, env_var, funcs);
+    kev_template_convert_plain(out, tmpl, env_var, funcs);
   if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
     kev_throw_error("template: ", "missing $;", NULL);
 }
 
-static void kev_template_replace_no_output(FILE* tmpl) {
+static void kev_template_replace_no_out(FILE* tmpl) {
   char buffer[1024];
   int ch = kev_template_read_id(tmpl, buffer, 1024);
   while (ch == ' ' || ch == '\t' || ch == '\n')
@@ -108,23 +112,23 @@ static void kev_template_replace_no_output(FILE* tmpl) {
     buffer[2] = '\0';
     kev_throw_error("template: ", "unexpected ", buffer);
   }
-  kev_template_convert_plain_no_output(tmpl);
+  kev_template_convert_plain_no_out(tmpl);
   if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
     kev_throw_error("template: ", "missing $;", NULL);
 }
 
-static void kev_template_convert_plain_no_output(FILE* tmpl) {
+static void kev_template_convert_plain_no_out(FILE* tmpl) {
   int ch = 0;
   while ((ch = fgetc(tmpl)) != EOF) {
     if (ch == '$') {
       ch = fgetc(tmpl);
       switch (ch) {
         case 'r': {
-          kev_template_replace_no_output(tmpl);
+          kev_template_replace_no_out(tmpl);
           break;
         }
         case 'c': {
-          kev_template_condition_no_output(tmpl);
+          kev_template_condition_no_out(tmpl);
           break;
         }
         case '$': {
@@ -160,24 +164,24 @@ static int kev_template_read_id(FILE* tmpl, char* buf, size_t buf_size) {
   return ch;
 }
 
-static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs) {
+static void kev_template_condition(FILE* out, FILE* tmpl, KevStringMap* env_var, KevFuncMap* funcs) {
   bool val = kev_template_expr_or(tmpl, env_var, funcs);
   int ch = kev_template_next_non_blank(tmpl);
   if (ch != '$' || fgetc(tmpl) != ':')
     kev_throw_error("template: ", "expected $:", NULL);
   if (val) {
-    kev_template_convert_plain(output, tmpl, env_var, funcs);
+    kev_template_convert_plain(out, tmpl, env_var, funcs);
   } else {
-    kev_template_convert_plain_no_output(tmpl);
+    kev_template_convert_plain_no_out(tmpl);
   }
   ch = kev_template_next_non_blank(tmpl);
   if (ch != '$')
     kev_throw_error("template: ", "expected $; or expected $|", NULL);
   if ((ch = fgetc(tmpl)) == '|') {
     if (val) {
-      kev_template_convert_plain_no_output(tmpl);
+      kev_template_convert_plain_no_out(tmpl);
     } else {
-      kev_template_convert_plain(output, tmpl, env_var, funcs);
+      kev_template_convert_plain(out, tmpl, env_var, funcs);
     }
     if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
       kev_throw_error("template: ", "expected $;", NULL);
@@ -187,17 +191,17 @@ static void kev_template_condition(FILE* output, FILE* tmpl, KevStringMap* env_v
   }
 }
 
-static void kev_template_condition_no_output(FILE* tmpl) {
+static void kev_template_condition_no_out(FILE* tmpl) {
   kev_template_expr_or(tmpl, NULL, NULL);
   int ch = kev_template_next_non_blank(tmpl);
   if (ch != '$' || fgetc(tmpl) != ':')
     kev_throw_error("template: ", "expected $:", NULL);
-  kev_template_convert_plain_no_output(tmpl);
+  kev_template_convert_plain_no_out(tmpl);
   ch = kev_template_next_non_blank(tmpl);
   if (ch != '$')
     kev_throw_error("template: ", "expected $; or expected $|", NULL);
   if ((ch = fgetc(tmpl)) == '|') {
-      kev_template_convert_plain_no_output(tmpl);
+      kev_template_convert_plain_no_out(tmpl);
     if (fgetc(tmpl) != '$' || fgetc(tmpl) != ';')
       kev_throw_error("template: ", "expected $;", NULL);
   }
@@ -253,4 +257,12 @@ static int kev_template_next_non_blank(FILE* tmpl) {
   while ((ch = fgetc(tmpl)) == ' ' || ch == '\t' || ch == '\n')
     continue;
   return ch;
+}
+
+static void kev_throw_error(const char* header, const char* info, const char* additional_info) {
+  fprintf(stderr, "%s %s", header, info);
+  if (additional_info)
+    fputs(additional_info, stderr);
+  fputc('\n', stderr);
+  exit(EXIT_FAILURE);
 }

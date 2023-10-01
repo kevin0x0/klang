@@ -123,7 +123,7 @@ bool kev_lr_print_symbols(FILE* out, KevLRCollection* collec) {
   for (size_t i = 0; i < 10; ++i)
     fprintf(out, num_format, (int)i);
 
-  size_t max_id = kev_lr_util_symbol_max_id(collec);
+  size_t max_id = kev_lr_util_user_symbol_max_id(collec);
   for (size_t id = 0, i = 0; id <= max_id; ++id) {
     if (id % 10 == 0) {
       fputc('\n', out);
@@ -199,7 +199,7 @@ void kev_lr_print_terminal_set(FILE* out, KevLRCollection* collec, KevBitSet* lo
 }
 
 void kev_lr_print_goto_table(FILE* out, KevLRTable* table) {
-  size_t width = kev_numlen(kev_max(table->table_symbol_no, table->itemset_no)) + 1;
+  size_t width = kev_numlen(kev_max(table->table_symbol_no, table->state_no)) + 1;
   width = kev_max(width, 5);
   char num_format[sizeof (size_t) * 4];
   char str_format[sizeof (size_t) * 4];
@@ -209,7 +209,7 @@ void kev_lr_print_goto_table(FILE* out, KevLRTable* table) {
   for (size_t i = 0; i < table->table_symbol_no; ++i)
     fprintf(out, num_format, (int)i);
   fputc('\n', out);
-  for (size_t i = 0; i < table->itemset_no; ++i) {
+  for (size_t i = 0; i < table->state_no; ++i) {
     fprintf(out, num_format, (int)i);
     for (size_t j = 0; j < table->table_symbol_no; ++j)
       fprintf(out, num_format, (int)table->entries[i][j].go_to);
@@ -218,7 +218,7 @@ void kev_lr_print_goto_table(FILE* out, KevLRTable* table) {
 }
 
 void kev_lr_print_action_table(FILE* out, KevLRTable* table) {
-  size_t width = kev_numlen(kev_max(table->table_symbol_no, table->itemset_no)) + 1;
+  size_t width = kev_numlen(kev_max(table->table_symbol_no, table->state_no)) + 1;
   width = kev_max(width, 7);
   char num_format[sizeof (size_t) * 4];
   char str_format[sizeof (size_t) * 4];
@@ -229,7 +229,7 @@ void kev_lr_print_action_table(FILE* out, KevLRTable* table) {
     fprintf(out, num_format, (int)i);
   fputc('\n', out);
 
-  for (size_t i = 0; i < table->itemset_no; ++i) {
+  for (size_t i = 0; i < table->state_no; ++i) {
     fprintf(out, num_format, (int)i);
     for (size_t j = 0; j < table->table_symbol_no; ++j) {
       const char* action = NULL;

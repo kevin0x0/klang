@@ -1,3 +1,6 @@
+#ifndef KEVCC_UTILS_INCLUDE_HASHMAP_FUNC_MAP_H
+#define KEVCC_UTILS_INCLUDE_HASHMAP_FUNC_MAP_H
+
 #include "utils/include/hashmap/strx_map.h"
 #include <stdlib.h>
 
@@ -29,3 +32,5 @@ static inline void kev_funcmap_delete(KevFuncMap* funcs) {
   }
   kev_strxmap_delete(funcs);
 }
+
+#endif

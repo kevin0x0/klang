@@ -1,5 +1,5 @@
-#ifndef KEVCC_LEXGEN_INCLUDE_LEXGEN_TEMPLATE_H
-#define KEVCC_LEXGEN_INCLUDE_LEXGEN_TEMPLATE_H
+#ifndef KEVCC_TEMPLATE_INCLUDE_TEMPLATE_H
+#define KEVCC_TEMPLATE_INCLUDE_TEMPLATE_H
 
 #include "utils/include/hashmap/str_map.h"
 #include "utils/include/hashmap/func_map.h"

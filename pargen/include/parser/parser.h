@@ -19,6 +19,11 @@ typedef struct tagKevActionFunc {
   char* content;
 } KevActionFunc;
 
+typedef struct tagKevConfHandler {
+  char* handler_name;
+  char* attribute;
+} KevConfHandler;
+
 /* pargen parser state */
 typedef struct tagKevPParserState {
   KevStringMap* env_var;
@@ -26,18 +31,21 @@ typedef struct tagKevPParserState {
   KevAddrArray* rules;
   KevAddrArray* redact; /* reducing action */
   size_t next_priority;
+  size_t next_symbol_id;
   size_t err_count;
   KevSymbol* start;
   KevAddrArray* end_symbols;
   KevSymbol* default_symbol_nt;
   KevSymbol* default_symbol_t;
   KevPrioMap* priorities;
+  KevAddrArray* confhandlers;
+  char* algorithm;
 } KevPParserState;
 
 bool kev_pargenparser_init(KevPParserState* parser_state);
 void kev_pargenparser_destroy(KevPParserState* parser_state);
 
 void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex);
-void kev_pargenparser_parse_file(KevPParserState* parser_state, const char* filepath);
+bool kev_pargenparser_parse_file(KevPParserState* parser_state, const char* filepath);
 
 #endif

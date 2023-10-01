@@ -338,7 +338,7 @@ KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts,
   return follows;
 }
 
-size_t kev_lr_util_symbol_max_id(KevLRCollection* collec) {
+size_t kev_lr_util_user_symbol_max_id(KevLRCollection* collec) {
   size_t max_id = 0;
   KevSymbol** symbols = kev_lr_collection_get_symbols(collec);
   size_t symbol_no = collec->symbol_no;

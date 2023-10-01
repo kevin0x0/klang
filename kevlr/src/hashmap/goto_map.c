@@ -1,12 +1,7 @@
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "kevlr/include/hashmap/goto_map.h"
 #include "kevlr/include/object_pool/gotomap_node_pool.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 inline static size_t kev_gotomap_hashing(void* key) {
   return (size_t)key >> 3;

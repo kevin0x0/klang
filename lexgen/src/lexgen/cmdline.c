@@ -1,7 +1,3 @@
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "lexgen/include/lexgen/cmdline.h"
 #include "lexgen/include/lexgen/dir.h"
 #include "lexgen/include/lexgen/error.h"

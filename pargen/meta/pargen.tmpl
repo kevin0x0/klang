@@ -106,6 +106,22 @@ static char* kev_get_escape_str(const char* origin, size_t len) {
         case '\'': str[i++] = '\''; break;
         case '\"': str[i++] = '\"'; break;
         case '\\': str[i++] = '\\'; break;
+        case 'x': {
+          if (*origin != '\0' && *(origin + 1) != '\0') {
+            unsigned char hex = 0;
+            if (*origin >= '0' && *origin <= '9')
+              hex = 16 * hex + *origin - '0';
+            else
+              hex = 16 * hex + (*origin | 0x20) - 'a';
+            if (*++origin >= '0' && *origin <= '9')
+              hex = 16 * hex + *origin - '0';
+            else
+              hex = 16 * hex + (*origin | 0x20) - 'a';
+            ++origin;
+            str[i++] = hex;
+          }
+          break;
+        }
         default: str[i++] = *origin; break;
       }
     } else {

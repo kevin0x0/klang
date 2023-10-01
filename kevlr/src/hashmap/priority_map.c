@@ -1,14 +1,9 @@
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "kevlr/include/hashmap/priority_map.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 inline static size_t kev_priomap_hashing(KevSymbol* symbol, KevPrioPos pos) {
-  return ((size_t)symbol >> 3) + pos;
+  return ((size_t)symbol) + pos;
 }
 
 static void kev_priomap_rehash(KevPrioMap* to, KevPrioMap* from) {

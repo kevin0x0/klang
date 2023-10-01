@@ -16,9 +16,20 @@ void kev_lr_itemset_add_item(KevItemSet* itemset, KevItem* item);
 static inline void kev_lr_itemset_add_goto(KevItemSet* itemset, KevItemSetGoto* go_to);
 static inline bool kev_lr_itemset_goto(KevItemSet* itemset, KevSymbol* symbol, KevItemSet* iset);
 
+/* iterate for itemset */
+static inline KevItem* kev_lr_itemset_iter_begin(KevItemSet* itemset);
+static inline KevItem* kev_lr_itemset_iter_next(KevItem* item);
+/* get method for itemset */
+static inline KevLRID kev_lr_itemset_get_id(KevItemSet* itemset);
+
 static inline KevItem* kev_lr_item_create(KevRule* rule, size_t dot);
 static inline KevItem* kev_lr_item_create_copy(KevItem* item);
 static inline void kev_lr_item_delete(KevItem* item);
+
+/* item get method */
+static inline KevRule* kev_lr_item_get_rule(KevItem* item);
+static inline KevBitSet* kev_lr_item_get_lookahead(KevItem* item);
+static inline size_t kev_lr_item_get_dotpos(KevItem* item);
 
 bool kev_lr_closure_init(KevItemSetClosure* closure, size_t symbol_no);
 void kev_lr_closure_destroy(KevItemSetClosure* closure);
@@ -76,6 +87,30 @@ static inline bool kev_lr_itemset_goto(KevItemSet* itemset, KevSymbol* symbol, K
   go_to->itemset = iset;
   kev_lr_itemset_add_goto(itemset, go_to);
   return true;
+}
+
+static inline KevRule* kev_lr_item_get_rule(KevItem* item) {
+  return item->rule;
+}
+
+static inline KevBitSet* kev_lr_item_get_lookahead(KevItem* item) {
+  return item->lookahead;
+}
+
+static inline size_t kev_lr_item_get_dotpos(KevItem* item) {
+  return item->dot;
+}
+
+static inline KevItem* kev_lr_itemset_iter_begin(KevItemSet* itemset) {
+  return itemset->items;
+}
+
+static inline KevItem* kev_lr_itemset_iter_next(KevItem* item) {
+  return item->next;
+}
+
+static inline size_t kev_lr_itemset_get_id(KevItemSet* itemset) {
+  return itemset->id;
 }
 
 #endif

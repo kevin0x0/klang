@@ -20,9 +20,10 @@
 #define KEV_PTK_EQUAL (14)
 #define KEV_PTK_LESS (15)
 #define KEV_PTK_ENV (16)
-#define KEV_PTK_BLKS (17)
-#define KEV_PTK_NUM (18)
-#define KEV_PTK_END (19)
+#define KEV_PTK_CONCAT (17)
+#define KEV_PTK_BLKS (18)
+#define KEV_PTK_NUM (19)
+#define KEV_PTK_END (20)
 
 
 

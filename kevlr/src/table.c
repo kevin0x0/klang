@@ -16,11 +16,12 @@ KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* c
   if (!table) return NULL;
   /* start symbol is excluded in the table, so the actual symbol number for
    * the table is table->symbol_no - 1. */
-  table->table_symbol_no = kev_lr_util_symbol_max_id(collec) + 1;
+  table->table_symbol_no = kev_lr_util_user_symbol_max_id(collec) + 1;
   table->total_symbol_no = kev_lr_collection_get_symbol_no(collec);
   table->terminal_no = kev_lr_collection_get_terminal_no(collec);
-  table->itemset_no = kev_lr_collection_get_itemset_no(collec);
-  table->entries = kev_lr_table_get_initial_entries(table->table_symbol_no, table->itemset_no);
+  table->state_no = kev_lr_collection_get_itemset_no(collec);
+  table->start_state = kev_lr_itemset_get_id(kev_lr_collection_get_start_itemset(collec));
+  table->entries = kev_lr_table_get_initial_entries(table->table_symbol_no, table->state_no);
   table->conflicts = NULL;
   if (!table->entries) {
     kev_lr_table_delete(table);
@@ -38,7 +39,7 @@ KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* c
 static bool kev_lr_init_reducing_action(KevLRTable* table, KevLRCollection* collec, KevLRConflictHandler* conf_handler) {
   size_t total_symbol_no = table->total_symbol_no;
   size_t terminal_no = table->terminal_no;
-  size_t itemset_no = table->itemset_no;
+  size_t itemset_no = table->state_no;
   KevItemSet** itemsets = collec->itemsets;
   KevItemSetClosure* closure = kev_lr_closure_create(total_symbol_no);
   if (!closure) return false;
@@ -69,7 +70,7 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
     if (kitem->dot != rule->bodylen) continue;
     /* reduce */
     KevBitSet* la = kitem->lookahead;
-    /* lookahead set is guaranteed to be not empty */
+    /* lookahead set is ensured to be not empty */
     size_t next_symbol_index = kev_bitset_iterate_begin(la);
     size_t symbol_index = 0;
     do {
@@ -82,8 +83,6 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
         continue;
       } else if (entry->action != KEV_LR_ACTION_ERR) {
         KevLRConflict* conflict = kev_lr_conflict_create(itemset, collec->symbols[symbol_index], entry);
-        entry->action = KEV_LR_ACTION_CON;
-        entry->info.conflict = conflict;
         if (!conflict) return false;
         if (!kev_lr_conflict_create_and_add_item(conflict, kitem->rule, kitem->dot) ||
             (entry->action == KEV_LR_ACTION_RED &&
@@ -91,6 +90,8 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
           kev_lr_conflict_delete(conflict);
           return false;
         }
+        entry->action = KEV_LR_ACTION_CON;
+        entry->info.conflict = conflict;
         if (!conf_handler || !kev_lr_conflict_handle(conf_handler, conflict, collec))
           kev_lr_table_add_conflict(table, conflict);
         else
@@ -109,40 +110,40 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
     KevBitSet* la = las[head->index];
     for (KevRuleNode* node = head->rules; node; node = node->next) {
       KevRule* rule = node->rule;
-      if (rule->bodylen == 0) {  /* reduce */
+      if (rule->bodylen != 0) continue;
+      /* reduce */
       /* lookahead is guaranteed to be not empty. */
-        size_t symbol_index = kev_bitset_iterate_begin(la);
-        size_t next_symbol_index = 0;
-        do {
-          symbol_index = next_symbol_index;
-          size_t id = symbols[symbol_index]->id;
-          KevLRTableEntry* entry = &entries[itemset_id][id];
-          if (entry->action == KEV_LR_ACTION_CON) {
-            if (!kev_lr_conflict_create_and_add_item(entry->info.conflict, rule, rule->bodylen))
-              return false;
-            continue;
-          } else if (entry->action != KEV_LR_ACTION_ERR) {
-            KevLRConflict* conflict = kev_lr_conflict_create(itemset, collec->symbols[symbol_index], entry);
-            entry->action = KEV_LR_ACTION_CON;
-            entry->info.conflict = conflict;
-            if (!conflict) return false;
-            if (!kev_lr_conflict_create_and_add_item(conflict, rule, rule->bodylen) ||
-                !(entry->action == KEV_LR_ACTION_RED &&
+      size_t next_symbol_index = kev_bitset_iterate_begin(la);
+      size_t symbol_index = 0;
+      do {
+        symbol_index = next_symbol_index;
+        size_t id = symbols[symbol_index]->id;
+        KevLRTableEntry* entry = &entries[itemset_id][id];
+        if (entry->action == KEV_LR_ACTION_CON) {
+          if (!kev_lr_conflict_create_and_add_item(entry->info.conflict, rule, rule->bodylen))
+            return false;
+          continue;
+        } else if (entry->action != KEV_LR_ACTION_ERR) {
+          KevLRConflict* conflict = kev_lr_conflict_create(itemset, collec->symbols[symbol_index], entry);
+          if (!conflict) return false;
+          if (!kev_lr_conflict_create_and_add_item(conflict, rule, rule->bodylen) ||
+              !(entry->action == KEV_LR_ACTION_RED &&
                 kev_lr_conflict_create_and_add_item(conflict, entry->info.rule, entry->info.rule->bodylen))) {
-              kev_lr_conflict_delete(conflict);
-              return false;
-            }
-            if (!conf_handler || !kev_lr_conflict_handle(conf_handler, conflict, collec))
-              kev_lr_table_add_conflict(table, conflict);
-            else
-              kev_lr_conflict_delete(conflict);
-          } else {
-            entry->action = rule == start_rule ? KEV_LR_ACTION_ACC : KEV_LR_ACTION_RED;
-            entry->info.rule = rule;
+            kev_lr_conflict_delete(conflict);
+            return false;
           }
-          next_symbol_index = kev_bitset_iterate_next(la, symbol_index);
-        } while (next_symbol_index != symbol_index);
-      }
+          entry->action = KEV_LR_ACTION_CON;
+          entry->info.conflict = conflict;
+          if (!conf_handler || !kev_lr_conflict_handle(conf_handler, conflict, collec))
+            kev_lr_table_add_conflict(table, conflict);
+          else
+            kev_lr_conflict_delete(conflict);
+        } else {
+          entry->action = rule == start_rule ? KEV_LR_ACTION_ACC : KEV_LR_ACTION_RED;
+          entry->info.rule = rule;
+        }
+        next_symbol_index = kev_bitset_iterate_next(la, symbol_index);
+      } while (next_symbol_index != symbol_index);
     }
   }
   return true;
@@ -172,8 +173,8 @@ KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, Ke
   conflict->itemset = itemset;
   conflict->symbol = symbol;
   conflict->entry = entry;
-  conflict->conflct_items = kev_lr_itemset_create();
-  if (!conflict->conflct_items) {
+  conflict->conflict_items = kev_lr_itemset_create();
+  if (!conflict->conflict_items) {
     free(conflict);
     return NULL;
   }
@@ -182,7 +183,7 @@ KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, Ke
 
 void kev_lr_conflict_delete(KevLRConflict* conflict) {
   if (!conflict) return;
-  kev_lr_itemset_delete(conflict->conflct_items);
+  kev_lr_itemset_delete(conflict->conflict_items);
   free(conflict);
 }
 

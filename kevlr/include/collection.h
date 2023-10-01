@@ -2,6 +2,7 @@
 #define KEVCC_KEVLR_INCLUDELECTION_H
 
 #include "kevlr/include/itemset.h"
+#include "kevlr/include/itemset_def.h"
 #include "utils/include/array/addr_array.h"
 
 typedef struct tagKevLRCollection {
@@ -32,6 +33,8 @@ static inline size_t kev_lr_collection_get_symbol_no(KevLRCollection* collec);
 static inline size_t kev_lr_collection_get_user_symbol_no(KevLRCollection* collec);
 static inline size_t kev_lr_collection_get_terminal_no(KevLRCollection* collec);
 static inline KevSymbol** kev_lr_collection_get_symbols(KevLRCollection* collec);
+static inline KevItemSet* kev_lr_collection_get_start_itemset(KevLRCollection* collec);
+static inline KevRule* kev_lr_collection_get_start_rule(KevLRCollection* collec);
 
 
 static inline KevItemSet* kev_lr_collection_get_itemset_by_index(KevLRCollection* collec, size_t index) {
@@ -50,7 +53,7 @@ static inline size_t kev_lr_collection_get_symbol_no(KevLRCollection* collec) {
   return collec->symbol_no;
 }
 static inline size_t kev_lr_collection_get_user_symbol_no(KevLRCollection* collec) {
-  /* start symbol is excluded, so the actual symbol number created by user is
+  /* start symbol should be excluded, so the actual symbol number created by user is
    * collec->symbol_no - 1. */
   return collec->symbol_no - 1;
 }
@@ -61,6 +64,14 @@ static inline KevSymbol** kev_lr_collection_get_symbols(KevLRCollection* collec)
 
 static inline size_t kev_lr_collection_get_terminal_no(KevLRCollection* collec) {
   return collec->terminal_no;
+}
+
+static inline KevItemSet* kev_lr_collection_get_start_itemset(KevLRCollection* collec) {
+  return collec->itemsets[0];
+}
+
+static inline KevRule* kev_lr_collection_get_start_rule(KevLRCollection* collec) {
+  return collec->start_rule;
 }
 
 #endif

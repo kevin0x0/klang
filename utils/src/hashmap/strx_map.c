@@ -1,7 +1,3 @@
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "utils/include/hashmap/strx_map.h"
 #include "utils/include/string/kev_string.h"
 
