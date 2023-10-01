@@ -159,8 +159,10 @@ static bool kev_lr_init_goto_and_shifting_action(KevLRTable* table, KevLRCollect
       size_t symbol_id = goto_item->symbol->id;
       size_t itemset_id = goto_item->itemset->id;
       entries[i][symbol_id].go_to = itemset_id;
-      entries[i][symbol_id].action = KEV_LR_ACTION_SHI;
-      entries[i][symbol_id].info.itemset_id = itemset_id;
+      if (kev_lr_symbol_get_kind(goto_item->symbol) == KEV_LR_TERMINAL) {
+        entries[i][symbol_id].action = KEV_LR_ACTION_SHI;
+        entries[i][symbol_id].info.itemset_id = itemset_id;
+      }
     }
   }
   return true;

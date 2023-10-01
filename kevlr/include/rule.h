@@ -39,7 +39,7 @@ KevRule* kev_lr_rule_create_move(KevSymbol* head, KevSymbol** body, size_t body_
 void kev_lr_rule_delete(KevRule* rule);
 
 /* get method */
-static inline KevSymbolType kev_lr_symbol_get_type(KevSymbol* symbol);
+static inline KevSymbolType kev_lr_symbol_get_kind(KevSymbol* symbol);
 static inline char* kev_lr_symbol_get_name(KevSymbol* symbol);
 static inline KevLRID kev_lr_symbol_get_id(KevSymbol* symbol);
 
@@ -52,7 +52,7 @@ static inline KevLRID kev_lr_rule_get_id(KevRule* rule);
 static inline void kev_lr_symbol_set_id(KevSymbol* symbol, KevLRID id);
 static inline void kev_lr_rule_set_id(KevRule* rule, KevLRID id);
 
-static inline KevSymbolType kev_lr_symbol_get_type(KevSymbol* symbol) {
+static inline KevSymbolType kev_lr_symbol_get_kind(KevSymbol* symbol) {
   return symbol->kind;
 }
 
