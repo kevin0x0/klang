@@ -45,6 +45,7 @@ typedef struct tagKevLRTable {
   size_t total_symbol_no;
   size_t table_symbol_no;
   size_t terminal_no;
+  size_t max_terminal_id;
   KevLRConflict* conflicts;
 } KevLRTable;
 
@@ -104,6 +105,10 @@ static inline size_t kev_lr_table_get_symbol_no(KevLRTable* table) {
 
 static inline size_t kev_lr_table_get_terminal_no(KevLRTable* table) {
   return table->terminal_no;
+}
+
+static inline size_t kev_lr_table_get_max_terminal_id(KevLRTable* table) {
+  return table->max_terminal_id;
 }
 
 static inline size_t kev_lr_table_get_state_no(KevLRTable* table) {

@@ -44,6 +44,42 @@ void kev_pargen_output_help(void) {
   free(resources_dir);
 }
 
+void kev_pargen_output_lrinfo(const char* collecinfo_path, const char* actioninfo_path,
+                              const char* gotoinfo_path, const char* symbolinfo_path,
+                              KevLRCollection* collec, KevLRTable* table) {
+  if (collecinfo_path) {
+    FILE* out = fopen(collecinfo_path, "w");
+    if (!out)
+      kev_throw_error("output:", "can not open file: ", collecinfo_path);
+    if (!kev_lr_print_collection(out, collec, true))
+      kev_throw_error("output:", "out of memory", ", failed to print collection");
+    fclose(out);
+  }
+  if (symbolinfo_path) {
+    FILE* out = fopen(symbolinfo_path, "w");
+    if (!out)
+      kev_throw_error("output:", "can not open file: ", symbolinfo_path);
+    if (!kev_lr_print_symbols(out, collec))
+      kev_throw_error("output:", "out of memory", ", failed to print symbol information");
+    fclose(out);
+  }
+  if (actioninfo_path) {
+    FILE* out = fopen(actioninfo_path, "w");
+    if (!out)
+      kev_throw_error("output:", "can not open file: ", actioninfo_path);
+    kev_lr_print_action_table(out, table);
+    fclose(out);
+  }
+  if (gotoinfo_path) {
+    FILE* out = fopen(gotoinfo_path, "w");
+    if (!out)
+      kev_throw_error("output:", "can not open file: ", gotoinfo_path);
+    kev_lr_print_goto_table(out, table);
+    fclose(out);
+  }
+
+}
+
 void kev_pargen_output_set_func(KevPOutputFuncGroup* func_group, const char* language) {
   if (strcmp(language, "c") == 0 || strcmp(language, "cpp") == 0) {
     func_group->output_action_table = (KevPOutputFunc*)kev_pargen_output_action_table_c_cpp;
@@ -71,8 +107,8 @@ void kev_pargen_output(const char* output_path, const char* tmpl_path, KevString
 
 static void kev_pargen_output_symbol_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
   char** symbol_name = table_info->symbol_name;
-  fprintf(out, "static const char* symbol_name[%d] = {\n", (int)table_info->symbol_no);
-  for (size_t i = 0; i < table_info->symbol_no; ++i) {
+  fprintf(out, "static const char* symbol_name[%d] = {\n", (int)table_info->goto_col_no);
+  for (size_t i = 0; i < table_info->goto_col_no; ++i) {
     fputs("  \"", out);
     if (symbol_name[i])
       kev_pargen_output_escape_str(out, symbol_name[i]);
@@ -89,12 +125,12 @@ static void kev_pargen_output_start_state_c_cpp(FILE* out, KevPTableInfo* table_
 
 static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
   size_t state_no = (size_t)table_info->state_no;
-  size_t symbol_no = (size_t)table_info->symbol_no;
+  size_t column_no = (size_t)table_info->action_col_no;
   KevPActionEntry** action = table_info->action_table;
-  fprintf(out, "static ActionEntry action_tbl[%d][%d] = {", (int)state_no, (int)symbol_no);
+  fprintf(out, "static ActionEntry action_tbl[%d][%d] = {", (int)state_no, (int)column_no);
   for (size_t i = 0; i < state_no; ++i) {
     fputs("\n  {", out);
-    for (size_t j = 0; j < symbol_no; ++j) {
+    for (size_t j = 0; j < column_no; ++j) {
       if (j % 8 == 0) fputs( "\n    ", out);
       fprintf(out, "{ %d, %4d }, ", (int)action[i][j].action, (int)action[i][j].info);
     }
@@ -105,7 +141,7 @@ static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table
 
 static void kev_pargen_output_goto_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
   size_t state_no = (size_t)table_info->state_no;
-  size_t symbol_no = (size_t)table_info->symbol_no;
+  size_t symbol_no = (size_t)table_info->goto_col_no;
   int** goto_tbl = table_info->goto_table;
   fprintf(out, "static int goto_tbl[%d][%d] = {\n ", (int)state_no, (int)symbol_no);
   for (size_t i = 0; i < state_no; ++i) {
@@ -150,8 +186,8 @@ static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* tab
         kev_throw_error("output:", "environment variable 'attr-idx-fmt', 'callback-head', ", 
                         "'callback-head' and 'placeholder' should be defined");
       }
-      char buf[(sizeof "_reducing_action_" / sizeof "_reducing_action_"[0]) + 30];
-      size_t len = sprintf(buf, "_reducing_action_%d", (int)i);
+      char buf[(sizeof "_action_" / sizeof "_action_"[0]) + 30];
+      size_t len = sprintf(buf, "_action_%d", (int)i);
       kev_pargen_output_simple_replace(out, buf, buf + len, placeholder[0], callback_head);
       kev_pargen_output_action_code(out, rules_info[i].actfunc, placeholder[0], attr_idx_fmt, stk_idx_fmt);
       fputs(callback_tail, out);
@@ -163,7 +199,7 @@ static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* tab
     if (rules_info[i].func_type == KEV_ACTFUNC_FUNCNAME) {
       fprintf(out, "\n  %s,", rules_info[i].actfunc ? rules_info[i].actfunc : "NULL");
     } else {
-      fprintf(out, "\n  _reducing_action_%d,", (int)i);
+      fprintf(out, "\n  _action_%d,", (int)i);
     }
   }
   fputs("\n};\n\n", out);

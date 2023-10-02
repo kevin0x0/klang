@@ -8,9 +8,9 @@ export LEXGEN_DIR = $(ROOT_DIR)lexgen/
 export PARGEN_DIR = $(ROOT_DIR)pargen/
 export UTILS_DIR = $(ROOT_DIR)utils/
 export TEMPL_DIR = $(ROOT_DIR)template/
-export CFLAGS = -Wall $(OPTIMIZE) -I $(ROOT_DIR)
-export TARGET_LEXGEN_NAME = lexgen.exe
-export TARGET_PARGEN_NAME = pargen.exe
+export CFLAGS = -Wall -Wextra $(OPTIMIZE) -I $(ROOT_DIR)
+export TARGET_LEXGEN_NAME = lexgen
+export TARGET_PARGEN_NAME = pargen
 
 all : lexgen_t pargen_t kevfa_t kevlr_t utils_t
 

@@ -19,7 +19,10 @@ set end '$';
 set con priority, shifting, log : "expr.log";
 
 %placeholder = "\xFF";
-%callback-head = "static void " .. placeholder .. "(Attr* stk) {\n";
+%callback-type = "typedef void LRCallback(Symbol* stk);";
+%callback-head = "static void " .. placeholder .. "(Symbol* stk) {\n";
+%stk-idx-fmt = "stk[(" .. placeholder .. ") == 0 ? 0 : (" .. placeholder .. ") - 1]";
+%attr-idx-fmt = stk-idx-fmt .. ".attr";
 %callback-tail = "\n}\n";
-%attr-idx-fmt = "stk[(" .. placeholder .. ") == 0 ? 0 : (" .. placeholder .. ") - 1]";
-%stk-idx-fmt = attr-idx-fmt .. ".attr";
+
+%attr-definition = "int";

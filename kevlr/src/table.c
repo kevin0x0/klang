@@ -17,6 +17,7 @@ KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* c
   /* start symbol is excluded in the table, so the actual symbol number for
    * the table is table->symbol_no - 1. */
   table->table_symbol_no = kev_lr_util_user_symbol_max_id(collec) + 1;
+  table->max_terminal_id = kev_lr_util_user_terminal_max_id(collec);
   table->total_symbol_no = kev_lr_collection_get_symbol_no(collec);
   table->terminal_no = kev_lr_collection_get_terminal_no(collec);
   table->state_no = kev_lr_collection_get_itemset_no(collec);

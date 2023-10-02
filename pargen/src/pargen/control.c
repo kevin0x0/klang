@@ -35,6 +35,11 @@ void kev_pargen_control(KevPOptions* options) {
 
   KevLRCollection* collec = kev_pargen_control_generate_collec(&parser_state);
   KevLRTable* table = kev_pargen_control_generate_table(&parser_state, collec);
+  kev_pargen_output_lrinfo(options->strs[KEV_PARGEN_LRINFO_COLLEC_PATH],
+                           options->strs[KEV_PARGEN_LRINFO_ACTION_PATH],
+                           options->strs[KEV_PARGEN_LRINFO_GOTO_PATH],
+                           options->strs[KEV_PARGEN_LRINFO_SYMBOL_PATH],
+                           collec, table);
   KevPTableInfo table_info;
   kev_pargen_convert(&table_info, table, &parser_state);
   kev_lr_table_delete(table);
@@ -110,12 +115,12 @@ static KevLRCollection* kev_pargen_control_generate_collec(KevPParserState* pars
 static KevLRTable* kev_pargen_control_generate_table(KevPParserState* parser_state, KevLRCollection* collec) {
   KevLRConflictHandler* handler = kev_pargen_confhandle_get_handler(parser_state);
   KevLRTable* table = kev_lr_table_create(collec, handler);
+  kev_pargen_confhandle_delete(handler);
   if (!table) {
     kev_throw_error("control:", "failed to generate table", NULL);
   }
   if (kev_lr_table_get_conflict(table)) {
-    kev_throw_error("control:", "there are unresolved conflicts in the table, ", "failed to generate table");
+    kev_throw_error("control:", "there are unresolved conflicts, ", "failed to generate table");
   }
-  kev_pargen_confhandle_delete(handler);
   return table;
 }

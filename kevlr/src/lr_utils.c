@@ -343,6 +343,31 @@ size_t kev_lr_util_user_symbol_max_id(KevLRCollection* collec) {
   KevSymbol** symbols = kev_lr_collection_get_symbols(collec);
   size_t symbol_no = collec->symbol_no;
   for (size_t i = 0; i < symbol_no; ++i) {
+    /* collec->start is not defined by user */
+    if (symbols[i] != collec->start && max_id < symbols[i]->id)
+      max_id = symbols[i]->id;
+  }
+  return max_id;
+}
+
+size_t kev_lr_util_user_terminal_max_id(KevLRCollection* collec) {
+  size_t max_id = 0;
+  KevSymbol** symbols = kev_lr_collection_get_symbols(collec);
+  size_t terminal_no = collec->terminal_no;
+  for (size_t i = 0; i < terminal_no; ++i) {
+    /* collec->start is non-terminal */
+    if (max_id < symbols[i]->id)
+      max_id = symbols[i]->id;
+  }
+  return max_id;
+}
+
+size_t kev_lr_util_user_nonterminal_max_id(KevLRCollection* collec) {
+  size_t max_id = 0;
+  KevSymbol** symbols = kev_lr_collection_get_symbols(collec);
+  size_t symbol_no = collec->symbol_no;
+  for (size_t i = collec->terminal_no; i < symbol_no; ++i) {
+    /* collec->start is not defined by user */
     if (symbols[i] != collec->start && max_id < symbols[i]->id)
       max_id = symbols[i]->id;
   }

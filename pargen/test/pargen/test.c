@@ -1,87 +1,81 @@
+#include <stddef.h>
+#include <stdint.h>
+
+
+
+typedef struct taSymbol {
+  int attr;
+  uint16_t state;
+} Symbol;
 
 typedef struct tagActionEntry {
-  uint8_t action;
   uint16_t info;
+  uint8_t action;
 } ActionEntry;
 
 typedef struct tagRuleInfo {
-  int head_id;
-  int bodylen;
+  uint8_t head_id;
+  uint8_t bodylen;
 } RuleInfo;
 
+typedef void LRCallback(Symbol* stk);
 
-static ActionEntry action_tbl[18][9] = {
+
+
+static ActionEntry action_tbl[18][8] = {
   {
     { 1,    4 }, { 1,    1 }, { 1,    2 }, { 0,   -1 }, { 0,   -1 }, { 1,    3 }, { 0,   -1 }, { 0,   -1 }, 
-    { 1,    5 }, 
   },
   {
     { 1,    4 }, { 1,    1 }, { 1,    2 }, { 0,   -1 }, { 0,   -1 }, { 1,    3 }, { 0,   -1 }, { 0,   -1 }, 
-    { 1,    6 }, 
   },
   {
     { 1,    4 }, { 1,    1 }, { 1,    2 }, { 0,   -1 }, { 0,   -1 }, { 1,    3 }, { 0,   -1 }, { 0,   -1 }, 
-    { 1,    7 }, 
   },
   {
     { 1,    4 }, { 1,    1 }, { 1,    2 }, { 0,   -1 }, { 0,   -1 }, { 1,    3 }, { 0,   -1 }, { 0,   -1 }, 
-    { 1,    8 }, 
   },
   {
     { 0,   -1 }, { 2,    7 }, { 2,    7 }, { 2,    7 }, { 2,    7 }, { 0,   -1 }, { 2,    7 }, { 2,    7 }, 
-    { 0,   -1 }, 
   },
   {
     { 0,   -1 }, { 1,    9 }, { 1,   10 }, { 1,   11 }, { 1,   12 }, { 0,   -1 }, { 0,   -1 }, { 3,   -1 }, 
-    { 0,   -1 }, 
   },
   {
     { 0,   -1 }, { 2,    4 }, { 2,    4 }, { 2,    4 }, { 2,    4 }, { 0,   -1 }, { 2,    4 }, { 2,    4 }, 
-    { 0,   -1 }, 
   },
   {
     { 0,   -1 }, { 2,    5 }, { 2,    5 }, { 2,    5 }, { 2,    5 }, { 0,   -1 }, { 2,    5 }, { 2,    5 }, 
-    { 0,   -1 }, 
   },
   {
     { 0,   -1 }, { 1,    9 }, { 1,   10 }, { 1,   11 }, { 1,   12 }, { 0,   -1 }, { 1,   13 }, { 0,   -1 }, 
-    { 0,   -1 }, 
   },
   {
     { 1,    4 }, { 1,    1 }, { 1,    2 }, { 0,   -1 }, { 0,   -1 }, { 1,    3 }, { 0,   -1 }, { 0,   -1 }, 
-    { 1,   14 }, 
   },
   {
     { 1,    4 }, { 1,    1 }, { 1,    2 }, { 0,   -1 }, { 0,   -1 }, { 1,    3 }, { 0,   -1 }, { 0,   -1 }, 
-    { 1,   15 }, 
   },
   {
     { 1,    4 }, { 1,    1 }, { 1,    2 }, { 0,   -1 }, { 0,   -1 }, { 1,    3 }, { 0,   -1 }, { 0,   -1 }, 
-    { 1,   16 }, 
   },
   {
     { 1,    4 }, { 1,    1 }, { 1,    2 }, { 0,   -1 }, { 0,   -1 }, { 1,    3 }, { 0,   -1 }, { 0,   -1 }, 
-    { 1,   17 }, 
   },
   {
     { 0,   -1 }, { 2,    6 }, { 2,    6 }, { 2,    6 }, { 2,    6 }, { 0,   -1 }, { 2,    6 }, { 2,    6 }, 
-    { 0,   -1 }, 
   },
   {
     { 0,   -1 }, { 2,    0 }, { 2,    0 }, { 1,   11 }, { 1,   12 }, { 0,   -1 }, { 2,    0 }, { 2,    0 }, 
-    { 0,   -1 }, 
   },
   {
     { 0,   -1 }, { 2,    1 }, { 2,    1 }, { 1,   11 }, { 1,   12 }, { 0,   -1 }, { 2,    1 }, { 2,    1 }, 
-    { 0,   -1 }, 
   },
   {
     { 0,   -1 }, { 2,    2 }, { 2,    2 }, { 2,    2 }, { 2,    2 }, { 0,   -1 }, { 2,    2 }, { 2,    2 }, 
-    { 0,   -1 }, 
   },
   {
     { 0,   -1 }, { 2,    3 }, { 2,    3 }, { 2,    3 }, { 2,    3 }, { 0,   -1 }, { 2,    3 }, { 2,    3 }, 
-    { 0,   -1 }, 
   },
 };
 
@@ -129,31 +123,35 @@ static int goto_tbl[18][9] = {
 
 
 
+static RuleInfo rules_info[8] = {
+  {    8,    3 }, {    8,    3 }, {    8,    3 }, {    8,    3 }, {    8,    2 }, {    8,    2 }, {    8,    3 }, {    8,    1 }, 
+};
 
 
-static void _reducing_action_0(Attr* stk) {
- stk[(0) == 0 ? 0 : (0) - 1] = stk[(1) == 0 ? 0 : (1) - 1] + stk[(3) == 0 ? 0 : (3) - 1]; 
+
+static void _reducing_action_0(Symbol* stk) {
+ stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr + stk[(3) == 0 ? 0 : (3) - 1].attr; 
 }
-static void _reducing_action_1(Attr* stk) {
- stk[(0) == 0 ? 0 : (0) - 1] = stk[(1) == 0 ? 0 : (1) - 1] - stk[(3) == 0 ? 0 : (3) - 1]; 
+static void _reducing_action_1(Symbol* stk) {
+ stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr - stk[(3) == 0 ? 0 : (3) - 1].attr; 
 }
-static void _reducing_action_2(Attr* stk) {
- stk[(0) == 0 ? 0 : (0) - 1] = stk[(1) == 0 ? 0 : (1) - 1] * stk[(3) == 0 ? 0 : (3) - 1]; 
+static void _reducing_action_2(Symbol* stk) {
+ stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr * stk[(3) == 0 ? 0 : (3) - 1].attr; 
 }
-static void _reducing_action_3(Attr* stk) {
- stk[(0) == 0 ? 0 : (0) - 1] = stk[(1) == 0 ? 0 : (1) - 1] / stk[(3) == 0 ? 0 : (3) - 1]; 
+static void _reducing_action_3(Symbol* stk) {
+ stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr / stk[(3) == 0 ? 0 : (3) - 1].attr; 
 }
-static void _reducing_action_4(Attr* stk) {
- stk[(0) == 0 ? 0 : (0) - 1] = stk[(2) == 0 ? 0 : (2) - 1]; 
+static void _reducing_action_4(Symbol* stk) {
+ stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(2) == 0 ? 0 : (2) - 1].attr; 
 }
-static void _reducing_action_5(Attr* stk) {
- stk[(0) == 0 ? 0 : (0) - 1] = - stk[(2) == 0 ? 0 : (2) - 1]; 
+static void _reducing_action_5(Symbol* stk) {
+ stk[(0) == 0 ? 0 : (0) - 1].attr = - stk[(2) == 0 ? 0 : (2) - 1].attr; 
 }
-static void _reducing_action_6(Attr* stk) {
- stk[(0) == 0 ? 0 : (0) - 1] = stk[(2) == 0 ? 0 : (2) - 1]; 
+static void _reducing_action_6(Symbol* stk) {
+ stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(2) == 0 ? 0 : (2) - 1].attr; 
 }
-static void _reducing_action_7(Attr* stk) {
- stk[(0) == 0 ? 0 : (0) - 1] = stk[(1) == 0 ? 0 : (1) - 1]; 
+static void _reducing_action_7(Symbol* stk) {
+ stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr; 
 }
 static LRCallback* callbacks[8] = {
   _reducing_action_0,

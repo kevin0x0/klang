@@ -13,7 +13,11 @@
 #define KEV_PARGEN_LANG_NAME          (3)
 #define KEV_PARGEN_OUT_SRC_PATH       (4)
 #define KEV_PARGEN_OUT_INC_PATH       (5)
-#define KEV_PARGEN_STR_NO             (6)
+#define KEV_PARGEN_LRINFO_COLLEC_PATH (6)
+#define KEV_PARGEN_LRINFO_SYMBOL_PATH (7)
+#define KEV_PARGEN_LRINFO_ACTION_PATH (8)
+#define KEV_PARGEN_LRINFO_GOTO_PATH   (9)
+#define KEV_PARGEN_STR_NO             (10)
 
 typedef struct tagKevPOptions {
   int opts[KEV_PARGEN_OPT_NO];

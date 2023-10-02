@@ -16,6 +16,8 @@ void kev_lr_util_symbol_array_partition(KevSymbol** array, size_t size);
 KevBitSet** kev_lr_util_compute_firsts(KevSymbol** symbols, size_t symbol_no, size_t terminal_no);
 KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts, size_t symbol_no, size_t terminal_no, KevSymbol* start, KevSymbol** ends, size_t ends_no);
 size_t kev_lr_util_user_symbol_max_id(KevLRCollection* collec);
+size_t kev_lr_util_user_terminal_max_id(KevLRCollection* collec);
+size_t kev_lr_util_user_nonterminal_max_id(KevLRCollection* collec);
 
 static inline void kev_lr_util_assign_itemset_id(KevItemSet** itemsets, size_t itemset_no) {
   for (size_t i = 0; i < itemset_no; ++i)

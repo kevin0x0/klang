@@ -173,7 +173,7 @@ void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex) {
 
 static void kev_pargenparser_rules(KevPParserState* parser_state, KevPLexer* lex) {
   KevSymbol* head = kev_pargenparser_symbol_kind(parser_state, lex, KEV_LR_NONTERMINAL);
-  if (kev_lr_symbol_get_type(head) != KEV_LR_NONTERMINAL) {
+  if (kev_lr_symbol_get_kind(head) != KEV_LR_NONTERMINAL) {
     kev_error_report(lex, "expected: ", "terminal symbol");
     parser_state->err_count++;
     kev_pargenparser_recover(lex, KEV_PTK_SEMI);
@@ -274,7 +274,7 @@ static KevSymbol* kev_pargenparser_symbol_kind(KevPParserState* parser_state, Ke
   } else {
     symbol = (KevSymbol*)node->value;
   }
-  if (kev_lr_symbol_get_type(symbol) != kind) {
+  if (kev_lr_symbol_get_kind(symbol) != kind) {
     kev_error_report(lex, "expected: ", kind == KEV_LR_TERMINAL ? "terminal" : "non-terminal");
     parser_state->err_count++;
     symbol = kind == KEV_LR_TERMINAL ? parser_state->default_symbol_t : parser_state->default_symbol_nt;

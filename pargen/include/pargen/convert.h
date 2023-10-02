@@ -21,7 +21,8 @@ typedef struct tagKevPTableInfo {
   char** symbol_name;
   KevPRuleInfo* rules_info;
   int start_state;
-  size_t symbol_no;         /* this actually is max_id + 1 */
+  size_t action_col_no;
+  size_t goto_col_no;       /* this actually is max_id + 1 */
   size_t terminal_no;       /* the number of terminal symbols */
   size_t state_no;
   size_t rule_no;

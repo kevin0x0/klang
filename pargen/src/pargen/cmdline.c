@@ -15,8 +15,10 @@ static void kev_pargen_set_pre(KevPOptions* options);
 static void kev_pargen_set_post(KevPOptions* options);
 /* get a copy of 'str' */
 static char* copy_string(const char* str);
-/* get value in a key-value pair */
+/* get option value from a key-value pair */
 static const char* kev_get_value(const char* arg, const char* prefix);
+
+static void kev_pargen_set_all_info_path(KevPOptions* options, const char* output_dir);
 
 void kev_pargen_get_options(int argc, char** argv, KevPOptions* options) {
   kev_pargen_set_pre(options);
@@ -39,16 +41,22 @@ void kev_pargen_get_options(int argc, char** argv, KevPOptions* options) {
         kev_throw_error("command line parser:", "missing output path: ", "--out-inc <path>");
       free(options->strs[KEV_PARGEN_OUT_INC_PATH]);
       options->strs[KEV_PARGEN_OUT_INC_PATH] = copy_string(argv[i]);
-  } else if (strcmp(arg, "-t") == 0 || strcmp(arg, "--tmpl") == 0) {
+    } else if (strcmp(arg, "-t") == 0 || strcmp(arg, "--tmpl") == 0) {
       if (++i >= argc)
-        kev_throw_error("command line parser:", "missing template path: ", "--template <path>");
-    free(options->strs[KEV_PARGEN_SRC_TMPL_PATH]);
-    options->strs[KEV_PARGEN_SRC_TMPL_PATH] = copy_string(argv[i]);
-  } else if (strcmp(arg, "--it") == 0 || strcmp(arg, "--inc-tmpl") == 0) {
+        kev_throw_error("command line parser:", "missing template file path: ", "--tmpl <path>");
+      free(options->strs[KEV_PARGEN_SRC_TMPL_PATH]);
+      options->strs[KEV_PARGEN_SRC_TMPL_PATH] = copy_string(argv[i]);
+    } else if (strcmp(arg, "--it") == 0 || strcmp(arg, "--inc-tmpl") == 0) {
       if (++i >= argc)
-        kev_throw_error("command line parser:", "missing header template path: ", "--inc-template <path>");
-    free(options->strs[KEV_PARGEN_INC_TMPL_PATH]);
-    options->strs[KEV_PARGEN_INC_TMPL_PATH] = copy_string(argv[i]);
+        kev_throw_error("command line parser:", "missing header template file path: ", "--inc-tmpl <path>");
+      free(options->strs[KEV_PARGEN_INC_TMPL_PATH]);
+      options->strs[KEV_PARGEN_INC_TMPL_PATH] = copy_string(argv[i]);
+    } else if (strcmp(arg, "--li") == 0 || strcmp(arg, "--lrinfo") == 0) {
+      const char* output_dir = "";
+      if (i + 1 < argc && argv[i + 1][0] != '-') {
+        output_dir = argv[++i];
+      }
+      kev_pargen_set_all_info_path(options, output_dir);
     } else {
       kev_pargen_set_kv_pair(arg, options);
     }
@@ -85,16 +93,13 @@ static void kev_pargen_set_pre(KevPOptions* options) {
     options->strs[i] = NULL;
   options->opts[KEV_PARGEN_OPT_HELP] = KEV_PARGEN_OPT_FALSE;
   options->strs[KEV_PARGEN_LANG_NAME] = copy_string("c");
-  options->strs[KEV_PARGEN_LANG_NAME] = copy_string("c");
   options->strs[KEV_PARGEN_OUT_SRC_PATH] = copy_string("parser.out");
-  options->strs[KEV_PARGEN_INC_TMPL_PATH] = NULL;
-  options->strs[KEV_PARGEN_SRC_TMPL_PATH] = NULL;
 }
 
 static void kev_pargen_set_post(KevPOptions* options) {
   char* resources_dir = kev_get_pargen_resources_dir();
   if (!resources_dir)
-    kev_throw_error("output:", "can not get resources directory", NULL);
+    kev_throw_error("command line parser:", "can not get resources directory", NULL);
   if (!options->strs[KEV_PARGEN_SRC_TMPL_PATH]) {
     char* src_path = kev_str_concat(resources_dir, "parser/");
     char* tmp = src_path;
@@ -104,7 +109,7 @@ static void kev_pargen_set_post(KevPOptions* options) {
     src_path = kev_str_concat(tmp, "/src.tmpl");
     free(tmp);
     if (!src_path)
-      kev_throw_error("output:", "out of memory", NULL);
+      kev_throw_error("command line parser:", "out of memory", NULL);
     options->strs[KEV_PARGEN_SRC_TMPL_PATH] = src_path;
   }
 
@@ -117,7 +122,7 @@ static void kev_pargen_set_post(KevPOptions* options) {
     inc_path = kev_str_concat(tmp, "/inc.tmpl");
     free(tmp);
     if (!inc_path)
-      kev_throw_error("output:", "out of memory", NULL);
+      kev_throw_error("command line parser:", "out of memory", NULL);
     options->strs[KEV_PARGEN_INC_TMPL_PATH] = inc_path;
   }
 }
@@ -133,4 +138,15 @@ static const char* kev_get_value(const char* arg, const char* prefix) {
     return arg + len;
   else
     return NULL;
+}
+
+static void kev_pargen_set_all_info_path(KevPOptions* options, const char* output_dir) {
+  if (!(options->strs[KEV_PARGEN_LRINFO_GOTO_PATH] = kev_str_concat(output_dir, "goto.txt")))
+    kev_throw_error("command line parser:", "out of memory", NULL);
+  if (!(options->strs[KEV_PARGEN_LRINFO_ACTION_PATH] = kev_str_concat(output_dir, "action.txt")))
+    kev_throw_error("command line parser:", "out of memory", NULL);
+  if (!(options->strs[KEV_PARGEN_LRINFO_COLLEC_PATH] = kev_str_concat(output_dir, "collection.txt")))
+    kev_throw_error("command line parser:", "out of memory", NULL);
+  if (!(options->strs[KEV_PARGEN_LRINFO_SYMBOL_PATH] = kev_str_concat(output_dir, "symbol.txt")))
+    kev_throw_error("command line parser:", "out of memory", NULL);
 }

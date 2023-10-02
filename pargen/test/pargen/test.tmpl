@@ -1,20 +1,32 @@
+#include <stddef.h>
+#include <stdint.h>
+
+
+
+typedef struct taSymbol {
+  $r attr-definition $:union { int intval; float floatval; char* str; } $; attr;
+  uint16_t state;
+} Symbol;
 
 typedef struct tagActionEntry {
-  uint8_t action;
   uint16_t info;
+  uint8_t action;
 } ActionEntry;
 
 typedef struct tagRuleInfo {
-  int head_id;
-  int bodylen;
+  uint8_t head_id;
+  uint8_t bodylen;
 } RuleInfo;
+
+$r callback-type $:$;
+
 
 
 $r action-table $:$;
 
 $r goto-table $:$;
 
-$r rules-info $:$;
+$r rule-info-array $:$;
 
 $r callback-array $:$;
 
