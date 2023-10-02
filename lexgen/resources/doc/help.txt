@@ -2,15 +2,15 @@ Usage:
   lexgen [ opt [opt-value] | <key>=<value> ]...
 
 Options:
-  -h --help                         Show this message.
-  -i --in                           Input file path.
+  -h | --help                       Show this message.
+  -i | --in                         Input file path.
   -o <path> | --out <path>          Output file path.
   --out-inc <path>                  Output header file path. This option works
                                     only when the language needs a header file,
                                     such as C/C++.
-  -t | --tmpl <path>                Specify template file for generating source
+  -t <path> | --tmpl <path>         Specify template file for generating source
                                     file.
-  --it | --inc-tmpl <path>          Specify template file for generating header
+  --it <path> | --inc-tmpl <path>   Specify template file for generating header
                                     file.
   -l=<value> | --lang[uage]=<value> Specify language.
     c                               This is the default value.
