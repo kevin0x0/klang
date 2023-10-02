@@ -117,6 +117,7 @@ static void kev_lexgen_set_post(KevLOptions* options) {
       kev_throw_error("output:", "out of memory", NULL);
     options->strs[KEV_LEXGEN_INC_TMPL_PATH] = inc_path;
   }
+  free(resources_dir);
 }
 
 void kev_lexgen_destroy_options(KevLOptions* options) {
