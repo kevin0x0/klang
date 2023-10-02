@@ -47,10 +47,10 @@ expr -> num · [$, *, ), -, +, /]
 
 item set 5:
 G -> expr · [$]
-expr -> expr · / expr [$, *, -, +, /]
-expr -> expr · * expr [$, *, -, +, /]
-expr -> expr · - expr [$, *, -, +, /]
-expr -> expr · + expr [$, *, -, +, /]
+expr -> expr · / expr [$, *, ), -, +, /]
+expr -> expr · * expr [$, *, ), -, +, /]
+expr -> expr · - expr [$, *, ), -, +, /]
+expr -> expr · + expr [$, *, ), -, +, /]
 
 item set 6:
 expr -> + expr · [$, *, ), -, +, /]
@@ -68,10 +68,10 @@ expr -> expr · + expr [$, *, ), -, +, /]
 
 item set 8:
 expr -> ( expr · ) [$, *, ), -, +, /]
-expr -> expr · / expr [*, ), -, +, /]
-expr -> expr · * expr [*, ), -, +, /]
-expr -> expr · - expr [*, ), -, +, /]
-expr -> expr · + expr [*, ), -, +, /]
+expr -> expr · / expr [$, *, ), -, +, /]
+expr -> expr · * expr [$, *, ), -, +, /]
+expr -> expr · - expr [$, *, ), -, +, /]
+expr -> expr · + expr [$, *, ), -, +, /]
 
 item set 9:
 expr -> expr + · expr [$, *, ), -, +, /]

@@ -125,6 +125,7 @@ static void kev_pargen_set_post(KevPOptions* options) {
       kev_throw_error("command line parser:", "out of memory", NULL);
     options->strs[KEV_PARGEN_INC_TMPL_PATH] = inc_path;
   }
+  free(resources_dir);
 }
 
 void kev_pargen_destroy_options(KevPOptions* options) {

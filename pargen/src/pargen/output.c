@@ -20,6 +20,7 @@ static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table
 static void kev_pargen_output_goto_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
 static void kev_pargen_output_rule_info_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
 static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
+static void kev_pargen_output_state_symbol_mapping_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
 
 
 static void kev_pargen_output_escape_str(FILE* out, const char* str);
@@ -88,6 +89,7 @@ void kev_pargen_output_set_func(KevPOutputFuncGroup* func_group, const char* lan
     func_group->output_callback_array = (KevPOutputFunc*)kev_pargen_output_callback_array_c_cpp;
     func_group->output_symbol_array = (KevPOutputFunc*)kev_pargen_output_symbol_array_c_cpp;
     func_group->output_rule_info_array = (KevPOutputFunc*)kev_pargen_output_rule_info_array_c_cpp;
+    func_group->output_state_symbol_mapping = (KevPOutputFunc*)kev_pargen_output_state_symbol_mapping_array_c_cpp;
   } else {
     kev_throw_error("output:", "unsupport language: ", language);
   }
@@ -120,7 +122,9 @@ static void kev_pargen_output_symbol_array_c_cpp(FILE* out, KevPTableInfo* table
 }
 
 static void kev_pargen_output_start_state_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
-  fprintf(out, "static int start = %d;\n\n", (int)table_info->start_state);
+  KevStringMapNode* node = kev_strmap_search(env_var, "state-type");
+  const char* state_type = node ? node->value : "int16_t";
+  fprintf(out, "static %s start_state = %d;\n\n", state_type, (int)table_info->start_state);
 }
 
 static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
@@ -140,10 +144,12 @@ static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table
 }
 
 static void kev_pargen_output_goto_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
+  KevStringMapNode* node = kev_strmap_search(env_var, "state-type");
+  const char* state_type = node ? node->value : "int16_t";
   size_t state_no = (size_t)table_info->state_no;
   size_t symbol_no = (size_t)table_info->goto_col_no;
   int** goto_tbl = table_info->goto_table;
-  fprintf(out, "static int goto_tbl[%d][%d] = {\n ", (int)state_no, (int)symbol_no);
+  fprintf(out, "static %s goto_tbl[%d][%d] = {\n ", state_type, (int)state_no, (int)symbol_no);
   for (size_t i = 0; i < state_no; ++i) {
     fputs(" {", out);
     for (size_t j = 0; j < symbol_no; ++j) {
@@ -186,8 +192,8 @@ static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* tab
         kev_throw_error("output:", "environment variable 'attr-idx-fmt', 'callback-head', ", 
                         "'callback-head' and 'placeholder' should be defined");
       }
-      char buf[(sizeof "_action_" / sizeof "_action_"[0]) + 30];
-      size_t len = sprintf(buf, "_action_%d", (int)i);
+      char buf[(sizeof "_action_callback_" / sizeof "_action_callback_"[0]) + 30];
+      size_t len = sprintf(buf, "_action_callback_%d", (int)i);
       kev_pargen_output_simple_replace(out, buf, buf + len, placeholder[0], callback_head);
       kev_pargen_output_action_code(out, rules_info[i].actfunc, placeholder[0], attr_idx_fmt, stk_idx_fmt);
       fputs(callback_tail, out);
@@ -199,8 +205,19 @@ static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* tab
     if (rules_info[i].func_type == KEV_ACTFUNC_FUNCNAME) {
       fprintf(out, "\n  %s,", rules_info[i].actfunc ? rules_info[i].actfunc : "NULL");
     } else {
-      fprintf(out, "\n  _action_%d,", (int)i);
+      fprintf(out, "\n  _action_callback_%d,", (int)i);
     }
+  }
+  fputs("\n};\n\n", out);
+}
+
+static void kev_pargen_output_state_symbol_mapping_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
+  size_t state_no = table_info->state_no;
+  int* mapping = table_info->state_to_symbol_id;
+  fprintf(out, "static int state_symbol_mapping[%d] = {", (int)state_no);
+  for (size_t i = 0; i < state_no; ++i) {
+    if (i % 16 == 0) fputs("\n  ", out);
+    fprintf(out, "%4d,", mapping[i]);
   }
   fputs("\n};\n\n", out);
 }
@@ -245,12 +262,12 @@ void kev_pargen_output_action_code(FILE* out, const char* code, char placeholder
         const char* begin = ptr;
         while (isdigit(*++ptr)) continue;
         kev_pargen_output_simple_replace(out, begin, ptr, placeholder, fmt);
-        --ptr;  /* ptr will be increased in for loop */
-      } else if ((*ptr | 0x20) >= 'a' && (*ptr | 0x20) <= 'z') {
+        --ptr;  /* ptr will increment in the for loop */
+      } else if (isalpha(*ptr) || *ptr == '_') {
         const char* begin = ptr++;
         while (isalnum(*ptr) || *ptr == '_' || (uint8_t)*ptr > 0x7F) ++ptr;
         kev_pargen_output_simple_replace(out, begin, ptr, placeholder, fmt);
-        --ptr;  /* ptr will be increased in for loop */
+        --ptr;  /* ptr will increment in the for loop */
       } else {
         char endmark = *ptr == '(' ? ')' :
                        *ptr == '{' ? '}' :

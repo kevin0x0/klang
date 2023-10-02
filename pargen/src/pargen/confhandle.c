@@ -47,6 +47,7 @@ void kev_pargen_confhandle_delete(KevLRConflictHandler* handler) {
   kev_lr_conflict_handler_delete(config->interactive);
   if ((config->options & KEV_PARGEN_CONFHANDLE_PRINT_LOG) && config->logstream != stderr)
     fclose(config->logstream);
+  free(config);
   kev_lr_conflict_handler_delete(handler);
 }
 
@@ -135,9 +136,15 @@ static bool kev_pargen_confhandler_callback(void* object, KevLRConflict* conflic
 
 static void kev_pargen_confhandle_make_option(KevHandlerConfig* config, KevPParserState* parser_state) {
   config->options = 0;
+  config->logstream = NULL;
   for (size_t i = 0; i < kev_addrarray_size(parser_state->confhandlers); ++i) {
     KevConfHandler* handler = (KevConfHandler*)kev_addrarray_visit(parser_state->confhandlers, i);
     if (kev_str_is_prefix(handler->handler_name, "log")) {
+      if (config->logstream) {
+        if (config->logstream != stderr)
+          fclose(config->logstream);
+        kev_throw_error("confhandle:", "log is specified multiple times", NULL);
+      }
       config->options |= KEV_PARGEN_CONFHANDLE_PRINT_LOG;
       FILE* stream = handler->attribute ? fopen(handler->attribute, "w") : stderr;
       config->logstream = stream;

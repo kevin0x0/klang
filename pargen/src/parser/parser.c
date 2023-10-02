@@ -29,8 +29,6 @@ static void kev_pargenparser_match(KevPParserState* parser_state, KevPLexer* lex
 static inline void kev_pargenparser_guarantee(KevPParserState* parser_state, KevPLexer* lex, int kind);
 static void kev_pargenparser_recover(KevPLexer* lex, int kind);
 
-static char* kev_pargenparser_check_and_get_expr(KevPParserState* parser_state, KevPLexer* lex);
-
 static char* kev_pargenparser_expr(KevPParserState* parser_state, KevPLexer* lex);
 static char* kev_pargenparser_expr_concat(KevPParserState* parser_state, KevPLexer* lex);
 static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer* lex);
@@ -205,9 +203,9 @@ static void kev_pargenparser_rules(KevPParserState* parser_state, KevPLexer* lex
 
 static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevPLexer* lex,
                                              size_t* p_bodylen, KevActionFunc** p_actfunc) {
-  KevAddrArray symarr;
+  KevAddrArray rulebody;
   *p_actfunc = NULL;
-  if (!kev_addrarray_init(&symarr)) {
+  if (!kev_addrarray_init(&rulebody)) {
     kev_error_report(lex, "out of memory", NULL);
     parser_state->err_count++;
     kev_pargenparser_recover(lex, KEV_PTK_SEMI);
@@ -218,7 +216,7 @@ static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevP
   while (true) {
     if (lex->currtoken.kind == KEV_PTK_ID) {
       KevSymbol* sym = kev_pargenparser_symbol(parser_state, lex);
-      if (!kev_addrarray_push_back(&symarr, sym)) {
+      if (!kev_addrarray_push_back(&rulebody, sym)) {
         kev_error_report(lex, "out of memory", NULL);
         parser_state->err_count++;
       }
@@ -230,7 +228,7 @@ static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevP
         KevSymbol* act_head = kev_pargenparser_symbol_create_move(parser_state, NULL, KEV_LR_NONTERMINAL);
         if (!act_head                                                                    ||
             !kev_pargenparser_rule_create_move(parser_state, act_head, NULL, 0, actfunc) ||
-            !kev_addrarray_push_back(&symarr, act_head)) {
+            !kev_addrarray_push_back(&rulebody, act_head)) {
           kev_error_report(lex, "out of memory", NULL);
           parser_state->err_count++;
         }
@@ -241,9 +239,9 @@ static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevP
       break;
     }
   }
-  *p_bodylen = kev_addrarray_size(&symarr);
-  KevSymbol** body = (KevSymbol**)kev_addrarray_steal(&symarr);
-  kev_addrarray_destroy(&symarr);
+  *p_bodylen = kev_addrarray_size(&rulebody);
+  KevSymbol** body = (KevSymbol**)kev_addrarray_steal(&rulebody);
+  kev_addrarray_destroy(&rulebody);
   return body;
 }
 
@@ -423,28 +421,29 @@ static void kev_pargenparser_statement_declare(KevPParserState* parser_state, Ke
 static void kev_pargenparser_statement_set(KevPParserState* parser_state, KevPLexer* lex) {
   kev_pargenparser_next_nonblank(lex);
   kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
-  if (kev_str_is_prefix(lex->currtoken.attr.str, "priority")) {
+  char* attr_name = lex->currtoken.attr.str;
+  if (kev_str_is_prefix(attr_name, "priority")) {
     kev_pargenparser_statement_set_prio(parser_state, lex);
-  } else if (kev_str_is_prefix(lex->currtoken.attr.str, "id")) {
+  } else if (kev_str_is_prefix(attr_name, "id")) {
     kev_pargenparser_statement_set_id(parser_state, lex);
-  } else if (kev_str_is_prefix(lex->currtoken.attr.str, "start")) {
+  } else if (kev_str_is_prefix(attr_name, "start")) {
     kev_pargenparser_statement_set_start(parser_state, lex);
-  } else if (kev_str_is_prefix(lex->currtoken.attr.str, "end")) {
+  } else if (kev_str_is_prefix(attr_name, "end")) {
     kev_pargenparser_statement_set_end_symbols(parser_state, lex);
-  } else if (kev_str_is_prefix(lex->currtoken.attr.str, "conflict-handler")) {
+  } else if (kev_str_is_prefix(attr_name, "conflict-handler")) {
     kev_pargenparser_statement_set_confhandler(parser_state, lex);
-  } else if (kev_str_is_prefix(lex->currtoken.attr.str, "algorithm")) {
+  } else if (kev_str_is_prefix(attr_name, "algorithm")) {
     kev_pargenparser_statement_set_algorithm(parser_state, lex);
   } else {
-    kev_error_report(lex, "unknown attribute: ", lex->currtoken.attr.str);
+    kev_error_report(lex, "unknown attribute: ", attr_name);
     parser_state->err_count++;
     kev_pargenparser_recover(lex, KEV_PTK_SEMI);
     kev_pargenparser_next_nonblank(lex);
   }
+  free(attr_name);
 }
 
 static void kev_pargenparser_statement_set_prio(KevPParserState* parser_state, KevPLexer* lex) {
-  kev_pargenlexer_free_attr(lex);
   kev_pargenparser_next_nonblank(lex);
   kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
   while (lex->currtoken.kind == KEV_PTK_ID) {
@@ -532,7 +531,7 @@ static void kev_pargenparser_statement_set_confhandler(KevPParserState* parser_s
     kev_pargenparser_next_nonblank(lex);
     if (lex->currtoken.kind == KEV_PTK_COLON) {
       kev_pargenparser_next_nonblank(lex);
-      attribute = kev_pargenparser_check_and_get_expr(parser_state, lex);
+      attribute = kev_pargenparser_expr(parser_state, lex);
     }
     KevConfHandler* handler = (KevConfHandler*)malloc(sizeof (KevConfHandler));
     if (!handler) {
@@ -562,6 +561,7 @@ static void kev_pargenparser_statement_set_algorithm(KevPParserState* parser_sta
   kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
   free(parser_state->algorithm);
   parser_state->algorithm = lex->currtoken.attr.str;
+  kev_pargenparser_next_nonblank(lex);
   kev_pargenparser_match(parser_state, lex, KEV_PTK_SEMI);
 }
 
@@ -570,14 +570,16 @@ static KevPrioPos kev_pargenparser_sympos(KevPParserState* parser_state, KevPLex
   if (lex->currtoken.kind == KEV_PTK_LP) {
     kev_pargenparser_next_nonblank(lex);
     if (lex->currtoken.kind == KEV_PTK_ID) {
-      if (kev_str_is_prefix(lex->currtoken.attr.str, "prefix")) {
+      char* str = lex->currtoken.attr.str;
+      if (kev_str_is_prefix(str, "prefix")) {
         sympos = 0;
-      } else if (kev_str_is_prefix(lex->currtoken.attr.str, "postfix")) {
+      } else if (kev_str_is_prefix(str, "postfix")) {
         sympos = KEV_LR_PRIOPOS_POSTFIX;
       } else {
         kev_error_report(lex, "unknown position", NULL);
         parser_state->err_count++;
       }
+      free(str);
     } else if (lex->currtoken.kind == KEV_PTK_NUM) {
       sympos = lex->currtoken.attr.num;
     } else {
@@ -613,26 +615,26 @@ static char* kev_pargenparser_expr(KevPParserState* parser_state, KevPLexer* lex
 }
 
 static char* kev_pargenparser_expr_concat(KevPParserState* parser_state, KevPLexer* lex) {
-  char* ret = kev_pargenparser_expr_unit(parser_state, lex);
+  char* lhs = kev_pargenparser_expr_unit(parser_state, lex);
   while (lex->currtoken.kind == KEV_PTK_CONCAT) {
     kev_pargenparser_next_nonblank(lex);
     char* rhs = kev_pargenparser_expr_unit(parser_state, lex);
-    if (!rhs || !ret) {
+    if (!rhs || !lhs) {
       free(rhs);
-      free(ret);
-      ret = NULL;
+      free(lhs);
+      lhs = NULL;
     } else {
-      char* result = kev_str_concat(ret, rhs);
-      free(ret);
+      char* result = kev_str_concat(lhs, rhs);
+      free(lhs);
+      free(rhs);
       if (!result) {
         kev_error_report(lex, "out of memory", NULL);
         parser_state->err_count++;
-        free(rhs);
       }
-      ret = result;
+      lhs = result;
     }
   }
-  return ret;
+  return lhs;
 }
 
 static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer* lex) {
@@ -641,9 +643,11 @@ static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer
     if (!node) {
       kev_error_report(lex, "undefined variable: ", lex->currtoken.attr.str);
       parser_state->err_count++;
+      kev_pargenlexer_free_attr(lex);
       kev_pargenparser_next_nonblank(lex);
       return NULL;
     } else {
+      kev_pargenlexer_free_attr(lex);
       char* ret = kev_str_copy(node->value);
       if (!ret) {
         kev_error_report(lex, "out of memory", NULL);
@@ -652,16 +656,19 @@ static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer
       kev_pargenparser_next_nonblank(lex);
       return ret;
     }
-  } else {
+  } else if (lex->currtoken.kind == KEV_PTK_STR) {
     char* ret = lex->currtoken.attr.str;
     kev_pargenparser_next_nonblank(lex);
     return ret;
+  } else if (lex->currtoken.kind == KEV_PTK_LP) {
+    kev_pargenparser_next_nonblank(lex);
+    char* ret = kev_pargenparser_expr(parser_state, lex);
+    kev_pargenparser_match(parser_state, lex, KEV_PTK_RP);
+    return ret;
+  } else {
+    kev_error_report(lex, "unexpected: ", kev_pargenlexer_info(lex->currtoken.kind));
+    parser_state->err_count++;
+    kev_pargenparser_recover(lex, KEV_PTK_ID);
+    return kev_pargenparser_expr_unit(parser_state, lex);
   }
-}
-
-static char* kev_pargenparser_check_and_get_expr(KevPParserState* parser_state, KevPLexer* lex) {
-  if (!(lex->currtoken.kind == KEV_PTK_STR || lex->currtoken.kind == KEV_PTK_ID)) {
-    kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
-  }
-  return kev_pargenparser_expr(parser_state, lex);
 }

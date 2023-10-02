@@ -1,11 +1,20 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 
+#define ACTION_SHIFT      (1)
+#define ACTION_REDUCE     (2)
+#define ACTION_ACCEPT     (3)
+#define ACTION_ERROR   (0)
 
-typedef struct taSymbol {
-  int attr;
-  uint16_t state;
+typedef int Attr;
+
+typedef struct tagSymbol {
+  Attr attr;
+  int16_t state;
 } Symbol;
 
 typedef struct tagActionEntry {
@@ -20,6 +29,103 @@ typedef struct tagRuleInfo {
 
 typedef void LRCallback(Symbol* stk);
 
+static ActionEntry action_tbl[18][8];
+static int16_t goto_tbl[18][9];
+static RuleInfo rules_info[8];
+static LRCallback* callbacks[8];
+static const char* symbol_name[9];
+static int16_t start_state;
+static int state_symbol_mapping[18];
+
+
+static Symbol* symstk_expand(Symbol* symstk, Symbol* symstk_end);
+
+Attr parse(FILE* stream) {
+  
+
+  uint8_t token = ;
+  int16_t state = start_state;
+
+  /* symbol stack definition */
+  Symbol* symstk = (Symbol*)malloc(16 * sizeof (Symbol*));
+  if (!symstk) {
+    fprintf(stderr, "out of memory", NULL);
+    exit(EXIT_FAILURE);
+  }
+  /* ensure the cell above the top of stack is always available, so the capacity of
+   * the stack is set to the actual capacity minus 1.
+   */
+  Symbol* symstk_end = symstk + 15;
+  Symbol* symstk_curr = symstk;
+
+  symstk_curr++->state = state;
+
+  while (true) {
+    ActionEntry action = action_tbl[state][token];
+    switch (action.action) {
+      case ACTION_SHIFT: {
+        state = action.info;
+        Attr attr;
+        
+        if (symstk_curr == symstk_end) {
+          size_t old_capacity = symstk_end - symstk + 1;
+          symstk = symstk_expand(symstk, symstk_end);
+          symstk_end = symstk + old_capacity * 2 - 1;
+          symstk_curr = symstk + old_capacity - 1;
+        }
+        symstk_curr->attr = attr;
+        symstk_curr++->state = state;
+        
+        token = ;
+        break;
+      }
+      case ACTION_REDUCE: {
+        RuleInfo ruleinfo = rules_info[action.info];
+        size_t rulelen = ruleinfo.bodylen;
+        if (callbacks[action.info])
+          callbacks[action.info](symstk - rulelen);
+        symstk_curr -= rulelen;
+        if (symstk_curr == symstk_end) {
+          size_t old_capacity = symstk_end - symstk + 1;
+          symstk = symstk_expand(symstk, symstk_end);
+          symstk_end = symstk + old_capacity * 2 - 1;
+          symstk_curr = symstk + old_capacity - 1;
+        }
+        state = goto_tbl[symstk_curr->state][ruleinfo.head_id];
+        symstk_curr++->state = state;
+        break;
+      }
+      case ACTION_ACCEPT: {
+        Attr ret = symstk_curr->attr;
+        free(symstk);
+        
+        return ret;
+      }
+      case ACTION_ERROR: {
+        fprintf(stderr, "error occurred!\n");
+        exit(EXIT_FAILURE);
+        break;
+      }
+      default: {
+        fprintf(stderr, "impossible state\n");
+        exit(EXIT_FAILURE);
+        break;
+      }
+    }
+  }
+}
+
+static Symbol* symstk_expand(Symbol* symstk, Symbol* symstk_end) {
+  size_t old_size = symstk_end - symstk + 1;
+  size_t new_size = old_size * 2;
+  Symbol* newstk = (Symbol*)realloc(symstk, new_size * sizeof (Symbol*));
+  if (!newstk) {
+    fprintf(stderr, "out of memory", NULL);
+    exit(EXIT_FAILURE);
+  }
+  symstk = newstk;
+  return symstk;
+}
 
 
 static ActionEntry action_tbl[18][8] = {
@@ -81,7 +187,7 @@ static ActionEntry action_tbl[18][8] = {
 
 
 
-static int goto_tbl[18][9] = {
+static int16_t goto_tbl[18][9] = {
   {
        4,   1,   2,  -1,  -1,   3,  -1,  -1,   5,
   }, {
@@ -129,39 +235,47 @@ static RuleInfo rules_info[8] = {
 
 
 
-static void _reducing_action_0(Symbol* stk) {
+static void _action_callback_0(Symbol* stk) {
  stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr + stk[(3) == 0 ? 0 : (3) - 1].attr; 
 }
-static void _reducing_action_1(Symbol* stk) {
+
+static void _action_callback_1(Symbol* stk) {
  stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr - stk[(3) == 0 ? 0 : (3) - 1].attr; 
 }
-static void _reducing_action_2(Symbol* stk) {
+
+static void _action_callback_2(Symbol* stk) {
  stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr * stk[(3) == 0 ? 0 : (3) - 1].attr; 
 }
-static void _reducing_action_3(Symbol* stk) {
+
+static void _action_callback_3(Symbol* stk) {
  stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr / stk[(3) == 0 ? 0 : (3) - 1].attr; 
 }
-static void _reducing_action_4(Symbol* stk) {
+
+static void _action_callback_4(Symbol* stk) {
  stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(2) == 0 ? 0 : (2) - 1].attr; 
 }
-static void _reducing_action_5(Symbol* stk) {
+
+static void _action_callback_5(Symbol* stk) {
  stk[(0) == 0 ? 0 : (0) - 1].attr = - stk[(2) == 0 ? 0 : (2) - 1].attr; 
 }
-static void _reducing_action_6(Symbol* stk) {
+
+static void _action_callback_6(Symbol* stk) {
  stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(2) == 0 ? 0 : (2) - 1].attr; 
 }
-static void _reducing_action_7(Symbol* stk) {
+
+static void _action_callback_7(Symbol* stk) {
  stk[(0) == 0 ? 0 : (0) - 1].attr = stk[(1) == 0 ? 0 : (1) - 1].attr; 
 }
+
 static LRCallback* callbacks[8] = {
-  _reducing_action_0,
-  _reducing_action_1,
-  _reducing_action_2,
-  _reducing_action_3,
-  _reducing_action_4,
-  _reducing_action_5,
-  _reducing_action_6,
-  _reducing_action_7,
+  _action_callback_0,
+  _action_callback_1,
+  _action_callback_2,
+  _action_callback_3,
+  _action_callback_4,
+  _action_callback_5,
+  _action_callback_6,
+  _action_callback_7,
 };
 
 
@@ -180,6 +294,13 @@ static const char* symbol_name[9] = {
 
 
 
-static int start = 0;
+static int16_t start_state = 0;
+
+
+
+static int state_symbol_mapping[18] = {
+    -1,   1,   2,   5,   0,   8,   8,   8,   8,   1,   2,   3,   4,   6,   8,   8,
+     8,   8,
+};
 
 

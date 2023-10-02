@@ -5,7 +5,7 @@
 #include <string.h>
 
 
-static void kev_pargen_convert_goto(KevPTableInfo* table_info, KevLRTable* table);
+static void kev_pargen_convert_goto_table_and_state_to_id(KevPTableInfo* table_info, KevLRTable* table);
 static void kev_pargen_convert_action(KevPTableInfo* table_info, KevLRTable* table);
 static void kev_pargen_convert_rules_info(KevPTableInfo* table_info, KevPParserState* parser_state);
 static void kev_pargen_convert_symbols(KevPTableInfo* table_info, KevPParserState* parser_state);
@@ -17,16 +17,17 @@ void kev_pargen_convert(KevPTableInfo* table_info, KevLRTable* table, KevPParser
   table_info->goto_col_no = kev_lr_table_get_symbol_no(table);
   table_info->action_col_no = kev_lr_table_get_max_terminal_id(table) + 1;
   table_info->start_state = kev_lr_table_get_start_state(table);
-  kev_pargen_convert_goto(table_info, table);
+  kev_pargen_convert_goto_table_and_state_to_id(table_info, table);
   kev_pargen_convert_action(table_info, table);
   kev_pargen_convert_rules_info(table_info, parser_state);
   kev_pargen_convert_symbols(table_info, parser_state);
 }
 
-static void kev_pargen_convert_goto(KevPTableInfo* table_info, KevLRTable* table) {
+static void kev_pargen_convert_goto_table_and_state_to_id(KevPTableInfo* table_info, KevLRTable* table) {
   table_info->goto_table = (int**)malloc(table_info->state_no * sizeof (int*));
+  table_info->state_to_symbol_id = (int*)malloc(table_info->state_no * sizeof (int));
   int* gotos = (int*)malloc(table_info->state_no * table_info->goto_col_no * sizeof (int));
-  if (!gotos || !table_info->goto_table) {
+  if (!gotos || !table_info->goto_table || !table_info->state_to_symbol_id) {
     kev_throw_error("convert:", "out of memory", NULL);
   }
   table_info->goto_table[0] = gotos;
@@ -34,9 +35,15 @@ static void kev_pargen_convert_goto(KevPTableInfo* table_info, KevLRTable* table
     table_info->goto_table[i] = table_info->goto_table[i - 1] + table_info->goto_col_no;
 
   for (size_t i = 0; i < table_info->state_no; ++i) {
-    for (size_t j = 0; j < table_info->goto_col_no; ++j)
-      table_info->goto_table[i][j] = kev_lr_table_get_goto(table, i, j);
+    for (size_t j = 0; j < table_info->goto_col_no; ++j) {
+      int state = (int)kev_lr_table_get_goto(table, i, j);
+      table_info->goto_table[i][j] = state == (int)KEV_LR_GOTO_NONE ? -1 : state;
+      if (state != KEV_LR_GOTO_NONE)
+        table_info->state_to_symbol_id[state] = j;
+    }
   }
+  /* Start state is not corresponding to any symbol. */
+  table_info->state_to_symbol_id[table_info->start_state] = -1;
 }
 
 static void kev_pargen_convert_action(KevPTableInfo* table_info, KevLRTable* table) {
@@ -109,6 +116,6 @@ void kev_pargen_convert_destroy(KevPTableInfo* table_info) {
   free(table_info->goto_table[0]);
   free(table_info->goto_table);
   free(table_info->symbol_name);
+  free(table_info->state_to_symbol_id);
   free(table_info->rules_info);
-  free(table_info);
 }

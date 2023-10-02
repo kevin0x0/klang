@@ -1,11 +1,20 @@
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 
+#define ACTION_SHIFT      ($r lr-action-shift $:$;)
+#define ACTION_REDUCE     ($r lr-action-reduce $:$;)
+#define ACTION_ACCEPT     ($r lr-action-accept $:$;)
+#define ACTION_ERROR   ($r lr-action-error $:$;)
 
-typedef struct taSymbol {
-  $r attr-definition $:union { int intval; float floatval; char* str; } $; attr;
-  uint16_t state;
+typedef $r attr-definition $:union { int intval; float floatval; char* str; }$; Attr;
+
+typedef struct tagSymbol {
+  Attr attr;
+  $r state-type $:int16_t$; state;
 } Symbol;
 
 typedef struct tagActionEntry {
@@ -14,12 +23,109 @@ typedef struct tagActionEntry {
 } ActionEntry;
 
 typedef struct tagRuleInfo {
-  uint8_t head_id;
+  $r symbol-id-type $:uint8_t$; head_id;
   uint8_t bodylen;
 } RuleInfo;
 
 $r callback-type $:$;
 
+static ActionEntry action_tbl[$r state-number $:$;][$r action-column $:$;];
+static $r state-type $:int16_t$; goto_tbl[$r state-number $:$;][$r goto-column $:$;];
+static RuleInfo rules_info[$r rule-number $:$;];
+static LRCallback* callbacks[$r rule-number $:$;];
+static const char* symbol_name[$r symbol-number $:$;];
+static $r state-type $:int16_t$; start_state;
+static int state_symbol_mapping[$r state-number $:$;];
+
+
+static Symbol* symstk_expand(Symbol* symstk, Symbol* symstk_end);
+
+Attr parse(FILE* stream) {
+  $r lexer-init $:$;
+
+  $r symbol-id-type $:uint8_t$; token = $r lexer-token-id-expr $:$;;
+  $r state-type $:int16_t$; state = start_state;
+
+  /* symbol stack definition */
+  Symbol* symstk = (Symbol*)malloc(16 * sizeof (Symbol*));
+  if (!symstk) {
+    fprintf(stderr, "out of memory", NULL);
+    exit(EXIT_FAILURE);
+  }
+  /* ensure the cell above the top of stack is always available, so the capacity of
+   * the stack is set to the actual capacity minus 1.
+   */
+  Symbol* symstk_end = symstk + 15;
+  Symbol* symstk_curr = symstk;
+
+  symstk_curr++->state = state;
+
+  while (true) {
+    ActionEntry action = action_tbl[state][token];
+    switch (action.action) {
+      case ACTION_SHIFT: {
+        state = action.info;
+        Attr attr;
+        $r lexer-token-convert-attr $:$;
+        if (symstk_curr == symstk_end) {
+          size_t old_capacity = symstk_end - symstk + 1;
+          symstk = symstk_expand(symstk, symstk_end);
+          symstk_end = symstk + old_capacity * 2 - 1;
+          symstk_curr = symstk + old_capacity - 1;
+        }
+        symstk_curr->attr = attr;
+        symstk_curr++->state = state;
+        $r lexer-token-next $:$;
+        token = $r lexer-token-id-expr $:$;;
+        break;
+      }
+      case ACTION_REDUCE: {
+        RuleInfo ruleinfo = rules_info[action.info];
+        size_t rulelen = ruleinfo.bodylen;
+        if (callbacks[action.info])
+          callbacks[action.info](symstk - rulelen);
+        symstk_curr -= rulelen;
+        if (symstk_curr == symstk_end) {
+          size_t old_capacity = symstk_end - symstk + 1;
+          symstk = symstk_expand(symstk, symstk_end);
+          symstk_end = symstk + old_capacity * 2 - 1;
+          symstk_curr = symstk + old_capacity - 1;
+        }
+        state = goto_tbl[symstk_curr->state][ruleinfo.head_id];
+        symstk_curr++->state = state;
+        break;
+      }
+      case ACTION_ACCEPT: {
+        Attr ret = symstk_curr->attr;
+        free(symstk);
+        $r lexer-destroy $:$;
+        return ret;
+      }
+      case ACTION_ERROR: {
+        $r error-handle-code $:fprintf(stderr, "error occurred!\n");
+        exit(EXIT_FAILURE);$;
+        break;
+      }
+      default: {
+        fprintf(stderr, "impossible state\n");
+        exit(EXIT_FAILURE);
+        break;
+      }
+    }
+  }
+}
+
+static Symbol* symstk_expand(Symbol* symstk, Symbol* symstk_end) {
+  size_t old_size = symstk_end - symstk + 1;
+  size_t new_size = old_size * 2;
+  Symbol* newstk = (Symbol*)realloc(symstk, new_size * sizeof (Symbol*));
+  if (!newstk) {
+    fprintf(stderr, "out of memory", NULL);
+    exit(EXIT_FAILURE);
+  }
+  symstk = newstk;
+  return symstk;
+}
 
 
 $r action-table $:$;
@@ -33,3 +139,5 @@ $r callback-array $:$;
 $r symbol-array $:$;
 
 $r start-state $:$;
+
+$r state-symbol-mapping $:$;

@@ -20,6 +20,7 @@ typedef struct tagKevPOutputFuncGroup {
   KevPOutputFunc* output_rule_info_array;
   KevPOutputFunc* output_callback_array;
   KevPOutputFunc* output_symbol_array;
+  KevPOutputFunc* output_state_symbol_mapping;
 } KevPOutputFuncGroup;
 
 /* fill the structure by language */
