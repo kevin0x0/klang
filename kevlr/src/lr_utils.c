@@ -8,6 +8,8 @@
 
 static void kev_lr_util_compute_first(KevBitSet** firsts, KevSymbol* symbol, size_t epsilon);
 
+static inline bool kev_lr_util_symbol_is_in_array(KevSymbol* symbol, KevAddrArray* array);
+
 bool kev_lr_util_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure, KevGotoMap* goto_container) {
   kev_gotomap_make_empty(goto_container);
   KevAddrArray* symbols = closure->symbols;
@@ -184,26 +186,61 @@ KevItemSet* kev_lr_util_get_start_itemset(KevSymbol* start, KevSymbol** lookahea
   return iset;
 }
 
-size_t kev_lr_util_label_symbols(KevSymbol** symbols, size_t symbol_no) {
-  size_t number = 0;
-  size_t i = 0;
-  while (symbols[i]->kind == KEV_LR_TERMINAL) {
-    symbols[i]->index = i;
-    ++i;
-  }
-  number = i;
-  for (; i < symbol_no; ++i)
-    symbols[i]->index = i;
-  return number;
-}
-
 void kev_lr_util_destroy_terminal_set_array(KevBitSet** firsts, size_t size) {
   for (size_t i = 0; i < size; ++i)
     kev_bitset_delete(firsts[i]);
   free(firsts);
 }
 
+static inline bool kev_lr_util_symbol_is_in_array(KevSymbol* symbol, KevAddrArray* array) {
+  return symbol->index < kev_addrarray_size(array) && kev_addrarray_visit(array, symbol->index) == symbol;
+}
+
 KevSymbol** kev_lr_util_get_symbol_array(KevSymbol* start, KevSymbol** ends, size_t ends_no, size_t* p_size) {
+  KevAddrArray array;
+  if (!kev_addrarray_init(&array))
+    return NULL;
+  if (!kev_addrarray_push_back(&array, start)) {
+    kev_addrarray_destroy(&array);
+    return NULL;
+  }
+  start->index = 0;
+
+  for (size_t curr = 0; curr != kev_addrarray_size(&array); ++curr) {
+    KevSymbol* symbol = (KevSymbol*)kev_addrarray_visit(&array, curr);
+    for (KevRuleNode* node = symbol->rules; node; node = node->next) {
+      KevRule* rule = node->rule;
+      size_t bodylen = kev_lr_rule_get_bodylen(rule);
+      KevSymbol** body = kev_lr_rule_get_body(rule);
+      for (size_t i = 0; i < bodylen; ++i) {
+        if (kev_lr_util_symbol_is_in_array(body[i], &array))
+          continue;
+        body[i]->index = kev_addrarray_size(&array);
+        if (!kev_addrarray_push_back(&array, body[i])) {
+          kev_addrarray_destroy(&array);
+          return NULL;
+        }
+      }
+    }
+  }
+
+  for (size_t i = 0; i < ends_no; ++i) {
+    if (kev_lr_util_symbol_is_in_array(ends[i], &array))
+      continue;
+    ends[i]->index = kev_addrarray_size(&array);
+    if (!kev_addrarray_push_back(&array, ends[i])) {
+      kev_addrarray_destroy(&array);
+      return NULL;
+    }
+  }
+
+  *p_size = kev_addrarray_size(&array);
+  KevSymbol** symbol_array = (KevSymbol**)kev_addrarray_steal(&array);
+  kev_addrarray_destroy(&array);
+  return symbol_array;
+}
+
+KevSymbol** kev_lr_util_get_symbol_array_without_changing_index(KevSymbol* start, KevSymbol** ends, size_t ends_no, size_t* p_size) {
   KevAddrArray array;
   if (!kev_addrarray_init(&array))
     return NULL;
@@ -243,11 +280,6 @@ KevSymbol** kev_lr_util_get_symbol_array(KevSymbol* start, KevSymbol** ends, siz
   for (size_t i = 0; i < ends_no; ++i) {
     if (kev_hashset_has(&set, ends[i]))
       continue;
-    if (ends[i]->kind == KEV_LR_NONTERMINAL) {
-      kev_hashset_destroy(&set);
-      kev_addrarray_destroy(&array);
-      return NULL;
-    }
     if (!kev_hashset_insert(&set, ends[i]) ||
         !kev_addrarray_push_back(&array, ends[i])) {
       kev_hashset_destroy(&set);
@@ -256,15 +288,17 @@ KevSymbol** kev_lr_util_get_symbol_array(KevSymbol* start, KevSymbol** ends, siz
     }
   }
 
-  kev_hashset_destroy(&set);
   *p_size = kev_addrarray_size(&array);
-  return (KevSymbol**)array.begin;
+  KevSymbol** symbol_array = (KevSymbol**)kev_addrarray_steal(&array);
+  kev_addrarray_destroy(&array);
+  kev_hashset_destroy(&set);
+  return symbol_array;
 }
 
-void kev_lr_util_symbol_array_partition(KevSymbol** array, size_t size) {
+size_t kev_lr_util_symbol_array_partition(KevSymbol** array, size_t size) {
   KevSymbol** left = array;
   KevSymbol** right = array + size - 1;
-  while (left < right) {
+  while (true) {
     while (left < right && (*left)->kind == KEV_LR_TERMINAL)
       ++left;
     while (left < right && (*right)->kind == KEV_LR_NONTERMINAL)
@@ -274,6 +308,7 @@ void kev_lr_util_symbol_array_partition(KevSymbol** array, size_t size) {
     *left = *right;
     *right = tmp;
   }
+  return (*left)->kind == KEV_LR_TERMINAL ? left - array + 1 : left - array;
 }
 
 KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts, size_t symbol_no, size_t terminal_no, KevSymbol* start, KevSymbol** ends, size_t ends_no) {

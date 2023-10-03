@@ -59,8 +59,8 @@ KevLRCollection* kev_lr_collection_create_lalr(KevSymbol* start, KevSymbol** end
     kev_lalr_destroy_collec(collec);
     return NULL;
   }
-  kev_lr_util_symbol_array_partition(collec->symbols, collec->symbol_no);
-  collec->terminal_no = kev_lr_util_label_symbols(collec->symbols, collec->symbol_no);
+  collec->terminal_no = kev_lr_util_symbol_array_partition(collec->symbols, collec->symbol_no);
+  kev_lr_util_label_symbols(collec->symbols, collec->symbol_no);
   collec->firsts = kev_lr_util_compute_firsts(collec->symbols, collec->symbol_no, collec->terminal_no);
   if (!collec->firsts) {
     kev_lalr_destroy_collec(collec);
