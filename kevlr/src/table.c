@@ -128,8 +128,8 @@ static bool kev_lr_decide_action(KevLRCollection* collec, KevLRTable* table, Kev
           KevLRConflict* conflict = kev_lr_conflict_create(itemset, collec->symbols[symbol_index], entry);
           if (!conflict) return false;
           if (!kev_lr_conflict_create_and_add_item(conflict, rule, rule->bodylen) ||
-              !(entry->action == KEV_LR_ACTION_RED &&
-                kev_lr_conflict_create_and_add_item(conflict, entry->info.rule, entry->info.rule->bodylen))) {
+              (entry->action == KEV_LR_ACTION_RED &&
+              !kev_lr_conflict_create_and_add_item(conflict, entry->info.rule, entry->info.rule->bodylen))) {
             kev_lr_conflict_delete(conflict);
             return false;
           }
