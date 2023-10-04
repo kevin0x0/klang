@@ -13,7 +13,7 @@ static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevP
                                                        size_t* p_bodylen, KevActionFunc** actfunc);
 static KevSymbol* kev_pargenparser_symbol(KevPParserState* parser_state, KevPLexer* lex);
 static KevSymbol* kev_pargenparser_symbol_kind(KevPParserState* parser_state, KevPLexer* lex, KevSymbolType kind);
-static KevActionFunc* kev_pargenlexer_actfunc(KevPParserState* parser_state, KevPLexer* lex);
+static KevActionFunc* kev_pargenparser_actfunc(KevPParserState* parser_state, KevPLexer* lex);
 static KevPrioPos kev_pargenparser_sympos(KevPParserState* parser_state, KevPLexer* lex);
 static void kev_pargenparser_statement_set(KevPParserState* parser_state, KevPLexer* lex);
 static void kev_pargenparser_statement_set_prio(KevPParserState* parser_state, KevPLexer* lex);
@@ -23,7 +23,7 @@ static void kev_pargenparser_statement_set_end_symbols(KevPParserState* parser_s
 static void kev_pargenparser_statement_set_confhandler(KevPParserState* parser_state, KevPLexer* lex);
 static void kev_pargenparser_statement_set_algorithm(KevPParserState* parser_state, KevPLexer* lex);
 
-static void kev_pargenparser_statement_env_assign(KevPParserState* parser_state, KevPLexer* lex);
+static void kev_pargenparser_statement_var_assign(KevPParserState* parser_state, KevPLexer* lex);
 
 static void kev_pargenparser_match(KevPParserState* parser_state, KevPLexer* lex, int kind);
 static inline void kev_pargenparser_guarantee(KevPParserState* parser_state, KevPLexer* lex, int kind);
@@ -161,7 +161,7 @@ void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex) {
     } else if (lex->currtoken.kind == KEV_PTK_SET) {
       kev_pargenparser_statement_set(parser_state, lex);
     } else if (lex->currtoken.kind == KEV_PTK_ENV) {
-        kev_pargenparser_statement_env_assign(parser_state, lex);
+        kev_pargenparser_statement_var_assign(parser_state, lex);
     } else {
       kev_error_report(lex, "expected: ", "identifier or keyword decl");
       parser_state->err_count++;
@@ -222,7 +222,7 @@ static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevP
         parser_state->err_count++;
       }
     } else if (lex->currtoken.kind == KEV_PTK_STR || lex->currtoken.kind == KEV_PTK_LBE) {
-      KevActionFunc* actfunc = kev_pargenlexer_actfunc(parser_state, lex);
+      KevActionFunc* actfunc = kev_pargenparser_actfunc(parser_state, lex);
       if (lex->currtoken.kind == KEV_PTK_LBE ||
           lex->currtoken.kind == KEV_PTK_STR ||
           lex->currtoken.kind == KEV_PTK_ID) {
@@ -358,7 +358,7 @@ static inline void kev_pargenparser_next_nonblank(KevPLexer* lex) {
   } while (lex->currtoken.kind == KEV_PTK_BLKS);
 }
 
-KevActionFunc* kev_pargenlexer_actfunc(KevPParserState* parser_state, KevPLexer* lex) {
+KevActionFunc* kev_pargenparser_actfunc(KevPParserState* parser_state, KevPLexer* lex) {
   KevActionFunc* actfunc = (KevActionFunc*)malloc(sizeof (KevActionFunc));
   if (!actfunc) {
     kev_error_report(lex, "out of memory", NULL);
@@ -599,7 +599,7 @@ static KevPrioPos kev_pargenparser_sympos(KevPParserState* parser_state, KevPLex
   return sympos;
 }
 
-static void kev_pargenparser_statement_env_assign(KevPParserState* parser_state, KevPLexer* lex) {
+static void kev_pargenparser_statement_var_assign(KevPParserState* parser_state, KevPLexer* lex) {
   kev_pargenparser_next_nonblank(lex);
   kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
   char* id = lex->currtoken.attr.str;
