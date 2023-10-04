@@ -8,7 +8,7 @@
 
 
 static void kev_pargenparser_statement_declare(KevPParserState* parser_state, KevPLexer* lex);
-static void kev_pargenparser_rules(KevPParserState* parser_state, KevPLexer* lex);
+static void kev_pargenparser_statement_rules(KevPParserState* parser_state, KevPLexer* lex);
 static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevPLexer* lex,
                                                        size_t* p_bodylen, KevActionFunc** actfunc);
 static KevSymbol* kev_pargenparser_symbol(KevPParserState* parser_state, KevPLexer* lex);
@@ -155,7 +155,7 @@ void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex) {
     kev_pargenparser_next_nonblank(lex);
   while (lex->currtoken.kind != KEV_PTK_END) {
     if (lex->currtoken.kind == KEV_PTK_ID) {
-      kev_pargenparser_rules(parser_state, lex);
+      kev_pargenparser_statement_rules(parser_state, lex);
     } else if (lex->currtoken.kind == KEV_PTK_DECL) {
       kev_pargenparser_statement_declare(parser_state, lex);
     } else if (lex->currtoken.kind == KEV_PTK_SET) {
@@ -170,7 +170,7 @@ void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex) {
   parser_state->err_count += lex->err_count;
 }
 
-static void kev_pargenparser_rules(KevPParserState* parser_state, KevPLexer* lex) {
+static void kev_pargenparser_statement_rules(KevPParserState* parser_state, KevPLexer* lex) {
   KevSymbol* head = kev_pargenparser_symbol_kind(parser_state, lex, KEV_LR_NONTERMINAL);
   if (kev_lr_symbol_get_kind(head) != KEV_LR_NONTERMINAL) {
     kev_error_report(lex, "expected: ", "terminal symbol");
