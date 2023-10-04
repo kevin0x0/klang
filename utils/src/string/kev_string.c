@@ -47,16 +47,3 @@ char* kev_str_concat_len(const char* str1, const char* str2, size_t len1, size_t
   ret[len1 + len2] = '\0';
   return ret;
 }
-
-char* kev_trunc_leaf(const char* path) {
-  size_t i = 0;
-  char* cp_path = kev_str_copy(path);
-  if (!cp_path) return NULL;
-  char* p = cp_path - 1;
-  while (*++p != '\0') {
-    if (*p == '/' || *p == '\\')
-      i = p - cp_path;
-  }
-  cp_path[i + 1] = '\0';
-  return cp_path;
-}

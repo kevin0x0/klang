@@ -1,4 +1,5 @@
 #include "utils/include/os_spec/dir.h"
+#include "utils/include/string/kev_string.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -59,4 +60,17 @@ char* kev_get_relpath(const char* from, const char* to) {
   relpath[dir_depth * 3] = '\0';
   strcat(relpath, to + i);
   return relpath;
+}
+
+char* kev_trunc_leaf(const char* path) {
+  size_t i = 0;
+  char* cp_path = kev_str_copy(path);
+  if (!cp_path) return NULL;
+  char* p = cp_path - 1;
+  while (*++p != '\0') {
+    if (*p == '/' || *p == '\\')
+      i = p - cp_path;
+  }
+  cp_path[i + 1] = '\0';
+  return cp_path;
 }

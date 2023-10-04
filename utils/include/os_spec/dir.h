@@ -6,4 +6,5 @@
 
 char* kev_get_bin_dir(void);
 char* kev_get_relpath(const char* from, const char* to);
+char* kev_trunc_leaf(const char* path);
 #endif

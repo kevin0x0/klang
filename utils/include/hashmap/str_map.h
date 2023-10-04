@@ -31,6 +31,7 @@ bool kev_strmap_insert(KevStringMap* map, const char* key, const char* value);
 bool kev_strmap_insert_move(KevStringMap* map, const char* key, char* value);
 KevStringMapNode* kev_strmap_search(KevStringMap* map, const char* key);
 bool kev_strmap_update(KevStringMap* map, const char* key, const char* value);
+static inline char* kev_strmap_swap(KevStringMapNode* mapnode, char* value);
 bool kev_strmap_update_move(KevStringMap* map, const char* key, char* value);
 
 static inline KevStringMapNode* kev_strmap_iterate_begin(KevStringMap* map);
@@ -38,6 +39,12 @@ KevStringMapNode* kev_strmap_iterate_next(KevStringMap* map, KevStringMapNode* c
 
 static inline KevStringMapNode* kev_strmap_iterate_begin(KevStringMap* map) {
     return map->bucket_head ? map->bucket_head->map_node_list : NULL;
+}
+
+static inline char* kev_strmap_swap(KevStringMapNode* mapnode, char* value) {
+  char* ret = mapnode->value;
+  mapnode->value = value;
+  return ret;
 }
 
 #endif

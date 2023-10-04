@@ -72,6 +72,10 @@ $(LIB_DIR)int_queue.o : $(QUEUE_DIR)int_queue.c $(QUEUE_INC_DIR)int_queue.h $(GE
 $(LIB_DIR)addr_queue.o : $(QUEUE_DIR)addr_queue.c $(QUEUE_INC_DIR)addr_queue.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+$(LIB_DIR)plugin.o : $(OS_SPEC_DIR)plugin.c $(OS_SPEC_INC_DIR)plugin.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+
 .PHONY: clean create_lib_dir
 clean :
 	$(RM) $(LIB_DIR)*
