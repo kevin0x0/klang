@@ -49,6 +49,8 @@ static inline size_t kev_lr_rule_get_bodylen(KevRule* rule);
 static inline KevLRID kev_lr_rule_get_id(KevRule* rule);
 
 /* set method */
+bool kev_lr_symbol_set_name(KevSymbol* symbol, const char* name);
+void kev_lr_symbol_set_name_move(KevSymbol* symbol, char* name);
 static inline void kev_lr_symbol_set_id(KevSymbol* symbol, KevLRID id);
 static inline void kev_lr_rule_set_id(KevRule* rule, KevLRID id);
 

@@ -9,7 +9,11 @@ KevSymbol* kev_lr_symbol_create(KevSymbolType kind, const char* name) {
   KevSymbol* symbol = (KevSymbol*)malloc(sizeof (KevSymbol));
   if (!symbol) return NULL;
   symbol->kind = kind;
-  symbol->name = kev_str_copy(name);
+  symbol->name = NULL;
+  if (name && !(symbol->name = kev_str_copy(name))) {
+    free(symbol);
+    return NULL;
+  }
   symbol->rules = NULL;
   return symbol;
 }
@@ -78,4 +82,15 @@ static inline void kev_rulenode_delete(KevRuleNode* rules) {
     free(rules);
     rules = tmp;
   }
+}
+
+bool kev_lr_symbol_set_name(KevSymbol* symbol, const char* name) {
+  free(symbol->name);
+  symbol->name = NULL;
+  return name && !(symbol->name = kev_str_copy(name));
+}
+
+void kev_lr_symbol_set_name_move(KevSymbol* symbol, char* name) {
+  free(symbol->name);
+  symbol->name = name;
 }
