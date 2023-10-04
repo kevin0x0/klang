@@ -404,11 +404,17 @@ static void kev_pargenparser_statement_declare(KevPParserState* parser_state, Ke
   kev_pargenparser_next_nonblank(lex);
   kev_pargenparser_match(parser_state, lex, KEV_PTK_COLON);
   while (lex->currtoken.kind == KEV_PTK_ID) {
-    if (!kev_pargenparser_symbol_create_move(parser_state, lex->currtoken.attr.str, symbol_kind)) {
+    KevSymbol* symbol = kev_pargenparser_symbol_create_move(parser_state, lex->currtoken.attr.str, symbol_kind);
+    if (!symbol) {
       kev_error_report(lex, "out of memory", NULL);
       parser_state->err_count++;
     }
     kev_pargenparser_next_nonblank(lex);
+    if (lex->currtoken.kind == KEV_PTK_COLON) {
+      kev_pargenparser_next_nonblank(lex);
+      char* symbol_name = kev_pargenparser_expr(parser_state, lex);
+      kev_lr_symbol_set_name_move(symbol, symbol_name);
+    }
     if (lex->currtoken.kind == KEV_PTK_COMMA)
       kev_pargenparser_next_nonblank(lex);
     else if (lex->currtoken.kind != KEV_PTK_SEMI) {
