@@ -9,6 +9,12 @@ def declare (KEV_PTK_DECL):
 def set (KEV_PTK_SET):
   $set
 
+def idof (KEV_PTK_IDOF):
+  $idof
+
+def 'import' (KEV_PTK_IMPORT):
+  $import
+
 def identifier (KEV_PTK_ID):
   (kev_plex_simple_id)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])*
   (kev_plex_str_id)     $'([^'\\\xFF] | \\[^\xFF])*'

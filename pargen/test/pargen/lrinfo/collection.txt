@@ -47,31 +47,31 @@ expr -> num · [$, *, ), -, +, /]
 
 item set 5:
 G -> expr · [$]
-expr -> expr · / expr [$, *, ), -, +, /]
-expr -> expr · * expr [$, *, ), -, +, /]
-expr -> expr · - expr [$, *, ), -, +, /]
-expr -> expr · + expr [$, *, ), -, +, /]
+expr -> expr · - expr [$, *, -, +, /]
+expr -> expr · / expr [$, *, -, +, /]
+expr -> expr · * expr [$, *, -, +, /]
+expr -> expr · + expr [$, *, -, +, /]
 
 item set 6:
-expr -> + expr · [$, *, ), -, +, /]
-expr -> expr · / expr [$, *, ), -, +, /]
-expr -> expr · * expr [$, *, ), -, +, /]
-expr -> expr · - expr [$, *, ), -, +, /]
 expr -> expr · + expr [$, *, ), -, +, /]
+expr -> expr · * expr [$, *, ), -, +, /]
+expr -> + expr · [$, *, ), -, +, /]
+expr -> expr · - expr [$, *, ), -, +, /]
+expr -> expr · / expr [$, *, ), -, +, /]
 
 item set 7:
 expr -> - expr · [$, *, ), -, +, /]
-expr -> expr · / expr [$, *, ), -, +, /]
+expr -> expr · + expr [$, *, ), -, +, /]
 expr -> expr · * expr [$, *, ), -, +, /]
 expr -> expr · - expr [$, *, ), -, +, /]
-expr -> expr · + expr [$, *, ), -, +, /]
+expr -> expr · / expr [$, *, ), -, +, /]
 
 item set 8:
+expr -> expr · * expr [*, ), -, +, /]
+expr -> expr · / expr [*, ), -, +, /]
+expr -> expr · + expr [*, ), -, +, /]
 expr -> ( expr · ) [$, *, ), -, +, /]
-expr -> expr · / expr [$, *, ), -, +, /]
-expr -> expr · * expr [$, *, ), -, +, /]
-expr -> expr · - expr [$, *, ), -, +, /]
-expr -> expr · + expr [$, *, ), -, +, /]
+expr -> expr · - expr [*, ), -, +, /]
 
 item set 9:
 expr -> expr + · expr [$, *, ), -, +, /]
@@ -85,17 +85,6 @@ expr -> · expr - expr [$, *, ), -, +, /]
 expr -> · expr + expr [$, *, ), -, +, /]
 
 item set 10:
-expr -> expr - · expr [$, *, ), -, +, /]
-expr -> · num [$, *, ), -, +, /]
-expr -> · ( expr ) [$, *, ), -, +, /]
-expr -> · - expr [$, *, ), -, +, /]
-expr -> · + expr [$, *, ), -, +, /]
-expr -> · expr / expr [$, *, ), -, +, /]
-expr -> · expr * expr [$, *, ), -, +, /]
-expr -> · expr - expr [$, *, ), -, +, /]
-expr -> · expr + expr [$, *, ), -, +, /]
-
-item set 11:
 expr -> expr * · expr [$, *, ), -, +, /]
 expr -> · num [$, *, ), -, +, /]
 expr -> · ( expr ) [$, *, ), -, +, /]
@@ -106,8 +95,19 @@ expr -> · expr * expr [$, *, ), -, +, /]
 expr -> · expr - expr [$, *, ), -, +, /]
 expr -> · expr + expr [$, *, ), -, +, /]
 
-item set 12:
+item set 11:
 expr -> expr / · expr [$, *, ), -, +, /]
+expr -> · num [$, *, ), -, +, /]
+expr -> · ( expr ) [$, *, ), -, +, /]
+expr -> · - expr [$, *, ), -, +, /]
+expr -> · + expr [$, *, ), -, +, /]
+expr -> · expr / expr [$, *, ), -, +, /]
+expr -> · expr * expr [$, *, ), -, +, /]
+expr -> · expr - expr [$, *, ), -, +, /]
+expr -> · expr + expr [$, *, ), -, +, /]
+
+item set 12:
+expr -> expr - · expr [$, *, ), -, +, /]
 expr -> · num [$, *, ), -, +, /]
 expr -> · ( expr ) [$, *, ), -, +, /]
 expr -> · - expr [$, *, ), -, +, /]
@@ -121,30 +121,30 @@ item set 13:
 expr -> ( expr ) · [$, *, ), -, +, /]
 
 item set 14:
-expr -> expr + expr · [$, *, ), -, +, /]
 expr -> expr · / expr [$, *, ), -, +, /]
 expr -> expr · * expr [$, *, ), -, +, /]
-expr -> expr · - expr [$, *, ), -, +, /]
 expr -> expr · + expr [$, *, ), -, +, /]
+expr -> expr + expr · [$, *, ), -, +, /]
+expr -> expr · - expr [$, *, ), -, +, /]
 
 item set 15:
-expr -> expr - expr · [$, *, ), -, +, /]
-expr -> expr · / expr [$, *, ), -, +, /]
-expr -> expr · * expr [$, *, ), -, +, /]
 expr -> expr · - expr [$, *, ), -, +, /]
 expr -> expr · + expr [$, *, ), -, +, /]
+expr -> expr · * expr [$, *, ), -, +, /]
+expr -> expr · / expr [$, *, ), -, +, /]
+expr -> expr * expr · [$, *, ), -, +, /]
 
 item set 16:
-expr -> expr * expr · [$, *, ), -, +, /]
-expr -> expr · / expr [$, *, ), -, +, /]
-expr -> expr · * expr [$, *, ), -, +, /]
 expr -> expr · - expr [$, *, ), -, +, /]
 expr -> expr · + expr [$, *, ), -, +, /]
-
-item set 17:
 expr -> expr / expr · [$, *, ), -, +, /]
 expr -> expr · / expr [$, *, ), -, +, /]
 expr -> expr · * expr [$, *, ), -, +, /]
-expr -> expr · - expr [$, *, ), -, +, /]
+
+item set 17:
+expr -> expr · / expr [$, *, ), -, +, /]
 expr -> expr · + expr [$, *, ), -, +, /]
+expr -> expr · * expr [$, *, ), -, +, /]
+expr -> expr · - expr [$, *, ), -, +, /]
+expr -> expr - expr · [$, *, ), -, +, /]
 

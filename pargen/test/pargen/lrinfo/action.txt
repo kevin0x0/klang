@@ -10,13 +10,13 @@
       4    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
                     7      7      7      7             7      7       
       5    ERR    SHI    SHI    SHI    SHI    ERR    ERR    ACC    ERR
-                    9     10     11     12                            
+                    9     12     10     11                            
       6    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
                     4      4      4      4             4      4       
       7    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
                     5      5      5      5             5      5       
       8    ERR    SHI    SHI    SHI    SHI    ERR    SHI    ERR    ERR
-                    9     10     11     12            13              
+                    9     12     10     11            13              
       9    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    ERR
              4      1      2                    3                     
      10    SHI    SHI    SHI    ERR    ERR    SHI    ERR    ERR    ERR
@@ -28,10 +28,10 @@
      13    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
                     6      6      6      6             6      6       
      14    ERR    RED    RED    SHI    SHI    ERR    RED    RED    ERR
-                    0      0     11     12             0      0       
-     15    ERR    RED    RED    SHI    SHI    ERR    RED    RED    ERR
-                    1      1     11     12             1      1       
-     16    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
+                    0      0     10     11             0      0       
+     15    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
                     2      2      2      2             2      2       
-     17    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
+     16    ERR    RED    RED    RED    RED    ERR    RED    RED    ERR
                     3      3      3      3             3      3       
+     17    ERR    RED    RED    SHI    SHI    ERR    RED    RED    ERR
+                    1      1     10     11             1      1       

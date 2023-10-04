@@ -4,11 +4,12 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+$r source-pre $:$;
 
 #define ACTION_SHIFT      ($r lr-action-shift $:$;)
 #define ACTION_REDUCE     ($r lr-action-reduce $:$;)
 #define ACTION_ACCEPT     ($r lr-action-accept $:$;)
-#define ACTION_ERROR   ($r lr-action-error $:$;)
+#define ACTION_ERROR      ($r lr-action-error $:$;)
 
 typedef $r attr-definition $:union { int intval; float floatval; char* str; }$; Attr;
 
@@ -18,8 +19,8 @@ typedef struct tagSymbol {
 } Symbol;
 
 typedef struct tagActionEntry {
-  uint16_t info;
   uint8_t action;
+  uint16_t info;
 } ActionEntry;
 
 typedef struct tagRuleInfo {
@@ -38,72 +39,74 @@ static $r state-type $:int16_t$; start_state;
 static int state_symbol_mapping[$r state-number $:$;];
 
 
+Attr parse($r parser-parameter $:FILE* input$;);
 static Symbol* symstk_expand(Symbol* symstk, Symbol* symstk_end);
 
-Attr parse(FILE* stream) {
+Attr parse($r parser-parameter $:FILE* input$;) {
   $r lexer-init $:$;
 
-  $r symbol-id-type $:uint8_t$; token = $r lexer-token-id-expr $:$;;
-  $r state-type $:int16_t$; state = start_state;
+  $r symbol-id-type $:uint8_t$; _token = $r lexer-token-id-expr $:$;;
+  $r state-type $:int16_t$; _state = start_state;
 
   /* symbol stack definition */
-  Symbol* symstk = (Symbol*)malloc(16 * sizeof (Symbol*));
-  if (!symstk) {
+  Symbol* _symstk = (Symbol*)malloc(16 * sizeof (Symbol*));
+  if (!_symstk) {
     fprintf(stderr, "out of memory", NULL);
     exit(EXIT_FAILURE);
   }
   /* ensure the cell above the top of stack is always available, so the capacity of
    * the stack is set to the actual capacity minus 1.
    */
-  Symbol* symstk_end = symstk + 15;
-  Symbol* symstk_curr = symstk;
+  Symbol* _symstk_end = _symstk + 15;
+  Symbol* _symstk_curr = _symstk;
 
-  symstk_curr++->state = state;
+  _symstk_curr++->state = _state;
 
   while (true) {
-    ActionEntry action = action_tbl[state][token];
+    ActionEntry action = action_tbl[_state][_token];
     switch (action.action) {
       case ACTION_SHIFT: {
-        state = action.info;
+        if (_symstk_curr == _symstk_end) {
+          size_t old_capacity = _symstk_end - _symstk + 1;
+          _symstk = symstk_expand(_symstk, _symstk_end);
+          _symstk_end = _symstk + old_capacity * 2 - 1;
+          _symstk_curr = _symstk + old_capacity - 1;
+        }
+        _state = action.info;
         Attr attr;
         $r lexer-token-convert-attr $:$;
-        if (symstk_curr == symstk_end) {
-          size_t old_capacity = symstk_end - symstk + 1;
-          symstk = symstk_expand(symstk, symstk_end);
-          symstk_end = symstk + old_capacity * 2 - 1;
-          symstk_curr = symstk + old_capacity - 1;
-        }
-        symstk_curr->attr = attr;
-        symstk_curr++->state = state;
+        _symstk_curr->attr = attr;
+        _symstk_curr++->state = _state;
         $r lexer-token-next $:$;
-        token = $r lexer-token-id-expr $:$;;
+        _token = $r lexer-token-id-expr $:$;;
         break;
       }
       case ACTION_REDUCE: {
         RuleInfo ruleinfo = rules_info[action.info];
         size_t rulelen = ruleinfo.bodylen;
+        _symstk_curr -= rulelen;
         if (callbacks[action.info])
-          callbacks[action.info](symstk - rulelen);
-        symstk_curr -= rulelen;
-        if (symstk_curr == symstk_end) {
-          size_t old_capacity = symstk_end - symstk + 1;
-          symstk = symstk_expand(symstk, symstk_end);
-          symstk_end = symstk + old_capacity * 2 - 1;
-          symstk_curr = symstk + old_capacity - 1;
+          callbacks[action.info](_symstk_curr);
+        if (_symstk_curr == _symstk_end) {
+          size_t old_capacity = _symstk_end - _symstk + 1;
+          _symstk = symstk_expand(_symstk, _symstk_end);
+          _symstk_end = _symstk + old_capacity * 2 - 1;
+          _symstk_curr = _symstk + old_capacity - 1;
         }
-        state = goto_tbl[symstk_curr->state][ruleinfo.head_id];
-        symstk_curr++->state = state;
+        _state = goto_tbl[(_symstk_curr - 1)->state][ruleinfo.head_id];
+        _symstk_curr++->state = _state;
         break;
       }
       case ACTION_ACCEPT: {
-        Attr ret = symstk_curr->attr;
-        free(symstk);
+        Attr ret = (_symstk_curr - 1)->attr;
+        free(_symstk);
         $r lexer-destroy $:$;
         return ret;
       }
       case ACTION_ERROR: {
         $r error-handle-code $:fprintf(stderr, "error occurred!\n");
         exit(EXIT_FAILURE);$;
+        free(_symstk);
         break;
       }
       default: {
@@ -113,18 +116,6 @@ Attr parse(FILE* stream) {
       }
     }
   }
-}
-
-static Symbol* symstk_expand(Symbol* symstk, Symbol* symstk_end) {
-  size_t old_size = symstk_end - symstk + 1;
-  size_t new_size = old_size * 2;
-  Symbol* newstk = (Symbol*)realloc(symstk, new_size * sizeof (Symbol*));
-  if (!newstk) {
-    fprintf(stderr, "out of memory", NULL);
-    exit(EXIT_FAILURE);
-  }
-  symstk = newstk;
-  return symstk;
 }
 
 
@@ -141,3 +132,18 @@ $r symbol-array $:$;
 $r start-state $:$;
 
 $r state-symbol-mapping $:$;
+
+
+static Symbol* symstk_expand(Symbol* symstk, Symbol* symstk_end) {
+  size_t old_size = symstk_end - symstk + 1;
+  size_t new_size = old_size * 2;
+  Symbol* newstk = (Symbol*)realloc(symstk, new_size * sizeof (Symbol*));
+  if (!newstk) {
+    fprintf(stderr, "out of memory", NULL);
+    exit(EXIT_FAILURE);
+  }
+  symstk = newstk;
+  return symstk;
+}
+
+$r source-post $:$;

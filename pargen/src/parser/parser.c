@@ -31,6 +31,7 @@ static void kev_pargenparser_recover(KevPLexer* lex, int kind);
 
 static char* kev_pargenparser_expr(KevPParserState* parser_state, KevPLexer* lex);
 static char* kev_pargenparser_expr_concat(KevPParserState* parser_state, KevPLexer* lex);
+static char* kev_pargenparser_expr_prefix(KevPParserState* parser_state, KevPLexer* lex);
 static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer* lex);
 
 /* wraper */
@@ -615,10 +616,10 @@ static char* kev_pargenparser_expr(KevPParserState* parser_state, KevPLexer* lex
 }
 
 static char* kev_pargenparser_expr_concat(KevPParserState* parser_state, KevPLexer* lex) {
-  char* lhs = kev_pargenparser_expr_unit(parser_state, lex);
+  char* lhs = kev_pargenparser_expr_prefix(parser_state, lex);
   while (lex->currtoken.kind == KEV_PTK_CONCAT) {
     kev_pargenparser_next_nonblank(lex);
-    char* rhs = kev_pargenparser_expr_unit(parser_state, lex);
+    char* rhs = kev_pargenparser_expr_prefix(parser_state, lex);
     if (!rhs || !lhs) {
       free(rhs);
       free(lhs);
@@ -635,6 +636,33 @@ static char* kev_pargenparser_expr_concat(KevPParserState* parser_state, KevPLex
     }
   }
   return lhs;
+}
+
+static char* kev_pargenparser_expr_prefix(KevPParserState* parser_state, KevPLexer* lex) {
+  if (lex->currtoken.kind == KEV_PTK_IDOF) {
+    kev_pargenparser_next_nonblank(lex);
+    kev_pargenparser_match(parser_state, lex, KEV_PTK_LP);
+    kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
+    char* symbol_name = lex->currtoken.attr.str;
+    KevStrXMapNode* node = kev_strxmap_search(parser_state->symbols, symbol_name);
+    char* ret = NULL;
+    if (!node) {
+      kev_error_report(lex, "undefined symbol: ", symbol_name);
+      parser_state->err_count++;
+    } else {
+      char buf[32];
+      sprintf(buf, "%d", (int)kev_lr_symbol_get_id((KevSymbol*)node->value));
+      if (!(ret = kev_str_copy(buf))) {
+        kev_error_report(lex, "out of memory", NULL);
+        parser_state->err_count++;
+      }
+    }
+    kev_pargenparser_next_nonblank(lex);
+    kev_pargenparser_match(parser_state, lex, KEV_PTK_RP);
+    return ret;
+  } else {
+    return kev_pargenparser_expr_unit(parser_state, lex);
+  }
 }
 
 static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer* lex) {

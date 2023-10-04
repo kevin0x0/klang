@@ -41,4 +41,58 @@ set con priority, shifting, log : "expr.log";
 %callback-tail = "\n}\n\n";
 
 
-%attr-definition = "int";
+%attr-definition = "float";
+
+%lexer-token-next = `lex_next(input);`;
+
+%lexer-init = lexer-token-next;
+
+%lexer-token-id-expr = `token_id`;
+
+%lexer-token-convert-attr = `attr = attrval;`;
+
+%source-pre = `
+#include <ctype.h>
+
+static int token_id = 0;
+static float attrval = 0.0;
+void lex_next(FILE* stream);
+`;
+
+%source-post = `
+void lex_next(FILE* stream) {
+  int ch = fgetc(stream);
+  while (ch == ' ' || ch == '\t')
+    ch = fgetc(stream);
+  if (isdigit(ch)) {
+    ungetc(ch, stream);
+    fscanf(stream, "%f", &attrval);
+    token_id = ` .. idof (num) .. `;
+  } else if (ch == '+') {
+    token_id = ` .. idof ('+') .. `;
+  } else if (ch == '-') {
+    token_id = ` .. idof ('-') .. `;
+  } else if (ch == '*') {
+    token_id = ` .. idof ('*') .. `;
+  } else if (ch == '/') {
+    token_id = ` .. idof ('/') .. `;
+  } else if (ch == '(') {
+    token_id = ` .. idof ('(') .. `;
+  } else if (ch == ')') {
+    token_id = ` .. idof (')') .. `;
+  } else if (ch == EOF || ch == '\n') {
+    token_id = ` .. idof ('$') .. `;
+  } else {
+    fprintf(stderr, "lexical error\n");
+    lex_next(stream);
+  }
+}
+
+int main(int argc, char** argv) {
+  while (true) {
+    printf(">>>");
+    float result = parse(stdin);
+    printf("%f\n", result);
+  }
+  return 0;
+}`;
