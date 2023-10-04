@@ -645,30 +645,7 @@ static char* kev_pargenparser_expr_concat(KevPParserState* parser_state, KevPLex
 }
 
 static char* kev_pargenparser_expr_prefix(KevPParserState* parser_state, KevPLexer* lex) {
-  if (lex->currtoken.kind == KEV_PTK_IDOF) {
-    kev_pargenparser_next_nonblank(lex);
-    kev_pargenparser_match(parser_state, lex, KEV_PTK_LP);
-    kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
-    char* symbol_name = lex->currtoken.attr.str;
-    KevStrXMapNode* node = kev_strxmap_search(parser_state->symbols, symbol_name);
-    char* ret = NULL;
-    if (!node) {
-      kev_error_report(lex, "undefined symbol: ", symbol_name);
-      parser_state->err_count++;
-    } else {
-      char buf[32];
-      sprintf(buf, "%d", (int)kev_lr_symbol_get_id((KevSymbol*)node->value));
-      if (!(ret = kev_str_copy(buf))) {
-        kev_error_report(lex, "out of memory", NULL);
-        parser_state->err_count++;
-      }
-    }
-    kev_pargenparser_next_nonblank(lex);
-    kev_pargenparser_match(parser_state, lex, KEV_PTK_RP);
-    return ret;
-  } else {
-    return kev_pargenparser_expr_unit(parser_state, lex);
-  }
+  return kev_pargenparser_expr_unit(parser_state, lex);
 }
 
 static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer* lex) {
@@ -690,6 +667,47 @@ static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer
       kev_pargenparser_next_nonblank(lex);
       return ret;
     }
+  } else if (lex->currtoken.kind == KEV_PTK_IDOF) {
+    kev_pargenparser_next_nonblank(lex);
+    kev_pargenparser_match(parser_state, lex, KEV_PTK_LP);
+    kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
+    char* symbol_name = lex->currtoken.attr.str;
+    KevStrXMapNode* node = kev_strxmap_search(parser_state->symbols, symbol_name);
+    char* ret = NULL;
+    if (!node) {
+      kev_error_report(lex, "undefined symbol: ", symbol_name);
+      parser_state->err_count++;
+    } else {
+      char buf[32];
+      sprintf(buf, "%d", (int)kev_lr_symbol_get_id((KevSymbol*)node->value));
+      if (!(ret = kev_str_copy(buf))) {
+        kev_error_report(lex, "out of memory", NULL);
+        parser_state->err_count++;
+      }
+    }
+    kev_pargenparser_next_nonblank(lex);
+    kev_pargenparser_match(parser_state, lex, KEV_PTK_RP);
+    return ret;
+  } else if (lex->currtoken.kind == KEV_PTK_NAMEOF) {
+    kev_pargenparser_next_nonblank(lex);
+    kev_pargenparser_match(parser_state, lex, KEV_PTK_LP);
+    kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
+    char* symbol_name = lex->currtoken.attr.str;
+    KevStrXMapNode* node = kev_strxmap_search(parser_state->symbols, symbol_name);
+    char* ret = NULL;
+    if (!node) {
+      kev_error_report(lex, "undefined symbol: ", symbol_name);
+      parser_state->err_count++;
+    } else {
+      ret = kev_str_copy(kev_lr_symbol_get_name((KevSymbol*)node->value));
+      if (!ret) {
+        kev_error_report(lex, "out of memory", NULL);
+        parser_state->err_count++;
+      }
+    }
+    kev_pargenparser_next_nonblank(lex);
+    kev_pargenparser_match(parser_state, lex, KEV_PTK_RP);
+    return ret;
   } else if (lex->currtoken.kind == KEV_PTK_STR) {
     char* ret = lex->currtoken.attr.str;
     kev_pargenparser_next_nonblank(lex);

@@ -12,6 +12,9 @@ def set (KEV_PTK_SET):
 def idof (KEV_PTK_IDOF):
   $idof
 
+def nameof (KEV_PTK_NAMEOF):
+  $nameof
+
 def 'import' (KEV_PTK_IMPORT):
   $import
 
