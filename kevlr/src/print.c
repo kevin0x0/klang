@@ -160,6 +160,7 @@ void kev_lr_print_kernel_item(FILE* out, KevLRCollection* collec, KevItem* kitem
   fprintf(out, "%s ", KEV_LR_DOT);
   for (size_t i = dot; i < len; ++i) 
     fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_LR_SYMBOL_UNNAMED);
+  fputc(' ', out);
   kev_lr_print_terminal_set(out, collec, kitem->lookahead);
 }
 
@@ -170,6 +171,7 @@ void kev_lr_print_non_kernel_item(FILE* out, KevLRCollection* collec, KevRule* r
   fprintf(out, "%s ", KEV_LR_DOT);
   for (size_t i = 0; i < len; ++i) 
     fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_LR_SYMBOL_UNNAMED);
+  fputc(' ', out);
   kev_lr_print_terminal_set(out, collec, lookahead);
 }
 
