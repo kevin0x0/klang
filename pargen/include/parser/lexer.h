@@ -27,9 +27,10 @@ typedef struct tagKevPToken {
 } KevPToken;
 
 typedef struct tagKevPLexer {
-  FILE* infile;
-  size_t currpos; /* current position */
   KevPToken currtoken;
+  FILE* infile;
+  char* filename;
+  size_t currpos; /* current position */
   uint8_t* buf;
   uint8_t (*table)[256];
   int* pattern_mapping;
@@ -38,7 +39,7 @@ typedef struct tagKevPLexer {
   size_t err_count;
 } KevPLexer;
 
-bool kev_pargenlexer_init(KevPLexer* lex,FILE* infile);
+bool kev_pargenlexer_init(KevPLexer* lex,FILE* infile, const char* filename);
 void kev_pargenlexer_destroy(KevPLexer* lex);
  
 void kev_pargenlexer_next(KevPLexer* lex);

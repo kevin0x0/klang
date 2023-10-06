@@ -1,17 +1,20 @@
 #include "pargen/include/pargen/control.h"
 #include "pargen/include/pargen/confhandle.h"
 #include "pargen/include/pargen/convert.h"
+#include "pargen/include/pargen/dir.h"
 #include "pargen/include/pargen/error.h"
 #include "pargen/include/pargen/output.h"
+#include "utils/include/string/kev_string.h"
 
 #include <string.h>
 
 static KevLRCollection* kev_pargen_control_generate_collec(KevPParserState* parser_state);
 static KevLRTable* kev_pargen_control_generate_table(KevPParserState* parser_state, KevLRCollection* collec);
 static KevFuncMap* kev_pargen_control_get_funcmap(KevPTableInfo* table_info, KevPOutputFuncGroup* func_group);
+static void kev_pargen_control_parse(KevPParserState* parser_state, const char* filepath);
 
-static void kev_pargen_control_set_env_var_pre(KevStringMap* env_var);
-static void kev_pargen_control_set_env_var_post(KevStringMap* env_var, KevPTableInfo* table_info);
+static void kev_pargen_control_set_vars_pre(KevStringMap* vars, KevPOptions* options);
+static void kev_pargen_control_set_vars_post(KevStringMap* vars, KevPTableInfo* table_info);
 
 
 void kev_pargen_control(KevPOptions* options) {
@@ -28,12 +31,10 @@ void kev_pargen_control(KevPOptions* options) {
   }
 
   /* predefine variables */
-  kev_pargen_control_set_env_var_pre(parser_state.env_var);
+  kev_pargen_control_set_vars_pre(parser_state.vars, options);
 
   /* parse input file */
-  if (!kev_pargenparser_parse_file(&parser_state, options->strs[KEV_PARGEN_INPUT_PATH])) {
-    kev_throw_error("control:", "can not open file: ", options->strs[KEV_PARGEN_INPUT_PATH]);
-  }
+  kev_pargen_control_parse(&parser_state, options->strs[KEV_PARGEN_INPUT_PATH]);
   
   /* if there is any error, report and abort */
   if (parser_state.err_count != 0) {
@@ -63,7 +64,7 @@ void kev_pargen_control(KevPOptions* options) {
   kev_lr_table_delete(table);
   kev_lr_collection_delete(collec);
   /* set variables corresponding to fields of 'table_info' */
-  kev_pargen_control_set_env_var_post(parser_state.env_var, &table_info);
+  kev_pargen_control_set_vars_post(parser_state.vars, &table_info);
 
   /* set function group, which contains functions that output the lr table
    * to a source file. */
@@ -72,14 +73,20 @@ void kev_pargen_control(KevPOptions* options) {
   KevFuncMap* funcs = kev_pargen_control_get_funcmap(&table_info, &func_group);
   /* generate source code from a template file if output path is specified */
   if (options->strs[KEV_PARGEN_OUT_SRC_PATH])
-    kev_pargen_output(options->strs[KEV_PARGEN_OUT_SRC_PATH], options->strs[KEV_PARGEN_SRC_TMPL_PATH], parser_state.env_var, funcs);
+    kev_pargen_output(options->strs[KEV_PARGEN_OUT_SRC_PATH], options->strs[KEV_PARGEN_SRC_TMPL_PATH], parser_state.vars, funcs);
   if (options->strs[KEV_PARGEN_OUT_INC_PATH])
-    kev_pargen_output(options->strs[KEV_PARGEN_OUT_INC_PATH], options->strs[KEV_PARGEN_INC_TMPL_PATH], parser_state.env_var, funcs);
+    kev_pargen_output(options->strs[KEV_PARGEN_OUT_INC_PATH], options->strs[KEV_PARGEN_INC_TMPL_PATH], parser_state.vars, funcs);
   /* release resources */
   kev_funcmap_delete(funcs);
   kev_pargen_convert_destroy(&table_info);
   /* release resources */
   kev_pargenparser_destroy(&parser_state);
+}
+
+static void kev_pargen_control_parse(KevPParserState* parser_state, const char* filepath) {
+  if (!kev_pargenparser_parse_file(parser_state, filepath)) {
+    kev_throw_error("control:", "can not open file: ", filepath);
+  }
 }
 
 static KevFuncMap* kev_pargen_control_get_funcmap(KevPTableInfo* table_info, KevPOutputFuncGroup* func_group) {
@@ -160,40 +167,52 @@ static KevLRTable* kev_pargen_control_generate_table(KevPParserState* parser_sta
   return table;
 }
 
-static void kev_pargen_control_set_env_var_post(KevStringMap* env_var, KevPTableInfo* table_info) {
+static void kev_pargen_control_set_vars_post(KevStringMap* vars, KevPTableInfo* table_info) {
   char buf[100];
   sprintf(buf, "%d", (int)table_info->state_no);
-  if (!kev_strmap_update(env_var, "state-number",buf))
-    kev_throw_error("control:", "out of memory", ", falied to set variable 'state-number'");
+  if (!kev_strmap_update(vars, "lr-state-number", buf))
+    kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-state-number'");
   sprintf(buf, "%d", (int)table_info->action_col_no);
-  if (!kev_strmap_update(env_var, "action-column",buf))
-    kev_throw_error("control:", "out of memory", ", falied to set variable 'action-column'");
+  if (!kev_strmap_update(vars, "lr-action-column", buf))
+    kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-action-column'");
   sprintf(buf, "%d", (int)table_info->goto_col_no);
-  if (!kev_strmap_update(env_var, "goto-column",buf))
-    kev_throw_error("control:", "out of memory", ", falied to set variable 'goto-column'");
+  if (!kev_strmap_update(vars, "lr-goto-column", buf))
+    kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-goto-column'");
   /* goto-column is equal to symbol-number */
-  if (!kev_strmap_update(env_var, "symbol-number",buf))
-    kev_throw_error("control:", "out of memory", ", falied to set variable 'symbol-number'");
+  if (!kev_strmap_update(vars, "lr-symbol-number", buf))
+    kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-symbol-number'");
   sprintf(buf, "%d", (int)table_info->rule_no);
-  if (!kev_strmap_update(env_var, "rule-number",buf))
-    kev_throw_error("control:", "out of memory", ", falied to set variable 'rule-number'");
+  if (!kev_strmap_update(vars, "lr-rule-number", buf))
+    kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-rule-number'");
 }
 
-static void kev_pargen_control_set_env_var_pre(KevStringMap* env_var) {
+static void kev_pargen_control_set_vars_pre(KevStringMap* vars, KevPOptions* options) {
   char buf[100];
+  /* lr action constant */
   sprintf(buf, "%d", KEV_LR_ACTION_SHI);
-  if (!kev_strmap_update(env_var, "lr-action-shift",buf))
+  if (!kev_strmap_update(vars, "lr-action-shift", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-action-shift'");
   sprintf(buf, "%d", KEV_LR_ACTION_RED);
-  if (!kev_strmap_update(env_var, "lr-action-reduce",buf))
+  if (!kev_strmap_update(vars, "lr-action-reduce", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-action-reduce'");
   sprintf(buf, "%d", KEV_LR_ACTION_ACC);
-  if (!kev_strmap_update(env_var, "lr-action-accept",buf))
+  if (!kev_strmap_update(vars, "lr-action-accept", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-action-accept'");
   sprintf(buf, "%d", KEV_LR_ACTION_CON);
-  if (!kev_strmap_update(env_var, "lr-action-conflict",buf))
+  if (!kev_strmap_update(vars, "lr-action-conflict", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-action-conflict'");
   sprintf(buf, "%d", KEV_LR_ACTION_ERR);
-  if (!kev_strmap_update(env_var, "lr-action-error",buf))
+  if (!kev_strmap_update(vars, "lr-action-error", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'lr-action-error'");
+
+  /* environment variables */
+  char* resources = kev_get_pargen_resources_dir();
+  char* klr_dir = kev_str_concat(resources, "language/");
+  free(resources);
+  if (!klr_dir || !kev_strmap_update_move(vars, "env-res", klr_dir))
+    kev_throw_error("control:", "out of memory", ", falied to set variable 'env-res'");
+
+  /* option variables */
+  if (!kev_strmap_update(vars, "opt-language", options->strs[KEV_PARGEN_LANG_NAME]))
+    kev_throw_error("control:", "out of memory", ", falied to set variable 'opt-language'");
 }

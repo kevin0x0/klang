@@ -14,13 +14,13 @@
 #define KEV_PARGEN_ATTR_IDX_FMT_PLACEHOLDER   ((char)255)
 
 
-static void kev_pargen_output_symbol_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
-static void kev_pargen_output_start_state_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
-static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
-static void kev_pargen_output_goto_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
-static void kev_pargen_output_rule_info_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
-static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
-static void kev_pargen_output_state_symbol_mapping_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var);
+static void kev_pargen_output_symbol_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars);
+static void kev_pargen_output_start_state_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars);
+static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars);
+static void kev_pargen_output_goto_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars);
+static void kev_pargen_output_rule_info_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars);
+static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars);
+static void kev_pargen_output_state_symbol_mapping_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars);
 
 
 static void kev_pargen_output_escape_str(FILE* out, const char* str);
@@ -95,19 +95,19 @@ void kev_pargen_output_set_func(KevPOutputFuncGroup* func_group, const char* lan
   }
 }
 
-void kev_pargen_output(const char* output_path, const char* tmpl_path, KevStringMap* env_var, KevFuncMap* funcs) {
+void kev_pargen_output(const char* output_path, const char* tmpl_path, KevStringMap* vars, KevFuncMap* funcs) {
   FILE* output = fopen(output_path, "w");
   if (!output)
     kev_throw_error("output:", "can not open file: ", output_path);
   FILE* tmpl = fopen(tmpl_path, "r");
   if (!tmpl)
     kev_throw_error("output:", "can not open file: ", tmpl_path);
-  kev_template_convert(output, tmpl, env_var, funcs);
+  kev_template_convert(output, tmpl, vars, funcs);
   fclose(tmpl);
   fclose(output);
 }
 
-static void kev_pargen_output_symbol_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
+static void kev_pargen_output_symbol_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars) {
   char** symbol_name = table_info->symbol_name;
   fprintf(out, "static const char* symbol_name[%d] = {\n", (int)table_info->goto_col_no);
   for (size_t i = 0; i < table_info->goto_col_no; ++i) {
@@ -121,13 +121,13 @@ static void kev_pargen_output_symbol_array_c_cpp(FILE* out, KevPTableInfo* table
   fprintf(out, "};\n\n");
 }
 
-static void kev_pargen_output_start_state_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
-  KevStringMapNode* node = kev_strmap_search(env_var, "state-type");
+static void kev_pargen_output_start_state_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars) {
+  KevStringMapNode* node = kev_strmap_search(vars, "state-type");
   const char* state_type = node ? node->value : "int16_t";
   fprintf(out, "static %s start_state = %d;\n\n", state_type, (int)table_info->start_state);
 }
 
-static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
+static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars) {
   size_t state_no = (size_t)table_info->state_no;
   size_t column_no = (size_t)table_info->action_col_no;
   KevPActionEntry** action = table_info->action_table;
@@ -143,8 +143,8 @@ static void kev_pargen_output_action_table_c_cpp(FILE* out, KevPTableInfo* table
   fputs("\n};\n\n", out);
 }
 
-static void kev_pargen_output_goto_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
-  KevStringMapNode* node = kev_strmap_search(env_var, "state-type");
+static void kev_pargen_output_goto_table_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars) {
+  KevStringMapNode* node = kev_strmap_search(vars, "state-type");
   const char* state_type = node ? node->value : "int16_t";
   size_t state_no = (size_t)table_info->state_no;
   size_t symbol_no = (size_t)table_info->goto_col_no;
@@ -161,7 +161,7 @@ static void kev_pargen_output_goto_table_c_cpp(FILE* out, KevPTableInfo* table_i
   fputs("\n};\n\n", out);
 }
 
-static void kev_pargen_output_rule_info_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
+static void kev_pargen_output_rule_info_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars) {
   size_t rule_no = (size_t)table_info->rule_no;
   KevPRuleInfo* rules_info = table_info->rules_info;
   fprintf(out, "static RuleInfo rules_info[%d] = {", (int)rule_no);
@@ -172,18 +172,18 @@ static void kev_pargen_output_rule_info_array_c_cpp(FILE* out, KevPTableInfo* ta
   fputs("\n};\n\n", out);
 }
 
-static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
+static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars) {
   size_t rule_no = (size_t)table_info->rule_no;
   KevPRuleInfo* rules_info = table_info->rules_info;
-  KevStringMapNode* node = kev_strmap_search(env_var, "attr-idx-fmt");
+  KevStringMapNode* node = kev_strmap_search(vars, "attr-idx-fmt");
   const char* attr_idx_fmt = node ? node->value : NULL;
-  node = kev_strmap_search(env_var, "stk-idx-fmt");
+  node = kev_strmap_search(vars, "stk-idx-fmt");
   const char* stk_idx_fmt = node ? node->value : NULL;
-  node = kev_strmap_search(env_var, "callback-head");
+  node = kev_strmap_search(vars, "callback-head");
   const char* callback_head = node ? node->value : NULL;
-  node = kev_strmap_search(env_var, "callback-tail");
+  node = kev_strmap_search(vars, "callback-tail");
   const char* callback_tail = node ? node->value : NULL;
-  node = kev_strmap_search(env_var, "placeholder");
+  node = kev_strmap_search(vars, "placeholder");
   char* placeholder = node ? node->value : NULL;
 
   for (size_t i = 0; i < rule_no; ++i) {
@@ -211,7 +211,7 @@ static void kev_pargen_output_callback_array_c_cpp(FILE* out, KevPTableInfo* tab
   fputs("\n};\n\n", out);
 }
 
-static void kev_pargen_output_state_symbol_mapping_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* env_var) {
+static void kev_pargen_output_state_symbol_mapping_array_c_cpp(FILE* out, KevPTableInfo* table_info, KevStringMap* vars) {
   size_t state_no = table_info->state_no;
   int* mapping = table_info->state_to_symbol_id;
   fprintf(out, "static int state_symbol_mapping[%d] = {", (int)state_no);

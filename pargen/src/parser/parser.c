@@ -1,6 +1,7 @@
 #include "pargen/include/parser/parser.h"
 #include "pargen/include/parser/error.h"
 #include "utils/include/array/addr_array.h"
+#include "utils/include/os_spec/dir.h"
 #include "utils/include/string/kev_string.h"
 
 #include <stdio.h>
@@ -24,6 +25,7 @@ static void kev_pargenparser_statement_set_confhandler(KevPParserState* parser_s
 static void kev_pargenparser_statement_set_algorithm(KevPParserState* parser_state, KevPLexer* lex);
 
 static void kev_pargenparser_statement_var_assign(KevPParserState* parser_state, KevPLexer* lex);
+static void kev_pargenparser_statement_import(KevPParserState* parser_state, KevPLexer* lex);
 
 static void kev_pargenparser_match(KevPParserState* parser_state, KevPLexer* lex, int kind);
 static inline void kev_pargenparser_guarantee(KevPParserState* parser_state, KevPLexer* lex, int kind);
@@ -49,7 +51,7 @@ bool kev_pargenparser_init(KevPParserState* parser_state) {
   parser_state->redact = kev_addrarray_create();
   parser_state->end_symbols = kev_addrarray_create();
   parser_state->symbols = kev_strxmap_create(64);
-  parser_state->env_var = kev_strmap_create(16);
+  parser_state->vars = kev_strmap_create(16);
   parser_state->priorities = kev_priomap_create(32);
   parser_state->default_symbol_nt = kev_lr_symbol_create(KEV_LR_NONTERMINAL, NULL);
   parser_state->default_symbol_t = kev_lr_symbol_create(KEV_LR_TERMINAL, NULL);
@@ -60,14 +62,14 @@ bool kev_pargenparser_init(KevPParserState* parser_state) {
   parser_state->next_priority = 0;
   parser_state->algorithm = kev_str_copy("lalr");
   if (!parser_state->rules || !parser_state->symbols || !parser_state->redact ||
-      !parser_state->env_var || !parser_state->default_symbol_nt || !parser_state->default_symbol_t ||
+      !parser_state->vars || !parser_state->default_symbol_nt || !parser_state->default_symbol_t ||
       !parser_state->priorities || !parser_state->end_symbols || !parser_state->algorithm ||
       !parser_state->confhandlers) {
     kev_addrarray_delete(parser_state->rules);
     kev_addrarray_delete(parser_state->redact);
     kev_addrarray_delete(parser_state->end_symbols);
     kev_strxmap_delete(parser_state->symbols);
-    kev_strmap_delete(parser_state->env_var);
+    kev_strmap_delete(parser_state->vars);
     kev_priomap_delete(parser_state->priorities);
     kev_lr_symbol_delete(parser_state->default_symbol_nt);
     kev_lr_symbol_delete(parser_state->default_symbol_t);
@@ -77,7 +79,7 @@ bool kev_pargenparser_init(KevPParserState* parser_state) {
     parser_state->symbols = NULL;
     parser_state->end_symbols = NULL;
     parser_state->redact = NULL;
-    parser_state->env_var = NULL;
+    parser_state->vars = NULL;
     parser_state->priorities = NULL;
     parser_state->default_symbol_t = NULL;
     parser_state->default_symbol_nt = NULL;
@@ -116,7 +118,7 @@ void kev_pargenparser_destroy(KevPParserState* parser_state) {
   kev_addrarray_delete(parser_state->redact);
   kev_addrarray_delete(parser_state->end_symbols);
   kev_strxmap_delete(parser_state->symbols);
-  kev_strmap_delete(parser_state->env_var);
+  kev_strmap_delete(parser_state->vars);
   kev_priomap_delete(parser_state->priorities);
   kev_lr_symbol_delete(parser_state->default_symbol_nt);
   kev_lr_symbol_delete(parser_state->default_symbol_t);
@@ -126,7 +128,7 @@ void kev_pargenparser_destroy(KevPParserState* parser_state) {
   parser_state->symbols = NULL;
   parser_state->end_symbols = NULL;
   parser_state->redact = NULL;
-  parser_state->env_var = NULL;
+  parser_state->vars = NULL;
   parser_state->priorities = NULL;
   parser_state->default_symbol_t = NULL;
   parser_state->default_symbol_nt = NULL;
@@ -138,12 +140,31 @@ bool kev_pargenparser_parse_file(KevPParserState* parser_state, const char* file
   FILE* file = fopen(filepath, "r");
   if (!file) return false;
   KevPLexer lex;
-  if (!kev_pargenlexer_init(&lex, file)) {
+  if (!kev_pargenlexer_init(&lex, file, filepath)) {
     fclose(file);
     return false;
   }
+
   kev_pargenlexer_next(&lex);
+  char* file_dir = kev_trunc_leaf(filepath);
+  if (!file_dir) {
+    kev_error_report(&lex, "out of memory", NULL);
+    parser_state->err_count++;
+  }
+  KevStringMapNode* node = kev_strmap_search(parser_state->vars, "env-file-directory");
+  if (file_dir) {
+    if (!node) {
+      if (!kev_strmap_insert_move(parser_state->vars, "env-file-directory", file_dir)) {
+        kev_error_report(&lex, "out of memory", NULL);
+        parser_state->err_count++;
+      }
+    } else {
+      file_dir = kev_strmap_node_swap_value(node, file_dir);
+    }
+  }
   kev_pargenparser_parse(parser_state, &lex);
+  if (file_dir && node)
+    free(kev_strmap_node_swap_value(node, file_dir));
   kev_pargenlexer_destroy(&lex);
   fclose(file);
   return true;
@@ -161,9 +182,11 @@ void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex) {
     } else if (lex->currtoken.kind == KEV_PTK_SET) {
       kev_pargenparser_statement_set(parser_state, lex);
     } else if (lex->currtoken.kind == KEV_PTK_ENV) {
-        kev_pargenparser_statement_var_assign(parser_state, lex);
+      kev_pargenparser_statement_var_assign(parser_state, lex);
+    } else if (lex->currtoken.kind == KEV_PTK_IMPORT) {
+      kev_pargenparser_statement_import(parser_state, lex);
     } else {
-      kev_error_report(lex, "expected: ", "identifier or keyword decl");
+      kev_error_report(lex, "unexpected: ", kev_pargenlexer_info(lex->currtoken.kind));
       parser_state->err_count++;
     }
   }
@@ -284,7 +307,7 @@ static KevSymbol* kev_pargenparser_symbol_kind(KevPParserState* parser_state, Ke
 }
 
 static inline void kev_error_report(KevPLexer* lex, const char* info1, const char* info2) {
-  kev_parser_throw_error(stderr, lex->infile, lex->currtoken.begin, info1, info2);
+  kev_parser_throw_error(stderr, lex->infile, lex->filename, lex->currtoken.begin, info1, info2);
 }
 
 static void kev_pargenparser_match(KevPParserState* parser_state, KevPLexer* lex, int kind) {
@@ -607,7 +630,7 @@ static void kev_pargenparser_statement_var_assign(KevPParserState* parser_state,
   kev_pargenparser_match(parser_state, lex, KEV_PTK_ASSIGN);
   char* value = kev_pargenparser_expr(parser_state, lex);
   if (value) {
-    if (!kev_strmap_update_move(parser_state->env_var, id, value)) {
+    if (!kev_strmap_update_move(parser_state->vars, id, value)) {
       kev_error_report(lex, "out of memory", NULL);
       parser_state->err_count++;
       free(value);
@@ -650,7 +673,7 @@ static char* kev_pargenparser_expr_prefix(KevPParserState* parser_state, KevPLex
 
 static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer* lex) {
   if (lex->currtoken.kind == KEV_PTK_ID) {
-    KevStringMapNode* node = kev_strmap_search(parser_state->env_var, lex->currtoken.attr.str);
+    KevStringMapNode* node = kev_strmap_search(parser_state->vars, lex->currtoken.attr.str);
     if (!node) {
       kev_error_report(lex, "undefined variable: ", lex->currtoken.attr.str);
       parser_state->err_count++;
@@ -723,4 +746,28 @@ static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer
     kev_pargenparser_recover(lex, KEV_PTK_ID);
     return kev_pargenparser_expr_unit(parser_state, lex);
   }
+}
+
+static void kev_pargenparser_statement_import(KevPParserState* parser_state, KevPLexer* lex) {
+  kev_pargenparser_next_nonblank(lex);
+  char* import_path = kev_pargenparser_expr(parser_state, lex);
+  if (kev_is_relative(import_path)) {
+    KevStringMapNode* node = kev_strmap_search(parser_state->vars, "env-file-directory");
+    char* base = node ? node->value : "";
+    char* absolute_path = NULL;
+    if (!(absolute_path = kev_str_concat(base, import_path))) {
+      kev_error_report(lex, "out of memory", NULL);
+      parser_state->err_count++;
+    }
+    free(import_path);
+    import_path = absolute_path;
+  }
+  if (import_path) {
+    if (!kev_pargenparser_parse_file(parser_state, import_path)) {
+      kev_error_report(lex, "can not open file: ", import_path);
+      parser_state->err_count++;
+    }
+  }
+  free(import_path);
+  kev_pargenparser_match(parser_state, lex, KEV_PTK_SEMI);
 }

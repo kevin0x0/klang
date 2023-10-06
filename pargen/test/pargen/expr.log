@@ -1,144 +1,240 @@
-conflict occurred on itemset 6 when handling symbol '*'(id = 3)
+conflict occurred on itemset 10 when handling symbol '*'(id = 7)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> + expr · 
+expr -> cos expr ·  
 
-conflict occurred on itemset 6 when handling symbol '-'(id = 2)
+conflict occurred on itemset 10 when handling symbol '-'(id = 6)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> + expr · 
+expr -> cos expr ·  
 
-conflict occurred on itemset 6 when handling symbol '+'(id = 1)
+conflict occurred on itemset 10 when handling symbol '+'(id = 5)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> + expr · 
+expr -> cos expr ·  
 
-conflict occurred on itemset 6 when handling symbol '/'(id = 4)
+conflict occurred on itemset 10 when handling symbol '/'(id = 8)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> + expr · 
+expr -> cos expr ·  
 
-conflict occurred on itemset 7 when handling symbol '*'(id = 3)
+conflict occurred on itemset 11 when handling symbol '*'(id = 7)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> - expr · 
+expr -> sin expr ·  
 
-conflict occurred on itemset 7 when handling symbol '-'(id = 2)
+conflict occurred on itemset 11 when handling symbol '-'(id = 6)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> - expr · 
+expr -> sin expr ·  
 
-conflict occurred on itemset 7 when handling symbol '+'(id = 1)
+conflict occurred on itemset 11 when handling symbol '+'(id = 5)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> - expr · 
+expr -> sin expr ·  
 
-conflict occurred on itemset 7 when handling symbol '/'(id = 4)
+conflict occurred on itemset 11 when handling symbol '/'(id = 8)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> - expr · 
+expr -> sin expr ·  
 
-conflict occurred on itemset 14 when handling symbol '*'(id = 3)
+conflict occurred on itemset 12 when handling symbol '*'(id = 7)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> expr * expr · 
+expr -> exp expr ·  
 
-conflict occurred on itemset 14 when handling symbol '-'(id = 2)
+conflict occurred on itemset 12 when handling symbol '-'(id = 6)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> expr * expr · 
+expr -> exp expr ·  
 
-conflict occurred on itemset 14 when handling symbol '+'(id = 1)
+conflict occurred on itemset 12 when handling symbol '+'(id = 5)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> expr * expr · 
+expr -> exp expr ·  
 
-conflict occurred on itemset 14 when handling symbol '/'(id = 4)
+conflict occurred on itemset 12 when handling symbol '/'(id = 8)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> expr * expr · 
+expr -> exp expr ·  
 
-conflict occurred on itemset 15 when handling symbol '*'(id = 3)
+conflict occurred on itemset 13 when handling symbol '*'(id = 7)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> ln expr ·  
+
+conflict occurred on itemset 13 when handling symbol '-'(id = 6)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> ln expr ·  
+
+conflict occurred on itemset 13 when handling symbol '+'(id = 5)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> ln expr ·  
+
+conflict occurred on itemset 13 when handling symbol '/'(id = 8)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> ln expr ·  
+
+conflict occurred on itemset 14 when handling symbol '*'(id = 7)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> + expr ·  
+
+conflict occurred on itemset 14 when handling symbol '-'(id = 6)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> + expr ·  
+
+conflict occurred on itemset 14 when handling symbol '+'(id = 5)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> + expr ·  
+
+conflict occurred on itemset 14 when handling symbol '/'(id = 8)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> + expr ·  
+
+conflict occurred on itemset 15 when handling symbol '*'(id = 7)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> - expr ·  
+
+conflict occurred on itemset 15 when handling symbol '-'(id = 6)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> - expr ·  
+
+conflict occurred on itemset 15 when handling symbol '+'(id = 5)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> - expr ·  
+
+conflict occurred on itemset 15 when handling symbol '/'(id = 8)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> - expr ·  
+
+conflict occurred on itemset 22 when handling symbol '*'(id = 7)
 status: shift
 resolved stage: priority
 conflict item(s):
-expr -> expr + expr · 
+expr -> expr - expr ·  
 
-conflict occurred on itemset 15 when handling symbol '-'(id = 2)
+conflict occurred on itemset 22 when handling symbol '-'(id = 6)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> expr + expr · 
+expr -> expr - expr ·  
 
-conflict occurred on itemset 15 when handling symbol '+'(id = 1)
+conflict occurred on itemset 22 when handling symbol '+'(id = 5)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> expr + expr · 
+expr -> expr - expr ·  
 
-conflict occurred on itemset 15 when handling symbol '/'(id = 4)
+conflict occurred on itemset 22 when handling symbol '/'(id = 8)
 status: shift
 resolved stage: priority
 conflict item(s):
-expr -> expr + expr · 
+expr -> expr - expr ·  
 
-conflict occurred on itemset 16 when handling symbol '*'(id = 3)
+conflict occurred on itemset 23 when handling symbol '*'(id = 7)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> expr / expr ·  
+
+conflict occurred on itemset 23 when handling symbol '-'(id = 6)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> expr / expr ·  
+
+conflict occurred on itemset 23 when handling symbol '+'(id = 5)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> expr / expr ·  
+
+conflict occurred on itemset 23 when handling symbol '/'(id = 8)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> expr / expr ·  
+
+conflict occurred on itemset 24 when handling symbol '*'(id = 7)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> expr * expr ·  
+
+conflict occurred on itemset 24 when handling symbol '-'(id = 6)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> expr * expr ·  
+
+conflict occurred on itemset 24 when handling symbol '+'(id = 5)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> expr * expr ·  
+
+conflict occurred on itemset 24 when handling symbol '/'(id = 8)
+status: reduce
+resolved stage: priority
+conflict item(s):
+expr -> expr * expr ·  
+
+conflict occurred on itemset 25 when handling symbol '*'(id = 7)
 status: shift
 resolved stage: priority
 conflict item(s):
-expr -> expr - expr · 
+expr -> expr + expr ·  
 
-conflict occurred on itemset 16 when handling symbol '-'(id = 2)
+conflict occurred on itemset 25 when handling symbol '-'(id = 6)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> expr - expr · 
+expr -> expr + expr ·  
 
-conflict occurred on itemset 16 when handling symbol '+'(id = 1)
+conflict occurred on itemset 25 when handling symbol '+'(id = 5)
 status: reduce
 resolved stage: priority
 conflict item(s):
-expr -> expr - expr · 
+expr -> expr + expr ·  
 
-conflict occurred on itemset 16 when handling symbol '/'(id = 4)
+conflict occurred on itemset 25 when handling symbol '/'(id = 8)
 status: shift
 resolved stage: priority
 conflict item(s):
-expr -> expr - expr · 
-
-conflict occurred on itemset 17 when handling symbol '*'(id = 3)
-status: reduce
-resolved stage: priority
-conflict item(s):
-expr -> expr / expr · 
-
-conflict occurred on itemset 17 when handling symbol '-'(id = 2)
-status: reduce
-resolved stage: priority
-conflict item(s):
-expr -> expr / expr · 
-
-conflict occurred on itemset 17 when handling symbol '+'(id = 1)
-status: reduce
-resolved stage: priority
-conflict item(s):
-expr -> expr / expr · 
-
-conflict occurred on itemset 17 when handling symbol '/'(id = 4)
-status: reduce
-resolved stage: priority
-conflict item(s):
-expr -> expr / expr · 
+expr -> expr + expr ·  
 

@@ -30,13 +30,13 @@ typedef struct tagRuleInfo {
 
 $r callback-type $:$;
 
-static ActionEntry action_tbl[$r state-number $:$;][$r action-column $:$;];
-static $r state-type $:int16_t$; goto_tbl[$r state-number $:$;][$r goto-column $:$;];
-static RuleInfo rules_info[$r rule-number $:$;];
-static LRCallback* callbacks[$r rule-number $:$;];
-static const char* symbol_name[$r symbol-number $:$;];
+static ActionEntry action_tbl[$r lr-state-number $:$;][$r lr-action-column $:$;];
+static $r state-type $:int16_t$; goto_tbl[$r lr-state-number $:$;][$r lr-goto-column $:$;];
+static RuleInfo rules_info[$r lr-rule-number $:$;];
+static LRCallback* callbacks[$r lr-rule-number $:$;];
+static const char* symbol_name[$r lr-symbol-number $:$;];
 static $r state-type $:int16_t$; start_state;
-static int state_symbol_mapping[$r state-number $:$;];
+static int state_symbol_mapping[$r lr-state-number $:$;];
 
 
 Attr parse($r parser-parameter $:FILE* input$;);
@@ -48,7 +48,7 @@ Attr parse($r parser-parameter $:FILE* input$;) {
   $r symbol-id-type $:uint8_t$; _token = $r lexer-token-id-expr $:$;;
   $r state-type $:int16_t$; _state = start_state;
 
-  /* symbol stack definition */
+  /* symbol stack */
   Symbol* _symstk = (Symbol*)malloc(16 * sizeof (Symbol*));
   if (!_symstk) {
     fprintf(stderr, "out of memory", NULL);

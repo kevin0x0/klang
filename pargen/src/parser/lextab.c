@@ -1197,7 +1197,7 @@ static char* kev_get_escape_str(const char* str, size_t len);
 void kev_plex_simple_id(KevPLexer* lex) {
   KevPToken* token = &lex->currtoken;
   if (!(token->attr.str = kev_str_copy_len((char*)lex->buf, token->end - token->begin))) {
-    kev_parser_throw_error(stderr, lex->infile, token->begin, "out of memory", NULL);
+    kev_parser_throw_error(stderr, lex->infile, lex->filename, token->begin, "out of memory", NULL);
     lex->err_count++;
   }
 }
@@ -1205,7 +1205,7 @@ void kev_plex_simple_id(KevPLexer* lex) {
 void kev_plex_str_id(KevPLexer* lex) {
   KevPToken* token = &lex->currtoken;
   if (!(token->attr.str = kev_get_escape_str((char*)lex->buf + 1, token->end - token->begin - 2))) {
-    kev_parser_throw_error(stderr, lex->infile, token->begin, "out of memory", NULL);
+    kev_parser_throw_error(stderr, lex->infile, lex->filename, token->begin, "out of memory", NULL);
     lex->err_count++;
   }
 }
@@ -1213,7 +1213,7 @@ void kev_plex_str_id(KevPLexer* lex) {
 void kev_plex_str(KevPLexer* lex) {
   KevPToken* token = &lex->currtoken;
   if (!(token->attr.str = kev_get_escape_str((char*)lex->buf + 1, token->end - token->begin - 2))) {
-    kev_parser_throw_error(stderr, lex->infile, token->begin, "out of memory", NULL);
+    kev_parser_throw_error(stderr, lex->infile, lex->filename, token->begin, "out of memory", NULL);
     lex->err_count++;
   }
 }
@@ -1221,7 +1221,7 @@ void kev_plex_str(KevPLexer* lex) {
 void kev_plex_simple_str(KevPLexer* lex) {
   KevPToken* token = &lex->currtoken;
   if (!(token->attr.str = kev_str_copy_len((char*)lex->buf + 1, token->end - token->begin - 2))) {
-    kev_parser_throw_error(stderr, lex->infile, token->begin, "out of memory", NULL);
+    kev_parser_throw_error(stderr, lex->infile, lex->filename, token->begin, "out of memory", NULL);
     lex->err_count++;
   }
 }
@@ -1233,7 +1233,7 @@ void kev_plex_num(KevPLexer* lex) {
 
 void kev_plex_err(KevPLexer* lex) {
   KevPToken* token = &lex->currtoken;
-  kev_parser_throw_error(stderr, lex->infile, token->begin, "lexical error", NULL);
+  kev_parser_throw_error(stderr, lex->infile, lex->filename, token->begin, "lexical error", NULL);
   lex->err_count++;
   lex->currpos++;
   FILE* infile = lex->infile;

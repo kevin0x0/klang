@@ -9,7 +9,7 @@ PS_DIR = $(SRC_DIR)parser/
 UTILS_INC = $(UTILS_DIR)include/
 GEN_INC_DIR = $(UTILS_INC)general/
 
-all : $(BIN_DIR)error.o $(BIN_DIR)lexer.o $(BIN_DIR)lextab.o
+all : $(BIN_DIR)error.o $(BIN_DIR)lexer.o $(BIN_DIR)lextab.o $(BIN_DIR)symtable.o
 
 
 $(BIN_DIR)error.o : $(PS_DIR)error.c $(PS_INC_DIR)error.h $(GEN_INC_DIR)global_def.h $(BIN_DIR)parser.o
@@ -22,4 +22,7 @@ $(BIN_DIR)lextab.o : $(PS_DIR)lextab.c $(PS_INC_DIR)error.h $(PS_INC_DIR)lexer.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(BIN_DIR)parser.o : $(PS_DIR)parser.c $(PS_INC_DIR)parser.h $(PS_INC_DIR)lexer.h $(PS_INC_DIR)partokens.h $(GEN_INC_DIR)global_def.h $(UTILS_INC)array/addr_array.h $(UTILS_INC)hashmap/str_map.h
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(BIN_DIR)symtable.o : $(PS_DIR)symtable.c $(PS_INC_DIR)symtable.h $(UTILS_INC)hashmap/str_map.h
 	$(CC) -c -o $@ $< $(CFLAGS)
