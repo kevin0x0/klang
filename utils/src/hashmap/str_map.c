@@ -229,3 +229,14 @@ bool kev_strmap_update_move(KevStringMap* map, const char* key, char* value) {
     return kev_strmap_insert_move(map, key, value);
   }
 }
+
+bool kev_strmap_node_set_value(KevStringMapNode* node, const char* value) {
+  char* tmp = kev_str_copy(value);
+  if (!tmp) return false;
+  free(kev_strmap_node_swap_value(node, tmp));
+  return true;
+}
+
+void kev_strmap_node_set_value_move(KevStringMapNode* node, char* value) {
+  free(kev_strmap_node_swap_value(node, value));
+}

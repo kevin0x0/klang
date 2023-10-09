@@ -12,7 +12,7 @@
 
 char* kev_get_bin_dir(void) {
   char* buf = NULL;
-  size_t size = 64;
+  size_t buf_size = 64;
 #ifdef _WIN32
   size_t len = 0;
 #else
@@ -20,18 +20,18 @@ char* kev_get_bin_dir(void) {
 #endif
   do {
     free(buf);
-    size = size + size / 2;
-    buf = (char*)malloc(sizeof (char) * size);
+    buf_size = buf_size + buf_size / 2;
+    buf = (char*)malloc(sizeof (char) * buf_size);
     if (!buf) return NULL;
 #ifdef _WIN32
-  } while ((len = (size_t)GetModuleFileNameA(NULL, buf, size)) == size);
+  } while ((len = (size_t)GetModuleFileNameA(NULL, buf, buf_size)) == buf_size);
 #else
-  } while ((len = readlink("/proc/self/exe",buf, size)) == -1);
+  } while ((len = readlink("/proc/self/exe",buf, buf_size)) == -1);
 #endif
   len--;
 #ifdef _WIN32
-  for (char* p = buf; *p != '\0'; ++p)
-    if (*p == '\\') *p = '/';
+  for (char* ptr = buf; *ptr != '\0'; ++ptr)
+    if (*ptr == '\\') *ptr = '/';
 #endif
   while (buf[--len] != '/') continue;
   buf[len + 1] = '\0';
@@ -73,4 +73,12 @@ char* kev_trunc_leaf(const char* path) {
   }
   cp_path[i + 1] = '\0';
   return cp_path;
+}
+
+bool kev_is_relative(const char* path) {
+#ifdef _WIN32
+  return !isupper(path[0]) || path[1] != ':';
+#else
+  return path[0] != '/';
+#endif
 }
