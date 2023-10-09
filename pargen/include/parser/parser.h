@@ -26,7 +26,8 @@ typedef struct tagKevConfHandler {
 
 /* pargen parser state */
 typedef struct tagKevPParserState {
-  KevStringMap* vars;
+  KevAddrArray* symtables;
+  size_t curr_symtbl;
   KevStrXMap* symbols;
   KevAddrArray* rules;
   KevAddrArray* redact; /* reducing action */

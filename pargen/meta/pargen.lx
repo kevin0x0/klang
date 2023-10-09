@@ -18,6 +18,9 @@ def nameof (KEV_PTK_NAMEOF):
 def 'import' (KEV_PTK_IMPORT):
   $import
 
+def this (KEV_PTK_THIS):
+  $this
+
 def identifier (KEV_PTK_ID):
   (kev_plex_simple_id)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])*
   (kev_plex_str_id)     $'([^'\\\xFF] | \\[^\xFF])*'
@@ -62,11 +65,14 @@ def '=' (KEV_PTK_ASSIGN, KEV_PTK_EQUAL):
 def '<' (KEV_PTK_LESS):
   $<
 
-def '%' (KEV_PTK_ENV):
-  $%
+def '%' (KEV_PTK_LET):
+  $let
 
 def '..' (KEV_PTK_CONCAT):
   $\.\.
+
+def '@' (KEV_PTK_AT):
+  $@
 
 def blanks (KEV_PTK_BLKS):
   $([\ \n\t] | [:comment:])+

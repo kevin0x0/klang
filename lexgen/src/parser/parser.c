@@ -2,6 +2,7 @@
 #include "lexgen/include/parser/error.h"
 #include "lexgen/include/parser/regex.h"
 #include "utils/include/string/kev_string.h"
+#include "utils/include/os_spec/dir.h"
 
 #include <stdlib.h>
 
