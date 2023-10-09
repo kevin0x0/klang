@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define KBUFSIZE  (4096)
-#define MBUFSIZE  (4097)
+#define KBUFSIZE  (BUFSIZ)
+#define MBUFSIZE  (BUFSIZ)
 
 int main(void) {
   Ki ki;
@@ -19,6 +19,9 @@ int main(void) {
 
   clock_t t = clock();
   //int ch = 0;
+  //while ((ch = ki_getc(&ki)) != EOF) {
+  //  ko_putc(&ko, ch);
+  //}
   char buf[MBUFSIZE];
   size_t len = 0;
   while ((len = ki_read(&ki, buf, MBUFSIZE))) {
