@@ -8,12 +8,17 @@ static bool ki_nextbuf(Ki* ki);
 static bool ko_nextbuf(Ko* ko, size_t *p_written_size);
 
 
-static const void* ki_bufreader_buf(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize);
-static void* ko_bufwriter_buf(void* data, size_t next_readpos, size_t readpos, void* buf, size_t* p_bufsize);
-static const void* ki_bufreader_str(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize);
+static const void* ki_bufhandler_buf(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize);
+static void ki_closestream_buf(void* data, size_t readpos, const void* buf, size_t bufsize);
+static void* ko_bufhandler_buf(void* data, size_t next_readpos, size_t readpos, void* buf, size_t* p_bufsize);
+static void ko_closestream_buf(void* data, size_t readpos, void* buf, size_t bufsize);
+static const void* ki_bufhandler_str(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize);
+static void ki_closestream_str(void* data, size_t readpos, const void* buf, size_t bufsize);
 
-static const void* ki_bufreader_file(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize);
-static void* ko_bufwriter_file(void* data, size_t next_readpos, size_t readpos, void* buf, size_t* p_bufsize);
+static const void* ki_bufhandler_file(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize);
+static void ki_closestream_file(void* data, size_t readpos, const void* buf, size_t bufsize);
+static void* ko_bufhandler_file(void* data, size_t next_readpos, size_t readpos, void* buf, size_t* p_bufsize);
+static void ko_closestream_file(void* data, size_t readpos, void* buf, size_t bufsize);
 
 
 size_t ki_read(Ki* ki, void* buf, size_t buf_size) {
@@ -39,7 +44,7 @@ int ki_fill_buf(Ki* ki) {
 static bool ki_nextbuf(Ki* ki) {
   size_t old_bufsize = ki_bufsize(ki);
   size_t buf_size = old_bufsize;
-  if (!(ki->buf = ki->reader(ki->data, ki->headpos + ki_bufsize(ki), ki->headpos, ki->buf, &buf_size))) {
+  if (!(ki->buf = ki->handler(ki->data, ki->headpos + ki_bufsize(ki), ki->headpos, ki->buf, &buf_size))) {
     buf_size = 0;
   }
   ki->buf_end = ki->buf + buf_size;
@@ -56,8 +61,8 @@ bool ki_seek(Ki* ki, size_t offset) {
   size_t buf_size = ki_bufsize(ki);
   size_t old_offset = ki_tell(ki);
   bool succeed = true;
-  if (!(ki->buf = ki->reader(ki->data, offset, old_offset, ki->buf, &buf_size))) {
-    if (!(ki->buf = ki->reader(ki->data, old_offset, 0, NULL, &buf_size))) {
+  if (!(ki->buf = ki->handler(ki->data, offset, old_offset, ki->buf, &buf_size))) {
+    if (!(ki->buf = ki->handler(ki->data, old_offset, 0, NULL, &buf_size))) {
       buf_size = 0;
     }
     succeed = false;
@@ -99,7 +104,7 @@ bool ko_write_buf(Ko* ko, int ch) {
 static bool ko_nextbuf(Ko* ko, size_t *p_written_size) {
   size_t old_bufsize = ko_bufsize(ko);
   size_t buf_size = old_bufsize;
-  if (!(ko->buf = ko->writer(ko->data, ko->headpos + ko_bufsize(ko), ko->headpos, ko->buf, &buf_size))) {
+  if (!(ko->buf = ko->handler(ko->data, ko->headpos + ko_bufsize(ko), ko->headpos, ko->buf, &buf_size))) {
     if (p_written_size)
       *p_written_size = buf_size;
     buf_size = 0;
@@ -119,8 +124,8 @@ bool ko_seek(Ko* ko, size_t offset) {
   size_t buf_size = ko->writepos - ko->buf;
   size_t old_offset = ko_tell(ko);
   bool succeed = true;
-  if (!(ko->buf = ko->writer(ko->data, offset, old_offset, ko->buf, &buf_size))) {
-    if (!(ko->buf = ko->writer(ko->data, old_offset, 0, NULL, &buf_size))) {
+  if (!(ko->buf = ko->handler(ko->data, offset, old_offset, ko->buf, &buf_size))) {
+    if (!(ko->buf = ko->handler(ko->data, old_offset, 0, NULL, &buf_size))) {
       buf_size = 0;
     }
     succeed = false;
@@ -137,20 +142,19 @@ typedef struct tagKioReaderBufInfo {
 } KioReaderBufInfo;
 
 
-static const void* ki_bufreader_buf(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize) {
+static const void* ki_bufhandler_buf(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize) {
   KioReaderBufInfo* bufinfo = (KioReaderBufInfo*)data;
-  if (!buf || next_readpos != readpos) { /* read */
-    if (next_readpos >= bufinfo->bufsize) {
-      *p_bufsize = 0;
-      return NULL;
-    } else {
+  if (next_readpos >= bufinfo->bufsize) {
+    *p_bufsize = 0;
+    return NULL;
+  } else {
     *p_bufsize = bufinfo->bufsize - next_readpos;
     return bufinfo->buf + next_readpos;
-    }
-  } else { /* end of read */
-    free(data);
-    return NULL;
   }
+}
+
+static void ki_closestream_buf(void* data, size_t streampos, const void* buf, size_t bufsize) {
+  free(data);
 }
 
 typedef struct tagKioWriterBufInfo {
@@ -159,29 +163,28 @@ typedef struct tagKioWriterBufInfo {
 } KioWriterBufInfo;
 
 
-static void* ko_bufwriter_buf(void* data, size_t next_writepos, size_t writepos, void* buf, size_t* p_bufsize) {
+static void* ko_bufhandler_buf(void* data, size_t next_writepos, size_t writepos, void* buf, size_t* p_bufsize) {
   KioWriterBufInfo* bufinfo = (KioWriterBufInfo*)data;
-  if (!buf || next_writepos != writepos) { /* write */
-    if (next_writepos >= bufinfo->bufsize) {
-      *p_bufsize = 0;
-      return NULL;
-    } else {
+  if (next_writepos >= bufinfo->bufsize) {
+    *p_bufsize = 0;
+    return NULL;
+  } else {
     *p_bufsize = bufinfo->bufsize - next_writepos;
     return bufinfo->buf + next_writepos;
-    }
-  } else { /* end of write */
-    free(data);
-    return NULL;
   }
 }
 
-static const void* ki_bufreader_str(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize) {
-  if (!buf || next_readpos != readpos) { /* read */
-    /* ignore 'next_readpos' and treat it as 0 */
-    return data;
-  } else { /* end of read */
-    return NULL;
-  }
+static void ko_closestream_buf(void* data, size_t streampos, void* buf, size_t bufsize) {
+  free(data);
+}
+
+static const void* ki_bufhandler_str(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize) {
+  /* ignore 'next_readpos' and treat it as 0 */
+  return data;
+}
+
+static void ki_closestream_str(void* data, size_t streampos, const void* buf, size_t bufsize) {
+  free(data);
 }
 
 typedef struct tagKioReaderFileInfo {
@@ -191,23 +194,23 @@ typedef struct tagKioReaderFileInfo {
 } KioReaderFileInfo;
 
 
-static const void* ki_bufreader_file(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize) {
+static const void* ki_bufhandler_file(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize) {
   KioReaderFileInfo* fileinfo = (KioReaderFileInfo*)data;
-  if (!buf || readpos != next_readpos) { /* read */
-    if (ftell(fileinfo->file) != next_readpos &&
-        fseek(fileinfo->file, next_readpos, SEEK_SET) != 0) {
-      *p_bufsize = 0;
-      return NULL;
-    }
-    size_t readsize = fread(fileinfo->buf, 1, fileinfo->bufsize, fileinfo->file);
-    *p_bufsize = readsize;
-    return readsize == 0 ? NULL : fileinfo->buf;
-  } else { /* end of read */
-    fclose(fileinfo->file);
-    free(fileinfo->buf);
-    free(fileinfo);
+  if (ftell(fileinfo->file) != next_readpos &&
+      fseek(fileinfo->file, next_readpos, SEEK_SET) != 0) {
+    *p_bufsize = 0;
     return NULL;
   }
+  size_t readsize = fread(fileinfo->buf, 1, fileinfo->bufsize, fileinfo->file);
+  *p_bufsize = readsize;
+  return readsize == 0 ? NULL : fileinfo->buf;
+}
+
+static void ki_closestream_file(void* data, size_t streampos, const void* buf, size_t bufsize) {
+  KioReaderFileInfo* fileinfo = (KioReaderFileInfo*)data;
+  fclose(fileinfo->file);
+  free(fileinfo->buf);
+  free(fileinfo);
 }
 
 typedef struct tagKioWriterFileInfo {
@@ -217,12 +220,9 @@ typedef struct tagKioWriterFileInfo {
 } KioWriterFileInfo;
 
 
-static void* ko_bufwriter_file(void* data, size_t next_writepos, size_t writepos, void* buf, size_t* p_bufsize) {
+static void* ko_bufhandler_file(void* data, size_t next_writepos, size_t writepos, void* buf, size_t* p_bufsize) {
   KioWriterFileInfo* fileinfo = (KioWriterFileInfo*)data;
-  if (!buf) { /* initialize write */
-    *p_bufsize = fileinfo->bufsize;
-    return fileinfo->buf;
-  } else if (writepos != next_writepos) { /* write */
+  if (buf) { /* write */
     if (ftell(fileinfo->file) != writepos &&
         fseek(fileinfo->file, writepos, SEEK_SET) != 0) {
       *p_bufsize = 0;
@@ -239,17 +239,22 @@ static void* ko_bufwriter_file(void* data, size_t next_writepos, size_t writepos
       *p_bufsize = writesize; 
       return NULL;
     }
-  } else { /* end of read */
-    /* write data */
-    if (ftell(fileinfo->file) == writepos ||
-        fseek(fileinfo->file, writepos, SEEK_SET) == 0) {
-      fwrite(fileinfo->buf, 1, *p_bufsize, fileinfo->file);
-    }
-    fclose(fileinfo->file);
-    free(fileinfo->buf);
-    free(fileinfo);
-    return NULL;
+  } else { /* initialize write */
+    *p_bufsize = fileinfo->bufsize;
+    return fileinfo->buf;
   }
+}
+
+static void ko_closestream_file(void* data, size_t streampos, void* buf, size_t bufsize) {
+  KioWriterFileInfo* fileinfo = (KioWriterFileInfo*)data;
+  /* write data */
+  if (buf && (ftell(fileinfo->file) == streampos ||
+        fseek(fileinfo->file, streampos, SEEK_SET) == 0)) {
+    fwrite(buf, 1, bufsize, fileinfo->file);
+  }
+  fclose(fileinfo->file);
+  free(fileinfo->buf);
+  free(fileinfo);
 }
 
 bool ki_init_open(Ki* ki, const char* filepath, size_t bufsize) {
@@ -283,7 +288,7 @@ bool ki_init_file(Ki* ki, FILE* file, size_t bufsize) {
   fileinfo->file = file;
   fileinfo->bufsize = bufsize;
   fileinfo->buf = buffer;
-  ki_init(ki, fileinfo, ki_bufreader_file);
+  ki_init(ki, fileinfo, ki_bufhandler_file, ki_closestream_file);
   return true;
 }
 
@@ -298,7 +303,7 @@ bool ko_init_file(Ko* ko, FILE* file, size_t bufsize) {
   fileinfo->file = file;
   fileinfo->bufsize = bufsize;
   fileinfo->buf = buffer;
-  ko_init(ko, fileinfo, ko_bufwriter_file);
+  ko_init(ko, fileinfo, ko_bufhandler_file, ko_closestream_file);
   return true;
 }
 
@@ -307,7 +312,7 @@ bool ki_init_buf(Ki* ki, const void* buf, size_t bufsize) {
   if (!bufinfo) return false;
   bufinfo->buf = buf;
   bufinfo->bufsize = bufsize;
-  ki_init(ki, bufinfo, ki_bufreader_buf);
+  ki_init(ki, bufinfo, ki_bufhandler_buf, ki_closestream_buf);
   return true;
 }
 
@@ -316,11 +321,11 @@ bool ko_init_buf(Ko* ko, void* buf, size_t bufsize) {
   if (!bufinfo) return false;
   bufinfo->buf = buf;
   bufinfo->bufsize = bufsize;
-  ko_init(ko, bufinfo, ko_bufwriter_buf);
+  ko_init(ko, bufinfo, ko_bufhandler_buf, ko_closestream_buf);
   return true;
 }
 
 void ki_init_string(Ki* ki, const char* str) {
-  ki_init(ki, (void*)str, ki_bufreader_str);
+  ki_init(ki, (void*)str, ki_bufhandler_str, ki_closestream_str);
 }
 
