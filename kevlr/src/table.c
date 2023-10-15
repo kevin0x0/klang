@@ -78,27 +78,27 @@ static bool klr_decide_action(KlrCollection* collec, KlrTable* table, KlrItemSet
       symbol_index = next_symbol_index;
       size_t id = symbols[symbol_index]->id;
       KlrTableEntry* entry = &entries[itemset_id][id];
-      if (entry->action == KEV_LR_ACTION_CON) {
+      if (entry->action == KLR_ACTION_CON) {
         if (!klr_conflict_create_and_add_item(entry->info.conflict, kitem->rule, kitem->dot))
           return false;
         continue;
-      } else if (entry->action != KEV_LR_ACTION_ERR) {
+      } else if (entry->action != KLR_ACTION_ERR) {
         KlrConflict* conflict = klr_conflict_create(itemset, collec->symbols[symbol_index], entry);
         if (!conflict) return false;
         if (!klr_conflict_create_and_add_item(conflict, kitem->rule, kitem->dot) ||
-            (entry->action == KEV_LR_ACTION_RED &&
+            (entry->action == KLR_ACTION_RED &&
             !klr_conflict_create_and_add_item(conflict, entry->info.rule, entry->info.rule->bodylen))) {
           klr_conflict_delete(conflict);
           return false;
         }
-        entry->action = KEV_LR_ACTION_CON;
+        entry->action = KLR_ACTION_CON;
         entry->info.conflict = conflict;
         if (!conf_handler || !klr_conflict_handle(conf_handler, conflict, collec))
           klr_table_add_conflict(table, conflict);
         else
           klr_conflict_delete(conflict);
       } else {
-        entry->action = rule == start_rule ? KEV_LR_ACTION_ACC : KEV_LR_ACTION_RED;
+        entry->action = rule == start_rule ? KLR_ACTION_ACC : KLR_ACTION_RED;
         entry->info.rule = rule;
       }
       next_symbol_index = kbitset_iter_next(la, symbol_index);
@@ -120,27 +120,27 @@ static bool klr_decide_action(KlrCollection* collec, KlrTable* table, KlrItemSet
         symbol_index = next_symbol_index;
         size_t id = symbols[symbol_index]->id;
         KlrTableEntry* entry = &entries[itemset_id][id];
-        if (entry->action == KEV_LR_ACTION_CON) {
+        if (entry->action == KLR_ACTION_CON) {
           if (!klr_conflict_create_and_add_item(entry->info.conflict, rule, rule->bodylen))
             return false;
           continue;
-        } else if (entry->action != KEV_LR_ACTION_ERR) {
+        } else if (entry->action != KLR_ACTION_ERR) {
           KlrConflict* conflict = klr_conflict_create(itemset, collec->symbols[symbol_index], entry);
           if (!conflict) return false;
           if (!klr_conflict_create_and_add_item(conflict, rule, rule->bodylen) ||
-              (entry->action == KEV_LR_ACTION_RED &&
+              (entry->action == KLR_ACTION_RED &&
               !klr_conflict_create_and_add_item(conflict, entry->info.rule, entry->info.rule->bodylen))) {
             klr_conflict_delete(conflict);
             return false;
           }
-          entry->action = KEV_LR_ACTION_CON;
+          entry->action = KLR_ACTION_CON;
           entry->info.conflict = conflict;
           if (!conf_handler || !klr_conflict_handle(conf_handler, conflict, collec))
             klr_table_add_conflict(table, conflict);
           else
             klr_conflict_delete(conflict);
         } else {
-          entry->action = rule == start_rule ? KEV_LR_ACTION_ACC : KEV_LR_ACTION_RED;
+          entry->action = rule == start_rule ? KLR_ACTION_ACC : KLR_ACTION_RED;
           entry->info.rule = rule;
         }
         next_symbol_index = kbitset_iter_next(la, symbol_index);
@@ -160,8 +160,8 @@ static bool klr_init_transition_and_shifting_action(KlrTable* table, KlrCollecti
       size_t symbol_id = trans->symbol->id;
       size_t itemset_id = trans->target->id;
       entries[i][symbol_id].trans = itemset_id;
-      if (klr_symbol_get_kind(trans->symbol) == KEV_LR_TERMINAL) {
-        entries[i][symbol_id].action = KEV_LR_ACTION_SHI;
+      if (klr_symbol_get_kind(trans->symbol) == KLR_TERMINAL) {
+        entries[i][symbol_id].action = KLR_ACTION_SHI;
         entries[i][symbol_id].info.itemset_id = itemset_id;
       }
     }
@@ -217,8 +217,8 @@ static KlrTableEntry** klr_table_get_initial_entries(size_t symbol_no, size_t it
     return NULL;
   }
   for (size_t i = 0; i < itemset_no * symbol_no; ++i) {
-    entries[i].trans = KEV_LR_GOTO_NONE;
-    entries[i].action = KEV_LR_ACTION_ERR;
+    entries[i].trans = KLR_GOTO_NONE;
+    entries[i].action = KLR_ACTION_ERR;
   }
   table[0] = entries;
   for (size_t i = 1; i < itemset_no; ++i)

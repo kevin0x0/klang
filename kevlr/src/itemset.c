@@ -99,7 +99,7 @@ bool klr_closure_make(KlrItemSetClosure* closure, KlrItemSet* itemset, KBitSet**
     if (kitem->dot == kitem->rule->bodylen)
       continue;
     KlrSymbol* symbol = kitem->rule->body[kitem->dot];
-    if (symbol->kind == KEV_LR_TERMINAL)
+    if (symbol->kind == KLR_TERMINAL)
       continue;
     KBitSet* la = klr_get_kernel_item_follows(kitem, firsts, epsilon);
     if (!la) return false;
@@ -126,7 +126,7 @@ bool klr_closure_make(KlrItemSetClosure* closure, KlrItemSet* itemset, KBitSet**
       KlrRule* rule = node->rule;
       if (rule->bodylen == 0) continue;
       KlrSymbol* symbol = rule->body[0];
-      if (symbol->kind == KEV_LR_TERMINAL)
+      if (symbol->kind == KLR_TERMINAL)
         continue;
       KBitSet* la = klr_get_non_kernel_item_follows(rule, las[head_index], firsts, epsilon);
       if (!la) return false;
@@ -163,11 +163,11 @@ static bool klr_closure_propagate(KlrItemSetClosure* closure, size_t epsilon) {
       for (; node; node = node->next) {
         size_t len = node->rule->bodylen;
         KlrSymbol** body = node->rule->body;
-        if (len == 0 || body[0]->kind == KEV_LR_TERMINAL)
+        if (len == 0 || body[0]->kind == KLR_TERMINAL)
           continue;
         size_t i = 1;
         for (; i < len; ++i) {
-          if (body[i]->kind == KEV_LR_TERMINAL || 
+          if (body[i]->kind == KLR_TERMINAL || 
               !kbitset_has_element(las[body[i]->index], epsilon))
             break;
         }
@@ -189,7 +189,7 @@ static KBitSet* klr_get_kernel_item_follows(KlrItem* kitem, KBitSet** firsts, si
   KBitSet* follows = kbitset_create(epsilon + 3);
   if (!follows) return NULL;
   for (size_t i = kitem->dot + 1; i < len; ++i) {
-    if (rulebody[i]->kind == KEV_LR_TERMINAL) {
+    if (rulebody[i]->kind == KLR_TERMINAL) {
       kbitset_set(follows, rulebody[i]->index);
       return follows;
     }
@@ -217,7 +217,7 @@ static KBitSet* klr_get_non_kernel_item_follows(KlrRule* rule, KBitSet* lookahea
   KBitSet* follows = kbitset_create(epsilon + 3);
   if (!follows) return NULL;
   for (size_t i = 1; i < len; ++i) {
-    if (rulebody[i]->kind == KEV_LR_TERMINAL) {
+    if (rulebody[i]->kind == KLR_TERMINAL) {
       kbitset_set(follows, rulebody[i]->index);
       return follows;
     }

@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define KEV_LR_SYMBOL_EPSILON_STRING  "ε"
-#define KEV_LR_DOT                    "·"
-#define KEV_LR_SYMBOL_UNNAMED         "[UNNAMED]"
+#define KLR_SYMBOL_EPSILON_STRING  "ε"
+#define KLR_DOT                    "·"
+#define KLR_SYMBOL_UNNAMED         "[UNNAMED]"
 
 static inline size_t kev_numlen(size_t num);
 static inline size_t kev_max(size_t num1, size_t num2);
@@ -143,23 +143,23 @@ bool klr_print_symbols(FILE* out, KlrCollection* collec) {
 
 void klr_print_rule(FILE* out, KlrRule* rule) {
   KlrSymbol** body = rule->body;
-  fprintf(out, "%s -> ", rule->head->name ? rule->head->name : KEV_LR_SYMBOL_UNNAMED);
-  fprintf(out, "%s ", KEV_LR_DOT);
+  fprintf(out, "%s -> ", rule->head->name ? rule->head->name : KLR_SYMBOL_UNNAMED);
+  fprintf(out, "%s ", KLR_DOT);
   for (size_t i = 0; i < rule->bodylen; ++i) 
-    fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_LR_SYMBOL_UNNAMED);
+    fprintf(out, "%s ", body[i]->name ? body[i]->name : KLR_SYMBOL_UNNAMED);
 }
 
 void klr_print_kernel_item(FILE* out, KlrCollection* collec, KlrItem* kitem) {
   KlrRule* rule = kitem->rule;
   KlrSymbol** body = rule->body;
   size_t len = rule->bodylen;
-  fprintf(out, "%s -> ", rule->head->name ? rule->head->name : KEV_LR_SYMBOL_UNNAMED);
+  fprintf(out, "%s -> ", rule->head->name ? rule->head->name : KLR_SYMBOL_UNNAMED);
   size_t dot = kitem->dot;
   for (size_t i = 0; i < dot; ++i) 
-    fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_LR_SYMBOL_UNNAMED);
-  fprintf(out, "%s ", KEV_LR_DOT);
+    fprintf(out, "%s ", body[i]->name ? body[i]->name : KLR_SYMBOL_UNNAMED);
+  fprintf(out, "%s ", KLR_DOT);
   for (size_t i = dot; i < len; ++i) 
-    fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_LR_SYMBOL_UNNAMED);
+    fprintf(out, "%s ", body[i]->name ? body[i]->name : KLR_SYMBOL_UNNAMED);
   fputc(' ', out);
   klr_print_terminal_set(out, collec, kitem->lookahead);
 }
@@ -167,10 +167,10 @@ void klr_print_kernel_item(FILE* out, KlrCollection* collec, KlrItem* kitem) {
 void klr_print_non_kernel_item(FILE* out, KlrCollection* collec, KlrRule* rule, KBitSet* lookahead) {
   KlrSymbol** body = rule->body;
   size_t len = rule->bodylen;
-  fprintf(out, "%s -> ", rule->head->name ? rule->head->name : KEV_LR_SYMBOL_UNNAMED);
-  fprintf(out, "%s ", KEV_LR_DOT);
+  fprintf(out, "%s -> ", rule->head->name ? rule->head->name : KLR_SYMBOL_UNNAMED);
+  fprintf(out, "%s ", KLR_DOT);
   for (size_t i = 0; i < len; ++i) 
-    fprintf(out, "%s ", body[i]->name ? body[i]->name : KEV_LR_SYMBOL_UNNAMED);
+    fprintf(out, "%s ", body[i]->name ? body[i]->name : KLR_SYMBOL_UNNAMED);
   fputc(' ', out);
   klr_print_terminal_set(out, collec, lookahead);
 }
@@ -185,15 +185,15 @@ void klr_print_terminal_set(FILE* out, KlrCollection* collec, KBitSet* lookahead
   size_t symbol_index = kbitset_iter_begin(lookahead);
   size_t next_index = 0;
   char* name = collec->symbols[symbol_index]->name;
-  fprintf(out, "[%s", name ? name : KEV_LR_SYMBOL_UNNAMED);
+  fprintf(out, "[%s", name ? name : KLR_SYMBOL_UNNAMED);
   next_index = kbitset_iter_next(lookahead, symbol_index);
   while (next_index != symbol_index) {
     symbol_index = next_index;
     if (symbol_index != epsilon) {
       char* name = collec->symbols[symbol_index]->name;
-      fprintf(out, ", %s", name ? name : KEV_LR_SYMBOL_UNNAMED);
+      fprintf(out, ", %s", name ? name : KLR_SYMBOL_UNNAMED);
     } else {
-      fprintf(out, ", %s", KEV_LR_SYMBOL_EPSILON_STRING);
+      fprintf(out, ", %s", KLR_SYMBOL_EPSILON_STRING);
     }
     next_index = kbitset_iter_next(lookahead, symbol_index);
   }
@@ -236,11 +236,11 @@ void klr_print_action_table(FILE* out, KlrTable* table) {
     for (size_t j = 0; j < table->table_symbol_no; ++j) {
       const char* action = NULL;
       switch (table->entries[i][j].action) {
-        case KEV_LR_ACTION_ACC: action = "ACC"; break;
-        case KEV_LR_ACTION_RED: action = "RED"; break;
-        case KEV_LR_ACTION_SHI: action = "SHI"; break;
-        case KEV_LR_ACTION_ERR: action = "ERR"; break;
-        case KEV_LR_ACTION_CON: action = "CON"; break;
+        case KLR_ACTION_ACC: action = "ACC"; break;
+        case KLR_ACTION_RED: action = "RED"; break;
+        case KLR_ACTION_SHI: action = "SHI"; break;
+        case KLR_ACTION_ERR: action = "ERR"; break;
+        case KLR_ACTION_CON: action = "CON"; break;
         default: action = "NUL"; break;
       }
       fprintf(out, str_format, action);
@@ -249,11 +249,11 @@ void klr_print_action_table(FILE* out, KlrTable* table) {
     fprintf(out, str_format, " ");
     for (size_t j = 0; j < table->table_symbol_no; ++j) {
       KlrTableEntry* entry = &table->entries[i][j];
-      if (entry->action == KEV_LR_ACTION_SHI) {
+      if (entry->action == KLR_ACTION_SHI) {
         fprintf(out, num_format, entry->info.itemset_id);
-      } else if (entry->action == KEV_LR_ACTION_RED) {
+      } else if (entry->action == KLR_ACTION_RED) {
         fprintf(out, num_format, entry->info.rule->id);
-      } else if (entry->action == KEV_LR_ACTION_CON) {
+      } else if (entry->action == KLR_ACTION_CON) {
         bool has_sr = klr_conflict_SR(entry->info.conflict);
         bool has_rr = klr_conflict_RR(entry->info.conflict);
         if (has_sr && has_rr) {

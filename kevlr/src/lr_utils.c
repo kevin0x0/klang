@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#define KEV_LR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME   "G"
+#define KLR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME   "G"
 
 
 static void klr_util_compute_first(KBitSet** firsts, KlrSymbol* symbol, size_t epsilon);
@@ -89,7 +89,7 @@ static void klr_util_compute_first(KBitSet** firsts, KlrSymbol* symbol, size_t e
       size_t i = 0;
       bool first_has_epsilon = kbitset_has_element(first, epsilon);
       for (; i < bodylen; ++i) {
-        if (body[i]->kind == KEV_LR_TERMINAL) {
+        if (body[i]->kind == KLR_TERMINAL) {
           kbitset_set(first, body[i]->index);
           break;
         }
@@ -143,7 +143,7 @@ KBitSet** klr_util_compute_firsts(KlrSymbol** symbols, size_t symbol_no, size_t 
 }
 
 KlrSymbol* klr_util_augment(KlrSymbol* start) {
-  KlrSymbol* new_start = klr_symbol_create(KEV_LR_NONTERMINAL, KEV_LR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME);
+  KlrSymbol* new_start = klr_symbol_create(KLR_NONTERMINAL, KLR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME);
   if (!new_start) return NULL;
   KlrRule* start_rule = klr_rule_create(new_start, &start, 1);
   if (!start_rule) {
@@ -299,16 +299,16 @@ size_t klr_util_symbol_array_partition(KlrSymbol** array, size_t size) {
   KlrSymbol** left = array;
   KlrSymbol** right = array + size - 1;
   while (true) {
-    while (left < right && (*left)->kind == KEV_LR_TERMINAL)
+    while (left < right && (*left)->kind == KLR_TERMINAL)
       ++left;
-    while (left < right && (*right)->kind == KEV_LR_NONTERMINAL)
+    while (left < right && (*right)->kind == KLR_NONTERMINAL)
       --right;
     if (left >= right) break;
     KlrSymbol* tmp = *left;
     *left = *right;
     *right = tmp;
   }
-  return (*left)->kind == KEV_LR_TERMINAL ? left - array + 1 : left - array;
+  return (*left)->kind == KLR_TERMINAL ? left - array + 1 : left - array;
 }
 
 KBitSet** klr_util_compute_follows(KlrSymbol** symbols, KBitSet** firsts, size_t symbol_no, size_t terminal_no, KlrSymbol* start, KlrSymbol** ends, size_t ends_no) {
@@ -351,7 +351,7 @@ KBitSet** klr_util_compute_follows(KlrSymbol** symbols, KBitSet** firsts, size_t
         do {
           --i;
           KlrSymbol* symbol = body[i];
-          if (symbol->kind == KEV_LR_TERMINAL) {
+          if (symbol->kind == KLR_TERMINAL) {
             kbitset_make_empty(&curr_follow);
             kbitset_set(&curr_follow, symbol->index);
           } else {
