@@ -17,7 +17,7 @@ typedef struct tagKlrLR1Collection {
 
 static bool klr_lr1_get_all_itemsets(KlrItemSet* start_iset, KlrLR1Collection* collec);
 static bool klr_lr1_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_array, KlrItemSet* itemset);
-static bool klr_lr1_get_itemset(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransMap* transitions);
+static bool klr_lr1_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransMap* transitions);
 /* initialize lookahead for kernel items in itemset */
 
 static KlrLR1Collection* klr_lr1_get_empty_collec(void);
@@ -59,7 +59,7 @@ KlrCollection* klr_collection_create_lr1(KlrSymbol* start, KlrSymbol** ends, siz
     klr_lr1_destroy_collec(collec);
     return NULL;
   }
-  klr_util_assign_itemset_id(collec->itemsets, collec->itemset_no);
+  klr_util_label_itemsets(collec->itemsets, collec->itemset_no);
   KlrCollection* lr_collec = klr_lr1_to_lr_collec(collec);
   if (!lr_collec) klr_lr1_destroy_collec(collec);
   return lr_collec;
@@ -118,7 +118,7 @@ static bool klr_lr1_get_all_itemsets(KlrItemSet* start_iset, KlrLR1Collection* c
   size_t terminal_no = collec->terminal_no;
   for (size_t i = 0; i < karray_size(itemset_array); ++i) {
     KlrItemSet* itemset = (KlrItemSet*)karray_access(itemset_array, i);
-    if (!klr_lr1_get_itemset(itemset, &closure, firsts, terminal_no, transitions)) {
+    if (!klr_lr1_compute_transition(itemset, &closure, firsts, terminal_no, transitions)) {
       klr_lr1_destroy_itemset_array(itemset_array);
       klr_transmap_delete(transitions);
       klr_itemsetset_delete(iset_set);
@@ -173,7 +173,7 @@ static bool klr_lr1_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_ar
   return true;
 }
 
-static bool klr_lr1_get_itemset(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransMap* transitions) {
+static bool klr_lr1_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransMap* transitions) {
   if (!klr_closure_make(closure, itemset, firsts, epsilon))
     return false;
   if (!klr_util_generate_transition(itemset, closure, transitions))

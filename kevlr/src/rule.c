@@ -5,7 +5,7 @@
 
 static inline void kev_rulenode_delete(KlrRuleNode* rules);
 
-KlrSymbol* klr_symbol_create(KlrSymbolType kind, const char* name) {
+KlrSymbol* klr_symbol_create(KlrSymbolKind kind, const char* name) {
   KlrSymbol* symbol = (KlrSymbol*)malloc(sizeof (KlrSymbol));
   if (!symbol) return NULL;
   symbol->kind = kind;
@@ -18,7 +18,7 @@ KlrSymbol* klr_symbol_create(KlrSymbolType kind, const char* name) {
   return symbol;
 }
 
-KlrSymbol* klr_symbol_create_move(KlrSymbolType kind, char* name) {
+KlrSymbol* klr_symbol_create_move(KlrSymbolKind kind, char* name) {
   KlrSymbol* symbol = (KlrSymbol*)malloc(sizeof (KlrSymbol));
   if (!symbol) return NULL;
   symbol->kind = kind;

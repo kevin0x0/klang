@@ -240,7 +240,7 @@ KlrSymbol** klr_util_get_symbol_array(KlrSymbol* start, KlrSymbol** ends, size_t
   return symbol_array;
 }
 
-KlrSymbol** klr_util_get_symbol_array_without_changing_index(KlrSymbol* start, KlrSymbol** ends, size_t ends_no, size_t* p_size) {
+KlrSymbol** klr_util_get_symbol_array_with_index_unchanged(KlrSymbol* start, KlrSymbol** ends, size_t ends_no, size_t* p_size) {
   KArray array;
   if (!karray_init(&array))
     return NULL;

@@ -9,38 +9,38 @@ bool conflict_report(void* object, KlrConflict* conflict, KlrCollection* collec)
 }
 
 int main(int argc, char** argv) {
-  KlrSymbol* end = klr_symbol_create(KEV_LR_TERMINAL, "$");
-  KlrSymbol* id = klr_symbol_create(KEV_LR_TERMINAL, "id");
-  KlrSymbol* plus = klr_symbol_create(KEV_LR_TERMINAL, "+");
-  KlrSymbol* minus = klr_symbol_create(KEV_LR_TERMINAL, "-");
-  KlrSymbol* mul = klr_symbol_create(KEV_LR_TERMINAL, "*");
-  KlrSymbol* div = klr_symbol_create(KEV_LR_TERMINAL, "/");
-  KlrSymbol* op5 = klr_symbol_create(KEV_LR_TERMINAL, "|");
-  KlrSymbol* op6 = klr_symbol_create(KEV_LR_TERMINAL, "&");
-  KlrSymbol* op7 = klr_symbol_create(KEV_LR_TERMINAL, "^");
-  KlrSymbol* op8 = klr_symbol_create(KEV_LR_TERMINAL, "||");
-  KlrSymbol* op9 = klr_symbol_create(KEV_LR_TERMINAL, "&&");
-  KlrSymbol* op10 = klr_symbol_create(KEV_LR_TERMINAL, "<<");
-  KlrSymbol* op11 = klr_symbol_create(KEV_LR_TERMINAL, ">>");
-  KlrSymbol* op12 = klr_symbol_create(KEV_LR_TERMINAL, "<");
-  KlrSymbol* op13 = klr_symbol_create(KEV_LR_TERMINAL, ">");
-  KlrSymbol* op14 = klr_symbol_create(KEV_LR_TERMINAL, ">=");
-  KlrSymbol* op15 = klr_symbol_create(KEV_LR_TERMINAL, "<=");
-  KlrSymbol* op16 = klr_symbol_create(KEV_LR_TERMINAL, "==");
-  KlrSymbol* op17 = klr_symbol_create(KEV_LR_TERMINAL, "!=");
-  KlrSymbol* op18 = klr_symbol_create(KEV_LR_TERMINAL, "=");
-  KlrSymbol* op19 = klr_symbol_create(KEV_LR_TERMINAL, "->");
-  KlrSymbol* op20 = klr_symbol_create(KEV_LR_TERMINAL, "[");
-  KlrSymbol* op21 = klr_symbol_create(KEV_LR_TERMINAL, "]");
-  KlrSymbol* op22 = klr_symbol_create(KEV_LR_TERMINAL, ".");
-  KlrSymbol* op23 = klr_symbol_create(KEV_LR_TERMINAL, "++");
-  KlrSymbol* op24 = klr_symbol_create(KEV_LR_TERMINAL, "--");
-  KlrSymbol* op25 = klr_symbol_create(KEV_LR_TERMINAL, "!");
-  KlrSymbol* op26 = klr_symbol_create(KEV_LR_TERMINAL, "~");
-  KlrSymbol* op27 = klr_symbol_create(KEV_LR_TERMINAL, "&");
-  KlrSymbol* openp = klr_symbol_create(KEV_LR_TERMINAL, "(");
-  KlrSymbol* closep = klr_symbol_create(KEV_LR_TERMINAL, ")");
-  KlrSymbol* E = klr_symbol_create(KEV_LR_NONTERMINAL, "E");
+  KlrSymbol* end = klr_symbol_create(KLR_TERMINAL, "$");
+  KlrSymbol* id = klr_symbol_create(KLR_TERMINAL, "id");
+  KlrSymbol* plus = klr_symbol_create(KLR_TERMINAL, "+");
+  KlrSymbol* minus = klr_symbol_create(KLR_TERMINAL, "-");
+  KlrSymbol* mul = klr_symbol_create(KLR_TERMINAL, "*");
+  KlrSymbol* div = klr_symbol_create(KLR_TERMINAL, "/");
+  KlrSymbol* op5 = klr_symbol_create(KLR_TERMINAL, "|");
+  KlrSymbol* op6 = klr_symbol_create(KLR_TERMINAL, "&");
+  KlrSymbol* op7 = klr_symbol_create(KLR_TERMINAL, "^");
+  KlrSymbol* op8 = klr_symbol_create(KLR_TERMINAL, "||");
+  KlrSymbol* op9 = klr_symbol_create(KLR_TERMINAL, "&&");
+  KlrSymbol* op10 = klr_symbol_create(KLR_TERMINAL, "<<");
+  KlrSymbol* op11 = klr_symbol_create(KLR_TERMINAL, ">>");
+  KlrSymbol* op12 = klr_symbol_create(KLR_TERMINAL, "<");
+  KlrSymbol* op13 = klr_symbol_create(KLR_TERMINAL, ">");
+  KlrSymbol* op14 = klr_symbol_create(KLR_TERMINAL, ">=");
+  KlrSymbol* op15 = klr_symbol_create(KLR_TERMINAL, "<=");
+  KlrSymbol* op16 = klr_symbol_create(KLR_TERMINAL, "==");
+  KlrSymbol* op17 = klr_symbol_create(KLR_TERMINAL, "!=");
+  KlrSymbol* op18 = klr_symbol_create(KLR_TERMINAL, "=");
+  KlrSymbol* op19 = klr_symbol_create(KLR_TERMINAL, "->");
+  KlrSymbol* op20 = klr_symbol_create(KLR_TERMINAL, "[");
+  KlrSymbol* op21 = klr_symbol_create(KLR_TERMINAL, "]");
+  KlrSymbol* op22 = klr_symbol_create(KLR_TERMINAL, ".");
+  KlrSymbol* op23 = klr_symbol_create(KLR_TERMINAL, "++");
+  KlrSymbol* op24 = klr_symbol_create(KLR_TERMINAL, "--");
+  KlrSymbol* op25 = klr_symbol_create(KLR_TERMINAL, "!");
+  KlrSymbol* op26 = klr_symbol_create(KLR_TERMINAL, "~");
+  KlrSymbol* op27 = klr_symbol_create(KLR_TERMINAL, "&");
+  KlrSymbol* openp = klr_symbol_create(KLR_TERMINAL, "(");
+  KlrSymbol* closep = klr_symbol_create(KLR_TERMINAL, ")");
+  KlrSymbol* E = klr_symbol_create(KLR_NONTERMINAL, "E");
 
   KlrSymbol* body1[] = { E, plus, E };
   KlrSymbol* body2[] = { E, minus, E };
@@ -175,15 +175,15 @@ int main(int argc, char** argv) {
   rule32->id = 31;
 
   clock_t t = clock();
-  for (size_t i = 0; i < 1; ++i) {
+  for (size_t i = 0; i < 1000; ++i) {
     KlrCollection* collec = klr_collection_create_lalr(E, &end, 1);
-    klr_print_collection(stdout, collec, true);
-    KlrConflictHandler handler = { NULL, conflict_report };
+    //klr_print_collection(stdout, collec, true);
+    //KlrConflictHandler handler = { NULL, conflict_report };
 
-    KlrTable* table = klr_table_create(collec, NULL);
-    klr_print_trans_table(stdout, table);
-    klr_print_action_table(stdout, table);
-    klr_table_delete(table);
+    //KlrTable* table = klr_table_create(collec, NULL);
+    //klr_print_trans_table(stdout, table);
+    //klr_print_action_table(stdout, table);
+    //klr_table_delete(table);
     klr_collection_delete(collec);
   }
   printf("total time used:%fs\n", ((float)(clock() - t)) / (float)CLOCKS_PER_SEC);
@@ -256,13 +256,13 @@ int main(int argc, char** argv) {
 
 
 
-  //KlrSymbol* S = klr_symbol_create(KEV_LR_NONTERMINAL, "S");
-  //KlrSymbol* L = klr_symbol_create(KEV_LR_NONTERMINAL, "L");
-  //KlrSymbol* R = klr_symbol_create(KEV_LR_NONTERMINAL, "R");
-  //KlrSymbol* id = klr_symbol_create(KEV_LR_TERMINAL, "id");
-  //KlrSymbol* star = klr_symbol_create(KEV_LR_TERMINAL, "*");
-  //KlrSymbol* assign = klr_symbol_create(KEV_LR_TERMINAL, "=");
-  //KlrSymbol* end = klr_symbol_create(KEV_LR_TERMINAL, "$");
+  //KlrSymbol* S = klr_symbol_create(KLR_NONTERMINAL, "S");
+  //KlrSymbol* L = klr_symbol_create(KLR_NONTERMINAL, "L");
+  //KlrSymbol* R = klr_symbol_create(KLR_NONTERMINAL, "R");
+  //KlrSymbol* id = klr_symbol_create(KLR_TERMINAL, "id");
+  //KlrSymbol* star = klr_symbol_create(KLR_TERMINAL, "*");
+  //KlrSymbol* assign = klr_symbol_create(KLR_TERMINAL, "=");
+  //KlrSymbol* end = klr_symbol_create(KLR_TERMINAL, "$");
   //KlrSymbol* body1[3] = { L, assign, R };
   //KlrSymbol* body2[2] = { star, R };
   //KlrRule* rule1 = klr_rule_create(S, &R, 1);

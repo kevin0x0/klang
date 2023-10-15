@@ -12,7 +12,7 @@ bool klr_confhandler_priority_callback(void* object, KlrConflict* conflict, KlrC
   KlrPrioMap* priomap = (KlrPrioMap*)object;
   KlrSymbol* postfix_operator = klr_conflict_get_symbol(conflict);
   /* find the priority of the operator after the rule */
-  KlrPrioMapNode* mapnode = klr_priomap_search(priomap, postfix_operator, KEV_LR_PRIOPOS_POSTFIX);
+  KlrPrioMapNode* mapnode = klr_priomap_search(priomap, postfix_operator, KLR_PRIOPOS_POSTFIX);
   if (!mapnode) return false;
   size_t postfix_prio = mapnode->priority;
   /* find the priority of the operator in the reduced rule(not after the rule). */
