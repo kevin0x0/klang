@@ -2,43 +2,43 @@
 
 #include <stdlib.h>
 
-union KevItemPool {
-  KevItem kernel_item;
-  union KevItemPool* next;
+union KlrItemPool {
+  KlrItem kernel_item;
+  union KlrItemPool* next;
 };
 
-static union KevItemPool* item_pool = NULL;
+static union KlrItemPool* item_pool = NULL;
 
-static inline KevItem* kev_item_pool_acquire(void);
+static inline KlrItem* klr_item_pool_acquire(void);
 
 
-static inline KevItem* kev_item_pool_acquire(void) {
-  return (KevItem*)malloc(sizeof (union KevItemPool));
+static inline KlrItem* klr_item_pool_acquire(void) {
+  return (KlrItem*)malloc(sizeof (union KlrItemPool));
 }
 
-KevItem* kev_item_pool_allocate(void) {
+KlrItem* klr_item_pool_allocate(void) {
   if (item_pool) {
-    KevItem* retval = &item_pool->kernel_item;
+    KlrItem* retval = &item_pool->kernel_item;
     item_pool = item_pool->next;
     return retval;
   } else {
-    return kev_item_pool_acquire();
+    return klr_item_pool_acquire();
   }
 }
 
-void kev_item_pool_deallocate(KevItem* item) {
+void klr_item_pool_deallocate(KlrItem* item) {
   if (item) {
-    union KevItemPool* freed_node = (union KevItemPool*)item;
+    union KlrItemPool* freed_node = (union KlrItemPool*)item;
     freed_node->next = item_pool;
     item_pool = freed_node;
   }
 }
 
-void kev_item_pool_free(void) {
-  union KevItemPool* pool = item_pool;
+void klr_item_pool_free(void) {
+  union KlrItemPool* pool = item_pool;
   item_pool = NULL;
   while (pool) {
-    union KevItemPool* tmp = pool->next;
+    union KlrItemPool* tmp = pool->next;
     free(pool);
     pool = tmp;
   }

@@ -2,74 +2,74 @@
 
 #include <stdlib.h>
 
-static KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon);
-static KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon);
-static bool kev_lr_closure_propagate(KevItemSetClosure* closure, size_t epsilon);
+static KBitSet* klr_get_kernel_item_follows(KlrItem* kitem, KBitSet** firsts, size_t epsilon);
+static KBitSet* klr_get_non_kernel_item_follows(KlrRule* rule, KBitSet* lookahead, KBitSet** firsts, size_t epsilon);
+static bool klr_closure_propagate(KlrItemSetClosure* closure, size_t epsilon);
 
-void kev_lr_itemset_delete(KevItemSet* itemset) {
-  KevItem* item = itemset->items;
+void klr_itemset_delete(KlrItemSet* itemset) {
+  KlrItem* item = itemset->items;
   while (item) {
-    KevItem* tmp = item->next;
-    kev_lr_item_delete(item);
+    KlrItem* tmp = item->next;
+    klr_item_delete(item);
     item = tmp;
   }
-  KevItemSetGoto* go_to = itemset->gotos;
-  while (go_to) {
-    KevItemSetGoto* tmp = go_to->next;
-    free(go_to);
-    go_to = tmp;
+  KlrItemSetTransition* trans = itemset->trans;
+  while (trans) {
+    KlrItemSetTransition* tmp = trans->next;
+    free(trans);
+    trans = tmp;
   }
-  kev_itemset_pool_deallocate(itemset);
+  klr_itemset_pool_deallocate(itemset);
 }
 
-void kev_lr_itemset_add_item(KevItemSet* itemset, KevItem* item) {
-  if (!itemset->items || kev_lr_item_less_than(item, itemset->items)) {
+void klr_itemset_add_item(KlrItemSet* itemset, KlrItem* item) {
+  if (!itemset->items || klr_item_less_than(item, itemset->items)) {
     item->next = itemset->items;
     itemset->items = item;
     return;
   }
 
-  KevItem* items = itemset->items;
-  while (items->next && !kev_lr_item_less_than(item, items->next))
+  KlrItem* items = itemset->items;
+  while (items->next && !klr_item_less_than(item, items->next))
     items = items->next;
   item->next = items->next;
   items->next = item;
 }
 
-void kev_lr_closure_delete(KevItemSetClosure* closure) {
-  kev_lr_closure_destroy(closure);
+void klr_closure_delete(KlrItemSetClosure* closure) {
+  klr_closure_destroy(closure);
   free(closure);
 }
 
-void kev_lr_closure_destroy(KevItemSetClosure* closure) {
+void klr_closure_destroy(KlrItemSetClosure* closure) {
   if (!closure) return;
-  KevAddrArray* symbols = closure->symbols;
-  size_t size = kev_addrarray_size(symbols);
+  KArray* symbols = closure->symbols;
+  size_t size = karray_size(symbols);
   for (size_t i = 0; i < size; ++i) {
-    size_t index = ((KevSymbol*)kev_addrarray_visit(symbols, i))->index;
-    kev_bitset_delete(closure->lookaheads[index]);
+    size_t index = ((KlrSymbol*)karray_access(symbols, i))->index;
+    kbitset_delete(closure->lookaheads[index]);
   }
   free(closure->lookaheads);
-  kev_addrarray_delete(closure->symbols);
+  karray_delete(closure->symbols);
   closure->symbols = NULL;
   closure->lookaheads = NULL;
 }
 
-void kev_lr_closure_make_empty(KevItemSetClosure* closure) {
-  size_t size = kev_addrarray_size(closure->symbols);
-  KevBitSet** las = closure->lookaheads;
-  KevAddrArray* symbols = closure->symbols;
+void klr_closure_make_empty(KlrItemSetClosure* closure) {
+  size_t size = karray_size(closure->symbols);
+  KBitSet** las = closure->lookaheads;
+  KArray* symbols = closure->symbols;
   for (size_t i = 0; i < size; ++i) {
-    size_t index = ((KevSymbol*)kev_addrarray_visit(closure->symbols, i))->index;
-    kev_bitset_delete(las[index]);
+    size_t index = ((KlrSymbol*)karray_access(closure->symbols, i))->index;
+    kbitset_delete(las[index]);
     las[index] = NULL;
   }
-  kev_addrarray_make_empty(symbols);
+  karray_make_empty(symbols);
 }
 
-bool kev_lr_closure_init(KevItemSetClosure* closure, size_t symbol_no) {
-  KevAddrArray* symbols = kev_addrarray_create();
-  KevBitSet** las = (KevBitSet**)malloc(sizeof (KevBitSet*) * symbol_no);
+bool klr_closure_init(KlrItemSetClosure* closure, size_t symbol_no) {
+  KArray* symbols = karray_create();
+  KBitSet** las = (KBitSet**)malloc(sizeof (KBitSet*) * symbol_no);
   if (!symbols || !las) {
     free(symbols);
     free(las);
@@ -82,64 +82,64 @@ bool kev_lr_closure_init(KevItemSetClosure* closure, size_t symbol_no) {
   return true;
 }
 
-KevItemSetClosure* kev_lr_closure_create(size_t symbol_no) {
-  KevItemSetClosure* closure = (KevItemSetClosure*)malloc(sizeof (KevItemSetClosure));
-  if (!closure || !kev_lr_closure_init(closure, symbol_no)) {
+KlrItemSetClosure* klr_closure_create(size_t symbol_no) {
+  KlrItemSetClosure* closure = (KlrItemSetClosure*)malloc(sizeof (KlrItemSetClosure));
+  if (!closure || !klr_closure_init(closure, symbol_no)) {
     free(closure);
     return NULL;
   }
   return closure;
 }
 
-bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBitSet** firsts, size_t epsilon) {
-  KevAddrArray* symbols = closure->symbols;
-  KevBitSet** las = closure->lookaheads;
-  KevItem* kitem = itemset->items;
+bool klr_closure_make(KlrItemSetClosure* closure, KlrItemSet* itemset, KBitSet** firsts, size_t epsilon) {
+  KArray* symbols = closure->symbols;
+  KBitSet** las = closure->lookaheads;
+  KlrItem* kitem = itemset->items;
   for (; kitem; kitem = kitem->next) {
     if (kitem->dot == kitem->rule->bodylen)
       continue;
-    KevSymbol* symbol = kitem->rule->body[kitem->dot];
+    KlrSymbol* symbol = kitem->rule->body[kitem->dot];
     if (symbol->kind == KEV_LR_TERMINAL)
       continue;
-    KevBitSet* la = kev_lr_get_kernel_item_follows(kitem, firsts, epsilon);
+    KBitSet* la = klr_get_kernel_item_follows(kitem, firsts, epsilon);
     if (!la) return false;
     size_t index = symbol->index;
     if (las[index]) {
-      if (!kev_bitset_union(las[index], la)) {
-        kev_bitset_delete(la);
+      if (!kbitset_union(las[index], la)) {
+        kbitset_delete(la);
         return false;
       }
-      kev_bitset_delete(la);
+      kbitset_delete(la);
     } else {
-      if (!kev_addrarray_push_back(symbols, symbol)) {
-        kev_bitset_delete(la);
+      if (!karray_push_back(symbols, symbol)) {
+        kbitset_delete(la);
         return false;
       }
       las[index] = la;
     }
   }
 
-  for (size_t i = 0; i < kev_addrarray_size(symbols); ++i) {
-    KevSymbol* head = (KevSymbol*)kev_addrarray_visit(symbols, i);
+  for (size_t i = 0; i < karray_size(symbols); ++i) {
+    KlrSymbol* head = (KlrSymbol*)karray_access(symbols, i);
     size_t head_index = head->index;
-    for (KevRuleNode* node = head->rules; node; node = node->next) {
-      KevRule* rule = node->rule;
+    for (KlrRuleNode* node = head->rules; node; node = node->next) {
+      KlrRule* rule = node->rule;
       if (rule->bodylen == 0) continue;
-      KevSymbol* symbol = rule->body[0];
+      KlrSymbol* symbol = rule->body[0];
       if (symbol->kind == KEV_LR_TERMINAL)
         continue;
-      KevBitSet* la = kev_lr_get_non_kernel_item_follows(rule, las[head_index], firsts, epsilon);
+      KBitSet* la = klr_get_non_kernel_item_follows(rule, las[head_index], firsts, epsilon);
       if (!la) return false;
       size_t index = symbol->index;
       if (las[index]) {
-        if (!kev_bitset_union(las[index], la)) {
-          kev_bitset_delete(la);
+        if (!kbitset_union(las[index], la)) {
+          kbitset_delete(la);
           return false;
         }
-        kev_bitset_delete(la);
+        kbitset_delete(la);
       } else {
-        if (!kev_addrarray_push_back(symbols, symbol)) {
-          kev_bitset_delete(la);
+        if (!karray_push_back(symbols, symbol)) {
+          kbitset_delete(la);
           return false;
         }
         las[index] = la;
@@ -147,34 +147,34 @@ bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBit
     }
   }
 
-  return kev_lr_closure_propagate(closure, epsilon);
+  return klr_closure_propagate(closure, epsilon);
 }
 
-static bool kev_lr_closure_propagate(KevItemSetClosure* closure, size_t epsilon) {
-  KevAddrArray* symbols = closure->symbols;
-  KevBitSet** las = closure->lookaheads;
-  size_t symbol_array_size = kev_addrarray_size(symbols);
+static bool klr_closure_propagate(KlrItemSetClosure* closure, size_t epsilon) {
+  KArray* symbols = closure->symbols;
+  KBitSet** las = closure->lookaheads;
+  size_t symbol_array_size = karray_size(symbols);
   bool not_done = true;
   while (not_done) {
     not_done = false;
     for (size_t i = 0; i < symbol_array_size; ++i) {
-      KevSymbol* symbol = (KevSymbol*)kev_addrarray_visit(symbols, i);
-      KevRuleNode* node = symbol->rules;
+      KlrSymbol* symbol = (KlrSymbol*)karray_access(symbols, i);
+      KlrRuleNode* node = symbol->rules;
       for (; node; node = node->next) {
         size_t len = node->rule->bodylen;
-        KevSymbol** body = node->rule->body;
+        KlrSymbol** body = node->rule->body;
         if (len == 0 || body[0]->kind == KEV_LR_TERMINAL)
           continue;
         size_t i = 1;
         for (; i < len; ++i) {
           if (body[i]->kind == KEV_LR_TERMINAL || 
-              !kev_bitset_has_element(las[body[i]->index], epsilon))
+              !kbitset_has_element(las[body[i]->index], epsilon))
             break;
         }
         if (i != len) continue;
-        if (!kev_bitset_is_subset(las[symbol->index], las[body[0]->index])) {
+        if (!kbitset_is_subset(las[symbol->index], las[body[0]->index])) {
           not_done = true;
-          if (!kev_bitset_union(las[body[0]->index], las[symbol->index]))
+          if (!kbitset_union(las[body[0]->index], las[symbol->index]))
             return false;
         }
       }
@@ -183,57 +183,57 @@ static bool kev_lr_closure_propagate(KevItemSetClosure* closure, size_t epsilon)
   return true;
 }
 
-static KevBitSet* kev_lr_get_kernel_item_follows(KevItem* kitem, KevBitSet** firsts, size_t epsilon) {
+static KBitSet* klr_get_kernel_item_follows(KlrItem* kitem, KBitSet** firsts, size_t epsilon) {
   size_t len = kitem->rule->bodylen;
-  KevSymbol** rulebody = kitem->rule->body;
-  KevBitSet* follows = kev_bitset_create(epsilon + 3);
+  KlrSymbol** rulebody = kitem->rule->body;
+  KBitSet* follows = kbitset_create(epsilon + 3);
   if (!follows) return NULL;
   for (size_t i = kitem->dot + 1; i < len; ++i) {
     if (rulebody[i]->kind == KEV_LR_TERMINAL) {
-      kev_bitset_set(follows, rulebody[i]->index);
+      kbitset_set(follows, rulebody[i]->index);
       return follows;
     }
-    KevBitSet* set = firsts[rulebody[i]->index];
-    if (!kev_bitset_union(follows, set)) {
-      kev_bitset_delete(follows);
+    KBitSet* set = firsts[rulebody[i]->index];
+    if (!kbitset_union(follows, set)) {
+      kbitset_delete(follows);
       return NULL;
     }
-    if (!kev_bitset_has_element(set, epsilon)) {
-      kev_bitset_clear(follows, epsilon);
+    if (!kbitset_has_element(set, epsilon)) {
+      kbitset_clear(follows, epsilon);
       return follows;
     }
   }
-  kev_bitset_clear(follows, epsilon);
-  if (!kev_bitset_union(follows, kitem->lookahead)) {
-    kev_bitset_delete(follows);
+  kbitset_clear(follows, epsilon);
+  if (!kbitset_union(follows, kitem->lookahead)) {
+    kbitset_delete(follows);
     return NULL;
   }
   return follows;
 }
 
-static KevBitSet* kev_lr_get_non_kernel_item_follows(KevRule* rule, KevBitSet* lookahead, KevBitSet** firsts, size_t epsilon) {
+static KBitSet* klr_get_non_kernel_item_follows(KlrRule* rule, KBitSet* lookahead, KBitSet** firsts, size_t epsilon) {
   size_t len = rule->bodylen;
-  KevSymbol** rulebody = rule->body;
-  KevBitSet* follows = kev_bitset_create(epsilon + 3);
+  KlrSymbol** rulebody = rule->body;
+  KBitSet* follows = kbitset_create(epsilon + 3);
   if (!follows) return NULL;
   for (size_t i = 1; i < len; ++i) {
     if (rulebody[i]->kind == KEV_LR_TERMINAL) {
-      kev_bitset_set(follows, rulebody[i]->index);
+      kbitset_set(follows, rulebody[i]->index);
       return follows;
     }
-    KevBitSet* set = firsts[rulebody[i]->index];
-    if (!kev_bitset_union(follows, set)) {
-      kev_bitset_delete(follows);
+    KBitSet* set = firsts[rulebody[i]->index];
+    if (!kbitset_union(follows, set)) {
+      kbitset_delete(follows);
       return NULL;
     }
-    if (!kev_bitset_has_element(set, epsilon)) {
-      kev_bitset_clear(follows, epsilon);
+    if (!kbitset_has_element(set, epsilon)) {
+      kbitset_clear(follows, epsilon);
       return follows;
     }
   }
-  kev_bitset_clear(follows, epsilon);
-  if (!kev_bitset_union(follows, lookahead)) {
-    kev_bitset_delete(follows);
+  kbitset_clear(follows, epsilon);
+  if (!kbitset_union(follows, lookahead)) {
+    kbitset_delete(follows);
     return NULL;
   }
   return follows;

@@ -6,25 +6,25 @@
 
 #include <stdio.h>
 
-static inline void kev_lr_print_item(FILE* out, KevLRCollection* collec, KevItem* item);
-bool kev_lr_print_itemset(FILE* out, KevLRCollection* collec, KevItemSet* itemset, bool print_closure);
-void kev_lr_print_itemset_with_closure(FILE* out, KevLRCollection* collec, KevItemSet* itemset, KevItemSetClosure* closure);
-bool kev_lr_print_collection(FILE* out, KevLRCollection* collec, bool print_closure);
-bool kev_lr_print_symbols(FILE* out, KevLRCollection* collec);
+static inline void klr_print_item(FILE* out, KlrCollection* collec, KlrItem* item);
+bool klr_print_itemset(FILE* out, KlrCollection* collec, KlrItemSet* itemset, bool print_closure);
+void klr_print_itemset_with_closure(FILE* out, KlrCollection* collec, KlrItemSet* itemset, KlrItemSetClosure* closure);
+bool klr_print_collection(FILE* out, KlrCollection* collec, bool print_closure);
+bool klr_print_symbols(FILE* out, KlrCollection* collec);
 
-void kev_lr_print_rule(FILE* out, KevRule* rule);
+void klr_print_rule(FILE* out, KlrRule* rule);
 
-void kev_lr_print_goto_table(FILE* out, KevLRTable* table);
-void kev_lr_print_action_table(FILE* out, KevLRTable* table);
-
-
-void kev_lr_print_kernel_item(FILE* out, KevLRCollection* collec, KevItem* kitem);
-void kev_lr_print_non_kernel_item(FILE* out, KevLRCollection* collec, KevRule* rule, KevBitSet* lookahead);
-void kev_lr_print_terminal_set(FILE* out, KevLRCollection* collec, KevBitSet* lookahead);
+void klr_print_trans_table(FILE* out, KlrTable* table);
+void klr_print_action_table(FILE* out, KlrTable* table);
 
 
-static inline void kev_lr_print_item(FILE* out, KevLRCollection* collec, KevItem* item) {
-  kev_lr_print_kernel_item(out, collec, item);
+void klr_print_kernel_item(FILE* out, KlrCollection* collec, KlrItem* kitem);
+void klr_print_non_kernel_item(FILE* out, KlrCollection* collec, KlrRule* rule, KBitSet* lookahead);
+void klr_print_terminal_set(FILE* out, KlrCollection* collec, KBitSet* lookahead);
+
+
+static inline void klr_print_item(FILE* out, KlrCollection* collec, KlrItem* item) {
+  klr_print_kernel_item(out, collec, item);
 }
 
 #endif

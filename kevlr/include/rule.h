@@ -3,90 +3,90 @@
 
 #include "utils/include/general/global_def.h"
 
-#define KEV_LR_TERMINAL     ((KevSymbolType)0)
-#define KEV_LR_NONTERMINAL  ((KevSymbolType)1)
+#define KLR_TERMINAL     ((KlrSymbolType)0)
+#define KLR_NONTERMINAL  ((KlrSymbolType)1)
 
-typedef size_t KevLRID;
-typedef char* KevSymbolType;
-struct tagKevRule;
-struct tagKevRuleNode;
+typedef size_t KlrID;
+typedef char* KlrSymbolType;
+struct tagKlrRule;
+struct tagKlrRuleNode;
 
-typedef struct tagKevSymbol {
+typedef struct tagKlrSymbol {
   char* name;
-  KevLRID id;
+  KlrID id;
   size_t index;
-  KevSymbolType kind;
-  struct tagKevRuleNode* rules;
-} KevSymbol;
+  KlrSymbolType kind;
+  struct tagKlrRuleNode* rules;
+} KlrSymbol;
 
-typedef struct tagKevRule {
-  KevSymbol* head;
-  KevSymbol** body;
+typedef struct tagKlrRule {
+  KlrSymbol* head;
+  KlrSymbol** body;
   size_t bodylen;
   size_t id;
-} KevRule;
+} KlrRule;
 
-typedef struct tagKevRuleNode {
-  KevRule* rule;
-  struct tagKevRuleNode* next;
-} KevRuleNode;
+typedef struct tagKlrRuleNode {
+  KlrRule* rule;
+  struct tagKlrRuleNode* next;
+} KlrRuleNode;
 
-KevSymbol* kev_lr_symbol_create(KevSymbolType kind, const char* name);
-KevSymbol* kev_lr_symbol_create_move(KevSymbolType kind, char* name);
-void kev_lr_symbol_delete(KevSymbol* symbol);
-KevRule* kev_lr_rule_create(KevSymbol* head, KevSymbol** body, size_t body_length);
-KevRule* kev_lr_rule_create_move(KevSymbol* head, KevSymbol** body, size_t body_length);
-void kev_lr_rule_delete(KevRule* rule);
+KlrSymbol* klr_symbol_create(KlrSymbolType kind, const char* name);
+KlrSymbol* klr_symbol_create_move(KlrSymbolType kind, char* name);
+void klr_symbol_delete(KlrSymbol* symbol);
+KlrRule* klr_rule_create(KlrSymbol* head, KlrSymbol** body, size_t body_length);
+KlrRule* klr_rule_create_move(KlrSymbol* head, KlrSymbol** body, size_t body_length);
+void klr_rule_delete(KlrRule* rule);
 
 /* get method */
-static inline KevSymbolType kev_lr_symbol_get_kind(KevSymbol* symbol);
-static inline char* kev_lr_symbol_get_name(KevSymbol* symbol);
-static inline KevLRID kev_lr_symbol_get_id(KevSymbol* symbol);
+static inline KlrSymbolType klr_symbol_get_kind(KlrSymbol* symbol);
+static inline char* klr_symbol_get_name(KlrSymbol* symbol);
+static inline KlrID klr_symbol_get_id(KlrSymbol* symbol);
 
-static inline KevSymbol* kev_lr_rule_get_head(KevRule* rule);
-static inline KevSymbol** kev_lr_rule_get_body(KevRule* rule);
-static inline size_t kev_lr_rule_get_bodylen(KevRule* rule);
-static inline KevLRID kev_lr_rule_get_id(KevRule* rule);
+static inline KlrSymbol* klr_rule_get_head(KlrRule* rule);
+static inline KlrSymbol** klr_rule_get_body(KlrRule* rule);
+static inline size_t klr_rule_get_bodylen(KlrRule* rule);
+static inline KlrID klr_rule_get_id(KlrRule* rule);
 
 /* set method */
-bool kev_lr_symbol_set_name(KevSymbol* symbol, const char* name);
-void kev_lr_symbol_set_name_move(KevSymbol* symbol, char* name);
-static inline void kev_lr_symbol_set_id(KevSymbol* symbol, KevLRID id);
-static inline void kev_lr_rule_set_id(KevRule* rule, KevLRID id);
+bool klr_symbol_set_name(KlrSymbol* symbol, const char* name);
+void klr_symbol_set_name_move(KlrSymbol* symbol, char* name);
+static inline void klr_symbol_set_id(KlrSymbol* symbol, KlrID id);
+static inline void klr_rule_set_id(KlrRule* rule, KlrID id);
 
-static inline KevSymbolType kev_lr_symbol_get_kind(KevSymbol* symbol) {
+static inline KlrSymbolType klr_symbol_get_kind(KlrSymbol* symbol) {
   return symbol->kind;
 }
 
-static inline char* kev_lr_symbol_get_name(KevSymbol* symbol) {
+static inline char* klr_symbol_get_name(KlrSymbol* symbol) {
   return symbol->name;
 }
 
-static inline KevLRID kev_lr_symbol_get_id(KevSymbol* symbol) {
+static inline KlrID klr_symbol_get_id(KlrSymbol* symbol) {
   return symbol->id;
 }
 
-static inline void kev_lr_symbol_set_id(KevSymbol* symbol, KevLRID id) {
+static inline void klr_symbol_set_id(KlrSymbol* symbol, KlrID id) {
   symbol->id = id;
 }
 
-static inline KevSymbol* kev_lr_rule_get_head(KevRule* rule) {
+static inline KlrSymbol* klr_rule_get_head(KlrRule* rule) {
   return rule->head;
 }
 
-static inline KevSymbol** kev_lr_rule_get_body(KevRule* rule) {
+static inline KlrSymbol** klr_rule_get_body(KlrRule* rule) {
   return rule->body;
 }
 
-static inline size_t kev_lr_rule_get_bodylen(KevRule* rule) {
+static inline size_t klr_rule_get_bodylen(KlrRule* rule) {
   return rule->bodylen;
 }
 
-static inline KevLRID kev_lr_rule_get_id(KevRule* rule) {
+static inline KlrID klr_rule_get_id(KlrRule* rule) {
   return rule->id;
 }
 
-static inline void kev_lr_rule_set_id(KevRule* rule, KevLRID id) {
+static inline void klr_rule_set_id(KlrRule* rule, KlrID id) {
   rule->id = id;
 }
 

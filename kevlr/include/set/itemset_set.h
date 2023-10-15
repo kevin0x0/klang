@@ -4,25 +4,25 @@
 #include "kevlr/include/itemset_def.h"
 #include "utils/include/general/global_def.h"
 
-typedef struct tagKevItemSetSetNode {
-  KevItemSet* element;
+typedef struct tagKlrItemSetSetNode {
+  KlrItemSet* element;
   size_t hashval;
-  struct tagKevItemSetSetNode* next;
-} KevItemSetSetNode;
+  struct tagKlrItemSetSetNode* next;
+} KlrItemSetSetNode;
 
-typedef struct tagKevItemSetSet {
-  KevItemSetSetNode** array;
-  bool (*equal)(KevItemSet*, KevItemSet*);
+typedef struct tagKlrItemSetSet {
+  KlrItemSetSetNode** array;
+  bool (*equal)(KlrItemSet*, KlrItemSet*);
   size_t capacity;
   size_t size;
-} KevItemSetSet;
+} KlrItemSetSet;
 
-bool kev_itemsetset_init(KevItemSetSet* set, size_t capacity, bool (*equal)(KevItemSet*, KevItemSet*));
-void kev_itemsetset_destroy(KevItemSetSet* set);
-KevItemSetSet* kev_itemsetset_create(size_t capacity, bool (*equal)(KevItemSet*, KevItemSet*));
-void kev_itemsetset_delete(KevItemSetSet* set);
+bool klr_itemsetset_init(KlrItemSetSet* set, size_t capacity, bool (*equal)(KlrItemSet*, KlrItemSet*));
+void klr_itemsetset_destroy(KlrItemSetSet* set);
+KlrItemSetSet* klr_itemsetset_create(size_t capacity, bool (*equal)(KlrItemSet*, KlrItemSet*));
+void klr_itemsetset_delete(KlrItemSetSet* set);
 
-bool kev_itemsetset_insert(KevItemSetSet* set, KevItemSet* element);
-KevItemSetSetNode* kev_itemsetset_search(KevItemSetSet* set, KevItemSet* element);
+bool klr_itemsetset_insert(KlrItemSetSet* set, KlrItemSet* element);
+KlrItemSetSetNode* klr_itemsetset_search(KlrItemSetSet* set, KlrItemSet* element);
 
 #endif

@@ -2,30 +2,30 @@
 #define KEVCC_KEVLR_INCLUDE_LR_UTILS_H
 
 #include "kevlr/include/collection.h"
-#include "kevlr/include/hashmap/goto_map.h"
+#include "kevlr/include/hashmap/trans_map.h"
 
-static inline void kev_lr_util_assign_itemset_id(KevItemSet** itemsets, size_t itemset_no);
-bool kev_lr_util_generate_gotos(KevItemSet* itemset, KevItemSetClosure* closure, KevGotoMap* goto_container);
-void kev_lr_util_destroy_terminal_set_array(KevBitSet** array, size_t size);
-KevSymbol* kev_lr_util_augment(KevSymbol* start);
-KevBitSet* kev_lr_util_symbols_to_bitset(KevSymbol** symbols, size_t length);
-static inline void kev_lr_util_label_symbols(KevSymbol** symbols, size_t symbol_no);
-KevItemSet* kev_lr_util_get_start_itemset(KevSymbol* start, KevSymbol** lookahead, size_t length);
-KevSymbol** kev_lr_util_get_symbol_array_without_changing_index(KevSymbol* start, KevSymbol** ends, size_t ends_no, size_t* p_size);
-KevSymbol** kev_lr_util_get_symbol_array(KevSymbol* start, KevSymbol** ends, size_t ends_no, size_t* p_size);
-size_t kev_lr_util_symbol_array_partition(KevSymbol** array, size_t size);
-KevBitSet** kev_lr_util_compute_firsts(KevSymbol** symbols, size_t symbol_no, size_t terminal_no);
-KevBitSet** kev_lr_util_compute_follows(KevSymbol** symbols, KevBitSet** firsts, size_t symbol_no, size_t terminal_no, KevSymbol* start, KevSymbol** ends, size_t ends_no);
-size_t kev_lr_util_user_symbol_max_id(KevLRCollection* collec);
-size_t kev_lr_util_user_terminal_max_id(KevLRCollection* collec);
-size_t kev_lr_util_user_nonterminal_max_id(KevLRCollection* collec);
+static inline void klr_util_assign_itemset_id(KlrItemSet** itemsets, size_t itemset_no);
+bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KlrTransMap* transitions);
+void klr_util_destroy_terminal_set_array(KBitSet** array, size_t size);
+KlrSymbol* klr_util_augment(KlrSymbol* start);
+KBitSet* klr_util_symbols_to_bitset(KlrSymbol** symbols, size_t length);
+static inline void klr_util_label_symbols(KlrSymbol** symbols, size_t symbol_no);
+KlrItemSet* klr_util_get_start_itemset(KlrSymbol* start, KlrSymbol** lookahead, size_t length);
+KlrSymbol** klr_util_get_symbol_array_without_changing_index(KlrSymbol* start, KlrSymbol** ends, size_t ends_no, size_t* p_size);
+KlrSymbol** klr_util_get_symbol_array(KlrSymbol* start, KlrSymbol** ends, size_t ends_no, size_t* p_size);
+size_t klr_util_symbol_array_partition(KlrSymbol** array, size_t size);
+KBitSet** klr_util_compute_firsts(KlrSymbol** symbols, size_t symbol_no, size_t terminal_no);
+KBitSet** klr_util_compute_follows(KlrSymbol** symbols, KBitSet** firsts, size_t symbol_no, size_t terminal_no, KlrSymbol* start, KlrSymbol** ends, size_t ends_no);
+size_t klr_util_user_symbol_max_id(KlrCollection* collec);
+size_t klr_util_user_terminal_max_id(KlrCollection* collec);
+size_t klr_util_user_nonterminal_max_id(KlrCollection* collec);
 
-static inline void kev_lr_util_assign_itemset_id(KevItemSet** itemsets, size_t itemset_no) {
+static inline void klr_util_assign_itemset_id(KlrItemSet** itemsets, size_t itemset_no) {
   for (size_t i = 0; i < itemset_no; ++i)
     itemsets[i]->id = i;
 }
 
-static inline void kev_lr_util_label_symbols(KevSymbol** symbols, size_t symbol_no) {
+static inline void klr_util_label_symbols(KlrSymbol** symbols, size_t symbol_no) {
   for (size_t i = 0; i < symbol_no; ++i)
     symbols[i]->index = i;
 }

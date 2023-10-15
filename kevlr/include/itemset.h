@@ -3,52 +3,52 @@
 
 #include "kevlr/include/itemset_def.h"
 #include "kevlr/include/object_pool/itemset_pool.h"
-#include "kevlr/include/object_pool/itemsetgoto_pool.h"
+#include "kevlr/include/object_pool/itemsettrans_pool.h"
 #include "kevlr/include/object_pool/item_pool.h"
 
-#define kev_lr_item_less_than(item1, item2) ((size_t)(item1) < (size_t)(item2) || \
+#define klr_item_less_than(item1, item2) ((size_t)(item1) < (size_t)(item2) || \
                                             ((size_t)(item1) == (size_t)(item2) && \
                                             (item1)->dot < (item2)->dot))
 
-static inline KevItemSet* kev_lr_itemset_create(void);
-void kev_lr_itemset_delete(KevItemSet* itemset);
-void kev_lr_itemset_add_item(KevItemSet* itemset, KevItem* item);
-static inline void kev_lr_itemset_add_goto(KevItemSet* itemset, KevItemSetGoto* go_to);
-static inline bool kev_lr_itemset_goto(KevItemSet* itemset, KevSymbol* symbol, KevItemSet* iset);
+static inline KlrItemSet* klr_itemset_create(void);
+void klr_itemset_delete(KlrItemSet* itemset);
+void klr_itemset_add_item(KlrItemSet* itemset, KlrItem* item);
+static inline void klr_itemset_add_trans(KlrItemSet* itemset, KlrItemSetTransition* trans);
+static inline bool klr_itemset_goto(KlrItemSet* itemset, KlrSymbol* symbol, KlrItemSet* iset);
 
 /* iterate for itemset */
-static inline KevItem* kev_lr_itemset_iter_begin(KevItemSet* itemset);
-static inline KevItem* kev_lr_itemset_iter_next(KevItem* item);
+static inline KlrItem* klr_itemset_iter_begin(KlrItemSet* itemset);
+static inline KlrItem* klr_itemset_iter_next(KlrItem* item);
 /* get method for itemset */
-static inline KevLRID kev_lr_itemset_get_id(KevItemSet* itemset);
+static inline KlrID klr_itemset_get_id(KlrItemSet* itemset);
 
-static inline KevItem* kev_lr_item_create(KevRule* rule, size_t dot);
-static inline KevItem* kev_lr_item_create_copy(KevItem* item);
-static inline void kev_lr_item_delete(KevItem* item);
+static inline KlrItem* klr_item_create(KlrRule* rule, size_t dot);
+static inline KlrItem* klr_item_create_copy(KlrItem* item);
+static inline void klr_item_delete(KlrItem* item);
 
 /* item get method */
-static inline KevRule* kev_lr_item_get_rule(KevItem* item);
-static inline KevBitSet* kev_lr_item_get_lookahead(KevItem* item);
-static inline size_t kev_lr_item_get_dotpos(KevItem* item);
+static inline KlrRule* klr_item_get_rule(KlrItem* item);
+static inline KBitSet* klr_item_get_lookahead(KlrItem* item);
+static inline size_t klr_item_get_dotpos(KlrItem* item);
 
-bool kev_lr_closure_init(KevItemSetClosure* closure, size_t symbol_no);
-void kev_lr_closure_destroy(KevItemSetClosure* closure);
-KevItemSetClosure* kev_lr_closure_create(size_t symbol_no);
-void kev_lr_closure_delete(KevItemSetClosure* closure);
+bool klr_closure_init(KlrItemSetClosure* closure, size_t symbol_no);
+void klr_closure_destroy(KlrItemSetClosure* closure);
+KlrItemSetClosure* klr_closure_create(size_t symbol_no);
+void klr_closure_delete(KlrItemSetClosure* closure);
 
-bool kev_lr_closure_make(KevItemSetClosure* closure, KevItemSet* itemset, KevBitSet** firsts, size_t epsilon);
-void kev_lr_closure_make_empty(KevItemSetClosure* closure);
+bool klr_closure_make(KlrItemSetClosure* closure, KlrItemSet* itemset, KBitSet** firsts, size_t epsilon);
+void klr_closure_make_empty(KlrItemSetClosure* closure);
 
-static inline KevItemSet* kev_lr_itemset_create(void) {
-  KevItemSet* itemset = kev_itemset_pool_allocate();
+static inline KlrItemSet* klr_itemset_create(void) {
+  KlrItemSet* itemset = klr_itemset_pool_allocate();
   if (!itemset) return NULL;
   itemset->items = NULL;
-  itemset->gotos = NULL;
+  itemset->trans = NULL;
   return itemset;
 }
 
-static inline KevItem* kev_lr_item_create(KevRule* rule, size_t dot) {
-  KevItem* item = kev_item_pool_allocate();
+static inline KlrItem* klr_item_create(KlrRule* rule, size_t dot) {
+  KlrItem* item = klr_item_pool_allocate();
   if (!item) return NULL;
   item->rule = rule;
   item->dot = dot;
@@ -56,60 +56,60 @@ static inline KevItem* kev_lr_item_create(KevRule* rule, size_t dot) {
   return item;
 }
 
-static inline KevItem* kev_lr_item_create_copy(KevItem* item) {
-  KevItem* ret = kev_item_pool_allocate();
+static inline KlrItem* klr_item_create_copy(KlrItem* item) {
+  KlrItem* ret = klr_item_pool_allocate();
   ret->rule = item->rule;
   ret->dot = item->dot;
   ret->lookahead = NULL;
-  if (item->lookahead && !(ret->lookahead = kev_bitset_create_copy(item->lookahead))) {
-    kev_lr_item_delete(ret);
+  if (item->lookahead && !(ret->lookahead = kbitset_create_copy(item->lookahead))) {
+    klr_item_delete(ret);
     return NULL;
   }
   return ret;
 }
 
-static inline void kev_lr_item_delete(KevItem* item) {
+static inline void klr_item_delete(KlrItem* item) {
   if (item) {
-    kev_bitset_delete(item->lookahead);
-    kev_item_pool_deallocate(item);
+    kbitset_delete(item->lookahead);
+    klr_item_pool_deallocate(item);
   }
 }
 
-static inline void kev_lr_itemset_add_goto(KevItemSet* itemset, KevItemSetGoto* go_to) {
-  go_to->next = itemset->gotos;
-  itemset->gotos = go_to;
+static inline void klr_itemset_add_trans(KlrItemSet* itemset, KlrItemSetTransition* trans) {
+  trans->next = itemset->trans;
+  itemset->trans = trans;
 }
 
-static inline bool kev_lr_itemset_goto(KevItemSet* itemset, KevSymbol* symbol, KevItemSet* iset) {
-  KevItemSetGoto* go_to = kev_itemsetgoto_pool_allocate();
-  if (!go_to) return false;
-  go_to->symbol = symbol;
-  go_to->itemset = iset;
-  kev_lr_itemset_add_goto(itemset, go_to);
+static inline bool klr_itemset_goto(KlrItemSet* itemset, KlrSymbol* symbol, KlrItemSet* iset) {
+  KlrItemSetTransition* trans = klr_itemsettrans_pool_allocate();
+  if (!trans) return false;
+  trans->symbol = symbol;
+  trans->target = iset;
+  klr_itemset_add_trans(itemset, trans);
   return true;
 }
 
-static inline KevRule* kev_lr_item_get_rule(KevItem* item) {
+static inline KlrRule* klr_item_get_rule(KlrItem* item) {
   return item->rule;
 }
 
-static inline KevBitSet* kev_lr_item_get_lookahead(KevItem* item) {
+static inline KBitSet* klr_item_get_lookahead(KlrItem* item) {
   return item->lookahead;
 }
 
-static inline size_t kev_lr_item_get_dotpos(KevItem* item) {
+static inline size_t klr_item_get_dotpos(KlrItem* item) {
   return item->dot;
 }
 
-static inline KevItem* kev_lr_itemset_iter_begin(KevItemSet* itemset) {
+static inline KlrItem* klr_itemset_iter_begin(KlrItemSet* itemset) {
   return itemset->items;
 }
 
-static inline KevItem* kev_lr_itemset_iter_next(KevItem* item) {
+static inline KlrItem* klr_itemset_iter_next(KlrItem* item) {
   return item->next;
 }
 
-static inline size_t kev_lr_itemset_get_id(KevItemSet* itemset) {
+static inline size_t klr_itemset_get_id(KlrItemSet* itemset) {
   return itemset->id;
 }
 

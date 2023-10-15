@@ -3,10 +3,10 @@
 
 #include <stdlib.h>
 
-static inline void kev_rulenode_delete(KevRuleNode* rules);
+static inline void kev_rulenode_delete(KlrRuleNode* rules);
 
-KevSymbol* kev_lr_symbol_create(KevSymbolType kind, const char* name) {
-  KevSymbol* symbol = (KevSymbol*)malloc(sizeof (KevSymbol));
+KlrSymbol* klr_symbol_create(KlrSymbolType kind, const char* name) {
+  KlrSymbol* symbol = (KlrSymbol*)malloc(sizeof (KlrSymbol));
   if (!symbol) return NULL;
   symbol->kind = kind;
   symbol->name = NULL;
@@ -18,8 +18,8 @@ KevSymbol* kev_lr_symbol_create(KevSymbolType kind, const char* name) {
   return symbol;
 }
 
-KevSymbol* kev_lr_symbol_create_move(KevSymbolType kind, char* name) {
-  KevSymbol* symbol = (KevSymbol*)malloc(sizeof (KevSymbol));
+KlrSymbol* klr_symbol_create_move(KlrSymbolType kind, char* name) {
+  KlrSymbol* symbol = (KlrSymbol*)malloc(sizeof (KlrSymbol));
   if (!symbol) return NULL;
   symbol->kind = kind;
   symbol->name = name;
@@ -27,7 +27,7 @@ KevSymbol* kev_lr_symbol_create_move(KevSymbolType kind, char* name) {
   return symbol;
 }
 
-void kev_lr_symbol_delete(KevSymbol* symbol) {
+void klr_symbol_delete(KlrSymbol* symbol) {
   if (symbol) {
     kev_rulenode_delete(symbol->rules);
     free(symbol->name);
@@ -35,10 +35,10 @@ void kev_lr_symbol_delete(KevSymbol* symbol) {
   }
 }
 
-KevRule* kev_lr_rule_create(KevSymbol* head, KevSymbol** body, size_t body_length) {
-  KevRule* rule = (KevRule*)malloc(sizeof (KevRule));
-  KevSymbol** rule_body = (KevSymbol**)malloc(sizeof (KevSymbol*) * body_length);
-  KevRuleNode* rulenode = (KevRuleNode*)malloc(sizeof (KevRuleNode));
+KlrRule* klr_rule_create(KlrSymbol* head, KlrSymbol** body, size_t body_length) {
+  KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule));
+  KlrSymbol** rule_body = (KlrSymbol**)malloc(sizeof (KlrSymbol*) * body_length);
+  KlrRuleNode* rulenode = (KlrRuleNode*)malloc(sizeof (KlrRuleNode));
   if (!rule || !rule_body || !rulenode) {
     free(rule);
     free(rule_body);
@@ -56,9 +56,9 @@ KevRule* kev_lr_rule_create(KevSymbol* head, KevSymbol** body, size_t body_lengt
   return rule;
 }
 
-KevRule* kev_lr_rule_create_move(KevSymbol* head, KevSymbol** body, size_t body_length) {
-  KevRule* rule = (KevRule*)malloc(sizeof (KevRule));
-  KevRuleNode* rulenode = (KevRuleNode*)malloc(sizeof (KevRuleNode));
+KlrRule* klr_rule_create_move(KlrSymbol* head, KlrSymbol** body, size_t body_length) {
+  KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule));
+  KlrRuleNode* rulenode = (KlrRuleNode*)malloc(sizeof (KlrRuleNode));
   if (!rule || !rulenode) return NULL;
   rulenode->rule = rule;
   rulenode->next = head->rules;
@@ -69,28 +69,28 @@ KevRule* kev_lr_rule_create_move(KevSymbol* head, KevSymbol** body, size_t body_
   return rule;
 }
 
-void kev_lr_rule_delete(KevRule* rule) {
+void klr_rule_delete(KlrRule* rule) {
   if (rule) {
     free(rule->body);
     free(rule);
   }
 }
 
-static inline void kev_rulenode_delete(KevRuleNode* rules) {
+static inline void kev_rulenode_delete(KlrRuleNode* rules) {
   while (rules) {
-    KevRuleNode* tmp = rules->next;
+    KlrRuleNode* tmp = rules->next;
     free(rules);
     rules = tmp;
   }
 }
 
-bool kev_lr_symbol_set_name(KevSymbol* symbol, const char* name) {
+bool klr_symbol_set_name(KlrSymbol* symbol, const char* name) {
   free(symbol->name);
   symbol->name = NULL;
   return name && !(symbol->name = kev_str_copy(name));
 }
 
-void kev_lr_symbol_set_name_move(KevSymbol* symbol, char* name) {
+void klr_symbol_set_name_move(KlrSymbol* symbol, char* name) {
   free(symbol->name);
   symbol->name = name;
 }

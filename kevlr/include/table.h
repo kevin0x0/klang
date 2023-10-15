@@ -3,182 +3,182 @@
 
 #include "kevlr/include/collection.h"
 
-#define KEV_LR_ACTION_ERR     ((KevLRAction)0)
-#define KEV_LR_ACTION_SHI     ((KevLRAction)1)
-#define KEV_LR_ACTION_RED     ((KevLRAction)2)
-#define KEV_LR_ACTION_ACC     ((KevLRAction)3)
-#define KEV_LR_ACTION_CON     ((KevLRAction)4)
+#define KLR_ACTION_ERR     ((KlrAction)0)
+#define KLR_ACTION_SHI     ((KlrAction)1)
+#define KLR_ACTION_RED     ((KlrAction)2)
+#define KLR_ACTION_ACC     ((KlrAction)3)
+#define KLR_ACTION_CON     ((KlrAction)4)
 
-#define KEV_LR_GOTO_NONE      ((KevLRGotoEntry)-1)
+#define KLR_GOTO_NONE      ((KlrTransitionEntry)-1)
 
 
-struct tagKevLRTableEntry;
+struct tagKlrTableEntry;
 
-typedef struct tagKevLRConflict {
-  KevItemSet* itemset;
-  KevSymbol* symbol;
-  KevItemSet* conflict_items;
-  struct tagKevLRTableEntry* entry;
-  struct tagKevLRConflict* next;
-} KevLRConflict;
+typedef struct tagKlrConflict {
+  KlrItemSet* itemset;
+  KlrSymbol* symbol;
+  KlrItemSet* conflict_items;
+  struct tagKlrTableEntry* entry;
+  struct tagKlrConflict* next;
+} KlrConflict;
 
-typedef union tagKevLRActionInfo {
-  KevRule* rule;
-  KevLRConflict* conflict;
+typedef union tagKlrActionInfo {
+  KlrRule* rule;
+  KlrConflict* conflict;
   size_t itemset_id;
-} KevLRActionInfo;
+} KlrActionInfo;
 
-typedef int64_t KevLRGotoEntry;
-typedef uint8_t KevLRAction;
+typedef int64_t KlrTransitionEntry;
+typedef uint8_t KlrAction;
 
-typedef struct tagKevLRTableEntry {
-  KevLRActionInfo info;
-  KevLRGotoEntry go_to;
-  KevLRAction action;
-} KevLRTableEntry;
+typedef struct tagKlrTableEntry {
+  KlrActionInfo info;
+  KlrTransitionEntry trans;
+  KlrAction action;
+} KlrTableEntry;
 
 
-typedef struct tagKevLRTable {
-  KevLRTableEntry** entries;
+typedef struct tagKlrTable {
+  KlrTableEntry** entries;
   size_t start_state;
   size_t state_no;
   size_t total_symbol_no;
   size_t table_symbol_no;
   size_t terminal_no;
   size_t max_terminal_id;
-  KevLRConflict* conflicts;
-} KevLRTable;
+  KlrConflict* conflicts;
+} KlrTable;
 
-typedef bool KevLRConflictCallback(void* object, KevLRConflict* conflict, KevLRCollection* collec);
+typedef bool KlrConflictCallback(void* object, KlrConflict* conflict, KlrCollection* collec);
 
 /* conflict handler */
-typedef struct tagKevLRConflictHandler {
+typedef struct tagKlrConflictHandler {
   void* object;
-  KevLRConflictCallback* callback;
-} KevLRConflictHandler;
+  KlrConflictCallback* callback;
+} KlrConflictHandler;
 
 /* generation of table */
-KevLRTable* kev_lr_table_create(KevLRCollection* collec, KevLRConflictHandler* conf_handler);
-void kev_lr_table_delete(KevLRTable* table);
+KlrTable* klr_table_create(KlrCollection* collec, KlrConflictHandler* conf_handler);
+void klr_table_delete(KlrTable* table);
 
-static inline KevLRConflict* kev_lr_table_get_conflict(KevLRTable* table);
-static inline size_t kev_lr_table_get_symbol_no(KevLRTable* table);
-static inline size_t kev_lr_table_get_terminal_no(KevLRTable* table);
-static inline size_t kev_lr_table_get_state_no(KevLRTable* table);
-static inline size_t kev_lr_table_get_start_state(KevLRTable* table);
-static inline KevLRConflict* kev_lr_table_conflict_next(KevLRConflict* conflict);
+static inline KlrConflict* klr_table_get_conflict(KlrTable* table);
+static inline size_t klr_table_get_symbol_no(KlrTable* table);
+static inline size_t klr_table_get_terminal_no(KlrTable* table);
+static inline size_t klr_table_get_state_no(KlrTable* table);
+static inline size_t klr_table_get_start_state(KlrTable* table);
+static inline KlrConflict* klr_table_conflict_next(KlrConflict* conflict);
 
-static inline KevLRGotoEntry kev_lr_table_get_goto(KevLRTable* table, KevLRID itemset_id, KevLRID symbol_id);
-static inline KevLRAction kev_lr_table_get_action(KevLRTable* table, KevLRID itemset_id, KevLRID symbol_id);
-static inline KevLRActionInfo* kev_lr_table_get_action_info(KevLRTable* table, KevLRID itemset_id, KevLRID symbol_id);
+static inline KlrTransitionEntry klr_table_get_trans(KlrTable* table, KlrID itemset_id, KlrID symbol_id);
+static inline KlrAction klr_table_get_action(KlrTable* table, KlrID itemset_id, KlrID symbol_id);
+static inline KlrActionInfo* klr_table_get_action_info(KlrTable* table, KlrID itemset_id, KlrID symbol_id);
 
 /* conflict */
-KevLRConflict* kev_lr_conflict_create(KevItemSet* itemset, KevSymbol* symbol, KevLRTableEntry* entry);
-void kev_lr_conflict_delete(KevLRConflict* conflict);
-static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item);
-static inline bool kev_lr_conflict_handle(KevLRConflictHandler* handler, KevLRConflict* conflict, KevLRCollection* collec);
+KlrConflict* klr_conflict_create(KlrItemSet* itemset, KlrSymbol* symbol, KlrTableEntry* entry);
+void klr_conflict_delete(KlrConflict* conflict);
+static inline void klr_conflict_add_item(KlrConflict* conflict, KlrItem* item);
+static inline bool klr_conflict_handle(KlrConflictHandler* handler, KlrConflict* conflict, KlrCollection* collec);
 
 /* conflict interface */
-static inline bool kev_lr_conflict_SR(KevLRConflict* conflict);
-static inline bool kev_lr_conflict_RR(KevLRConflict* conflict);
-static inline KevItemSet* kev_lr_conflict_get_conflict_items(KevLRConflict* conflict);
-static inline KevItemSet* kev_lr_conflict_get_itemset(KevLRConflict* conflict);
-static inline KevSymbol* kev_lr_conflict_get_symbol(KevLRConflict* conflict);
-static inline size_t kev_lr_conflict_get_status(KevLRConflict* conflict);
-static inline void kev_lr_conflict_set_reducing(KevLRConflict* conflict, KevLRCollection* collec, KevItem* item);
-static inline void kev_lr_conflict_set_shifting(KevLRConflict* conflict);
+static inline bool klr_conflict_SR(KlrConflict* conflict);
+static inline bool klr_conflict_RR(KlrConflict* conflict);
+static inline KlrItemSet* klr_conflict_get_conflict_items(KlrConflict* conflict);
+static inline KlrItemSet* klr_conflict_get_itemset(KlrConflict* conflict);
+static inline KlrSymbol* klr_conflict_get_symbol(KlrConflict* conflict);
+static inline size_t klr_conflict_get_status(KlrConflict* conflict);
+static inline void klr_conflict_set_reducing(KlrConflict* conflict, KlrCollection* collec, KlrItem* item);
+static inline void klr_conflict_set_shifting(KlrConflict* conflict);
 
 /* conflict handler */
-KevLRConflictHandler* kev_lr_conflict_handler_create(void* object, KevLRConflictCallback* callback);
-void kev_lr_conflict_handler_delete(KevLRConflictHandler* handler);
+KlrConflictHandler* klr_conflict_handler_create(void* object, KlrConflictCallback* callback);
+void klr_conflict_handler_delete(KlrConflictHandler* handler);
 
 
 
 /* implementation of inline functions */
-static inline KevLRConflict* kev_lr_table_get_conflict(KevLRTable* table) {
+static inline KlrConflict* klr_table_get_conflict(KlrTable* table) {
   return table->conflicts;
 }
 
-static inline size_t kev_lr_table_get_symbol_no(KevLRTable* table) {
+static inline size_t klr_table_get_symbol_no(KlrTable* table) {
   return table->table_symbol_no;
 }
 
-static inline size_t kev_lr_table_get_terminal_no(KevLRTable* table) {
+static inline size_t klr_table_get_terminal_no(KlrTable* table) {
   return table->terminal_no;
 }
 
-static inline size_t kev_lr_table_get_max_terminal_id(KevLRTable* table) {
+static inline size_t klr_table_get_max_terminal_id(KlrTable* table) {
   return table->max_terminal_id;
 }
 
-static inline size_t kev_lr_table_get_state_no(KevLRTable* table) {
+static inline size_t klr_table_get_state_no(KlrTable* table) {
   return table->state_no;
 }
 
-static inline size_t kev_lr_table_get_start_state(KevLRTable* table) {
+static inline size_t klr_table_get_start_state(KlrTable* table) {
   return table->start_state;
 }
 
-static inline KevLRConflict* kev_lr_table_conflict_next(KevLRConflict* conflict) {
+static inline KlrConflict* klr_table_conflict_next(KlrConflict* conflict) {
   return conflict->next;
 }
 
-static inline KevLRGotoEntry kev_lr_table_get_goto(KevLRTable* table, KevLRID itemset_id, KevLRID symbol_id) {
-  return table->entries[itemset_id][symbol_id].go_to;
+static inline KlrTransitionEntry klr_table_get_trans(KlrTable* table, KlrID itemset_id, KlrID symbol_id) {
+  return table->entries[itemset_id][symbol_id].trans;
 }
 
-static inline KevLRAction kev_lr_table_get_action(KevLRTable* table, KevLRID itemset_id, KevLRID symbol_id) {
+static inline KlrAction klr_table_get_action(KlrTable* table, KlrID itemset_id, KlrID symbol_id) {
   return table->entries[itemset_id][symbol_id].action;
 }
 
-static inline KevLRActionInfo* kev_lr_table_get_action_info(KevLRTable* table, KevLRID itemset_id, KevLRID symbol_id) {
+static inline KlrActionInfo* klr_table_get_action_info(KlrTable* table, KlrID itemset_id, KlrID symbol_id) {
   return &table->entries[itemset_id][symbol_id].info;
 }
 
-static inline void kev_lr_conflict_add_item(KevLRConflict* conflict, KevItem* item) {
-  kev_lr_itemset_add_item(conflict->conflict_items, item);
+static inline void klr_conflict_add_item(KlrConflict* conflict, KlrItem* item) {
+  klr_itemset_add_item(conflict->conflict_items, item);
 }
 
-static inline bool kev_lr_conflict_SR(KevLRConflict* conflict) {
-  return conflict->entry->go_to != KEV_LR_GOTO_NONE;
+static inline bool klr_conflict_SR(KlrConflict* conflict) {
+  return conflict->entry->trans != KLR_GOTO_NONE;
 }
 
-static inline bool kev_lr_conflict_RR(KevLRConflict* conflict) {
+static inline bool klr_conflict_RR(KlrConflict* conflict) {
   return conflict->conflict_items->items->next != NULL;
 }
 
-static inline KevItemSet* kev_lr_conflict_get_conflict_items(KevLRConflict* conflict) {
+static inline KlrItemSet* klr_conflict_get_conflict_items(KlrConflict* conflict) {
   return conflict->conflict_items;
 }
 
-static inline KevItemSet* kev_lr_conflict_get_itemset(KevLRConflict* conflict) {
+static inline KlrItemSet* klr_conflict_get_itemset(KlrConflict* conflict) {
   return conflict->itemset;
 }
 
-static inline KevSymbol* kev_lr_conflict_get_symbol(KevLRConflict* conflict) {
+static inline KlrSymbol* klr_conflict_get_symbol(KlrConflict* conflict) {
   return conflict->symbol;
 }
 
-static inline size_t kev_lr_conflict_get_status(KevLRConflict* conflict) {
+static inline size_t klr_conflict_get_status(KlrConflict* conflict) {
   return conflict->entry->action;
 }
 
-static inline bool kev_lr_conflict_handle(KevLRConflictHandler* handler, KevLRConflict* conflict, KevLRCollection* collec) {
+static inline bool klr_conflict_handle(KlrConflictHandler* handler, KlrConflict* conflict, KlrCollection* collec) {
   return handler->callback(handler->object, conflict, collec);
 }
 
-static inline void kev_lr_conflict_set_reducing(KevLRConflict* conflict, KevLRCollection* collec, KevItem* item) {
-  KevLRTableEntry* entry = conflict->entry;
-  KevRule* rule = kev_lr_item_get_rule(item);
-  entry->action = kev_lr_collection_get_start_rule(collec) == rule ?
-                  KEV_LR_ACTION_ACC : KEV_LR_ACTION_RED;
+static inline void klr_conflict_set_reducing(KlrConflict* conflict, KlrCollection* collec, KlrItem* item) {
+  KlrTableEntry* entry = conflict->entry;
+  KlrRule* rule = klr_item_get_rule(item);
+  entry->action = klr_collection_get_start_rule(collec) == rule ?
+                  KLR_ACTION_ACC : KLR_ACTION_RED;
   entry->info.rule = rule;
 }
 
-static inline void kev_lr_conflict_set_shifting(KevLRConflict* conflict) {
-  KevLRTableEntry* entry = conflict->entry;
-  entry->action = KEV_LR_ACTION_SHI;
-  entry->info.itemset_id = entry->go_to;
+static inline void klr_conflict_set_shifting(KlrConflict* conflict) {
+  KlrTableEntry* entry = conflict->entry;
+  entry->action = KLR_ACTION_SHI;
+  entry->info.itemset_id = entry->trans;
 }
 
 #endif

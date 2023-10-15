@@ -3,8 +3,8 @@
 
 #include "kevlr/include/itemset_def.h"
 
-KevItemSet* kev_itemset_pool_allocate(void);
-void kev_itemset_pool_deallocate(KevItemSet* itemset);
-void kev_itemset_pool_free(void);
+KlrItemSet* klr_itemset_pool_allocate(void);
+void klr_itemset_pool_deallocate(KlrItemSet* itemset);
+void klr_itemset_pool_free(void);
 
 #endif

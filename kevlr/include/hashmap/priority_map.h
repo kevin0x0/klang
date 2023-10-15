@@ -6,41 +6,41 @@
 
 #define KEV_LR_PRIOPOS_POSTFIX  (-1)
 
-typedef int KevPrioPos;
+typedef int KlrPrioPos;
 
-typedef struct tagKevPrioMapNode {
-  KevSymbol* symbol;
+typedef struct tagKlrPrioMapNode {
+  KlrSymbol* symbol;
   size_t priority;
-  struct tagKevPrioMapNode* next;
-  KevPrioPos pos;
-} KevPrioMapNode;
+  struct tagKlrPrioMapNode* next;
+  KlrPrioPos pos;
+} KlrPrioMapNode;
 
-typedef struct tagKevPrioMapBucket {
-  KevPrioMapNode* map_node_list;
-  struct tagKevPrioMapBucket* next;
-} KevPrioMapBucket;
+typedef struct tagKlrPrioMapBucket {
+  KlrPrioMapNode* map_node_list;
+  struct tagKlrPrioMapBucket* next;
+} KlrPrioMapBucket;
 
-typedef struct tagKevPrioMap {
-  KevPrioMapBucket* array;
-  KevPrioMapBucket* bucket_head;
+typedef struct tagKlrPrioMap {
+  KlrPrioMapBucket* array;
+  KlrPrioMapBucket* bucket_head;
   size_t capacity;
   size_t size;
-} KevPrioMap;
+} KlrPrioMap;
 
-bool kev_priomap_init(KevPrioMap* map, size_t capacity);
-KevPrioMap* kev_priomap_create(size_t capacity);
-void kev_priomap_destroy(KevPrioMap* map);
-void kev_priomap_delete(KevPrioMap* map);
+bool klr_priomap_init(KlrPrioMap* map, size_t capacity);
+KlrPrioMap* klr_priomap_create(size_t capacity);
+void klr_priomap_destroy(KlrPrioMap* map);
+void klr_priomap_delete(KlrPrioMap* map);
 
-bool kev_priomap_insert(KevPrioMap* map, KevSymbol* symbol, KevPrioPos pos, size_t priority);
-KevPrioMapNode* kev_priomap_search(KevPrioMap* map, KevSymbol* symbol, KevPrioPos pos);
-bool kev_priomap_update(KevPrioMap* map, KevSymbol* symbol, KevPrioPos pos, size_t priority);
-void kev_priomap_make_empty(KevPrioMap* map);
+bool klr_priomap_insert(KlrPrioMap* map, KlrSymbol* symbol, KlrPrioPos pos, size_t priority);
+KlrPrioMapNode* klr_priomap_search(KlrPrioMap* map, KlrSymbol* symbol, KlrPrioPos pos);
+bool klr_priomap_update(KlrPrioMap* map, KlrSymbol* symbol, KlrPrioPos pos, size_t priority);
+void klr_priomap_make_empty(KlrPrioMap* map);
 
-static inline KevPrioMapNode* kev_priomap_iterate_begin(KevPrioMap* map);
-KevPrioMapNode* kev_priomap_iterate_next(KevPrioMap* map, KevPrioMapNode* current);
+static inline KlrPrioMapNode* klr_priomap_iterate_begin(KlrPrioMap* map);
+KlrPrioMapNode* klr_priomap_iterate_next(KlrPrioMap* map, KlrPrioMapNode* current);
 
-static inline KevPrioMapNode* kev_priomap_iterate_begin(KevPrioMap* map) {
+static inline KlrPrioMapNode* klr_priomap_iterate_begin(KlrPrioMap* map) {
     return map->bucket_head ? map->bucket_head->map_node_list : NULL;
 }
 
