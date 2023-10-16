@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   KlrSymbol* body22[] = { E, op18, E };
   KlrSymbol* body23[] = { E, op19, E };
   KlrSymbol* body24[] = { E, op20, E, op21 };
-  KlrSymbol* body25[] = { E, op22 };
+  KlrSymbol* body25[] = { E, op22, E };
   KlrSymbol* body26[] = { E, op23 };
   KlrSymbol* body27[] = { E, op24 };
   KlrSymbol* body28[] = { op23, E };
@@ -175,15 +175,15 @@ int main(int argc, char** argv) {
   rule32->id = 31;
 
   clock_t t = clock();
-  for (size_t i = 0; i < 1000; ++i) {
-    KlrCollection* collec = klr_collection_create_lalr(E, &end, 1);
-    //klr_print_collection(stdout, collec, true);
-    //KlrConflictHandler handler = { NULL, conflict_report };
+  for (size_t i = 0; i < 1; ++i) {
+    KlrCollection* collec = klr_collection_create_lr1(E, &end, 1);
+    klr_print_collection(stdout, collec, true);
+    KlrConflictHandler handler = { NULL, conflict_report };
 
-    //KlrTable* table = klr_table_create(collec, NULL);
-    //klr_print_trans_table(stdout, table);
-    //klr_print_action_table(stdout, table);
-    //klr_table_delete(table);
+    KlrTable* table = klr_table_create(collec, NULL);
+    klr_print_trans_table(stdout, table);
+    klr_print_action_table(stdout, table);
+    klr_table_delete(table);
     klr_collection_delete(collec);
   }
   printf("total time used:%fs\n", ((float)(clock() - t)) / (float)CLOCKS_PER_SEC);

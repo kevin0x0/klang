@@ -1,6 +1,7 @@
 #include "kevlr/include/itemset.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 static KBitSet* klr_get_kernel_item_follows(KlrItem* kitem, KBitSet** firsts, size_t epsilon);
 static KBitSet* klr_get_non_kernel_item_follows(KlrRule* rule, KBitSet* lookahead, KBitSet** firsts, size_t epsilon);
@@ -75,8 +76,7 @@ bool klr_closure_init(KlrItemSetClosure* closure, size_t symbol_no) {
     free(las);
     return false;
   }
-  for (size_t i = 0; i < symbol_no; ++i)
-    las[i] = NULL;
+  memset(las, 0, sizeof (KBitSet*) * symbol_no);
   closure->lookaheads = las;
   closure->symbols = symbols;
   return true;

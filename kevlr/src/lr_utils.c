@@ -10,8 +10,8 @@ static void klr_util_compute_first(KBitSet** firsts, KlrSymbol* symbol, size_t e
 
 static inline bool klr_util_symbol_is_in_array(KlrSymbol* symbol, KArray* array);
 
-bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KlrTransMap* transitions) {
-  klr_transmap_make_empty(transitions);
+bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KlrTransSet* transitions) {
+  klr_transset_make_empty(transitions);
   KArray* symbols = closure->symbols;
   KBitSet** las = closure->lookaheads;
   /* for kernel item */
@@ -26,22 +26,20 @@ bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closur
       klr_item_delete(item);
       return false;
     }
-    KlrTransMapNode* node = klr_transmap_search(transitions, symbol);
-    if (node) {
-      klr_itemset_add_item(node->value, item);
-    } else {
-      KlrItemSet* iset = klr_itemset_create();
-      if (!iset) {
+    KlrItemSet* target = klr_transset_search(transitions, symbol);
+    if (!target) {
+      if (!(target = klr_itemset_create())) {
         klr_item_delete(item);
         return false;
       }
-      klr_itemset_add_item(iset, item);
-      if (!klr_itemset_goto(itemset, symbol, iset) ||
-          !klr_transmap_insert(transitions, symbol, iset)) {
-        klr_itemset_delete(iset);
+      if (!klr_itemset_goto(itemset, symbol, target) ||
+          !klr_transset_insert(transitions, symbol, target)) {
+        klr_item_delete(item);
+        klr_itemset_delete(target);
         return false;
       }
     }
+    klr_itemset_add_item(target, item);
   }
 
   /* for non-kernel item */
@@ -59,22 +57,20 @@ bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closur
         klr_item_delete(item);
         return false;
       }
-      KlrTransMapNode* node = klr_transmap_search(transitions, symbol);
-      if (node) {
-        klr_itemset_add_item(node->value, item);
-      } else {
-        KlrItemSet* iset = klr_itemset_create();
-        if (!iset) {
+      KlrItemSet* target = klr_transset_search(transitions, symbol);
+      if (!target) {
+        if (!(target = klr_itemset_create())) {
           klr_item_delete(item);
           return false;
         }
-        klr_itemset_add_item(iset, item);
-        if (!klr_itemset_goto(itemset, symbol, iset) ||
-            !klr_transmap_insert(transitions, symbol, iset)) {
-          klr_itemset_delete(iset);
+        if (!klr_itemset_goto(itemset, symbol, target) ||
+            !klr_transset_insert(transitions, symbol, target)) {
+          klr_item_delete(item);
+          klr_itemset_delete(target);
           return false;
         }
       }
+      klr_itemset_add_item(target, item);
     }
   }
   return true;

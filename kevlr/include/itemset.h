@@ -2,9 +2,9 @@
 #define KEVCC_KEVLR_INCLUDE_ITEMSET_H
 
 #include "kevlr/include/itemset_def.h"
-#include "kevlr/include/object_pool/itemset_pool.h"
-#include "kevlr/include/object_pool/itemsettrans_pool.h"
-#include "kevlr/include/object_pool/item_pool.h"
+#include "kevlr/include/objpool/itemset_pool.h"
+#include "kevlr/include/objpool/itemsettrans_pool.h"
+#include "kevlr/include/objpool/item_pool.h"
 
 #define klr_item_less_than(item1, item2) ((size_t)(item1) < (size_t)(item2) || \
                                             ((size_t)(item1) == (size_t)(item2) && \

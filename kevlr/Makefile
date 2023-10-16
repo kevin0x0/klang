@@ -13,23 +13,23 @@ UTILS_INC_DIR = $(UTILS_DIR)include/
 GEN_INC_DIR = $(UTILS_INC_DIR)general/
 
 
-$(LIB_DIR)libkevlr.a : $(LIB_DIR)itemset.o $(LIB_DIR)lr_utils.o $(LIB_DIR)lalr.o $(LIB_DIR)lr1.o $(LIB_DIR)slr.o $(LIB_DIR)collection.o $(LIB_DIR)table.o $(LIB_DIR)confhandle.o $(LIB_DIR)print.o $(LIB_DIR)rule.o $(LIB_DIR)itemset_set.o $(LIB_DIR)item_pool.o $(LIB_DIR)itemsettrans_pool.o $(LIB_DIR)itemset_pool.o $(LIB_DIR)transmap_node_pool.o $(LIB_DIR)trans_map.o $(LIB_DIR)priority_map.o | create_lib_dir
+$(LIB_DIR)libkevlr.a : $(LIB_DIR)itemset.o $(LIB_DIR)lr_utils.o $(LIB_DIR)lalr.o $(LIB_DIR)lr1.o $(LIB_DIR)slr.o $(LIB_DIR)collection.o $(LIB_DIR)table.o $(LIB_DIR)confhandle.o $(LIB_DIR)print.o $(LIB_DIR)rule.o $(LIB_DIR)itemset_set.o $(LIB_DIR)item_pool.o $(LIB_DIR)itemsettrans_pool.o $(LIB_DIR)itemset_pool.o $(LIB_DIR)transset.o $(LIB_DIR)priority_map.o | create_lib_dir
 	cp $(UTILS_DIR)lib/libutils.a $(LIB_DIR)libkevlr.a
 	$(AR) $@ $^
 
 $(LIB_DIR)itemset.o : $(SRC_DIR)itemset.c $(INC_DIR)itemset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(UTILS_INC_DIR)set/bitset.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(LIB_DIR)lr_utils.o : $(SRC_DIR)lr_utils.c $(INC_DIR)lr_utils.h $(INC_DIR)collection.h $(INC_DIR)itemset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h  $(HMAP_INC_DIR)trans_map.h $(GEN_INC_DIR)global_def.h | create_lib_dir
+$(LIB_DIR)lr_utils.o : $(SRC_DIR)lr_utils.c $(INC_DIR)lr_utils.h $(INC_DIR)collection.h $(INC_DIR)itemset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h  $(SET_INC_DIR)transset.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(LIB_DIR)lalr.o : $(SRC_DIR)lalr.c $(INC_DIR)lr_utils.h $(INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(HMAP_INC_DIR)trans_map.h $(SET_INC_DIR)itemset_set.h $(GEN_INC_DIR)global_def.h | create_lib_dir
+$(LIB_DIR)lalr.o : $(SRC_DIR)lalr.c $(INC_DIR)lr_utils.h $(INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(SET_INC_DIR)transset.h $(SET_INC_DIR)itemset_set.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(LIB_DIR)lr1.o : $(SRC_DIR)lr1.c $(INC_DIR)lr_utils.h $(INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(HMAP_INC_DIR)trans_map.h $(SET_INC_DIR)itemset_set.h $(GEN_INC_DIR)global_def.h | create_lib_dir
+$(LIB_DIR)lr1.o : $(SRC_DIR)lr1.c $(INC_DIR)lr_utils.h $(INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(SET_INC_DIR)transset.h $(SET_INC_DIR)itemset_set.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(LIB_DIR)slr.o : $(SRC_DIR)slr.c $(INC_DIR)lr_utils.h $(INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(HMAP_INC_DIR)trans_map.h $(SET_INC_DIR)itemset_set.h $(GEN_INC_DIR)global_def.h | create_lib_dir
+$(LIB_DIR)slr.o : $(SRC_DIR)slr.c $(INC_DIR)lr_utils.h $(INC_DIR)collection.h $(UTILS_INC_DIR)set/bitset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(SET_INC_DIR)transset.h $(SET_INC_DIR)itemset_set.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(LIB_DIR)collection.o : $(SRC_DIR)collection.c $(INC_DIR)collection.h $(INC_DIR)itemset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(UTILS_INC_DIR)set/bitset.h | create_lib_dir
@@ -50,13 +50,10 @@ $(LIB_DIR)rule.o : $(SRC_DIR)rule.c $(INC_DIR)rule.h $(UTILS_INC_DIR)set/hashset
 $(LIB_DIR)itemset_set.o : $(SET_DIR)itemset_set.c $(SET_INC_DIR)itemset_set.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(LIB_DIR)trans_map.o : $(HMAP_DIR)trans_map.c $(HMAP_INC_DIR)trans_map.h $(INC_DIR)lr.h $(UTILS_INC_DIR)set/bitset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(GEN_INC_DIR)global_def.h | create_lib_dir
+$(LIB_DIR)transset.o : $(SET_DIR)transset.c $(SET_INC_DIR)transset.h $(INC_DIR)lr.h $(UTILS_INC_DIR)set/bitset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(LIB_DIR)priority_map.o : $(HMAP_DIR)priority_map.c $(HMAP_INC_DIR)priority_map.h $(INC_DIR)rule.h $(GEN_INC_DIR)global_def.h | create_lib_dir
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-$(LIB_DIR)transmap_node_pool.o : $(OBJP_DIR)transmap_node_pool.c $(OBJP_INC_DIR)transmap_node_pool.h $(HMAP_INC_DIR)trans_map.h $(INC_DIR)lr.h $(UTILS_INC_DIR)set/bitset.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(OBJP_INC_DIR)itemsettrans_pool.h $(OBJP_INC_DIR)itemset_pool.h $(OBJP_INC_DIR)item_pool.h $(GEN_INC_DIR)global_def.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(LIB_DIR)itemset_pool.o : $(OBJP_DIR)itemset_pool.c $(OBJP_INC_DIR)itemset_pool.h $(INC_DIR)itemset_def.h $(INC_DIR)rule.h $(UTILS_INC_DIR)set/bitset.h $(GEN_INC_DIR)global_def.h | create_lib_dir

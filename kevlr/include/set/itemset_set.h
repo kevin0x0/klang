@@ -1,8 +1,7 @@
-#ifndef KEVCC_KEVLR_INCLUDE_ITEMSET_SET_H
-#define KEVCC_KEVLR_INCLUDE_ITEMSET_SET_H
+#ifndef KEVCC_KEVLR_INCLUDE_SET_ITEMSET_SET_H
+#define KEVCC_KEVLR_INCLUDE_SET_ITEMSET_SET_H
 
 #include "kevlr/include/itemset_def.h"
-#include "utils/include/general/global_def.h"
 
 typedef struct tagKlrItemSetSetNode {
   KlrItemSet* element;

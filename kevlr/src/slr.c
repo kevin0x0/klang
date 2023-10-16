@@ -18,7 +18,7 @@ typedef struct tagKlrSLRCollection {
 
 static bool klr_slr_get_all_itemsets(KlrItemSet* start_iset, KlrSLRCollection* collec);
 static bool klr_slr_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_array, KlrItemSet* itemset);
-static bool klr_slr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, KBitSet** follows, size_t epsilon, KlrTransMap* transitions);
+static bool klr_slr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, KBitSet** follows, size_t epsilon, KlrTransSet* transitions);
 /* initialize lookahead for kernel items in itemset */
 
 static KlrSLRCollection* klr_slr_get_empty_collec(void);
@@ -105,11 +105,11 @@ static bool klr_slr_get_all_itemsets(KlrItemSet* start_iset, KlrSLRCollection* c
   KArray* itemset_array = karray_create();
   KlrItemSetSet* iset_set = klr_itemsetset_create(16, klr_slr_itemset_equal);
   KlrItemSetClosure closure;
-  KlrTransMap* goto_container = klr_transmap_create(16);
   size_t symbol_no = collec->symbol_no;
-  if (!itemset_array || !goto_container || !iset_set || !klr_closure_init(&closure, symbol_no)) {
+  KlrTransSet* transitions = klr_transset_create(symbol_no);
+  if (!itemset_array || !transitions || !iset_set || !klr_closure_init(&closure, symbol_no)) {
     karray_delete(itemset_array);
-    klr_transmap_delete(goto_container);
+    klr_transset_delete(transitions);
     klr_itemsetset_delete(iset_set);
     klr_closure_destroy(&closure);
     return false;
@@ -117,7 +117,7 @@ static bool klr_slr_get_all_itemsets(KlrItemSet* start_iset, KlrSLRCollection* c
   
   if (!karray_push_back(itemset_array, start_iset) || !klr_itemsetset_insert(iset_set, start_iset)) {
     klr_slr_destroy_itemset_array(itemset_array);
-    klr_transmap_delete(goto_container);
+    klr_transset_delete(transitions);
     klr_itemsetset_delete(iset_set);
     klr_closure_destroy(&closure);
     return false;
@@ -127,23 +127,23 @@ static bool klr_slr_get_all_itemsets(KlrItemSet* start_iset, KlrSLRCollection* c
   size_t terminal_no = collec->terminal_no;
   for (size_t i = 0; i < karray_size(itemset_array); ++i) {
     KlrItemSet* itemset = (KlrItemSet*)karray_access(itemset_array, i);
-    if (!klr_slr_compute_transition(itemset, &closure, firsts, collec->follows, terminal_no, goto_container)) {
+    if (!klr_slr_compute_transition(itemset, &closure, firsts, collec->follows, terminal_no, transitions)) {
       klr_slr_destroy_itemset_array(itemset_array);
-      klr_transmap_delete(goto_container);
+      klr_transset_delete(transitions);
       klr_itemsetset_delete(iset_set);
       klr_closure_destroy(&closure);
       return false;
     }
     if (!klr_slr_merge_transition(iset_set, itemset_array, itemset)) {
       klr_slr_destroy_itemset_array(itemset_array);
-      klr_transmap_delete(goto_container);
+      klr_transset_delete(transitions);
       klr_itemsetset_delete(iset_set);
       klr_closure_destroy(&closure);
       return false;
     }
     klr_closure_make_empty(&closure);
   }
-  klr_transmap_delete(goto_container);
+  klr_transset_delete(transitions);
   klr_itemsetset_delete(iset_set);
   klr_closure_destroy(&closure);
   collec->itemset_no = karray_size(itemset_array);
@@ -182,8 +182,8 @@ static bool klr_slr_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_ar
   return true;
 }
 
-bool klr_slr_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KlrTransMap* transitions, KBitSet** follows) {
-  klr_transmap_make_empty(transitions);
+bool klr_slr_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KlrTransSet* transitions, KBitSet** follows) {
+  klr_transset_make_empty(transitions);
   KArray* symbols = closure->symbols;
   /* for kernel item */
   KlrItem* kitem = itemset->items;
@@ -197,22 +197,20 @@ bool klr_slr_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure
       klr_item_delete(item);
       return false;
     }
-    KlrTransMapNode* node = klr_transmap_search(transitions, symbol);
-    if (node) {
-      klr_itemset_add_item(node->value, item);
-    } else {
-      KlrItemSet* iset = klr_itemset_create();
-      if (!iset) {
+    KlrItemSet* target = klr_transset_search(transitions, symbol);
+    if (!target) {
+      if (!(target = klr_itemset_create())) {
         klr_item_delete(item);
         return false;
       }
-      klr_itemset_add_item(iset, item);
-      if (!klr_itemset_goto(itemset, symbol, iset) ||
-          !klr_transmap_insert(transitions, symbol, iset)) {
-        klr_itemset_delete(iset);
+      if (!klr_itemset_goto(itemset, symbol, target) ||
+          !klr_transset_insert(transitions, symbol, target)) {
+        klr_item_delete(item);
+        klr_itemset_delete(target);
         return false;
       }
     }
+    klr_itemset_add_item(target, item);
   }
 
   /* for non-kernel item */
@@ -230,28 +228,26 @@ bool klr_slr_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure
         klr_item_delete(item);
         return false;
       }
-      KlrTransMapNode* node = klr_transmap_search(transitions, symbol);
-      if (node) {
-        klr_itemset_add_item(node->value, item);
-      } else {
-        KlrItemSet* iset = klr_itemset_create();
-        if (!iset) {
+      KlrItemSet* target = klr_transset_search(transitions, symbol);
+      if (!target) {
+        if (!(target = klr_itemset_create())) {
           klr_item_delete(item);
           return false;
         }
-        klr_itemset_add_item(iset, item);
-        if (!klr_itemset_goto(itemset, symbol, iset) ||
-            !klr_transmap_insert(transitions, symbol, iset)) {
-          klr_itemset_delete(iset);
+        if (!klr_itemset_goto(itemset, symbol, target) ||
+            !klr_transset_insert(transitions, symbol, target)) {
+          klr_item_delete(item);
+          klr_itemset_delete(target);
           return false;
         }
       }
+      klr_itemset_add_item(target, item);
     }
   }
   return true;
 }
 
-static bool klr_slr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, KBitSet** follows, size_t epsilon, KlrTransMap* transitions) {
+static bool klr_slr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, KBitSet** follows, size_t epsilon, KlrTransSet* transitions) {
   if (!klr_closure_make(closure, itemset, firsts, epsilon))
     return false;
   if (!klr_slr_generate_transition(itemset, closure, transitions, follows))

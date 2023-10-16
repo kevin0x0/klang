@@ -2,10 +2,10 @@
 #define KEVCC_KEVLR_INCLUDE_LR_UTILS_H
 
 #include "kevlr/include/collection.h"
-#include "kevlr/include/hashmap/trans_map.h"
+#include "kevlr/include/set/transset.h"
 
 static inline void klr_util_label_itemsets(KlrItemSet** itemsets, size_t itemset_no);
-bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KlrTransMap* transitions);
+bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KlrTransSet* transitions);
 void klr_util_destroy_terminal_set_array(KBitSet** array, size_t size);
 KlrSymbol* klr_util_augment(KlrSymbol* start);
 KBitSet* klr_util_symbols_to_bitset(KlrSymbol** symbols, size_t length);

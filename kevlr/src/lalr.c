@@ -28,7 +28,7 @@ static bool klr_lalr_do_lookahead_propagation(KlrLookaheadPropagation* propagati
 static bool klr_lalr_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_array, KlrLALRCollection* collec, KlrItemSet* itemset);
 static bool klr_lalr_merge_itemset(KlrItemSet* new_itemset, KlrItemSet* old_itemset, KlrItemSet* itemset, KlrLALRCollection* collec);
 static bool klr_lalr_add_new_itemset(KlrItemSet* new_itemset, KlrItemSetSet* iset_set, KlrItemSet* itemset, KlrLALRCollection* collec);
-static bool klr_lalr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransMap* transitions);
+static bool klr_lalr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransSet* transitions);
 /* initialize lookahead for kernel items in itemset */
 static inline bool klr_lalr_init_kitem_la(KlrItemSet* itemset, size_t epsilon);
 static inline void klr_lalr_final_kitem_la(KlrItemSet* itemset, size_t epsilon);
@@ -126,12 +126,12 @@ static bool klr_lalr_get_all_itemsets(KlrItemSet* start_iset, KlrLALRCollection*
   KArray* itemset_array = karray_create();
   KlrItemSetSet* iset_set = klr_itemsetset_create(16, klr_lalr_itemset_equal);
   KlrItemSetClosure closure;
-  KlrTransMap* transitions = klr_transmap_create(16);
   size_t symbol_no = collec->symbol_no;
+  KlrTransSet* transitions = klr_transset_create(symbol_no);
   if (!itemset_array || !transitions || !iset_set || !klr_closure_init(&closure, symbol_no) ||
       !karray_push_back(itemset_array, start_iset) || !klr_itemsetset_insert(iset_set, start_iset)) {
     klr_lalr_destroy_itemset_array(itemset_array);
-    klr_transmap_delete(transitions);
+    klr_transset_delete(transitions);
     klr_itemsetset_delete(iset_set);
     klr_closure_destroy(&closure);
     return false;
@@ -144,14 +144,14 @@ static bool klr_lalr_get_all_itemsets(KlrItemSet* start_iset, KlrLALRCollection*
     if (!klr_lalr_compute_transition(itemset, &closure, firsts, terminal_no, transitions) ||
         !klr_lalr_merge_transition(iset_set, itemset_array, collec, itemset)) {
       klr_lalr_destroy_itemset_array(itemset_array);
-      klr_transmap_delete(transitions);
+      klr_transset_delete(transitions);
       klr_itemsetset_delete(iset_set);
       klr_closure_destroy(&closure);
       return false;
     }
     klr_closure_make_empty(&closure);
   }
-  klr_transmap_delete(transitions);
+  klr_transset_delete(transitions);
   klr_itemsetset_delete(iset_set);
   klr_closure_destroy(&closure);
   collec->itemset_no = karray_size(itemset_array);
@@ -199,7 +199,7 @@ static bool klr_lalr_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_a
   return true;
 }
 
-static bool klr_lalr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransMap* transitions) {
+static bool klr_lalr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransSet* transitions) {
   if (!klr_lalr_init_kitem_la(itemset, epsilon))
     return false;
   if (!klr_closure_make(closure, itemset, firsts, epsilon))
