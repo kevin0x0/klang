@@ -2,7 +2,7 @@
 #define KEVCC_LEXGEN_INCLUDE_PARSER_LIST_PATTERN_LIST_H
 
 #include "kevfa/include/finite_automaton.h"
-#include "utils/include/array/addr_array.h"
+#include "utils/include/array/karray.h"
 
 typedef struct tagKevFAInfo {
   KevFA* fa;
@@ -12,7 +12,7 @@ typedef struct tagKevFAInfo {
 
 typedef struct tagKevPattern {
   char* name;
-  KevAddrArray* macros;
+  KArray* macros;
   size_t pattern_id;
   KevFAInfo* fa_info;
   struct tagKevPattern* next;
@@ -26,7 +26,7 @@ typedef struct tagKevPatternList {
 
 bool kev_patternlist_init(KevPatternList* list);
 void kev_patternlist_destroy(KevPatternList* list);
-bool kev_patternlist_insert(KevPatternList* list, char* pattern_name, KevAddrArray* macros, size_t pattern_id);
+bool kev_patternlist_insert(KevPatternList* list, char* pattern_name, KArray* macros, size_t pattern_id);
 bool kev_pattern_insert(KevPattern* pattern, char* name, KevFA* fa);
 
 static inline int kev_patternlist_pattern_no(KevPatternList* list);

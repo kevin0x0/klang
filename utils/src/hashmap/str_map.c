@@ -30,6 +30,8 @@ static void kev_strmap_rehash(KevStringMap* to, KevStringMap* from) {
       size_t index = hashval & mask;
       node->next = to_array[index].map_node_list;
       to_array[index].map_node_list = node;
+      /* this means 'node' is the first element that put in this bucket,
+       * so this bucket has not added to bucket list yet. */
       if (node->next == NULL) {
         to_array[index].next = bucket_head;
         bucket_head = &to_array[index];

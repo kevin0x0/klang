@@ -117,7 +117,7 @@ static bool ko_nextbuf(Ko* ko, size_t *p_written_size) {
 }
 
 bool ko_seek(Ko* ko, size_t offset) {
-  if (offset == ko->headpos + ko->writepos - ko->buf)
+  if (ko->writepos - offset == ko->buf - ko->headpos)
     return true;
 
   /* whenever you actually move the offset, flush the buffer */
@@ -196,7 +196,7 @@ typedef struct tagKioReaderFileInfo {
 
 static const void* ki_bufhandler_file(void* data, size_t next_readpos, size_t readpos, const void* buf, size_t* p_bufsize) {
   KioReaderFileInfo* fileinfo = (KioReaderFileInfo*)data;
-  if (ftell(fileinfo->file) != next_readpos &&
+  if ((size_t)ftell(fileinfo->file) != next_readpos &&
       fseek(fileinfo->file, next_readpos, SEEK_SET) != 0) {
     *p_bufsize = 0;
     return NULL;
@@ -223,7 +223,7 @@ typedef struct tagKioWriterFileInfo {
 static void* ko_bufhandler_file(void* data, size_t next_writepos, size_t writepos, void* buf, size_t* p_bufsize) {
   KioWriterFileInfo* fileinfo = (KioWriterFileInfo*)data;
   if (buf) { /* write */
-    if (ftell(fileinfo->file) != writepos &&
+    if ((size_t)ftell(fileinfo->file) != writepos &&
         fseek(fileinfo->file, writepos, SEEK_SET) != 0) {
       *p_bufsize = 0;
       return NULL;
@@ -248,7 +248,7 @@ static void* ko_bufhandler_file(void* data, size_t next_writepos, size_t writepo
 static void ko_closestream_file(void* data, size_t streampos, void* buf, size_t bufsize) {
   KioWriterFileInfo* fileinfo = (KioWriterFileInfo*)data;
   /* write data */
-  if (buf && (ftell(fileinfo->file) == streampos ||
+  if (buf && ((size_t)ftell(fileinfo->file) == streampos ||
         fseek(fileinfo->file, streampos, SEEK_SET) == 0)) {
     fwrite(buf, 1, bufsize, fileinfo->file);
   }

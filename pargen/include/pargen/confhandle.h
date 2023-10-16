@@ -5,7 +5,7 @@
 #include "kevlr/include/conflict_handle.h"
 #include "kevlr/include/hashmap/priority_map.h"
 
-KevLRConflictHandler* kev_pargen_confhandle_get_handler(KevPParserState* parser_state);
-void kev_pargen_confhandle_delete(KevLRConflictHandler* handler);
+KlrConflictHandler* kev_pargen_confhandle_get_handler(KevPParserState* parser_state);
+void kev_pargen_confhandle_delete(KlrConflictHandler* handler);
 
 #endif

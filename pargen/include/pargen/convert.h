@@ -29,7 +29,7 @@ typedef struct tagKevPTableInfo {
   size_t rule_no;
 } KevPTableInfo;
 
-void kev_pargen_convert(KevPTableInfo* table_info, KevLRTable* table, KevPParserState* parser_state);
+void kev_pargen_convert(KevPTableInfo* table_info, KlrTable* table, KevPParserState* parser_state);
 void kev_pargen_convert_destroy(KevPTableInfo* table_info);
 
 #endif

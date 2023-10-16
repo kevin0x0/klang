@@ -20,20 +20,20 @@ static inline size_t kev_get_array_size(KevFA** nfa_array);
 /* build mapping array between node number and address of node */
 static KevGraphNode** kev_build_node_mapping_array(KevFA** nfa_array, size_t state_number);
 /* compute epsilon-closure of single state set */
-static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping, KevBitSet* closures, KevIntQueue* queue);
+static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping, KBitSet* closures, KevIntQueue* queue);
 /* compute epsilon-closure for every single state set */
-static KevBitSet* kev_compute_closure_array(KevGraphNode** state_mapping, size_t state_number);
+static KBitSet* kev_compute_closure_array(KevGraphNode** state_mapping, size_t state_number);
 /* return a set containing start state of every nfa */
-static inline KevBitSet* kev_compute_start_state_set(KevFA** nfa_array, KevBitSet* closures, size_t state_number);
+static inline KBitSet* kev_compute_start_state_set(KevFA** nfa_array, KBitSet* closures, size_t state_number);
 /* return a set containing accept state of every nfa */
-static inline KevBitSet* kev_compute_accept_state_set(KevFA** nfa_array, size_t state_number);
+static inline KBitSet* kev_compute_accept_state_set(KevFA** nfa_array, size_t state_number);
 /* insert a state set to "sets", record the index of inserted set in "map" and 
  * insert a new node corresponding to the inserted set to "dfa_states". */
-static inline bool kev_state_sets_insert(KevStateSets* dfa_states_sets, KevBitSet* set);
+static inline bool kev_state_sets_insert(KevStateSets* dfa_states_sets, KBitSet* set);
 /* Compute all transitions starting from "closure", where transitions are
  * recorded in the form of a tuple <transition character,
  * set of transition states> in the "transition_map".*/
-static bool kev_compute_all_transition(KevIntSetMap* transition_map, KevBitSet* closure, KevBitSet* closures,
+static bool kev_compute_all_transition(KevIntSetMap* transition_map, KBitSet* closure, KBitSet* closures,
                                        KevGraphNode** state_mapping);
 /* Add the corresponding transitions to the DFA states based on
  * the tuples in the "transition_map". The tuples contain
@@ -46,17 +46,17 @@ static size_t* kev_get_state_ownership_array(KevFA** nfa_array, size_t state_num
 static KevFA* kev_construct_dfa(KevNodeArray* dfa_states, KevSetArray* state_sets, KevFA** nfa_array,
                                 size_t state_number, size_t** p_accept_state_mapping_array);
 /* Organize the DFA state nodes in the "dfa_states" into a structure of the struct KevDFA. */
-static KevFA* kev_classify_dfa_states(KevNodeArray* dfa_states, KevSetArray* state_sets, KevBitSet* accept_state_set,
+static KevFA* kev_classify_dfa_states(KevNodeArray* dfa_states, KevSetArray* state_sets, KBitSet* accept_state_set,
                                       size_t* state_ownership, size_t* p_dfa_accept_state_number);
 static size_t* kev_build_accept_state_mapping_array(KevFA* dfa, size_t dfa_accept_state_number);
-static bool kev_subset_construction_algorithm_init(KevFA** nfa_array, KevGraphNode** state_mapping_array, KevBitSet* closures,
+static bool kev_subset_construction_algorithm_init(KevFA** nfa_array, KevGraphNode** state_mapping_array, KBitSet* closures,
                                             KevStateSets* dfa_states_sets, KevIntSetMap* transition_map, size_t state_number);
-static bool kev_do_subset_construct_algorithm(KevGraphNode** state_mapping_array, KevBitSet* closures,
+static bool kev_do_subset_construct_algorithm(KevGraphNode** state_mapping_array, KBitSet* closures,
                                             KevStateSets* dfa_states_sets, KevIntSetMap* transition_map);
 static size_t kev_label_all_nfa_states(KevFA** nfa_array, size_t array_size);
 
 /* destroy all closures and free the array */
-static void kev_destroy_closure_array(KevBitSet* closure_array, size_t state_number);
+static void kev_destroy_closure_array(KBitSet* closure_array, size_t state_number);
 static void kev_destroy_transition_map(KevIntSetMap* map);
 /* if the delete_node is set to true, then the dfa nodes in "nodes" would be deleted. */
 static inline void kev_destroy_state_sets(KevStateSets* dfa_states_sets, bool delete_node);
@@ -69,7 +69,7 @@ KevFA* kev_nfa_to_dfa(KevFA** nfa_array, size_t** p_accept_state_mapping_array) 
   /* Indeces all states */
   KevGraphNode** state_mapping_array = kev_build_node_mapping_array(nfa_array, state_number);
   /* Compute closure for every single state set */
-  KevBitSet* closures = kev_compute_closure_array(state_mapping_array, state_number);
+  KBitSet* closures = kev_compute_closure_array(state_mapping_array, state_number);
   if (!state_mapping_array || !closures) {
     free(state_mapping_array);
     kev_destroy_closure_array(closures, state_number);
@@ -122,22 +122,22 @@ static KevGraphNode** kev_build_node_mapping_array(KevFA** nfa_array, size_t sta
   return mapping_array;
 }
 
-static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping, KevBitSet* closures, KevIntQueue* queue) {
-  KevBitSet* closure = &closures[state];
-  if (!kev_bitset_set(closure, state) || !kev_intqueue_insert(queue, state))
+static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping, KBitSet* closures, KevIntQueue* queue) {
+  KBitSet* closure = &closures[state];
+  if (!kbitset_set(closure, state) || !kev_intqueue_insert(queue, state))
     return false;
   
   while (!kev_intqueue_empty(queue)) {
     size_t state = kev_intqueue_pop(queue);
     for (KevGraphEdge* epsilons = kev_graphnode_get_epsilon(state_mapping[state]); epsilons; epsilons = epsilons->next) {
-      if (!kev_bitset_has_element(closure, epsilons->node->id)) {
+      if (!kbitset_has_element(closure, epsilons->node->id)) {
         KevGraphNodeId id = epsilons->node->id;
         if (epsilons->node->id < state) {
-          if (!kev_bitset_union(closure, closures + id))
+          if (!kbitset_union(closure, closures + id))
             return false;
           continue;
         }
-        if (!kev_bitset_set(closure, id) ||
+        if (!kbitset_set(closure, id) ||
             !kev_intqueue_insert(queue, id)) {
           return false;
         }
@@ -147,8 +147,8 @@ static bool kev_compute_state_closure(size_t state, KevGraphNode** state_mapping
   return true;
 }
 
-static KevBitSet* kev_compute_closure_array(KevGraphNode** state_mapping, size_t state_number) {
-  KevBitSet* state_closure = (KevBitSet*)malloc(sizeof (KevBitSet) * state_number);
+static KBitSet* kev_compute_closure_array(KevGraphNode** state_mapping, size_t state_number) {
+  KBitSet* state_closure = (KBitSet*)malloc(sizeof (KBitSet) * state_number);
   if (!state_closure) return NULL;
   KevIntQueue queue;
   if (!kev_intqueue_init(&queue)) {
@@ -157,10 +157,10 @@ static KevBitSet* kev_compute_closure_array(KevGraphNode** state_mapping, size_t
   }
 
   for (size_t i = 0; i < state_number; ++i) {
-    if (!kev_bitset_init(state_closure + i, state_number) ||
+    if (!kbitset_init(state_closure + i, state_number) ||
         !kev_compute_state_closure(i, state_mapping, state_closure, &queue)) {
       for (size_t j = 0; j < i; ++j)
-        kev_bitset_destroy(state_closure + j);
+        kbitset_destroy(state_closure + j);
       free(state_closure);
       kev_intqueue_destroy(&queue);
       return NULL;
@@ -170,34 +170,34 @@ static KevBitSet* kev_compute_closure_array(KevGraphNode** state_mapping, size_t
   return state_closure;
 }
 
-static void kev_destroy_closure_array(KevBitSet* closure_array, size_t state_number) {
+static void kev_destroy_closure_array(KBitSet* closure_array, size_t state_number) {
   if (!closure_array) return;
   for (size_t i = 0; i < state_number; ++i)
-    kev_bitset_destroy(closure_array + i);
+    kbitset_destroy(closure_array + i);
   free(closure_array);
 }
 
-static inline KevBitSet* kev_compute_start_state_set(KevFA** nfa_array, KevBitSet* closures, size_t state_number) {
-  KevBitSet* start_state_set = kev_bitset_create(state_number);
+static inline KBitSet* kev_compute_start_state_set(KevFA** nfa_array, KBitSet* closures, size_t state_number) {
+  KBitSet* start_state_set = kbitset_create(state_number);
   if (start_state_set) {
     KevFA** pnfa = nfa_array - 1;
     while (*++pnfa)
-      kev_bitset_union(start_state_set, &closures[kev_fa_get_start_state(*pnfa)->id]);
+      kbitset_union(start_state_set, &closures[kev_fa_get_start_state(*pnfa)->id]);
   }
   return start_state_set;
 }
 
-static inline KevBitSet* kev_compute_accept_state_set(KevFA** nfa_array, size_t state_number) {
-  KevBitSet* accept_state_set = kev_bitset_create(state_number);
+static inline KBitSet* kev_compute_accept_state_set(KevFA** nfa_array, size_t state_number) {
+  KBitSet* accept_state_set = kbitset_create(state_number);
   if (accept_state_set) {
     KevFA** pnfa = nfa_array - 1;
     while (*++pnfa)
-      kev_bitset_set(accept_state_set, kev_fa_get_accept_state(*pnfa)->id);
+      kbitset_set(accept_state_set, kev_fa_get_accept_state(*pnfa)->id);
   }
   return accept_state_set;
 }
 
-static inline bool kev_state_sets_insert(KevStateSets* dfa_states_sets, KevBitSet* set) {
+static inline bool kev_state_sets_insert(KevStateSets* dfa_states_sets, KBitSet* set) {
   KevGraphNode* new_node = kev_graphnode_create(0);
   if (!new_node || !kev_nodearray_push_back(&dfa_states_sets->dfa_states, new_node)) {
     kev_graphnode_delete(new_node);
@@ -210,7 +210,7 @@ static inline bool kev_state_sets_insert(KevStateSets* dfa_states_sets, KevBitSe
 static inline void kev_destroy_state_sets(KevStateSets* dfa_states_sets, bool delete_node) {
   size_t size = kev_setarray_size(&dfa_states_sets->state_sets);
   for (size_t i = 0; i < size; ++i)
-    kev_bitset_delete(kev_setarray_visit(&dfa_states_sets->state_sets, i));
+    kbitset_delete(kev_setarray_visit(&dfa_states_sets->state_sets, i));
   kev_setarray_destroy(&dfa_states_sets->state_sets);
   kev_setintmap_destroy(&dfa_states_sets->set_index_map);
   if (delete_node) {
@@ -221,28 +221,30 @@ static inline void kev_destroy_state_sets(KevStateSets* dfa_states_sets, bool de
   kev_nodearray_destroy(&dfa_states_sets->dfa_states);
 }
 
-static bool kev_compute_all_transition(KevIntSetMap* transition_map, KevBitSet* closure,
-                                       KevBitSet* closures, KevGraphNode** state_mapping) {
+static bool kev_compute_all_transition(KevIntSetMap* transition_map, KBitSet* closure,
+                                       KBitSet* closures, KevGraphNode** state_mapping) {
   /* It is guaranteed that the closure is not empty. */
   size_t state = 0;
-  size_t next_state = kev_bitset_iterate_begin(closure);
+  size_t next_state = kbitset_iter_begin(closure);
   do {
     state = next_state;
     KevGraphEdge* edge = kev_graphnode_get_edges(state_mapping[state]);
     for (; edge; edge = edge->next) {
       KevIntSetMapNode* map_node = kev_intsetmap_search(transition_map, edge->attr);
-      KevBitSet* set = NULL;
+      KBitSet* set = NULL;
       if (map_node == NULL) {
-        if (!(set = kev_bitset_create_copy(&closures[edge->node->id])) ||
+        if (!(set = kbitset_create_copy(&closures[edge->node->id])) ||
             !kev_intsetmap_insert(transition_map, edge->attr, set)) {
-          kev_bitset_delete(set);
+          kbitset_delete(set);
           return false;
         }
       } else {
-        kev_bitset_union(map_node->value, &closures[edge->node->id]);
+        /* This never fails. Because the capacity of every bitset is initialized
+         * to state number, so overflow will never happen. */
+        kbitset_union(map_node->value, &closures[edge->node->id]);
       }
     }
-    next_state = kev_bitset_iterate_next(closure, state);
+    next_state = kbitset_iter_next(closure, state);
   } while (next_state != state);
   return true;
 }
@@ -251,7 +253,7 @@ static void kev_destroy_transition_map(KevIntSetMap* map) {
   for (KevIntSetMapNode* itr = kev_intsetmap_iterate_begin(map);
       itr != NULL;
       itr = kev_intsetmap_iterate_next(map, itr)) {
-    kev_bitset_delete(itr->value);
+    kbitset_delete(itr->value);
   }
   kev_intsetmap_destroy(map);
 }
@@ -271,7 +273,7 @@ static bool kev_update_transition_and_state_set(KevIntSetMap* transition_map, Ke
         return false;
       }
     } else {
-      kev_bitset_delete(itr->value);
+      kbitset_delete(itr->value);
       itr->value = NULL;
       if (!kev_graphnode_connect(state, kev_nodearray_visit(&dfa_states_sets->dfa_states, target_node->value), itr->key)) {
         return false;
@@ -304,7 +306,7 @@ static KevFA* kev_construct_dfa(KevNodeArray* dfa_states, KevSetArray* state_set
       return NULL;
     }
   }
-  KevBitSet* accept_state_set = kev_compute_accept_state_set(nfa_array, state_number);
+  KBitSet* accept_state_set = kev_compute_accept_state_set(nfa_array, state_number);
   if (!accept_state_set) {
     free(ownership);
     return NULL;
@@ -312,11 +314,11 @@ static KevFA* kev_construct_dfa(KevNodeArray* dfa_states, KevSetArray* state_set
   KevFA* dfa = kev_classify_dfa_states(dfa_states, state_sets, accept_state_set, ownership, &dfa_accept_state_number);
   if (!dfa) {
     free(ownership);
-    kev_bitset_delete(accept_state_set);
+    kbitset_delete(accept_state_set);
     return NULL;
   }
   free(ownership);
-  kev_bitset_delete(accept_state_set);
+  kbitset_delete(accept_state_set);
   if (p_accept_state_mapping_array) {
     *p_accept_state_mapping_array = kev_build_accept_state_mapping_array(dfa, dfa_accept_state_number);
     if (!*p_accept_state_mapping_array) {
@@ -327,7 +329,7 @@ static KevFA* kev_construct_dfa(KevNodeArray* dfa_states, KevSetArray* state_set
   return dfa;
 }
 
-bool kev_subset_construction_algorithm_init(KevFA** nfa_array, KevGraphNode** state_mapping_array, KevBitSet* closures,
+bool kev_subset_construction_algorithm_init(KevFA** nfa_array, KevGraphNode** state_mapping_array, KBitSet* closures,
                                             KevStateSets* dfa_states_sets, KevIntSetMap* transition_map, size_t state_number) {
   bool all_done = true;
   all_done = kev_setarray_init(&dfa_states_sets->state_sets) && all_done;
@@ -345,13 +347,13 @@ bool kev_subset_construction_algorithm_init(KevFA** nfa_array, KevGraphNode** st
   }
 
   /* get and insert the start states set */
-  KevBitSet* start_state_set = kev_compute_start_state_set(nfa_array, closures, state_number);
+  KBitSet* start_state_set = kev_compute_start_state_set(nfa_array, closures, state_number);
   if (!start_state_set ||
       !kev_state_sets_insert(dfa_states_sets, start_state_set)) {
     free(state_mapping_array);
     kev_destroy_closure_array(closures, state_number);
     kev_destroy_state_sets(dfa_states_sets, true);
-    kev_bitset_delete(start_state_set);
+    kbitset_delete(start_state_set);
     kev_intsetmap_destroy(transition_map);
     return false;
   }
@@ -359,10 +361,10 @@ bool kev_subset_construction_algorithm_init(KevFA** nfa_array, KevGraphNode** st
   return true;
 }
 
-bool kev_do_subset_construct_algorithm(KevGraphNode** state_mapping_array, KevBitSet* closures,
+bool kev_do_subset_construct_algorithm(KevGraphNode** state_mapping_array, KBitSet* closures,
                                             KevStateSets* dfa_states_sets, KevIntSetMap* transition_map) {
   for (size_t i = 0; i < kev_setarray_size(&dfa_states_sets->state_sets); ++i) {
-    KevBitSet* state_set = kev_setarray_visit(&dfa_states_sets->state_sets, i);
+    KBitSet* state_set = kev_setarray_visit(&dfa_states_sets->state_sets, i);
     kev_intsetmap_make_empty(transition_map);
     if (!kev_compute_all_transition(transition_map, state_set, closures, state_mapping_array) ||
         !kev_update_transition_and_state_set(transition_map, dfa_states_sets, kev_nodearray_visit(&dfa_states_sets->dfa_states, i))) {
@@ -392,7 +394,7 @@ static size_t kev_label_all_nfa_states(KevFA** nfa_array, size_t array_size) {
   return start_label;
 }
 
-static KevFA* kev_classify_dfa_states(KevNodeArray* dfa_states, KevSetArray* state_sets, KevBitSet* accept_state_set,
+static KevFA* kev_classify_dfa_states(KevNodeArray* dfa_states, KevSetArray* state_sets, KBitSet* accept_state_set,
                                       size_t* state_ownership, size_t* p_dfa_accept_state_number) {
   KevGraphNode* accept_states = NULL;
   KevGraphNode* normal_state_tail = NULL;
@@ -401,10 +403,10 @@ static KevFA* kev_classify_dfa_states(KevNodeArray* dfa_states, KevSetArray* sta
   size_t size = kev_setarray_size(state_sets);
   for (size_t i = 0; i < size; ++i) {
     KevGraphNode* dfa_node = kev_nodearray_visit(dfa_states, i);
-    KevBitSet* state_set = kev_setarray_visit(state_sets, i);
-    kev_bitset_intersection(state_set, accept_state_set);
-    if (!kev_bitset_empty(state_set)) {
-      size_t min_accept_state = kev_bitset_iterate_begin(state_set);
+    KBitSet* state_set = kev_setarray_visit(state_sets, i);
+    kbitset_intersection(state_set, accept_state_set);
+    if (!kbitset_empty(state_set)) {
+      size_t min_accept_state = kbitset_iter_begin(state_set);
       if (state_ownership)
         dfa_node->id = state_ownership[min_accept_state];
       dfa_node->next = accept_states;

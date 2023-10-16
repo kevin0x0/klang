@@ -47,12 +47,12 @@ void kev_pargen_output_help(void) {
 
 void kev_pargen_output_lrinfo(const char* collecinfo_path, const char* actioninfo_path,
                               const char* gotoinfo_path, const char* symbolinfo_path,
-                              KevLRCollection* collec, KevLRTable* table) {
+                              KlrCollection* collec, KlrTable* table) {
   if (collecinfo_path) {
     FILE* out = fopen(collecinfo_path, "w");
     if (!out)
       kev_throw_error("output:", "can not open file: ", collecinfo_path);
-    if (!kev_lr_print_collection(out, collec, true))
+    if (!klr_print_collection(out, collec, true))
       kev_throw_error("output:", "out of memory", ", failed to print collection");
     fclose(out);
   }
@@ -60,7 +60,7 @@ void kev_pargen_output_lrinfo(const char* collecinfo_path, const char* actioninf
     FILE* out = fopen(symbolinfo_path, "w");
     if (!out)
       kev_throw_error("output:", "can not open file: ", symbolinfo_path);
-    if (!kev_lr_print_symbols(out, collec))
+    if (!klr_print_symbols(out, collec))
       kev_throw_error("output:", "out of memory", ", failed to print symbol information");
     fclose(out);
   }
@@ -68,14 +68,14 @@ void kev_pargen_output_lrinfo(const char* collecinfo_path, const char* actioninf
     FILE* out = fopen(actioninfo_path, "w");
     if (!out)
       kev_throw_error("output:", "can not open file: ", actioninfo_path);
-    kev_lr_print_action_table(out, table);
+    klr_print_action_table(out, table);
     fclose(out);
   }
   if (gotoinfo_path) {
     FILE* out = fopen(gotoinfo_path, "w");
     if (!out)
       kev_throw_error("output:", "can not open file: ", gotoinfo_path);
-    kev_lr_print_goto_table(out, table);
+    klr_print_trans_table(out, table);
     fclose(out);
   }
 

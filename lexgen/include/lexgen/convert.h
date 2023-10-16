@@ -14,7 +14,7 @@ typedef struct tagLTableInfos {
   size_t dfa_state_no;
   size_t dfa_start;
   char** callbacks;
-  KevAddrArray** macros;  /* store macro in order of patternlist */
+  KArray** macros;  /* store macro in order of patternlist */
   int* macro_ids;
   char** infos;
   int* pattern_mapping;   /* DFA state to pattern_id */

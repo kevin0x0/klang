@@ -10,7 +10,7 @@ static int kev_lexgenparser_next_nonblank(KevLLexer* lex, KevLToken* token);
 static int kev_lexgenparser_match(KevLLexer* lex, KevLToken* token, int kind);
 static int kev_lexgenparser_guarantee(KevLLexer* lex, KevLToken* token, int kind);
 static int kev_lexgenparser_proc_func_name(KevLLexer* lex, KevLToken* token, char** p_name);
-static int kev_lexgenparser_set_pattern_attribute(KevLLexer* lex, KevLToken* token, KevAddrArray* macros, size_t* p_pattern_id);
+static int kev_lexgenparser_set_pattern_attribute(KevLLexer* lex, KevLToken* token, KArray* macros, size_t* p_pattern_id);
 static int kev_lexgenparser_set_token_name(char** p_name, KevLLexer* lex, KevLToken* token);
 static char* kev_get_str(KevLToken* token);
 
@@ -78,12 +78,12 @@ int kev_lexgenparser_statement_deftoken(KevLLexer* lex, KevLToken* token, KevLPa
   err_count += kev_lexgenparser_next_nonblank(lex, token);
   char* name = NULL;
   err_count += kev_lexgenparser_set_token_name(&name, lex, token);
-  KevAddrArray* macros = kev_addrarray_create();
+  KArray* macros = karray_create();
   if (!macros) {
     kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
     err_count++;
     free(name);
-    kev_addrarray_delete(macros);
+    karray_delete(macros);
   }
   size_t pattern_id = parser_state->list.pattern_no;
   err_count += kev_lexgenparser_set_pattern_attribute(lex, token, macros, &pattern_id);
@@ -281,14 +281,14 @@ static int kev_lexgenparser_proc_func_name(KevLLexer* lex, KevLToken* token, cha
   return err_count;
 }
 
-static int kev_lexgenparser_set_pattern_attribute(KevLLexer* lex, KevLToken* token, KevAddrArray* macros, size_t* p_pattern_id) {
+static int kev_lexgenparser_set_pattern_attribute(KevLLexer* lex, KevLToken* token, KArray* macros, size_t* p_pattern_id) {
   int err_count = 0;
   if (token->kind == KEV_LTK_OPEN_PAREN) {
     while (true) {
       err_count += kev_lexgenparser_next_nonblank(lex, token);
       if (token->kind == KEV_LTK_ID) {
         char* name = kev_str_copy(token->attr);
-        if (!name || !kev_addrarray_push_back(macros, name)) {
+        if (!name || !karray_push_back(macros, name)) {
           kev_parser_error_report(stderr, lex->infile, "out of memory", token->begin);
           free(name);
           err_count++;

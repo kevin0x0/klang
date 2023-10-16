@@ -2,6 +2,7 @@
 #include "lexgen/include/lexgen/error.h"
 
 #include <stdlib.h>
+#include <time.h>
 
 static void kev_lexgen_convert_pattern_mapping(KevLTableInfos* table_info, KevLParserState* parser_state,
                                                size_t* acc_mapping);
@@ -123,7 +124,7 @@ static void kev_lexgen_convert_pattern_mapping(KevLTableInfos* table_info, KevLP
 
 static void kev_lexgen_convert_macro_array(KevLTableInfos* table_info, KevLParserState* parser_state) {
   KevPattern* pattern = parser_state->list.head->next;
-  KevAddrArray** macros = (KevAddrArray**)malloc(sizeof (KevAddrArray*) * table_info->pattern_no);
+  KArray** macros = (KArray**)malloc(sizeof (KArray*) * table_info->pattern_no);
   int* macro_ids = (int*)malloc(sizeof (int) * table_info->pattern_no);
   if ( !macros || !macro_ids)
     kev_throw_error("convert:", "out of memory", NULL);
@@ -166,11 +167,14 @@ static void kev_lexgen_convert_generate(KevLTableInfos* patterns_info, KevLParse
   }
   nfa_array[i] = NULL;  /* nfa_array must terminate with NULL */
 
+  /* time test */
+  clock_t t = clock();
   KevFA* dfa = kev_nfa_to_dfa(nfa_array, p_acc_mapping);
   free(nfa_array);
   if (!dfa)
     kev_throw_error("convert:", "failed to convert dfa", NULL);
   *p_min_dfa = kev_dfa_minimization(dfa, *p_acc_mapping);
+  printf("%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
   kev_fa_delete(dfa);
   if (!*p_min_dfa)
     kev_throw_error("convert:", "failed to minimize dfa", NULL);

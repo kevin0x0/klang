@@ -202,11 +202,13 @@ static bool kev_hopcroft_do_partition_for_single_target(KevSetCrossList* setlist
       kev_partition_set_delete(intersection);
       continue;
     }
+    /*add the new set to set list */
     KevSetCrossListNode* new_node = kev_setcrosslist_insert(itr, intersection);
     if (!new_node) {
       kev_partition_set_delete(intersection);
       return false;
     }
+
     if (kev_setcrosslist_node_in_worklist(itr) || int_size < dif_size) {
       kev_setcrosslist_add_to_worklist(setlist, new_node);
     } else {

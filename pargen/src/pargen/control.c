@@ -9,8 +9,8 @@
 
 #include <string.h>
 
-static KevLRCollection* kev_pargen_control_generate_collec(KevPParserState* parser_state);
-static KevLRTable* kev_pargen_control_generate_table(KevPParserState* parser_state, KevLRCollection* collec);
+static KlrCollection* kev_pargen_control_generate_collec(KevPParserState* parser_state);
+static KlrTable* kev_pargen_control_generate_table(KevPParserState* parser_state, KlrCollection* collec);
 static KevFuncMap* kev_pargen_control_get_funcmap(KevPTableInfo* table_info, KevPOutputFuncGroup* func_group);
 static void kev_pargen_control_parse(KevPParserState* parser_state, const char* filepath);
 
@@ -46,9 +46,9 @@ void kev_pargen_control(KevPOptions* options) {
   }
 
   /* construct lr collection */
-  KevLRCollection* collec = kev_pargen_control_generate_collec(&parser_state);
+  KlrCollection* collec = kev_pargen_control_generate_collec(&parser_state);
   /* generate lr table */
-  KevLRTable* table = kev_pargen_control_generate_table(&parser_state, collec);
+  KlrTable* table = kev_pargen_control_generate_table(&parser_state, collec);
   /* print lr information if specified */
   kev_pargen_output_lrinfo(options->strs[KEV_PARGEN_LRINFO_COLLEC_PATH],
                            options->strs[KEV_PARGEN_LRINFO_ACTION_PATH],
@@ -56,14 +56,14 @@ void kev_pargen_control(KevPOptions* options) {
                            options->strs[KEV_PARGEN_LRINFO_SYMBOL_PATH],
                            collec, table);
   /* abort if exist conflict */
-  if (kev_lr_table_get_conflict(table))
+  if (klr_table_get_conflict(table))
     kev_throw_error("control:", "there are unresolved conflicts, ", "failed to generate table");
   /* convert lr information to a simpler representation */
   KevPTableInfo table_info;
   kev_pargen_convert(&table_info, table, &parser_state);
   /* release resources that are no longer needed */
-  kev_lr_table_delete(table);
-  kev_lr_collection_delete(collec);
+  klr_table_delete(table);
+  klr_collection_delete(collec);
   /* set variables corresponding to fields of 'table_info' */
   kev_pargen_control_set_vars_post(&parser_state, &table_info, env_id);
 
@@ -126,29 +126,29 @@ static KevFuncMap* kev_pargen_control_get_funcmap(KevPTableInfo* table_info, Kev
   return funcs;
 }
 
-static KevLRCollection* kev_pargen_control_generate_collec(KevPParserState* parser_state) {
-  KevLRCollection* collec = NULL;
+static KlrCollection* kev_pargen_control_generate_collec(KevPParserState* parser_state) {
+  KlrCollection* collec = NULL;
 
   if (!parser_state->start) {
     kev_throw_error("control:", "start symbol should be specified", NULL);
   }
 
-  if (kev_addrarray_size(parser_state->end_symbols) == 0) {
+  if (karray_size(parser_state->end_symbols) == 0) {
     kev_throw_error("control:", "end symbol should be specified", NULL);
   }
 
   if (strcmp(parser_state->algorithm, "lalr") == 0) {
-    collec = kev_lr_collection_create_lalr(parser_state->start,
-                                           (KevSymbol**)kev_addrarray_raw_array(parser_state->end_symbols),
-                                           kev_addrarray_size(parser_state->end_symbols));
+    collec = klr_collection_create_lalr(parser_state->start,
+                                           (KlrSymbol**)karray_raw(parser_state->end_symbols),
+                                           karray_size(parser_state->end_symbols));
   } else if (strcmp(parser_state->algorithm, "lr1") == 0) {
-    collec = kev_lr_collection_create_lr1(parser_state->start,
-                                           (KevSymbol**)kev_addrarray_raw_array(parser_state->end_symbols),
-                                           kev_addrarray_size(parser_state->end_symbols));
+    collec = klr_collection_create_lr1(parser_state->start,
+                                           (KlrSymbol**)karray_raw(parser_state->end_symbols),
+                                           karray_size(parser_state->end_symbols));
   } else if (strcmp(parser_state->algorithm, "slr") == 0) {
-    collec = kev_lr_collection_create_slr(parser_state->start,
-                                           (KevSymbol**)kev_addrarray_raw_array(parser_state->end_symbols),
-                                           kev_addrarray_size(parser_state->end_symbols));
+    collec = klr_collection_create_slr(parser_state->start,
+                                           (KlrSymbol**)karray_raw(parser_state->end_symbols),
+                                           karray_size(parser_state->end_symbols));
   } else {
     kev_throw_error("control:", "unsupported algorithm: ", parser_state->algorithm);
   }
@@ -158,9 +158,9 @@ static KevLRCollection* kev_pargen_control_generate_collec(KevPParserState* pars
   return collec;
 }
 
-static KevLRTable* kev_pargen_control_generate_table(KevPParserState* parser_state, KevLRCollection* collec) {
-  KevLRConflictHandler* handler = kev_pargen_confhandle_get_handler(parser_state);
-  KevLRTable* table = kev_lr_table_create(collec, handler);
+static KlrTable* kev_pargen_control_generate_table(KevPParserState* parser_state, KlrCollection* collec) {
+  KlrConflictHandler* handler = kev_pargen_confhandle_get_handler(parser_state);
+  KlrTable* table = klr_table_create(collec, handler);
   kev_pargen_confhandle_delete(handler);
   if (!table) {
     kev_throw_error("control:", "failed to generate table", NULL);
@@ -169,17 +169,17 @@ static KevLRTable* kev_pargen_control_generate_table(KevPParserState* parser_sta
 }
 
 static void kev_pargen_control_set_vars_post(KevPParserState* parser_state, KevPTableInfo* table_info, size_t env_id) {
-  KevSymTable* env = kev_addrarray_visit(parser_state->symtables, env_id);
+  KevSymTable* env = karray_access(parser_state->symtables, env_id);
   char* endptr = NULL;
   KevSymTableNode* node = kev_symtable_search(env, "lr");
   if (!node) {
     kev_throw_error("control:", "can not find variable ", "'lr'");
   }
   size_t lr_id = (size_t)strtoull(node->value, &endptr, 10);
-  if (*endptr != '\0' || lr_id >= kev_addrarray_size(parser_state->symtables)) {
+  if (*endptr != '\0' || lr_id >= karray_size(parser_state->symtables)) {
     kev_throw_error("control:", "variable 'lr' was changed", NULL);
   }
-  KevSymTable* lr = kev_addrarray_visit(parser_state->symtables, lr_id);
+  KevSymTable* lr = karray_access(parser_state->symtables, lr_id);
   char buf[100];
   sprintf(buf, "%d", (int)table_info->state_no);
   if (!kev_symtable_update(lr, "state-number", buf))
@@ -201,17 +201,17 @@ static void kev_pargen_control_set_vars_post(KevPParserState* parser_state, KevP
 static size_t kev_pargen_control_set_vars_pre(KevPParserState* parser_state, KevPOptions* options) {
   char buf[100];
   /* create symbol table env, opt and lr */
-  size_t env_id = kev_addrarray_size(parser_state->symtables);
+  size_t env_id = karray_size(parser_state->symtables);
   KevSymTable* env = kev_symtable_create(env_id, env_id);
-  if(!env || !kev_addrarray_push_back(parser_state->symtables, env))
+  if(!env || !karray_push_back(parser_state->symtables, env))
     kev_throw_error("control:", "out of memory", NULL);
-  KevSymTable* opt = kev_symtable_create(kev_addrarray_size(parser_state->symtables), env_id);
+  KevSymTable* opt = kev_symtable_create(karray_size(parser_state->symtables), env_id);
   size_t opt_id = kev_symtable_get_self_id(opt);
-  if(!opt || !kev_addrarray_push_back(parser_state->symtables, opt))
+  if(!opt || !karray_push_back(parser_state->symtables, opt))
     kev_throw_error("control:", "out of memory", NULL);
-  KevSymTable* lr = kev_symtable_create(kev_addrarray_size(parser_state->symtables), env_id);
+  KevSymTable* lr = kev_symtable_create(karray_size(parser_state->symtables), env_id);
   size_t lr_id = kev_symtable_get_self_id(lr);
-  if(!lr || !kev_addrarray_push_back(parser_state->symtables, lr))
+  if(!lr || !karray_push_back(parser_state->symtables, lr))
     kev_throw_error("control:", "out of memory", NULL);
 
   parser_state->curr_symtbl = env_id;
@@ -234,19 +234,19 @@ static size_t kev_pargen_control_set_vars_pre(KevPParserState* parser_state, Kev
 
 
   /* set variables in 'lr' */
-  sprintf(buf, "%d", KEV_LR_ACTION_SHI);
+  sprintf(buf, "%d", KLR_ACTION_SHI);
   if (!kev_symtable_insert(lr, "action-shift", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'action-shift'");
-  sprintf(buf, "%d", KEV_LR_ACTION_RED);
+  sprintf(buf, "%d", KLR_ACTION_RED);
   if (!kev_symtable_insert(lr, "action-reduce", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'action-reduce'");
-  sprintf(buf, "%d", KEV_LR_ACTION_ACC);
+  sprintf(buf, "%d", KLR_ACTION_ACC);
   if (!kev_symtable_insert(lr, "action-accept", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'action-accept'");
-  sprintf(buf, "%d", KEV_LR_ACTION_CON);
+  sprintf(buf, "%d", KLR_ACTION_CON);
   if (!kev_symtable_insert(lr, "action-conflict", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'action-conflict'");
-  sprintf(buf, "%d", KEV_LR_ACTION_ERR);
+  sprintf(buf, "%d", KLR_ACTION_ERR);
   if (!kev_symtable_insert(lr, "action-error", buf))
     kev_throw_error("control:", "out of memory", ", falied to set variable 'action-error'");
 

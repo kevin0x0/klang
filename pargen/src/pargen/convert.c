@@ -5,25 +5,25 @@
 #include <string.h>
 
 
-static void kev_pargen_convert_goto_table_and_state_to_id(KevPTableInfo* table_info, KevLRTable* table);
-static void kev_pargen_convert_action(KevPTableInfo* table_info, KevLRTable* table);
+static void kev_pargen_convert_goto_table_and_state_to_id(KevPTableInfo* table_info, KlrTable* table);
+static void kev_pargen_convert_action(KevPTableInfo* table_info, KlrTable* table);
 static void kev_pargen_convert_rules_info(KevPTableInfo* table_info, KevPParserState* parser_state);
 static void kev_pargen_convert_symbols(KevPTableInfo* table_info, KevPParserState* parser_state);
 
 
-void kev_pargen_convert(KevPTableInfo* table_info, KevLRTable* table, KevPParserState* parser_state) {
-  table_info->terminal_no = kev_lr_table_get_terminal_no(table);
-  table_info->state_no = kev_lr_table_get_state_no(table);
-  table_info->goto_col_no = kev_lr_table_get_symbol_no(table);
-  table_info->action_col_no = kev_lr_table_get_max_terminal_id(table) + 1;
-  table_info->start_state = kev_lr_table_get_start_state(table);
+void kev_pargen_convert(KevPTableInfo* table_info, KlrTable* table, KevPParserState* parser_state) {
+  table_info->terminal_no = klr_table_get_terminal_no(table);
+  table_info->state_no = klr_table_get_state_no(table);
+  table_info->goto_col_no = klr_table_get_symbol_no(table);
+  table_info->action_col_no = klr_table_get_max_terminal_id(table) + 1;
+  table_info->start_state = klr_table_get_start_state(table);
   kev_pargen_convert_goto_table_and_state_to_id(table_info, table);
   kev_pargen_convert_action(table_info, table);
   kev_pargen_convert_rules_info(table_info, parser_state);
   kev_pargen_convert_symbols(table_info, parser_state);
 }
 
-static void kev_pargen_convert_goto_table_and_state_to_id(KevPTableInfo* table_info, KevLRTable* table) {
+static void kev_pargen_convert_goto_table_and_state_to_id(KevPTableInfo* table_info, KlrTable* table) {
   table_info->goto_table = (int**)malloc(table_info->state_no * sizeof (int*));
   table_info->state_to_symbol_id = (int*)malloc(table_info->state_no * sizeof (int));
   int* gotos = (int*)malloc(table_info->state_no * table_info->goto_col_no * sizeof (int));
@@ -36,9 +36,9 @@ static void kev_pargen_convert_goto_table_and_state_to_id(KevPTableInfo* table_i
 
   for (size_t i = 0; i < table_info->state_no; ++i) {
     for (size_t j = 0; j < table_info->goto_col_no; ++j) {
-      int state = (int)kev_lr_table_get_goto(table, i, j);
-      table_info->goto_table[i][j] = state == (int)KEV_LR_GOTO_NONE ? -1 : state;
-      if (state != KEV_LR_GOTO_NONE)
+      int state = (int)klr_table_get_trans(table, i, j);
+      table_info->goto_table[i][j] = state == (int)KLR_GOTO_NONE ? -1 : state;
+      if (state != KLR_GOTO_NONE)
         table_info->state_to_symbol_id[state] = j;
     }
   }
@@ -46,7 +46,7 @@ static void kev_pargen_convert_goto_table_and_state_to_id(KevPTableInfo* table_i
   table_info->state_to_symbol_id[table_info->start_state] = -1;
 }
 
-static void kev_pargen_convert_action(KevPTableInfo* table_info, KevLRTable* table) {
+static void kev_pargen_convert_action(KevPTableInfo* table_info, KlrTable* table) {
   table_info->action_table = (KevPActionEntry**)malloc(table_info->state_no * sizeof (KevPActionEntry*));
   KevPActionEntry* actions = (KevPActionEntry*)malloc(table_info->state_no * table_info->action_col_no * sizeof (KevPActionEntry));
   if (!actions || !table_info->action_table) {
@@ -59,13 +59,13 @@ static void kev_pargen_convert_action(KevPTableInfo* table_info, KevLRTable* tab
 
   for (size_t i = 0; i < table_info->state_no; ++i) {
     for (size_t j = 0; j < table_info->action_col_no; ++j) {
-      table_info->action_table[i][j].action = kev_lr_table_get_action(table, i, j);
+      table_info->action_table[i][j].action = klr_table_get_action(table, i, j);
       switch (table_info->action_table[i][j].action) {
-        case KEV_LR_ACTION_RED:
-          table_info->action_table[i][j].info = kev_lr_rule_get_id(kev_lr_table_get_action_info(table, i, j)->rule);
+        case KLR_ACTION_RED:
+          table_info->action_table[i][j].info = klr_rule_get_id(klr_table_get_action_info(table, i, j)->rule);
           break;
-        case KEV_LR_ACTION_SHI:
-          table_info->action_table[i][j].info = kev_lr_table_get_action_info(table, i, j)->itemset_id;
+        case KLR_ACTION_SHI:
+          table_info->action_table[i][j].info = klr_table_get_action_info(table, i, j)->itemset_id;
           break;
         default:
           table_info->action_table[i][j].info = -1;
@@ -76,17 +76,17 @@ static void kev_pargen_convert_action(KevPTableInfo* table_info, KevLRTable* tab
 }
 
 static void kev_pargen_convert_rules_info(KevPTableInfo* table_info, KevPParserState* parser_state) {
-  table_info->rule_no = kev_addrarray_size(parser_state->rules);
+  table_info->rule_no = karray_size(parser_state->rules);
   table_info->rules_info = (KevPRuleInfo*)malloc(table_info->rule_no * sizeof(KevPRuleInfo));
   if (!table_info->rules_info) {
     kev_throw_error("convert:", "out of memory", NULL);
   }
   KevPRuleInfo* rules_info = table_info->rules_info;
   for (size_t i = 0; i < table_info->rule_no; ++i) {
-    KevRule* rule = (KevRule*)kev_addrarray_visit(parser_state->rules, i);
-    rules_info[i].rulelen = kev_lr_rule_get_bodylen(rule);
-    rules_info[i].head_id = kev_lr_symbol_get_id(kev_lr_rule_get_head(rule));
-    KevActionFunc* actfunc = (KevActionFunc*)kev_addrarray_visit(parser_state->redact, i);
+    KlrRule* rule = (KlrRule*)karray_access(parser_state->rules, i);
+    rules_info[i].rulelen = klr_rule_get_bodylen(rule);
+    rules_info[i].head_id = klr_symbol_get_id(klr_rule_get_head(rule));
+    KevActionFunc* actfunc = (KevActionFunc*)karray_access(parser_state->redact, i);
     if (actfunc) {
       rules_info[i].actfunc = actfunc->content;
       rules_info[i].func_type = actfunc->type;
@@ -105,8 +105,8 @@ static void kev_pargen_convert_symbols(KevPTableInfo* table_info, KevPParserStat
   for (KevStrXMapNode* node = kev_strxmap_iterate_begin(symbol_map);
        node != NULL;
        node = kev_strxmap_iterate_next(symbol_map, node)) {
-    KevSymbol* symbol = (KevSymbol*)node->value;
-    symbol_name[kev_lr_symbol_get_id(symbol)] = kev_lr_symbol_get_name(symbol);
+    KlrSymbol* symbol = (KlrSymbol*)node->value;
+    symbol_name[klr_symbol_get_id(symbol)] = klr_symbol_get_name(symbol);
   }
 }
 

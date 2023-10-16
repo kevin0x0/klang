@@ -105,7 +105,7 @@ void kev_intsetmap_destroy(KevIntSetMap* map) {
   }
 }
 
-bool kev_intsetmap_insert(KevIntSetMap* map, size_t key, KevBitSet* value) {
+bool kev_intsetmap_insert(KevIntSetMap* map, size_t key, KBitSet* value) {
   if (map->size >= map->capacity && !kev_intsetmap_expand(map))
     return false;
 

@@ -6,7 +6,7 @@
 
 bool kev_setarray_init(KevSetArray* array) {
   if (!array) return false;
-  if (!(array->begin = (KevBitSet**)malloc(sizeof (KevBitSet*) * KEV_SETARRAY_DEFAULT_SIZE))) {
+  if (!(array->begin = (KBitSet**)malloc(sizeof (KBitSet*) * KEV_SETARRAY_DEFAULT_SIZE))) {
     array->end = NULL;
     array->current = NULL;
     return false;
@@ -28,7 +28,7 @@ void kev_setarray_destroy(KevSetArray* array) {
 
 bool kev_setarray_expand(KevSetArray* array) {
   size_t new_size = kev_setarray_size(array) * 2;
-  KevBitSet** new_array = (KevBitSet**)realloc(array->begin, sizeof (KevBitSet*) * new_size);
+  KBitSet** new_array = (KBitSet**)realloc(array->begin, sizeof (KBitSet*) * new_size);
   if (!new_array) return false;
   array->current = new_array + (array->current - array->begin);
   array->begin = new_array;

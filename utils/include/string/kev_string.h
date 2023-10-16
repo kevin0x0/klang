@@ -7,7 +7,7 @@ char* kev_str_copy(const char* str);
 char* kev_str_concat(const char* str1, const char* str2);
 char* kev_str_copy_len(const char* str, size_t len);
 char* kev_str_concat_len(const char* str1, const char* str2, size_t len1, size_t len2);
-static inline size_t kev_str_is_prefix(const char* prefix, const char* str);
+static inline bool kev_str_is_prefix(const char* prefix, const char* str);
 static inline size_t kev_str_prefix(const char* prefix, const char* str);
 
 static inline size_t kev_str_prefix(const char* prefix, const char* str) {
@@ -16,7 +16,7 @@ static inline size_t kev_str_prefix(const char* prefix, const char* str) {
   return i;
 }
 
-static inline size_t kev_str_is_prefix(const char* prefix, const char* str) {
+static inline bool kev_str_is_prefix(const char* prefix, const char* str) {
   return prefix[kev_str_prefix(prefix, str)] == '\0';
 }
 

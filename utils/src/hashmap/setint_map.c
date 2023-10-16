@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-inline static size_t kev_setintmap_hashing(KevBitSet* key) {
+inline static size_t kev_setintmap_hashing(KBitSet* key) {
   if (!key) return 0;
   size_t length = key->length;
   size_t* bits = key->bits;
@@ -98,7 +98,7 @@ void kev_setintmap_destroy(KevSetIntMap* map) {
   }
 }
 
-bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, size_t value) {
+bool kev_setintmap_insert(KevSetIntMap* map, KBitSet* key, size_t value) {
   if (map->size >= map->capacity && !kev_setintmap_expand(map))
     return false;
 
@@ -116,13 +116,13 @@ bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, size_t value) {
   return true;
 }
 
-KevSetIntMapNode* kev_setintmap_search(KevSetIntMap* map, KevBitSet* key) {
+KevSetIntMapNode* kev_setintmap_search(KevSetIntMap* map, KBitSet* key) {
   size_t hashval = kev_setintmap_hashing(key);
   size_t index = (map->capacity - 1) & hashval;
   KevSetIntMapNode* node = map->array[index];
   for (; node; node = node->next) {
     if (node->hashval == hashval &&
-        kev_bitset_equal(node->key, key)) {
+        kbitset_equal(node->key, key)) {
       break;
     }
   }

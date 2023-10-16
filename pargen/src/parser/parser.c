@@ -1,7 +1,7 @@
 #include "pargen/include/parser/parser.h"
 #include "pargen/include/parser/error.h"
 #include "pargen/include/parser/symtable.h"
-#include "utils/include/array/addr_array.h"
+#include "utils/include/array/karray.h"
 #include "utils/include/os_spec/dir.h"
 #include "utils/include/string/kev_string.h"
 
@@ -13,12 +13,12 @@ static KevSymTableNode* kev_pargenparser_symbol_search_rec(KevPParserState* pars
 
 static void kev_pargenparser_statement_declare(KevPParserState* parser_state, KevPLexer* lex);
 static void kev_pargenparser_statement_rules(KevPParserState* parser_state, KevPLexer* lex);
-static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevPLexer* lex,
+static KlrSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevPLexer* lex,
                                                        size_t* p_bodylen, KevActionFunc** actfunc);
-static KevSymbol* kev_pargenparser_symbol(KevPParserState* parser_state, KevPLexer* lex);
-static KevSymbol* kev_pargenparser_symbol_kind(KevPParserState* parser_state, KevPLexer* lex, KevSymbolType kind);
+static KlrSymbol* kev_pargenparser_symbol(KevPParserState* parser_state, KevPLexer* lex);
+static KlrSymbol* kev_pargenparser_symbol_kind(KevPParserState* parser_state, KevPLexer* lex, KlrSymbolKind kind);
 static KevActionFunc* kev_pargenparser_actfunc(KevPParserState* parser_state, KevPLexer* lex);
-static KevPrioPos kev_pargenparser_sympos(KevPParserState* parser_state, KevPLexer* lex);
+static KlrPrioPos kev_pargenparser_sympos(KevPParserState* parser_state, KevPLexer* lex);
 static void kev_pargenparser_statement_set(KevPParserState* parser_state, KevPLexer* lex);
 static void kev_pargenparser_statement_set_prio(KevPParserState* parser_state, KevPLexer* lex);
 static void kev_pargenparser_statement_set_id(KevPParserState* parser_state, KevPLexer* lex);
@@ -45,25 +45,25 @@ static char* kev_pargenparser_expr_postfix(KevPParserState* parser_state, KevPLe
 /* wraper */
 static inline void kev_error_report(KevPLexer* lex, const char* info1, const char* info2);
 /* this will free body and actfunc when failed */
-static KevRule* kev_pargenparser_rule_create_move(KevPParserState* parser_state, KevSymbol* head,
-                                                 KevSymbol** body, size_t bodylen, KevActionFunc* actfunc);
+static KlrRule* kev_pargenparser_rule_create_move(KevPParserState* parser_state, KlrSymbol* head,
+                                                 KlrSymbol** body, size_t bodylen, KevActionFunc* actfunc);
 /* this will free name when failed */
-static KevSymbol* kev_pargenparser_symbol_create_move(KevPParserState* parser_state, char* name, KevSymbolType kind);
+static KlrSymbol* kev_pargenparser_symbol_create_move(KevPParserState* parser_state, char* name, KlrSymbolKind kind);
 static inline void kev_pargenparser_next_nonblank(KevPLexer* lex);
 
 bool kev_pargenparser_init(KevPParserState* parser_state) {
   if (!parser_state) return false;
   KevSymTable* global_symtbl = kev_symtable_create(0, 0);
-  parser_state->rules = kev_addrarray_create();
-  parser_state->redact = kev_addrarray_create();
-  parser_state->end_symbols = kev_addrarray_create();
+  parser_state->rules = karray_create();
+  parser_state->redact = karray_create();
+  parser_state->end_symbols = karray_create();
   parser_state->symbols = kev_strxmap_create(64);
-  parser_state->symtables = kev_addrarray_create();
-  kev_addrarray_push_back(parser_state->symtables, global_symtbl);  /* this never fails */
-  parser_state->priorities = kev_priomap_create(32);
-  parser_state->default_symbol_nt = kev_lr_symbol_create(KEV_LR_NONTERMINAL, NULL);
-  parser_state->default_symbol_t = kev_lr_symbol_create(KEV_LR_TERMINAL, NULL);
-  parser_state->confhandlers = kev_addrarray_create();
+  parser_state->symtables = karray_create();
+  karray_push_back(parser_state->symtables, global_symtbl);  /* this never fails */
+  parser_state->priorities = klr_priomap_create(32);
+  parser_state->default_symbol_nt = klr_symbol_create(KLR_NONTERMINAL, NULL);
+  parser_state->default_symbol_t = klr_symbol_create(KLR_TERMINAL, NULL);
+  parser_state->confhandlers = karray_create();
   parser_state->start = NULL;
   parser_state->next_symbol_id = 0;
   parser_state->err_count = 0;
@@ -75,15 +75,15 @@ bool kev_pargenparser_init(KevPParserState* parser_state) {
       !parser_state->priorities || !parser_state->end_symbols || !parser_state->algorithm ||
       !parser_state->confhandlers || !global_symtbl) {
     kev_symtable_delete(global_symtbl);
-    kev_addrarray_delete(parser_state->rules);
-    kev_addrarray_delete(parser_state->redact);
-    kev_addrarray_delete(parser_state->end_symbols);
+    karray_delete(parser_state->rules);
+    karray_delete(parser_state->redact);
+    karray_delete(parser_state->end_symbols);
     kev_strxmap_delete(parser_state->symbols);
-    kev_addrarray_delete(parser_state->symtables);
-    kev_priomap_delete(parser_state->priorities);
-    kev_lr_symbol_delete(parser_state->default_symbol_nt);
-    kev_lr_symbol_delete(parser_state->default_symbol_t);
-    kev_addrarray_delete(parser_state->confhandlers);
+    karray_delete(parser_state->symtables);
+    klr_priomap_delete(parser_state->priorities);
+    klr_symbol_delete(parser_state->default_symbol_nt);
+    klr_symbol_delete(parser_state->default_symbol_t);
+    karray_delete(parser_state->confhandlers);
     free(parser_state->algorithm);
     parser_state->rules = NULL;
     parser_state->symbols = NULL;
@@ -103,10 +103,10 @@ bool kev_pargenparser_init(KevPParserState* parser_state) {
 void kev_pargenparser_destroy(KevPParserState* parser_state) {
   if (!parser_state) return;
   /* parser_state->rules and parser_state->redact have same rule number */
-  size_t rule_no = kev_addrarray_size(parser_state->rules);
+  size_t rule_no = karray_size(parser_state->rules);
   for (size_t i = 0; i < rule_no; ++i) {
-    kev_lr_rule_delete((KevRule*)kev_addrarray_visit(parser_state->rules, i));
-    KevActionFunc* actfunc = (KevActionFunc*)kev_addrarray_visit(parser_state->redact, i);
+    klr_rule_delete((KlrRule*)karray_access(parser_state->rules, i));
+    KevActionFunc* actfunc = (KevActionFunc*)karray_access(parser_state->redact, i);
     if (actfunc) {
       free(actfunc->content);
       free(actfunc);
@@ -115,28 +115,28 @@ void kev_pargenparser_destroy(KevPParserState* parser_state) {
   for (KevStrXMapNode* node = kev_strxmap_iterate_begin(parser_state->symbols);
        node != NULL;
        node = kev_strxmap_iterate_next(parser_state->symbols, node)) {
-    kev_lr_symbol_delete((KevSymbol*)node->value);
+    klr_symbol_delete((KlrSymbol*)node->value);
   }
 
-  for (size_t i = 0; i < kev_addrarray_size(parser_state->confhandlers); ++i) {
-    KevConfHandler* handler = (KevConfHandler*)kev_addrarray_visit(parser_state->confhandlers, i);
+  for (size_t i = 0; i < karray_size(parser_state->confhandlers); ++i) {
+    KevConfHandler* handler = (KevConfHandler*)karray_access(parser_state->confhandlers, i);
     free (handler->handler_name);
     free (handler->attribute);
     free(handler);
   }
 
-  for (size_t i = 0; i < kev_addrarray_size(parser_state->symtables); ++i) {
-    kev_symtable_delete((KevSymTable*)kev_addrarray_visit(parser_state->symtables, i));
+  for (size_t i = 0; i < karray_size(parser_state->symtables); ++i) {
+    kev_symtable_delete((KevSymTable*)karray_access(parser_state->symtables, i));
   }
-  kev_addrarray_delete(parser_state->rules);
-  kev_addrarray_delete(parser_state->redact);
-  kev_addrarray_delete(parser_state->end_symbols);
+  karray_delete(parser_state->rules);
+  karray_delete(parser_state->redact);
+  karray_delete(parser_state->end_symbols);
   kev_strxmap_delete(parser_state->symbols);
-  kev_addrarray_delete(parser_state->symtables);
-  kev_priomap_delete(parser_state->priorities);
-  kev_lr_symbol_delete(parser_state->default_symbol_nt);
-  kev_lr_symbol_delete(parser_state->default_symbol_t);
-  kev_addrarray_delete(parser_state->confhandlers);
+  karray_delete(parser_state->symtables);
+  klr_priomap_delete(parser_state->priorities);
+  klr_symbol_delete(parser_state->default_symbol_nt);
+  klr_symbol_delete(parser_state->default_symbol_t);
+  karray_delete(parser_state->confhandlers);
   free(parser_state->algorithm);
   parser_state->rules = NULL;
   parser_state->symbols = NULL;
@@ -161,15 +161,15 @@ bool kev_pargenparser_parse_file(KevPParserState* parser_state, const char* file
 
   kev_pargenlexer_next(&lex);
   char* file_dir = kev_trunc_leaf(filepath);
-  KevSymTable* curr_symtbl = kev_symtable_create(kev_addrarray_size(parser_state->symtables), parser_state->curr_symtbl);
-  if (!curr_symtbl || !kev_addrarray_push_back(parser_state->symtables, curr_symtbl) ||
+  KevSymTable* curr_symtbl = kev_symtable_create(karray_size(parser_state->symtables), parser_state->curr_symtbl);
+  if (!curr_symtbl || !karray_push_back(parser_state->symtables, curr_symtbl) ||
       !file_dir || !kev_symtable_insert_move(curr_symtbl, "@file-directory", file_dir)) {
     kev_error_report(&lex, "out of memory", NULL);
     parser_state->err_count++;
     free(file_dir);
     kev_symtable_delete(curr_symtbl);
-    if (!kev_addrarray_top(parser_state->symtables))
-      kev_addrarray_pop_back(parser_state->symtables);
+    if (!karray_top(parser_state->symtables))
+      karray_pop_back(parser_state->symtables);
   } else {
     parser_state->curr_symtbl = kev_symtable_get_self_id(curr_symtbl);
     kev_pargenparser_parse(parser_state, &lex);
@@ -204,8 +204,8 @@ void kev_pargenparser_parse(KevPParserState* parser_state, KevPLexer* lex) {
 }
 
 static void kev_pargenparser_statement_rules(KevPParserState* parser_state, KevPLexer* lex) {
-  KevSymbol* head = kev_pargenparser_symbol_kind(parser_state, lex, KEV_LR_NONTERMINAL);
-  if (kev_lr_symbol_get_kind(head) != KEV_LR_NONTERMINAL) {
+  KlrSymbol* head = kev_pargenparser_symbol_kind(parser_state, lex, KLR_NONTERMINAL);
+  if (klr_symbol_get_kind(head) != KLR_NONTERMINAL) {
     kev_error_report(lex, "expected: ", "terminal symbol");
     parser_state->err_count++;
     kev_pargenparser_recover(lex, KEV_PTK_SEMI);
@@ -222,7 +222,7 @@ static void kev_pargenparser_statement_rules(KevPParserState* parser_state, KevP
   while (true) {
     size_t bodylen = 0;
     KevActionFunc* actfunc = NULL;
-    KevSymbol** rulebody = kev_pargenparser_rulebody(parser_state, lex, &bodylen, &actfunc);
+    KlrSymbol** rulebody = kev_pargenparser_rulebody(parser_state, lex, &bodylen, &actfunc);
     if (!kev_pargenparser_rule_create_move(parser_state, head, rulebody, bodylen, actfunc)) {
       kev_error_report(lex, "out of memory", "");
       parser_state->err_count++;
@@ -235,11 +235,11 @@ static void kev_pargenparser_statement_rules(KevPParserState* parser_state, KevP
   kev_pargenparser_match(parser_state, lex, KEV_PTK_SEMI);
 }
 
-static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevPLexer* lex,
+static KlrSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevPLexer* lex,
                                              size_t* p_bodylen, KevActionFunc** p_actfunc) {
-  KevAddrArray rulebody;
+  KArray rulebody;
   *p_actfunc = NULL;
-  if (!kev_addrarray_init(&rulebody)) {
+  if (!karray_init(&rulebody)) {
     kev_error_report(lex, "out of memory", NULL);
     parser_state->err_count++;
     kev_pargenparser_recover(lex, KEV_PTK_SEMI);
@@ -249,8 +249,8 @@ static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevP
   }
   while (true) {
     if (lex->currtoken.kind == KEV_PTK_ID) {
-      KevSymbol* sym = kev_pargenparser_symbol(parser_state, lex);
-      if (!kev_addrarray_push_back(&rulebody, sym)) {
+      KlrSymbol* sym = kev_pargenparser_symbol(parser_state, lex);
+      if (!karray_push_back(&rulebody, sym)) {
         kev_error_report(lex, "out of memory", NULL);
         parser_state->err_count++;
       }
@@ -259,10 +259,10 @@ static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevP
       if (lex->currtoken.kind == KEV_PTK_LBE ||
           lex->currtoken.kind == KEV_PTK_STR ||
           lex->currtoken.kind == KEV_PTK_ID) {
-        KevSymbol* act_head = kev_pargenparser_symbol_create_move(parser_state, NULL, KEV_LR_NONTERMINAL);
+        KlrSymbol* act_head = kev_pargenparser_symbol_create_move(parser_state, NULL, KLR_NONTERMINAL);
         if (!act_head                                                                    ||
             !kev_pargenparser_rule_create_move(parser_state, act_head, NULL, 0, actfunc) ||
-            !kev_addrarray_push_back(&rulebody, act_head)) {
+            !karray_push_back(&rulebody, act_head)) {
           kev_error_report(lex, "out of memory", NULL);
           parser_state->err_count++;
         }
@@ -273,43 +273,43 @@ static KevSymbol** kev_pargenparser_rulebody(KevPParserState* parser_state, KevP
       break;
     }
   }
-  *p_bodylen = kev_addrarray_size(&rulebody);
-  KevSymbol** body = (KevSymbol**)kev_addrarray_steal(&rulebody);
-  kev_addrarray_destroy(&rulebody);
+  *p_bodylen = karray_size(&rulebody);
+  KlrSymbol** body = (KlrSymbol**)karray_steal(&rulebody);
+  karray_destroy(&rulebody);
   return body;
 }
 
-static KevSymbol* kev_pargenparser_symbol(KevPParserState* parser_state, KevPLexer* lex) {
+static KlrSymbol* kev_pargenparser_symbol(KevPParserState* parser_state, KevPLexer* lex) {
   char* symbol_name = lex->currtoken.attr.str;
   KevStrXMapNode* node = kev_strxmap_search(parser_state->symbols, symbol_name);
-  KevSymbol* symbol = NULL;
+  KlrSymbol* symbol = NULL;
   if (!node) {
     kev_error_report(lex, "undefined symbol: ", symbol_name);
     parser_state->err_count++;
     symbol = parser_state->default_symbol_nt;
   } else {
-    symbol = (KevSymbol*)node->value;
+    symbol = (KlrSymbol*)node->value;
   }
   kev_pargenlexer_free_attr(lex);
   kev_pargenparser_next_nonblank(lex);
   return symbol;
 }
 
-static KevSymbol* kev_pargenparser_symbol_kind(KevPParserState* parser_state, KevPLexer* lex, KevSymbolType kind) {
+static KlrSymbol* kev_pargenparser_symbol_kind(KevPParserState* parser_state, KevPLexer* lex, KlrSymbolKind kind) {
   char* symbol_name = lex->currtoken.attr.str;
   KevStrXMapNode* node = kev_strxmap_search(parser_state->symbols, symbol_name);
-  KevSymbol* symbol = NULL;
+  KlrSymbol* symbol = NULL;
   if (!node) {
     kev_error_report(lex, "undefined symbol: ", symbol_name);
     parser_state->err_count++;
-    symbol = kind == KEV_LR_TERMINAL ? parser_state->default_symbol_t : parser_state->default_symbol_nt;
+    symbol = kind == KLR_TERMINAL ? parser_state->default_symbol_t : parser_state->default_symbol_nt;
   } else {
-    symbol = (KevSymbol*)node->value;
+    symbol = (KlrSymbol*)node->value;
   }
-  if (kev_lr_symbol_get_kind(symbol) != kind) {
-    kev_error_report(lex, "expected: ", kind == KEV_LR_TERMINAL ? "terminal" : "non-terminal");
+  if (klr_symbol_get_kind(symbol) != kind) {
+    kev_error_report(lex, "expected: ", kind == KLR_TERMINAL ? "terminal" : "non-terminal");
     parser_state->err_count++;
-    symbol = kind == KEV_LR_TERMINAL ? parser_state->default_symbol_t : parser_state->default_symbol_nt;
+    symbol = kind == KLR_TERMINAL ? parser_state->default_symbol_t : parser_state->default_symbol_nt;
   }
   kev_pargenlexer_free_attr(lex);
   kev_pargenparser_next_nonblank(lex);
@@ -344,44 +344,44 @@ static void kev_pargenparser_recover(KevPLexer* lex, int kind) {
   }
 }
 
-static KevRule* kev_pargenparser_rule_create_move(KevPParserState* parser_state, KevSymbol* head,
-                                                  KevSymbol** body, size_t bodylen, KevActionFunc* actfunc) {
-  KevRule* rule = kev_lr_rule_create_move(head, body, bodylen);
+static KlrRule* kev_pargenparser_rule_create_move(KevPParserState* parser_state, KlrSymbol* head,
+                                                  KlrSymbol** body, size_t bodylen, KevActionFunc* actfunc) {
+  KlrRule* rule = klr_rule_create_move(head, body, bodylen);
   if (!rule) {
     free(body);
     free(actfunc->content);
     free(actfunc);
     return NULL;
   }
-  if (!kev_addrarray_push_back(parser_state->rules, rule)) {
-    kev_lr_rule_delete(rule);
+  if (!karray_push_back(parser_state->rules, rule)) {
+    klr_rule_delete(rule);
     free(actfunc->content);
     free(actfunc);
     return NULL;
   }
-  if (!kev_addrarray_push_back(parser_state->redact, actfunc)) {
-    kev_addrarray_pop_back(parser_state->rules);
-    kev_lr_rule_delete(rule);
+  if (!karray_push_back(parser_state->redact, actfunc)) {
+    karray_pop_back(parser_state->rules);
+    klr_rule_delete(rule);
     free(actfunc->content);
     free(actfunc);
     return NULL;
   }
-  kev_lr_rule_set_id(rule, kev_addrarray_size(parser_state->rules) - 1);
+  klr_rule_set_id(rule, karray_size(parser_state->rules) - 1);
   return rule;
 }
 
-static KevSymbol* kev_pargenparser_symbol_create_move(KevPParserState* parser_state, char* name, KevSymbolType kind) {
-  KevSymbol* symbol = kev_lr_symbol_create_move(kind, name);
+static KlrSymbol* kev_pargenparser_symbol_create_move(KevPParserState* parser_state, char* name, KlrSymbolKind kind) {
+  KlrSymbol* symbol = klr_symbol_create_move(kind, name);
   if (!symbol) {
     free(name);
     return NULL;
   }
 
   if (!kev_strxmap_insert(parser_state->symbols, name, symbol)) {
-    kev_lr_symbol_delete(symbol);
+    klr_symbol_delete(symbol);
     return NULL;
   }
-  kev_lr_symbol_set_id(symbol, parser_state->next_symbol_id++);
+  klr_symbol_set_id(symbol, parser_state->next_symbol_id++);
   return symbol;
 }
 
@@ -424,9 +424,9 @@ KevActionFunc* kev_pargenparser_actfunc(KevPParserState* parser_state, KevPLexer
 static void kev_pargenparser_statement_declare(KevPParserState* parser_state, KevPLexer* lex) {
   kev_pargenparser_next_nonblank(lex);
   kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
-  KevSymbolType symbol_kind = KEV_LR_NONTERMINAL;
+  KlrSymbolKind symbol_kind = KLR_NONTERMINAL;
   if (kev_str_is_prefix(lex->currtoken.attr.str, "terminal")) {
-    symbol_kind = KEV_LR_TERMINAL;
+    symbol_kind = KLR_TERMINAL;
   } else if (!kev_str_is_prefix(lex->currtoken.attr.str, "nonterminal") &&
              !kev_str_is_prefix(lex->currtoken.attr.str, "non-terminal")) {
     kev_error_report(lex, "unexpected: ", lex->currtoken.attr.str);
@@ -437,7 +437,7 @@ static void kev_pargenparser_statement_declare(KevPParserState* parser_state, Ke
   kev_pargenparser_next_nonblank(lex);
   kev_pargenparser_match(parser_state, lex, KEV_PTK_COLON);
   while (lex->currtoken.kind == KEV_PTK_ID) {
-    KevSymbol* symbol = kev_pargenparser_symbol_create_move(parser_state, lex->currtoken.attr.str, symbol_kind);
+    KlrSymbol* symbol = kev_pargenparser_symbol_create_move(parser_state, lex->currtoken.attr.str, symbol_kind);
     if (!symbol) {
       kev_error_report(lex, "out of memory", NULL);
       parser_state->err_count++;
@@ -446,7 +446,7 @@ static void kev_pargenparser_statement_declare(KevPParserState* parser_state, Ke
     if (lex->currtoken.kind == KEV_PTK_COLON) {
       kev_pargenparser_next_nonblank(lex);
       char* symbol_name = kev_pargenparser_expr(parser_state, lex);
-      kev_lr_symbol_set_name_move(symbol, symbol_name);
+      klr_symbol_set_name_move(symbol, symbol_name);
     }
     if (lex->currtoken.kind == KEV_PTK_COMMA)
       kev_pargenparser_next_nonblank(lex);
@@ -488,8 +488,8 @@ static void kev_pargenparser_statement_set_prio(KevPParserState* parser_state, K
   kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
   while (lex->currtoken.kind == KEV_PTK_ID) {
     /* parser_state->default_symbol is returned when the read symbol is not defined */
-    KevSymbol* symbol = kev_pargenparser_symbol(parser_state, lex);
-    KevPrioPos sympos = kev_pargenparser_sympos(parser_state, lex);
+    KlrSymbol* symbol = kev_pargenparser_symbol(parser_state, lex);
+    KlrPrioPos sympos = kev_pargenparser_sympos(parser_state, lex);
     bool keep_priority = false;
     if (lex->currtoken.kind == KEV_PTK_EQUAL)
       keep_priority = true;
@@ -503,16 +503,16 @@ static void kev_pargenparser_statement_set_prio(KevPParserState* parser_state, K
 
     /* only set priority when the symbol is defined */
     if (symbol != parser_state->default_symbol_nt) {
-      if (!kev_priomap_search(parser_state->priorities, symbol, sympos)) {
+      if (!klr_priomap_search(parser_state->priorities, symbol, sympos)) {
         /* previously the priority of the symbol in this position is not defined */
-        if (!kev_priomap_insert(parser_state->priorities, symbol, sympos, parser_state->next_priority)) {
+        if (!klr_priomap_insert(parser_state->priorities, symbol, sympos, parser_state->next_priority)) {
           kev_error_report(lex, "out of memory", NULL);
             parser_state->err_count++;
         }
         if (!keep_priority)
           parser_state->next_priority++;
       } else {  /* it has been defined */
-        kev_error_report(lex, "redefined priority: ", kev_lr_symbol_get_name(symbol));
+        kev_error_report(lex, "redefined priority: ", klr_symbol_get_name(symbol));
         parser_state->err_count++;
       }
     }
@@ -526,7 +526,7 @@ static void kev_pargenparser_statement_set_id(KevPParserState* parser_state, Kev
   kev_pargenparser_next_nonblank(lex);
   kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
   while (lex->currtoken.kind == KEV_PTK_ID) {
-    KevSymbol* symbol = kev_pargenparser_symbol(parser_state, lex);
+    KlrSymbol* symbol = kev_pargenparser_symbol(parser_state, lex);
     kev_pargenparser_match(parser_state, lex, KEV_PTK_ASSIGN);
     kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_NUM);
     symbol->id = lex->currtoken.attr.num;
@@ -540,9 +540,9 @@ static void kev_pargenparser_statement_set_id(KevPParserState* parser_state, Kev
 static void kev_pargenparser_statement_set_start(KevPParserState* parser_state, KevPLexer* lex) {
   kev_pargenparser_next_nonblank(lex);
   kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
-  KevSymbol* start = kev_pargenparser_symbol_kind(parser_state, lex, KEV_LR_NONTERMINAL);
+  KlrSymbol* start = kev_pargenparser_symbol_kind(parser_state, lex, KLR_NONTERMINAL);
   if (parser_state->start && parser_state->start != parser_state->default_symbol_nt) {
-    kev_error_report(lex, "redefine start symbol, previously defined as: ", kev_lr_symbol_get_name(parser_state->start));
+    kev_error_report(lex, "redefine start symbol, previously defined as: ", klr_symbol_get_name(parser_state->start));
     parser_state->err_count++;
   }
   parser_state->start = start;
@@ -552,8 +552,8 @@ static void kev_pargenparser_statement_set_start(KevPParserState* parser_state, 
 static void kev_pargenparser_statement_set_end_symbols(KevPParserState* parser_state, KevPLexer* lex) {
   kev_pargenparser_next_nonblank(lex);
   while (lex->currtoken.kind == KEV_PTK_ID) {
-    KevSymbol* symbol = kev_pargenparser_symbol_kind(parser_state, lex, KEV_LR_TERMINAL);
-    if (!kev_addrarray_push_back(parser_state->end_symbols, symbol)) {
+    KlrSymbol* symbol = kev_pargenparser_symbol_kind(parser_state, lex, KLR_TERMINAL);
+    if (!karray_push_back(parser_state->end_symbols, symbol)) {
       kev_error_report(lex, "out of memory", NULL);
       parser_state->err_count++;
     }
@@ -582,7 +582,7 @@ static void kev_pargenparser_statement_set_confhandler(KevPParserState* parser_s
     } else {
       handler->handler_name = handler_name;
       handler->attribute = attribute;
-      if (!kev_addrarray_push_back(parser_state->confhandlers, handler)) {
+      if (!karray_push_back(parser_state->confhandlers, handler)) {
         kev_error_report(lex, "out of memory", NULL);
         parser_state->err_count++;
         free(handler_name);
@@ -605,8 +605,8 @@ static void kev_pargenparser_statement_set_algorithm(KevPParserState* parser_sta
   kev_pargenparser_match(parser_state, lex, KEV_PTK_SEMI);
 }
 
-static KevPrioPos kev_pargenparser_sympos(KevPParserState* parser_state, KevPLexer* lex) {
-  KevPrioPos sympos = 1;
+static KlrPrioPos kev_pargenparser_sympos(KevPParserState* parser_state, KevPLexer* lex) {
+  KlrPrioPos sympos = 1;
   if (lex->currtoken.kind == KEV_PTK_LP) {
     kev_pargenparser_next_nonblank(lex);
     if (lex->currtoken.kind == KEV_PTK_ID) {
@@ -614,7 +614,7 @@ static KevPrioPos kev_pargenparser_sympos(KevPParserState* parser_state, KevPLex
       if (kev_str_is_prefix(str, "prefix")) {
         sympos = 0;
       } else if (kev_str_is_prefix(str, "postfix")) {
-        sympos = KEV_LR_PRIOPOS_POSTFIX;
+        sympos = KLR_PRIOPOS_POSTFIX;
       } else {
         kev_error_report(lex, "unknown position", NULL);
         parser_state->err_count++;
@@ -641,7 +641,7 @@ static void kev_pargenparser_statement_var_assign(KevPParserState* parser_state,
   kev_pargenparser_match(parser_state, lex, KEV_PTK_ASSIGN);
   char* value = kev_pargenparser_expr(parser_state, lex);
   if (value) {
-    KevSymTable* symtable = (KevSymTable*)kev_addrarray_visit(parser_state->symtables, symtable_id);
+    KevSymTable* symtable = (KevSymTable*)karray_access(parser_state->symtables, symtable_id);
     if (!kev_symtable_update_move(symtable, varname, value)) {
       kev_error_report(lex, "out of memory", NULL);
       parser_state->err_count++;
@@ -660,7 +660,7 @@ static size_t kev_pargenparser_statement_var_assign_scope(KevPParserState* parse
       return 0;
     char* endptr = NULL;
     size_t scope_id = (size_t)strtoull(scope, &endptr, 10);
-    if (*endptr != '\0' || scope_id >= kev_addrarray_size(parser_state->symtables)) {
+    if (*endptr != '\0' || scope_id >= karray_size(parser_state->symtables)) {
       kev_error_report(lex, "invalid symbol table id", scope);
       parser_state->err_count++;
       return 0;
@@ -671,7 +671,7 @@ static size_t kev_pargenparser_statement_var_assign_scope(KevPParserState* parse
     size_t symtbl_id = parser_state->curr_symtbl;
     KevSymTable* symtable = NULL;
     do {
-      symtable = kev_addrarray_visit(parser_state->symtables, symtbl_id);
+      symtable = karray_access(parser_state->symtables, symtbl_id);
       node = kev_symtable_search(symtable, varname);
       symtbl_id = kev_symtable_get_parent_id(symtable);
     } while (!node && symtbl_id != kev_symtable_get_self_id(symtable));
@@ -741,7 +741,7 @@ static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer
       parser_state->err_count++;
     } else {
       char buf[32];
-      sprintf(buf, "%d", (int)kev_lr_symbol_get_id((KevSymbol*)node->value));
+      sprintf(buf, "%d", (int)klr_symbol_get_id((KlrSymbol*)node->value));
       if (!(ret = kev_str_copy(buf))) {
         kev_error_report(lex, "out of memory", NULL);
         parser_state->err_count++;
@@ -760,7 +760,7 @@ static char* kev_pargenparser_expr_unit(KevPParserState* parser_state, KevPLexer
       kev_error_report(lex, "undefined symbol: ", symbol_name);
       parser_state->err_count++;
     } else {
-      ret = kev_str_copy(kev_lr_symbol_get_name((KevSymbol*)node->value));
+      ret = kev_str_copy(klr_symbol_get_name((KlrSymbol*)node->value));
       if (!ret) {
         kev_error_report(lex, "out of memory", NULL);
         parser_state->err_count++;
@@ -802,7 +802,7 @@ static char* kev_pargenparser_expr_postfix(KevPParserState* parser_state, KevPLe
       }
       char* endptr = NULL;
       size_t symtbl_id = (size_t)strtoull(value, &endptr, 10);
-      if (*endptr != '\0' || symtbl_id >= kev_addrarray_size(parser_state->symtables)) {
+      if (*endptr != '\0' || symtbl_id >= karray_size(parser_state->symtables)) {
         kev_error_report(lex, "not a valid symbol table id: ", ret);
         parser_state->err_count++;
         free(ret);
@@ -814,7 +814,7 @@ static char* kev_pargenparser_expr_postfix(KevPParserState* parser_state, KevPLe
       free(ret);
       kev_pargenparser_next_nonblank(lex);
       kev_pargenparser_guarantee(parser_state, lex, KEV_PTK_ID);
-      KevSymTable* symtable = (KevSymTable*)kev_addrarray_visit(parser_state->symtables, symtbl_id);
+      KevSymTable* symtable = (KevSymTable*)karray_access(parser_state->symtables, symtbl_id);
       KevSymTableNode* node = kev_symtable_search(symtable, lex->currtoken.attr.str);
       if (!node) {
         kev_error_report(lex, "undefined variable: ", lex->currtoken.attr.str);
@@ -835,7 +835,7 @@ static void kev_pargenparser_statement_import(KevPParserState* parser_state, Kev
   kev_pargenparser_next_nonblank(lex);
   char* import_path = kev_pargenparser_expr(parser_state, lex);
   if (kev_is_relative(import_path)) {
-    KevSymTable* curr_symtbl = (KevSymTable*)kev_addrarray_visit(parser_state->symtables, parser_state->curr_symtbl);
+    KevSymTable* curr_symtbl = (KevSymTable*)karray_access(parser_state->symtables, parser_state->curr_symtbl);
     KevStringMapNode* node = kev_symtable_search(curr_symtbl, "@file-directory");
     char* base = node ? node->value : "";
     char* absolute_path = NULL;
@@ -861,7 +861,7 @@ static KevSymTableNode* kev_pargenparser_symbol_search_rec(KevPParserState* pars
   size_t symtbl_id = begin_symtbl_id;
   KevSymTable* symtable = NULL;
   do {
-    symtable = kev_addrarray_visit(parser_state->symtables, symtbl_id);
+    symtable = karray_access(parser_state->symtables, symtbl_id);
     node = kev_symtable_search(symtable, key);
     symtbl_id = kev_symtable_get_parent_id(symtable);
   } while (!node && symtbl_id != kev_symtable_get_self_id(symtable));

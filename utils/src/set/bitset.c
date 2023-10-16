@@ -2,13 +2,8 @@
 
 #include <stdlib.h>
 
-#define FIND_BIT_MASK32       ((KevBitSetInt)0xFFFFFFFF)
-#define FIND_BIT_MASK16       ((KevBitSetInt)0xFFFF);
-#define FIND_BIT_MASK8        ((KevBitSetInt)0xFF);
-#define FIND_BIT_MASK4        ((KevBitSetInt)0xF);
-
-bool kev_bitset_expand(KevBitSet* bitset, size_t new_size) {
-  new_size = new_size & KEV_BITSET_MASK ? (new_size >> KEV_BITSET_SHIFT) + 1 : new_size >> KEV_BITSET_SHIFT;
+bool kbitset_expand(KBitSet* bitset, size_t new_size) {
+  new_size = new_size & KBITSET_MASK ? (new_size >> KBITSET_SHIFT) + 1 : new_size >> KBITSET_SHIFT;
   if (new_size > bitset->length) {
     KevBitSetInt* new_bits = (KevBitSetInt*)realloc(bitset->bits, sizeof (KevBitSetInt) * new_size);
     if (!new_bits) return false;
@@ -30,7 +25,7 @@ inline static size_t kev_bit_count(KevBitSetInt word) {
   return word & 0x7f;
 }
 
-bool kev_bitset_init(KevBitSet* bitset, size_t initial_size) {
+bool kbitset_init(KBitSet* bitset, size_t initial_size) {
   if (!bitset) return false;
   if (sizeof (KevBitSetInt) != 8) {
     bitset->bits = NULL;
@@ -38,7 +33,7 @@ bool kev_bitset_init(KevBitSet* bitset, size_t initial_size) {
     return false;
   }
 
-  initial_size = initial_size & KEV_BITSET_MASK ? (initial_size >> KEV_BITSET_SHIFT) + 1 : initial_size >> KEV_BITSET_SHIFT;
+  initial_size = initial_size & KBITSET_MASK ? (initial_size >> KBITSET_SHIFT) + 1 : initial_size >> KBITSET_SHIFT;
   KevBitSetInt* bits = (KevBitSetInt*)malloc(sizeof (KevBitSetInt) * initial_size);
   bitset->bits = bits;
   if (!bits) {
@@ -51,7 +46,7 @@ bool kev_bitset_init(KevBitSet* bitset, size_t initial_size) {
   return true;
 }
 
-bool kev_bitset_init_copy(KevBitSet* bitset, KevBitSet* src) {
+bool kbitset_init_copy(KBitSet* bitset, KBitSet* src) {
   if (!bitset) return false;
   if (!src || sizeof (KevBitSetInt) != 8) {
     bitset->bits = NULL;
@@ -74,7 +69,7 @@ bool kev_bitset_init_copy(KevBitSet* bitset, KevBitSet* src) {
   return true;
 }
 
-void kev_bitset_destroy(KevBitSet* bitset) {
+void kbitset_destroy(KBitSet* bitset) {
   if (bitset) {
     free(bitset->bits);
     bitset->length = 0;
@@ -82,33 +77,33 @@ void kev_bitset_destroy(KevBitSet* bitset) {
   }
 }
 
-KevBitSet* kev_bitset_create(size_t initial_size) {
-  KevBitSet* bitset = (KevBitSet*)malloc(sizeof (KevBitSet));
-  if (!bitset || !kev_bitset_init(bitset, initial_size)) {
-    kev_bitset_destroy(bitset);
+KBitSet* kbitset_create(size_t initial_size) {
+  KBitSet* bitset = (KBitSet*)malloc(sizeof (KBitSet));
+  if (!bitset || !kbitset_init(bitset, initial_size)) {
+    kbitset_destroy(bitset);
     free(bitset);
     return NULL;
   }
   return bitset;
 }
 
-KevBitSet* kev_bitset_create_copy(KevBitSet* src) {
-  KevBitSet* bitset = (KevBitSet*)malloc(sizeof (KevBitSet));
-  if (!bitset || !kev_bitset_init_copy(bitset, src)) {
-    kev_bitset_destroy(bitset);
+KBitSet* kbitset_create_copy(KBitSet* src) {
+  KBitSet* bitset = (KBitSet*)malloc(sizeof (KBitSet));
+  if (!bitset || !kbitset_init_copy(bitset, src)) {
+    kbitset_destroy(bitset);
     free(bitset);
     return NULL;
   }
   return bitset;
 }
 
-void kev_bitset_delete(KevBitSet* bitset) {
+void kbitset_delete(KBitSet* bitset) {
   if (!bitset) return;
   free(bitset->bits);
   free(bitset);
 }
 
-bool kev_bitset_intersection(KevBitSet* dest, KevBitSet* src) {
+bool kbitset_intersection(KBitSet* dest, KBitSet* src) {
   size_t min_len = dest->length > src->length ? src->length : dest->length;
   size_t i = 0;
   KevBitSetInt* dest_bits = dest->bits;
@@ -124,8 +119,8 @@ bool kev_bitset_intersection(KevBitSet* dest, KevBitSet* src) {
   return true;
 }
 
-bool kev_bitset_union(KevBitSet* dest, KevBitSet* src) {
-  if (dest->length < src->length && !kev_bitset_expand(dest, src->length << KEV_BITSET_SHIFT)) {
+bool kbitset_union(KBitSet* dest, KBitSet* src) {
+  if (dest->length < src->length && !kbitset_expand(dest, src->length << KBITSET_SHIFT)) {
     return false;
   }
 
@@ -137,7 +132,7 @@ bool kev_bitset_union(KevBitSet* dest, KevBitSet* src) {
   return true;
 }
 
-bool kev_bitset_completion(KevBitSet* bitset) {
+bool kbitset_completion(KBitSet* bitset) {
   size_t len = bitset->length;
   KevBitSetInt* bits = bitset->bits;
   for (size_t i = 0; i < len; ++i)
@@ -145,7 +140,7 @@ bool kev_bitset_completion(KevBitSet* bitset) {
   return true;
 }
 
-bool kev_bitset_difference(KevBitSet* dest, KevBitSet* src) {
+bool kbitset_difference(KBitSet* dest, KBitSet* src) {
   size_t len = src->length < dest->length ? src->length : dest->length;
   KevBitSetInt* dest_bits = dest->bits;
   KevBitSetInt* src_bits = src->bits;
@@ -154,7 +149,7 @@ bool kev_bitset_difference(KevBitSet* dest, KevBitSet* src) {
   return true;
 }
 
-bool kev_bitset_assign(KevBitSet* bitset, KevBitSet* src) {
+bool kbitset_assign(KBitSet* bitset, KBitSet* src) {
   if (bitset->length < src->length) {
     KevBitSetInt* buf = (KevBitSetInt*)malloc(sizeof (KevBitSetInt) * src->length);
     if ( !buf) return false;
@@ -169,13 +164,13 @@ bool kev_bitset_assign(KevBitSet* bitset, KevBitSet* src) {
   return true;
 }
 
-bool kev_bitset_equal(KevBitSet* set1, KevBitSet* set2) {
+bool kbitset_equal(KBitSet* set1, KBitSet* set2) {
   size_t min_length = set1->length < set2->length ? set1->length : set2->length;
   for (size_t i = 0; i < min_length; ++i) {
     if (set1->bits[i] != set2->bits[i])
       return false;
   }
-  KevBitSet* the_larger_set = set1->length < set2->length ? set2 : set1;
+  KBitSet* the_larger_set = set1->length < set2->length ? set2 : set1;
   for (size_t i = min_length; i < the_larger_set->length; ++i) {
     if (the_larger_set->bits[i] != 0)
       return false;
@@ -183,37 +178,59 @@ bool kev_bitset_equal(KevBitSet* set1, KevBitSet* set2) {
   return true;
 }
 
-static inline uint8_t kev_bitset_find_first_bit(size_t bits) {
-  KevBitSetInt mask = FIND_BIT_MASK32;
-  uint8_t current_pos = 0;
-  uint8_t half_size = 32;
-  while (half_size) {
-    if (!(bits & mask)) {
-      current_pos += half_size;
-      bits >>= half_size;
+//static inline uint8_t kbitset_find_first_bit(size_t bits) {
+//  uint8_t current_pos = 0;
+//  KevBitSetInt mask = 0xFFFFFFFF;
+//  uint8_t half = 32;
+//  while (half) {
+//    if (!(bits & mask)) {
+//      current_pos += half;
+//      bits >>= half;
+//    }
+//    half >>= 1;
+//    mask >>= half;
+//  }
+//  return current_pos;
+//}
+static inline uint8_t kbitset_find_first_bit(KevBitSetInt bits, size_t begin_bit) {
+  bits >>= begin_bit;
+  uint8_t current_pos = begin_bit;
+  uint8_t masklen = (KBITSET_INTLEN - begin_bit);
+  KevBitSetInt mask = (~(KevBitSetInt)0) >> begin_bit;
+  while (masklen > 1) {
+    size_t lowhalf = masklen / 2;
+    KevBitSetInt lowmask = mask >> (masklen - lowhalf);
+    if ((bits & lowmask)) {
+      masklen = lowhalf;
+      mask = lowmask;
+    } else {
+      current_pos += lowhalf;
+      bits >>= lowhalf;
+      masklen -= lowhalf;
+      mask >>= lowhalf;
     }
-    half_size >>= 1;
-    mask >>= half_size;
   }
   return current_pos;
 }
 
-size_t kev_bitset_iterate_next(KevBitSet* bitset, size_t previous) {
-  size_t index = (previous + 1) >> KEV_BITSET_SHIFT;
+size_t kbitset_iter_next(KBitSet* bitset, size_t previous) {
+  size_t index = (previous + 1) >> KBITSET_SHIFT;
   if (index >= bitset->length) return previous;
-  size_t bit = (previous + 1) & KEV_BITSET_MASK;
+  size_t next = (previous + 1) & KBITSET_MASK;
   KevBitSetInt* bits = bitset->bits;
-  if (bits[index] >> bit)
-    return 64 * index + bit + kev_bitset_find_first_bit(bits[index] >> bit);
+  if (bits[index] >> next)
+    return KBITSET_INTLEN * index + kbitset_find_first_bit(bits[index], next);
+    //return 64 * index + next + kbitset_find_first_bit(bits[index] >> next);
 
   for (size_t i = index + 1; i < bitset->length; ++i) {
     if (bits[i] != 0)
-      return 64 * i + kev_bitset_find_first_bit(bits[i]);
+      return KBITSET_INTLEN * i + kbitset_find_first_bit(bits[i], 0);
+      //return KBITSET_INTLEN * i + kbitset_find_first_bit(bits[i]);
   }
   return previous;
 }
 
-size_t kev_bitset_size(KevBitSet* bitset) {
+size_t kbitset_size(KBitSet* bitset) {
   size_t count = 0;
   for (size_t i = 0; i < bitset->length; ++i) {
     if (bitset->bits[i])

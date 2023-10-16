@@ -31,7 +31,7 @@ void kev_pargen_output(const char* output_path, const char* tmpl_path, KevString
 void kev_pargen_output_help(void);
 void kev_pargen_output_lrinfo(const char* collecinfo_path, const char* actioninfo_path,
                               const char* gotoinfo_path, const char* symbolinfo_path,
-                              KevLRCollection* collec, KevLRTable* table);
+                              KlrCollection* collec, KlrTable* table);
 
 void kev_pargen_output_action_code(FILE* out, const char* code, char placeholder, const char* attr_idx_fmt, const char* stk_idx_fmt);
 

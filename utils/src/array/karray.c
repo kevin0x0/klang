@@ -1,10 +1,10 @@
-#include "utils/include/array/addr_array.h"
+#include "utils/include/array/karray.h"
 
 #include <stdlib.h>
 
 #define KEV_ARRAY_DEFAULT_SIZE      (16)
 
-bool kev_addrarray_init(KevAddrArray* array) {
+bool karray_init(KArray* array) {
   if (!array) return false;
   if (!(array->begin = (void**)malloc(sizeof (void*) * KEV_ARRAY_DEFAULT_SIZE))) {
     array->end = NULL;
@@ -17,7 +17,7 @@ bool kev_addrarray_init(KevAddrArray* array) {
   return true;
 }
 
-void kev_addrarray_destroy(KevAddrArray* array) {
+void karray_destroy(KArray* array) {
   if (array) {
     free(array->begin);
     array->begin = NULL;
@@ -26,22 +26,22 @@ void kev_addrarray_destroy(KevAddrArray* array) {
   }
 }
 
-KevAddrArray* kev_addrarray_create(void) {
-  KevAddrArray* array = (KevAddrArray*)malloc(sizeof (KevAddrArray));
-  if (!array || !kev_addrarray_init(array)) {
-    kev_addrarray_delete(array);
+KArray* karray_create(void) {
+  KArray* array = (KArray*)malloc(sizeof (KArray));
+  if (!array || !karray_init(array)) {
+    karray_delete(array);
     return NULL;
   }
   return array;
 }
 
-void kev_addrarray_delete(KevAddrArray* array) {
-  kev_addrarray_destroy(array);
+void karray_delete(KArray* array) {
+  karray_destroy(array);
   free(array);
 }
 
-bool kev_addrarray_expand(KevAddrArray* array) {
-  size_t new_size = kev_addrarray_size(array) * 2;
+bool karray_expand(KArray* array) {
+  size_t new_size = karray_size(array) * 2;
   void** new_array = (void**)realloc(array->begin, sizeof (void*) * new_size);
   if (!new_array) return false;
   array->current = new_array + (array->current - array->begin);

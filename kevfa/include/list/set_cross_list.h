@@ -13,7 +13,7 @@ typedef struct tagKevSetCrossListNode {
   struct tagKevSetCrossListNode* w_next;
 } KevSetCrossListNode;
 
-typedef struct tagKevBitSetCrossList {
+typedef struct tagKevSetCrossList {
   KevSetCrossListNode head_sentinel;
   KevSetCrossListNode tail_sentinel;
 } KevSetCrossList;

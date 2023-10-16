@@ -291,12 +291,12 @@ static void kev_lexgen_output_info_c_cpp(FILE* output, KevLTableInfos* table_inf
 }
 
 static void kev_lexgen_output_macro_c_cpp(FILE* output, KevLTableInfos* table_info, KevStringMap* env_var) {
-  KevAddrArray** macros = table_info->macros;
+  KArray** macros = table_info->macros;
   int* macro_ids = table_info->macro_ids;
   for (size_t i = 0; i < table_info->pattern_no; ++i) {
-    size_t arrlen = kev_addrarray_size(macros[i]);
+    size_t arrlen = karray_size(macros[i]);
     for (size_t j = 0; j < arrlen; ++j) {
-      const char* macro_name = (const char*)kev_addrarray_visit(macros[i], j);
+      const char* macro_name = (const char*)karray_access(macros[i], j);
       fprintf(output, "#define ");
       fprintf(output, "%s (%d)\n", macro_name, (int)macro_ids[i]);
     }

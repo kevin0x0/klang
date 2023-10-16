@@ -5,7 +5,7 @@
 #include "utils/include/general/global_def.h"
 
 typedef struct tagKevSetIntMapNode {
-  KevBitSet* key;
+  KBitSet* key;
   size_t value;
   size_t hashval;
   struct tagKevSetIntMapNode* next;
@@ -20,8 +20,8 @@ typedef struct tagKevSetIntMap {
 bool kev_setintmap_init(KevSetIntMap* map, size_t capacity);
 void kev_setintmap_destroy(KevSetIntMap* map);
 
-bool kev_setintmap_insert(KevSetIntMap* map, KevBitSet* key, size_t value);
-KevSetIntMapNode* kev_setintmap_search(KevSetIntMap* map, KevBitSet* key);
+bool kev_setintmap_insert(KevSetIntMap* map, KBitSet* key, size_t value);
+KevSetIntMapNode* kev_setintmap_search(KevSetIntMap* map, KBitSet* key);
 void kev_setintmap_make_empty(KevSetIntMap* map);
 
 #endif

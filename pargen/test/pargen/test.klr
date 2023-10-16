@@ -27,7 +27,7 @@ set prio '+'(pre) = '-'(pre) = cos(pre) = sin(pre) = exp(pre) = ln(pre);
 set con priority, log : "expr.log";
 
 #define attribute type
-%attr-definition = "float";
+attr-definition = "float";
 
 #a series of statements that read next token
 %lexer-token-next = `lex_next(input);`;

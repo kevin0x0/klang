@@ -4,7 +4,7 @@
 #include "pargen/include/parser/lexer.h"
 #include "kevlr/include/lr.h"
 #include "kevlr/include/hashmap/priority_map.h"
-#include "utils/include/array/addr_array.h"
+#include "utils/include/array/karray.h"
 #include "utils/include/hashmap/str_map.h"
 #include "utils/include/hashmap/strx_map.h"
 
@@ -26,20 +26,20 @@ typedef struct tagKevConfHandler {
 
 /* pargen parser state */
 typedef struct tagKevPParserState {
-  KevAddrArray* symtables;
+  KArray* symtables;
   size_t curr_symtbl;
   KevStrXMap* symbols;
-  KevAddrArray* rules;
-  KevAddrArray* redact; /* reducing action */
+  KArray* rules;
+  KArray* redact; /* reducing action */
   size_t next_priority;
   size_t next_symbol_id;
   size_t err_count;
-  KevSymbol* start;
-  KevAddrArray* end_symbols;
-  KevSymbol* default_symbol_nt;
-  KevSymbol* default_symbol_t;
-  KevPrioMap* priorities;
-  KevAddrArray* confhandlers;
+  KlrSymbol* start;
+  KArray* end_symbols;
+  KlrSymbol* default_symbol_nt;
+  KlrSymbol* default_symbol_t;
+  KlrPrioMap* priorities;
+  KArray* confhandlers;
   char* algorithm;
 } KevPParserState;
 
