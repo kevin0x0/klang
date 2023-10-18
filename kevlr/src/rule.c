@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-static inline void kev_rulenode_delete(KlrRuleNode* rules);
+static inline void kev_rulenode_delete(KlrRuleNode* rulenode);
 
 KlrSymbol* klr_symbol_create(KlrSymbolKind kind, const char* name) {
   KlrSymbol* symbol = (KlrSymbol*)malloc(sizeof (KlrSymbol));
@@ -36,12 +36,10 @@ void klr_symbol_delete(KlrSymbol* symbol) {
 }
 
 KlrRule* klr_rule_create(KlrSymbol* head, KlrSymbol** body, size_t body_length) {
-  KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule));
-  KlrSymbol** rule_body = (KlrSymbol**)malloc(sizeof (KlrSymbol*) * body_length);
+  KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule) + sizeof (KlrSymbol*) * body_length - sizeof (KlrSymbol*));
   KlrRuleNode* rulenode = (KlrRuleNode*)malloc(sizeof (KlrRuleNode));
-  if (!rule || !rule_body || !rulenode) {
+  if (!rule || !rulenode) {
     free(rule);
-    free(rule_body);
     free(rulenode);
     return NULL;
   }
@@ -49,38 +47,23 @@ KlrRule* klr_rule_create(KlrSymbol* head, KlrSymbol** body, size_t body_length) 
   rulenode->next = head->rules;
   head->rules = rulenode;
   rule->head = head;
-  rule->body = rule_body;
+  KlrSymbol** rulebody = rule->body;
   rule->bodylen = body_length;
   for (size_t i = 0; i < body_length; ++i)
-    rule_body[i] = body[i];
-  return rule;
-}
-
-KlrRule* klr_rule_create_move(KlrSymbol* head, KlrSymbol** body, size_t body_length) {
-  KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule));
-  KlrRuleNode* rulenode = (KlrRuleNode*)malloc(sizeof (KlrRuleNode));
-  if (!rule || !rulenode) return NULL;
-  rulenode->rule = rule;
-  rulenode->next = head->rules;
-  head->rules = rulenode;
-  rule->head = head;
-  rule->body = body;
-  rule->bodylen = body_length;
+    rulebody[i] = body[i];
   return rule;
 }
 
 void klr_rule_delete(KlrRule* rule) {
-  if (rule) {
-    free(rule->body);
-    free(rule);
-  }
+  if (!rule) return;
+  free(rule);
 }
 
-static inline void kev_rulenode_delete(KlrRuleNode* rules) {
-  while (rules) {
-    KlrRuleNode* tmp = rules->next;
-    free(rules);
-    rules = tmp;
+static inline void kev_rulenode_delete(KlrRuleNode* rulenode) {
+  while (rulenode) {
+    KlrRuleNode* tmp = rulenode->next;
+    free(rulenode);
+    rulenode = tmp;
   }
 }
 

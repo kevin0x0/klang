@@ -2,8 +2,8 @@ INC_DIR = $(KEVLR_DIR)include/
 SRC_DIR = $(KEVLR_DIR)src/
 LIB_DIR = $(KEVLR_DIR)lib/
 
-OBJP_INC_DIR = $(INC_DIR)object_pool/
-OBJP_DIR = $(SRC_DIR)object_pool/
+OBJP_INC_DIR = $(INC_DIR)objpool/
+OBJP_DIR = $(SRC_DIR)objpool/
 HMAP_INC_DIR = $(INC_DIR)hashmap/
 HMAP_DIR = $(SRC_DIR)hashmap/
 SET_INC_DIR = $(INC_DIR)set/

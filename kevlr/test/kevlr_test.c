@@ -175,15 +175,15 @@ int main(int argc, char** argv) {
   rule32->id = 31;
 
   clock_t t = clock();
-  for (size_t i = 0; i < 1; ++i) {
+  for (size_t i = 0; i < 1000; ++i) {
     KlrCollection* collec = klr_collection_create_lr1(E, &end, 1);
-    klr_print_collection(stdout, collec, true);
-    KlrConflictHandler handler = { NULL, conflict_report };
+    //klr_print_collection(stdout, collec, true);
+    //KlrConflictHandler handler = { NULL, conflict_report };
 
-    KlrTable* table = klr_table_create(collec, NULL);
-    klr_print_trans_table(stdout, table);
-    klr_print_action_table(stdout, table);
-    klr_table_delete(table);
+    //KlrTable* table = klr_table_create(collec, NULL);
+    //klr_print_trans_table(stdout, table);
+    //klr_print_action_table(stdout, table);
+    //klr_table_delete(table);
     klr_collection_delete(collec);
   }
   printf("total time used:%fs\n", ((float)(clock() - t)) / (float)CLOCKS_PER_SEC);

@@ -20,10 +20,10 @@ typedef struct tagKlrSymbol {
 } KlrSymbol;
 
 typedef struct tagKlrRule {
-  KlrSymbol* head;
-  KlrSymbol** body;
-  size_t bodylen;
   size_t id;
+  size_t bodylen;
+  KlrSymbol* head;
+  KlrSymbol* body[1]; /* the first symbol of rule body */
 } KlrRule;
 
 typedef struct tagKlrRuleNode {
@@ -34,8 +34,8 @@ typedef struct tagKlrRuleNode {
 KlrSymbol* klr_symbol_create(KlrSymbolKind kind, const char* name);
 KlrSymbol* klr_symbol_create_move(KlrSymbolKind kind, char* name);
 void klr_symbol_delete(KlrSymbol* symbol);
+
 KlrRule* klr_rule_create(KlrSymbol* head, KlrSymbol** body, size_t body_length);
-KlrRule* klr_rule_create_move(KlrSymbol* head, KlrSymbol** body, size_t body_length);
 void klr_rule_delete(KlrRule* rule);
 
 /* get method */
