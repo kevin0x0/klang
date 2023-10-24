@@ -95,6 +95,29 @@ bool klmap_init(KlMap* map, size_t capacity) {
   return true;
 }
 
+bool klmap_init_copy(KlMap* map, KlMap* src) {
+  if (!klmap_init(map, klmap_capacity(src)))
+    return false;
+  KlMapIter begin = klmap_iter_begin(src);
+  KlMapIter end = klmap_iter_end(src);
+  for (KlMapIter itr = begin; itr != end; itr = klmap_iter_next(itr)) {
+    if (!klmap_insert(map, itr->key, itr->value)) {
+      klmap_destroy(map);
+      return false;
+    }
+  }
+  return true;
+}
+
+KlMap* klmap_create_copy(KlMap* src) {
+  KlMap* map = (KlMap*)malloc(sizeof (KlMap));
+  if (!map || !klmap_init_copy(map, src)) {
+    free(map);
+    return NULL;
+  }
+  return map;
+}
+
 KlMap* klmap_create(size_t capacity) {
   KlMap* map = (KlMap*)malloc(sizeof (KlMap));
   if (!map || !klmap_init(map, capacity)) {
@@ -151,7 +174,7 @@ bool klmap_insert_move(KlMap* map, KString* key, KlValue* value) {
   return true;
 }
 
-KlMapIter* klmap_search(KlMap* map, const KString* key) {
+KlMapIter klmap_search(KlMap* map, const KString* key) {
   size_t  hashval = klmap_hashing(key);
   size_t mask = map->capacity - 1;
   size_t index = mask & hashval;
@@ -167,12 +190,12 @@ KlMapIter* klmap_search(KlMap* map, const KString* key) {
   return klmap_iter_end(map);
 }
 
-KlMapIter* klmap_erase(KlMap* map, KlMapIter* iter) {
+KlMapIter klmap_erase(KlMap* map, KlMapIter iter) {
   iter->prev->next = iter->next;
   iter->next->prev = iter->prev;
   --map->size;
   size_t index = (map->capacity - 1) & iter->hashval;
-  KlMapIter* next = iter->next;
+  KlMapIter next = iter->next;
   if (map->array[index] == iter) {
     if (next == map->tail || (next->hashval & (map->capacity - 1)) != index) {
       map->array[index] = NULL;

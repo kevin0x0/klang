@@ -19,7 +19,7 @@ int main(void) {
     KlValue* val11 = klvalue_create_int(11);
     KlValue* val12 = klvalue_create_int(12);
     klmap_insert_move(map, kstring_create("0"), val0);
-    for (KlMapIter* iter = klmap_iter_begin(map); iter != klmap_iter_end(map); /* iter = klmap_iter_next(iter) */) {
+    for (KlMapIter iter = klmap_iter_begin(map); iter != klmap_iter_end(map); /* iter = klmap_iter_next(iter) */) {
       iter = klmap_erase(map, iter);
     }
     klmap_insert_move(map, kstring_create("1"), val1);

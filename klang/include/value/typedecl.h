@@ -4,5 +4,6 @@
 typedef struct tagKlArray KlArray;
 typedef struct tagKlMap KlMap;
 typedef struct tagKlValue KlValue;
+typedef struct tagKlScope KlScope;
 
 #endif

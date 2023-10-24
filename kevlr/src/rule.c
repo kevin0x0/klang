@@ -36,7 +36,28 @@ void klr_symbol_delete(KlrSymbol* symbol) {
 }
 
 KlrRule* klr_rule_create(KlrSymbol* head, KlrSymbol** body, size_t body_length) {
-  KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule) + sizeof (KlrSymbol*) * body_length - sizeof (KlrSymbol*));
+  KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule));
+  KlrSymbol** rulebody = (KlrSymbol**)malloc(sizeof (KlrSymbol*) * body_length);
+  KlrRuleNode* rulenode = (KlrRuleNode*)malloc(sizeof (KlrRuleNode));
+  if (!rule || !rulebody || !rulenode) {
+    free(rule);
+    free(rulebody);
+    free(rulenode);
+    return NULL;
+  }
+  rulenode->rule = rule;
+  rulenode->next = head->rules;
+  head->rules = rulenode;
+  rule->head = head;
+  rule->body = rulebody;
+  rule->bodylen = body_length;
+  for (size_t i = 0; i < body_length; ++i)
+    rulebody[i] = body[i];
+  return rule;
+}
+
+KlrRule* klr_rule_create_move(KlrSymbol* head, KlrSymbol** body, size_t body_length) {
+  KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule));
   KlrRuleNode* rulenode = (KlrRuleNode*)malloc(sizeof (KlrRuleNode));
   if (!rule || !rulenode) {
     free(rule);
@@ -47,15 +68,14 @@ KlrRule* klr_rule_create(KlrSymbol* head, KlrSymbol** body, size_t body_length) 
   rulenode->next = head->rules;
   head->rules = rulenode;
   rule->head = head;
-  KlrSymbol** rulebody = rule->body;
+  rule->body = body;
   rule->bodylen = body_length;
-  for (size_t i = 0; i < body_length; ++i)
-    rulebody[i] = body[i];
   return rule;
 }
 
 void klr_rule_delete(KlrRule* rule) {
   if (!rule) return;
+  free(rule->body);
   free(rule);
 }
 

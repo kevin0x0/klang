@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 
-KlValue kl_nil_struct = { { 0 }, KL_NIL, 1 };
+KlValue kl_nil_struct = { { 0 }, NULL, KL_NIL, false , NULL };
 
 static KlValue* kl_nil = &kl_nil_struct;
 
@@ -21,7 +21,6 @@ KlValue* klvalue_create_array(void) {
   }
   value->value.array = array;
   value->type = KL_ARRAY;
-  value->ref_count = 1;
   return value;
 }
 
@@ -33,12 +32,19 @@ KlValue* klvalue_create_array_move(KlArray* array) {
   }
   value->value.array = array;
   value->type = KL_ARRAY;
-  value->ref_count = 1;
   return value;
 }
 
 KlValue* klvalue_create_map(void) {
-  return NULL;
+  KlValue* value = klvalue_pool_allocate();
+  KlMap* map = klmap_create(4);
+  if (!map || !value) {
+    klvalue_pool_deallocate(value);
+    return NULL;
+  }
+  value->value.map = map;
+  value->type = KL_MAP;
+  return value;
 }
 
 KlValue* klvalue_create_map_move(KlMap* map) {
@@ -49,7 +55,6 @@ KlValue* klvalue_create_map_move(KlMap* map) {
   }
   value->value.map = map;
   value->type = KL_MAP;
-  value->ref_count = 1;
   return value;
 }
 
@@ -63,7 +68,6 @@ KlValue* klvalue_create_string(const KString* string) {
   }
   value->value.string = copy;
   value->type = KL_STRING;
-  value->ref_count = 1;
   return value;
 }
 
@@ -75,7 +79,6 @@ KlValue* klvalue_create_string_move(KString* string) {
   }
   value->value.string = string;
   value->type = KL_STRING;
-  value->ref_count = 1;
   return value;
 }
 
@@ -87,12 +90,34 @@ KlValue* klvalue_create_int(KlInt val) {
   }
   value->value.intval = val;
   value->type = KL_INT;
-  value->ref_count = 1;
   return value;
 }
 
 KlValue* klvalue_create_shallow_copy(KlValue* value) {
-  return NULL;
+  KlValue* copy = klvalue_pool_allocate();
+  if (!copy) {
+    klvalue_pool_deallocate(value);
+    return NULL;
+  }
+  switch (value->type) {
+    case KL_INT:
+      copy->value.intval = value->value.intval;
+      break;
+    case KL_STRING:
+      copy->value.string = kstring_create_copy(value->value.string);
+      break;
+    case KL_MAP:
+      copy->value.map = klmap_create_copy(value->value.map);
+      break;
+    case KL_ARRAY:
+      copy->value.array = klarray_create_copy(value->value.array);
+      break;
+    default:
+      /* impossible state */
+      exit(EXIT_FAILURE);
+  }
+  copy->type = value->type;
+  return copy;
 }
 
 void klvalue_delete(KlValue* value) {
@@ -115,6 +140,6 @@ void klvalue_delete(KlValue* value) {
   klvalue_pool_deallocate(value);
 }
 
-KlValue* klvalue_get_nil(KlValue* value) {
+KlValue* klvalue_get_nil(void) {
   return kl_nil;
 }

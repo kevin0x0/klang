@@ -1,10 +1,10 @@
-#include "utils/include/array/karray.h"
+#include "utils/include/array/kiarray.h"
 
 #include <stdlib.h>
 
 #define KARRAY_SIZE       (4)
 
-bool karray_init(KArray* array) {
+bool kiarray_init(KIArray* array) {
   if (!array) return false;
   if (!(array->begin = (void**)malloc(sizeof (void*) * KARRAY_SIZE))) {
     array->end = NULL;
@@ -17,7 +17,7 @@ bool karray_init(KArray* array) {
   return true;
 }
 
-void karray_destroy(KArray* array) {
+void kiarray_destroy(KIArray* array) {
   if (array) {
     free(array->begin);
     array->begin = NULL;
@@ -26,22 +26,22 @@ void karray_destroy(KArray* array) {
   }
 }
 
-KArray* karray_create(void) {
-  KArray* array = (KArray*)malloc(sizeof (KArray));
-  if (!array || !karray_init(array)) {
-    karray_delete(array);
+KIArray* kiarray_create(void) {
+  KIArray* array = (KIArray*)malloc(sizeof (KIArray));
+  if (!array || !kiarray_init(array)) {
+    kiarray_delete(array);
     return NULL;
   }
   return array;
 }
 
-void karray_delete(KArray* array) {
-  karray_destroy(array);
+void kiarray_delete(KIArray* array) {
+  kiarray_destroy(array);
   free(array);
 }
 
-bool karray_expand(KArray* array) {
-  size_t new_size = karray_size(array) * 2;
+bool kiarray_expand(KIArray* array) {
+  size_t new_size = kiarray_size(array) * 2;
   void** new_array = (void**)realloc(array->begin, sizeof (void*) * new_size);
   if (!new_array) return false;
   array->current = new_array + (array->current - array->begin);

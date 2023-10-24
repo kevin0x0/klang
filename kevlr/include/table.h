@@ -78,7 +78,7 @@ void klr_conflict_delete(KlrConflict* conflict);
 static inline void klr_conflict_add_item(KlrConflict* conflict, KlrItem* item);
 static inline bool klr_conflict_handle(KlrConflictHandler* handler, KlrConflict* conflict, KlrCollection* collec);
 
-/* conflict interface */
+/* conflict handling */
 static inline bool klr_conflict_SR(KlrConflict* conflict);
 static inline bool klr_conflict_RR(KlrConflict* conflict);
 static inline KlrItemSet* klr_conflict_get_conflict_items(KlrConflict* conflict);

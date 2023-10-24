@@ -19,6 +19,20 @@ bool klarray_init(KlArray* array) {
   return true;
 }
 
+bool klarray_init_copy(KlArray* array, KlArray* src) {
+  if (!klarray_init(array))
+    return false;
+  KlArrayIter begin = klarray_iter_begin(src);
+  KlArrayIter end = klarray_iter_end(src);
+  for (KlArrayIter itr = begin; itr != end; itr = klarray_iter_next(itr)) {
+    if (!klarray_push_back(array, *itr)) {
+      klarray_destroy(array);
+      return false;
+    }
+  }
+  return true;
+}
+
 void klarray_destroy(KlArray* array) {
   if (!array) return;
   free(array->begin);
@@ -30,6 +44,15 @@ void klarray_destroy(KlArray* array) {
 KlArray* klarray_create(void) {
   KlArray* array = (KlArray*)malloc(sizeof (KlArray));
   if (!array || !klarray_init(array)) {
+    klarray_delete(array);
+    return NULL;
+  }
+  return array;
+}
+
+KlArray* klarray_create_copy(KlArray* src) {
+  KlArray* array = (KlArray*)malloc(sizeof (KlArray));
+  if (!array || !klarray_init_copy(array, src)) {
     klarray_delete(array);
     return NULL;
   }

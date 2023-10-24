@@ -103,7 +103,7 @@ static void klr_slr_destroy_collec(KlrSLRCollection* collec) {
 
 static bool klr_slr_get_all_itemsets(KlrItemSet* start_iset, KlrSLRCollection* collec) {
   KArray* itemset_array = karray_create();
-  KlrItemSetSet* iset_set = klr_itemsetset_create(16, klr_slr_itemset_equal);
+  KlrItemSetSet* iset_set = klr_itemsetset_create(32, klr_slr_itemset_equal);
   KlrItemSetClosure closure;
   size_t symbol_no = collec->symbol_no;
   KlrTransSet* transitions = klr_transset_create(symbol_no);

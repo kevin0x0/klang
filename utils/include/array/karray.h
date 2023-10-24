@@ -23,11 +23,16 @@ bool karray_expand(KArray* array);
 static inline void* karray_access(KArray* array, size_t index);
 static inline void* karray_top(KArray* array);
 static inline size_t karray_size(KArray* array);
+static inline size_t karray_capacity(KArray* array);
 static inline void** karray_steal(KArray* array);
 static inline void** karray_raw(KArray* array);
 
 static inline size_t karray_size(KArray* array) {
   return array->current - array->begin;
+}
+
+static inline size_t karray_capacity(KArray* array) {
+  return array->end - array->begin;
 }
 
 static inline bool karray_push_back(KArray* array, void* addr) {

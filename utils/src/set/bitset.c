@@ -15,7 +15,7 @@ bool kbitset_expand(KBitSet* bitset, size_t new_size) {
   return true;
 }
 
-inline static size_t kev_bit_count(KevBitSetInt word) {
+inline static size_t kbitset_bit_count(KevBitSetInt word) {
   word = word - ((word >> 1) & 0x5555555555555555);
   word = (word & 0x3333333333333333) + ((word >> 2) & 0x3333333333333333);
   word = (word + (word >> 4)) & 0x0f0f0f0f0f0f0f0f;
@@ -212,6 +212,10 @@ static inline uint8_t kbitset_find_first_bit(KevBitSetInt bits, size_t begin_bit
   }
   return current_pos;
 }
+//static inline uint8_t kbitset_find_first_bit(KevBitSetInt bits) {
+//  KevBitSetInt allone = ~(bits & (bits - 1));
+//  return kbitset_bit_count(allone);
+//}
 
 size_t kbitset_iter_next(KBitSet* bitset, size_t previous) {
   size_t index = (previous + 1) >> KBITSET_SHIFT;
@@ -220,7 +224,7 @@ size_t kbitset_iter_next(KBitSet* bitset, size_t previous) {
   KevBitSetInt* bits = bitset->bits;
   if (bits[index] >> next)
     return KBITSET_INTLEN * index + kbitset_find_first_bit(bits[index], next);
-    //return 64 * index + next + kbitset_find_first_bit(bits[index] >> next);
+    //return KBITSET_INTLEN * index + next + kbitset_find_first_bit(bits[index] >> next);
 
   for (size_t i = index + 1; i < bitset->length; ++i) {
     if (bits[i] != 0)
@@ -234,7 +238,7 @@ size_t kbitset_size(KBitSet* bitset) {
   size_t count = 0;
   for (size_t i = 0; i < bitset->length; ++i) {
     if (bitset->bits[i])
-      count += kev_bit_count(bitset->bits[i]);
+      count += kbitset_bit_count(bitset->bits[i]);
   }
   return count;
 }
