@@ -1,0 +1,5 @@
+local name 0
+local age 0
+local gender 0
+local salary 0
+shared count 0

@@ -1,4 +1,5 @@
 #include "utils/include/hashmap/address_map.h"
+#include "utils/include/utils/utils.h"
 
 #include <stdlib.h>
 
@@ -32,7 +33,7 @@ static void kev_addressmap_rehash(KevAddressMap* to, KevAddressMap* from) {
 
 static bool kev_addressmap_expand(KevAddressMap* map) {
   KevAddressMap new_map;
-  if (!kev_addressmap_init(&new_map, map->capacity << 1))
+  if (k_unlikely(!kev_addressmap_init(&new_map, map->capacity << 1)))
     return false;
   kev_addressmap_rehash(&new_map, map);
   *map = new_map;
@@ -61,7 +62,7 @@ bool kev_addressmap_init(KevAddressMap* map, size_t capacity) {
   /* TODO: make sure capacity is power of 2 */
   capacity = pow_of_2_above(capacity);
   KevAddressMapNode** array = (KevAddressMapNode**)malloc(sizeof (KevAddressMapNode*) * capacity);
-  if (!array) {
+  if (k_unlikely(!array)) {
     map->array = NULL;
     map->capacity = 0;
     map->size = 0;
@@ -79,24 +80,25 @@ bool kev_addressmap_init(KevAddressMap* map, size_t capacity) {
 }
 
 void kev_addressmap_destroy(KevAddressMap* map) {
-  if (map) {
-    KevAddressMapNode** array = map->array;
-    size_t capacity = map->capacity;
-    for (size_t i = 0; i < capacity; ++i)
-      kev_addressmap_bucket_free(array[i]);
-    free(array);
-    map->array = NULL;
-    map->capacity = 0;
-    map->size = 0;
-  }
+  if (k_unlikely(!map)) return;
+
+  KevAddressMapNode** array = map->array;
+  size_t capacity = map->capacity;
+  for (size_t i = 0; i < capacity; ++i)
+    kev_addressmap_bucket_free(array[i]);
+  free(array);
+  map->array = NULL;
+  map->capacity = 0;
+  map->size = 0;
+
 }
 
 bool kev_addressmap_insert(KevAddressMap* map, void* key, void* value) {
-  if (map->size >= map->capacity && !kev_addressmap_expand(map))
+  if (k_unlikely(map->size >= map->capacity && !kev_addressmap_expand(map)))
     return false;
 
   KevAddressMapNode* new_node = (KevAddressMapNode*)malloc(sizeof (*new_node));
-  if (!new_node) return false;
+  if (k_unlikely(!new_node)) return false;
 
   size_t index = (map->capacity - 1) & kev_addressmap_hashing(key);
   new_node->key = key;

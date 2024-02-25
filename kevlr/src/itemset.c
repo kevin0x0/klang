@@ -43,7 +43,7 @@ void klr_closure_delete(KlrItemSetClosure* closure) {
 }
 
 void klr_closure_destroy(KlrItemSetClosure* closure) {
-  if (!closure) return;
+  if (k_unlikely(!closure)) return;
   KArray* symbols = closure->symbols;
   size_t size = karray_size(symbols);
   for (size_t i = 0; i < size; ++i) {
@@ -71,7 +71,7 @@ void klr_closure_make_empty(KlrItemSetClosure* closure) {
 bool klr_closure_init(KlrItemSetClosure* closure, size_t symbol_no) {
   KArray* symbols = karray_create();
   KBitSet** las = (KBitSet**)malloc(sizeof (KBitSet*) * symbol_no);
-  if (!symbols || !las) {
+  if (k_unlikely(!symbols || !las)) {
     free(symbols);
     free(las);
     return false;
@@ -84,7 +84,7 @@ bool klr_closure_init(KlrItemSetClosure* closure, size_t symbol_no) {
 
 KlrItemSetClosure* klr_closure_create(size_t symbol_no) {
   KlrItemSetClosure* closure = (KlrItemSetClosure*)malloc(sizeof (KlrItemSetClosure));
-  if (!closure || !klr_closure_init(closure, symbol_no)) {
+  if (k_unlikely(!closure || !klr_closure_init(closure, symbol_no))) {
     free(closure);
     return NULL;
   }
@@ -102,16 +102,16 @@ bool klr_closure_make(KlrItemSetClosure* closure, KlrItemSet* itemset, KBitSet**
     if (symbol->kind == KLR_TERMINAL)
       continue;
     KBitSet* la = klr_get_kernel_item_follows(kitem, firsts, epsilon);
-    if (!la) return false;
+    if (k_unlikely(!la)) return false;
     size_t index = symbol->index;
     if (las[index]) {
-      if (!kbitset_union(las[index], la)) {
+      if (k_unlikely(!kbitset_union(las[index], la))) {
         kbitset_delete(la);
         return false;
       }
       kbitset_delete(la);
     } else {
-      if (!karray_push_back(symbols, symbol)) {
+      if (k_unlikely(!karray_push_back(symbols, symbol))) {
         kbitset_delete(la);
         return false;
       }
@@ -129,16 +129,16 @@ bool klr_closure_make(KlrItemSetClosure* closure, KlrItemSet* itemset, KBitSet**
       if (symbol->kind == KLR_TERMINAL)
         continue;
       KBitSet* la = klr_get_non_kernel_item_follows(rule, las[head_index], firsts, epsilon);
-      if (!la) return false;
+      if (k_unlikely(!la)) return false;
       size_t index = symbol->index;
       if (las[index]) {
-        if (!kbitset_union(las[index], la)) {
+        if (k_unlikely(!kbitset_union(las[index], la))) {
           kbitset_delete(la);
           return false;
         }
         kbitset_delete(la);
       } else {
-        if (!karray_push_back(symbols, symbol)) {
+        if (k_unlikely(!karray_push_back(symbols, symbol))) {
           kbitset_delete(la);
           return false;
         }
@@ -174,7 +174,7 @@ static bool klr_closure_propagate(KlrItemSetClosure* closure, size_t epsilon) {
         if (i != len) continue;
         if (!kbitset_is_subset(las[symbol->index], las[body[0]->index])) {
           not_done = true;
-          if (!kbitset_union(las[body[0]->index], las[symbol->index]))
+          if (k_unlikely(!kbitset_union(las[body[0]->index], las[symbol->index])))
             return false;
         }
       }
@@ -194,7 +194,7 @@ static KBitSet* klr_get_kernel_item_follows(KlrItem* kitem, KBitSet** firsts, si
       return follows;
     }
     KBitSet* set = firsts[rulebody[i]->index];
-    if (!kbitset_union(follows, set)) {
+    if (k_unlikely(!kbitset_union(follows, set))) {
       kbitset_delete(follows);
       return NULL;
     }
@@ -204,7 +204,7 @@ static KBitSet* klr_get_kernel_item_follows(KlrItem* kitem, KBitSet** firsts, si
     }
   }
   kbitset_clear(follows, epsilon);
-  if (!kbitset_union(follows, kitem->lookahead)) {
+  if (k_unlikely(!kbitset_union(follows, kitem->lookahead))) {
     kbitset_delete(follows);
     return NULL;
   }
@@ -222,7 +222,7 @@ static KBitSet* klr_get_non_kernel_item_follows(KlrRule* rule, KBitSet* lookahea
       return follows;
     }
     KBitSet* set = firsts[rulebody[i]->index];
-    if (!kbitset_union(follows, set)) {
+    if (k_unlikely(!kbitset_union(follows, set))) {
       kbitset_delete(follows);
       return NULL;
     }
@@ -232,7 +232,7 @@ static KBitSet* klr_get_non_kernel_item_follows(KlrRule* rule, KBitSet* lookahea
     }
   }
   kbitset_clear(follows, epsilon);
-  if (!kbitset_union(follows, lookahead)) {
+  if (k_unlikely(!kbitset_union(follows, lookahead))) {
     kbitset_delete(follows);
     return NULL;
   }

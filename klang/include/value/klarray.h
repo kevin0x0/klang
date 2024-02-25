@@ -1,40 +1,50 @@
 #ifndef KEVCC_KLANG_INCLUDE_VALUE_KLARRAY_H
 #define KEVCC_KLANG_INCLUDE_VALUE_KLARRAY_H
-#include "klang/include/value/typedecl.h"
+
+#include "klang/include/mm/klmm.h"
+#include "klang/include/value/klclass.h"
+#include "klang/include/value/klvalue.h"
 
 #include <stddef.h>
 #include <stdbool.h>
 
 typedef struct tagKlArray {
-  KlValue** begin;
-  KlValue** end;
-  KlValue** current;
+  KlObject objbase;
+  KlValue* begin;
+  KlValue* end;
+  KlValue* current;
+  klobject_tail;
 } KlArray;
 
-typedef KlValue** KlArrayIter;
+typedef KlValue* KlArrayIter;
 
-bool klarray_init(KlArray* array);
-bool klarray_init_copy(KlArray* array, KlArray* src);
-void klarray_destroy(KlArray* array);
-KlArray* klarray_create(void);
-KlArray* klarray_create_copy(KlArray* src);
-void klarray_delete(KlArray* array);
+KlClass* klarray_class(KlMM* klmm);
+KlArray* klarray_create(KlClass* arrayclass, size_t capacity);
 
-static inline KlValue* klarray_swap(KlArray* array, size_t index, KlValue* value);
-static inline bool klarray_push_back(KlArray* array, KlValue* value);
-static inline void klarray_pop_back(KlArray* array);
-static inline void klarray_make_empty(KlArray* array);
-bool klarray_expand(KlArray* array);
-static inline KlValue* klarray_access(KlArray* array, size_t index);
-static inline KlValue* klarray_top(KlArray* array);
+bool klarray_check_capacity(KlArray* array, size_t capacity);
+
 static inline size_t klarray_size(KlArray* array);
 static inline size_t klarray_capacity(KlArray* array);
-static inline KlValue** klarray_steal(KlArray* array);
-static inline KlValue** klarray_raw(KlArray* array);
+
+static inline bool klarray_expand(KlArray* array);
+
+static inline bool klarray_push_back(KlArray* array, KlValue* value);
+static inline void klarray_pop_back(KlArray* array);
+static inline void klarray_multipop(KlArray* array, size_t count);
+static inline KlValue* klarray_top(KlArray* array);
+
+static inline void klarray_make_empty(KlArray* array);
+static inline KlValue* klarray_access(KlArray* array, size_t index);
+static inline void klarray_index(KlArray* array, size_t index, KlValue* val);
+static inline bool klarray_indexas(KlArray* array, size_t index, KlValue* val);
+static inline KlValue* klarray_access_from_top(KlArray* array, size_t index);
+//static inline KlValue* klarray_set_from_top(KlArray* array, size_t index);
+static inline KlValue* klarray_raw(KlArray* array);
 
 static inline KlArrayIter klarray_iter_begin(KlArray* array);
 static inline KlArrayIter klarray_iter_end(KlArray* array);
 static inline KlArrayIter klarray_iter_next(KlArrayIter itr);
+
 
 static inline size_t klarray_size(KlArray* array) {
   return array->current - array->begin;
@@ -44,47 +54,62 @@ static inline size_t klarray_capacity(KlArray* array) {
   return array->end - array->begin;
 }
 
+
+static inline bool klarray_expand(KlArray* array) {
+  return klarray_check_capacity(array, klarray_size(array) * 2);
+}
+
 static inline bool klarray_push_back(KlArray* array, KlValue* value) {
-  if (array->current == array->end &&
-      !klarray_expand(array)) {
+  if (kl_unlikely(array->current == array->end && !klarray_expand(array))) {
     return false;
   }
-  *array->current++ = value;
+  klvalue_setvalue(array->current++, value);
   return true;
 }
 
-static inline void klarray_pop_back(KlArray* array) {
-  array->current--;
+static inline void klarray_multipop(KlArray* array, size_t count) {
+  array->current -= count;
 }
 
-static inline KlValue* klarray_access(KlArray* array, size_t index) {
-  return array->begin[index];
+static inline void klarray_pop_back(KlArray* array) {
+  klarray_multipop(array, 1);
 }
 
 static inline KlValue* klarray_top(KlArray* array) {
-  return *(array->current - 1);
+  return array->current - 1;
+}
+
+
+static inline KlValue* klarray_access(KlArray* array, size_t index) {
+  return &array->begin[index];
+}
+
+static inline void klarray_index(KlArray* array, size_t index, KlValue* val) {
+  if (index < klarray_size(array)) {
+    klvalue_setvalue(val, klarray_access(array, index));
+    return;
+  }
+  klvalue_setnil(val);
+}
+
+static inline bool klarray_indexas(KlArray* array, size_t index, KlValue* val) {
+  if (index < klarray_size(array)) {
+    klvalue_setvalue(klarray_access(array, index), val);
+    return true;
+  }
+  return false;
+}
+
+static inline KlValue* klarray_access_from_top(KlArray* array, size_t index) {
+  return &array->current[-index];
 }
 
 static inline void klarray_make_empty(KlArray* array) {
   array->current = array->begin;
 }
 
-static inline KlValue** klarray_steal(KlArray* array) {
-  KlValue** ret = array->begin;
-  array->begin = NULL;
-  array->current = NULL;
-  array->end = NULL;
-  return ret;
-}
-
-static inline KlValue** klarray_raw(KlArray* array) {
+static inline KlValue* klarray_raw(KlArray* array) {
   return array->begin;
-}
-
-static inline KlValue* klarray_swap(KlArray* array, size_t index, KlValue* value) {
-  void* ret = array->begin[index];
-  array->begin[index] = value;
-  return ret;
 }
 
 static inline KlArrayIter klarray_iter_begin(KlArray* array) {

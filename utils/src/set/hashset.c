@@ -32,7 +32,7 @@ static void kev_hashset_rehash(KevHashSet* to, KevHashSet* from) {
 
 static bool kev_hashset_expand(KevHashSet* set) {
   KevHashSet new_set;
-  if (!kev_hashset_init(&new_set, set->capacity << 1))
+  if (!khashset_init(&new_set, set->capacity << 1))
     return false;
   kev_hashset_rehash(&new_set, set);
   *set = new_set;
@@ -55,7 +55,7 @@ inline static size_t pow_of_2_above(size_t num) {
   return pow;
 }
 
-bool kev_hashset_init(KevHashSet* set, size_t capacity) {
+bool khashset_init(KevHashSet* set, size_t capacity) {
   if (!set) return false;
 
   /* TODO: make sure capacity is power of 2 */
@@ -78,7 +78,7 @@ bool kev_hashset_init(KevHashSet* set, size_t capacity) {
   return true;
 }
 
-void kev_hashset_destroy(KevHashSet* set) {
+void khashset_destroy(KevHashSet* set) {
   if (set) {
     KevHashSetNode** array = set->array;
     size_t capacity = set->capacity;
@@ -91,7 +91,7 @@ void kev_hashset_destroy(KevHashSet* set) {
   }
 }
 
-bool kev_hashset_insert(KevHashSet* set, void* element) {
+bool khashset_insert(KevHashSet* set, void* element) {
   if (set->size >= set->capacity && !kev_hashset_expand(set))
     return false;
 
@@ -106,7 +106,7 @@ bool kev_hashset_insert(KevHashSet* set, void* element) {
   return true;
 }
 
-bool kev_hashset_has(KevHashSet* set, void* element) {
+bool khashset_has(KevHashSet* set, void* element) {
   size_t index = (set->capacity - 1) & kev_hashset_hashing(element);
   KevHashSetNode* node = set->array[index];
   for (; node; node = node->next) {

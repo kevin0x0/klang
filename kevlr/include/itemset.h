@@ -41,7 +41,7 @@ void klr_closure_make_empty(KlrItemSetClosure* closure);
 
 static inline KlrItemSet* klr_itemset_create(void) {
   KlrItemSet* itemset = klr_itemset_pool_allocate();
-  if (!itemset) return NULL;
+  if (k_unlikely(!itemset)) return NULL;
   itemset->items = NULL;
   itemset->trans = NULL;
   return itemset;
@@ -49,7 +49,7 @@ static inline KlrItemSet* klr_itemset_create(void) {
 
 static inline KlrItem* klr_item_create(KlrRule* rule, size_t dot) {
   KlrItem* item = klr_item_pool_allocate();
-  if (!item) return NULL;
+  if (k_unlikely(!item)) return NULL;
   item->rule = rule;
   item->dot = dot;
   item->lookahead = NULL;
@@ -61,7 +61,7 @@ static inline KlrItem* klr_item_create_copy(KlrItem* item) {
   ret->rule = item->rule;
   ret->dot = item->dot;
   ret->lookahead = NULL;
-  if (item->lookahead && !(ret->lookahead = kbitset_create_copy(item->lookahead))) {
+  if (k_unlikely(item->lookahead && !(ret->lookahead = kbitset_create_copy(item->lookahead)))) {
     klr_item_delete(ret);
     return NULL;
   }
@@ -69,10 +69,9 @@ static inline KlrItem* klr_item_create_copy(KlrItem* item) {
 }
 
 static inline void klr_item_delete(KlrItem* item) {
-  if (item) {
-    kbitset_delete(item->lookahead);
-    klr_item_pool_deallocate(item);
-  }
+  if (k_unlikely(!item)) return;
+  kbitset_delete(item->lookahead);
+  klr_item_pool_deallocate(item);
 }
 
 static inline void klr_itemset_add_trans(KlrItemSet* itemset, KlrItemSetTransition* trans) {
@@ -82,7 +81,7 @@ static inline void klr_itemset_add_trans(KlrItemSet* itemset, KlrItemSetTransiti
 
 static inline bool klr_itemset_goto(KlrItemSet* itemset, KlrSymbol* symbol, KlrItemSet* iset) {
   KlrItemSetTransition* trans = klr_itemsettrans_pool_allocate();
-  if (!trans) return false;
+  if (k_unlikely(!trans)) return false;
   trans->symbol = symbol;
   trans->target = iset;
   klr_itemset_add_trans(itemset, trans);

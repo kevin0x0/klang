@@ -6,11 +6,11 @@
 #define KEV_INTQUEUE_DEFAULT_SIZE   (32)
 
 bool kev_intqueue_init(KevIntQueue* queue) {
-  if (!queue) return false;
+  if (k_unlikely(!queue)) return false;
   queue->array = NULL;
   queue->head = 0;
   queue->array = (size_t*)malloc(sizeof (size_t) * KEV_INTQUEUE_DEFAULT_SIZE);
-  if (!queue->array) {
+  if (k_unlikely(!queue->array)) {
     queue->tail = 0;
     queue->capacity = 0;
     return false;
@@ -21,19 +21,20 @@ bool kev_intqueue_init(KevIntQueue* queue) {
 }
 
 void kev_intqueue_destroy(KevIntQueue* queue) {
-  if (queue) {
-    free(queue->array);
-    queue->array = NULL;
-    queue->capacity = 0;
-    queue->head = 0;
-    queue->tail = 0;
-  }
+  if (k_unlikely(queue))
+    return;
+  free(queue->array);
+  queue->array = NULL;
+  queue->capacity = 0;
+  queue->head = 0;
+  queue->tail = 0;
+
 }
 
 bool kev_intqueue_expand(KevIntQueue* queue) {
   size_t new_size = queue->capacity * 2;
   size_t* array = (size_t*)malloc(new_size * sizeof (size_t));
-  if (!array) return false;
+  if (k_unlikely(!array)) return false;
   if (queue->head < queue->tail) {
     memcpy(array, queue->array + queue->head, sizeof (size_t) * (queue->tail - queue->head));
     free(queue->array);

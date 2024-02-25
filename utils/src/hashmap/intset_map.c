@@ -40,7 +40,7 @@ static void kev_intsetmap_rehash(KevIntSetMap* to, KevIntSetMap* from) {
 
 static bool kev_intsetmap_expand(KevIntSetMap* map) {
   KevIntSetMap new_map;
-  if (!kev_intsetmap_init(&new_map, map->capacity << 1))
+  if (k_unlikely(!kev_intsetmap_init(&new_map, map->capacity << 1)))
     return false;
   kev_intsetmap_rehash(&new_map, map);
   *map = new_map;
@@ -72,7 +72,7 @@ bool kev_intsetmap_init(KevIntSetMap* map, size_t capacity) {
   map->bucket_head = NULL;
   capacity = pow_of_2_above(capacity);
   KevIntSetMapBucket* array = (KevIntSetMapBucket*)malloc(sizeof (KevIntSetMapBucket) * capacity);
-  if (!array) {
+  if (k_unlikely(!array)) {
     map->array = NULL;
     map->capacity = 0;
     map->size = 0;
@@ -90,27 +90,27 @@ bool kev_intsetmap_init(KevIntSetMap* map, size_t capacity) {
 }
 
 void kev_intsetmap_destroy(KevIntSetMap* map) {
-  if (map) {
-    KevIntSetMapBucket* bucket = map->bucket_head;
-    while (bucket) {
-      KevIntSetMapBucket* tmp = bucket->next;
-      kev_intsetmap_bucket_free(bucket);
-      bucket = tmp;
-    }
-    free(map->array);
-    map->bucket_head = NULL;
-    map->array = NULL;
-    map->capacity = 0;
-    map->size = 0;
+  if (k_unlikely(!map)) return;
+
+  KevIntSetMapBucket* bucket = map->bucket_head;
+  while (bucket) {
+    KevIntSetMapBucket* tmp = bucket->next;
+    kev_intsetmap_bucket_free(bucket);
+    bucket = tmp;
   }
+  free(map->array);
+  map->bucket_head = NULL;
+  map->array = NULL;
+  map->capacity = 0;
+  map->size = 0;
 }
 
 bool kev_intsetmap_insert(KevIntSetMap* map, size_t key, KBitSet* value) {
-  if (map->size >= map->capacity && !kev_intsetmap_expand(map))
+  if (k_unlikely(map->size >= map->capacity && !kev_intsetmap_expand(map)))
     return false;
 
   KevIntSetMapNode* new_node = kev_intsetmap_node_pool_allocate();
-  if (!new_node) return false;
+  if (k_unlikely(!new_node)) return false;
 
   size_t index = (map->capacity - 1) & kev_intsetmap_hashing(key);
   new_node->key = key;
@@ -147,7 +147,7 @@ void kev_intsetmap_make_empty(KevIntSetMap* map) {
 }
 
 KevIntSetMapNode* kev_intsetmap_iterate_next(KevIntSetMap* map, KevIntSetMapNode* current) {
-  if (current->next) return current->next;
+  if (k_unlikely(current->next)) return current->next;
   size_t index = (map->capacity - 1) & kev_intsetmap_hashing(current->key);
   KevIntSetMapBucket* current_bucket = &map->array[index];
   if (current_bucket->next)

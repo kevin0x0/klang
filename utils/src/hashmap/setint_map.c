@@ -39,7 +39,7 @@ static void kev_setintmap_rehash(KevSetIntMap* to, KevSetIntMap* from) {
 
 static bool kev_setintmap_expand(KevSetIntMap* map) {
   KevSetIntMap new_map;
-  if (!kev_setintmap_init(&new_map, map->capacity << 1))
+  if (k_unlikely(!kev_setintmap_init(&new_map, map->capacity << 1)))
     return false;
   kev_setintmap_rehash(&new_map, map);
   *map = new_map;
@@ -63,12 +63,12 @@ inline static size_t pow_of_2_above(size_t num) {
 }
 
 bool kev_setintmap_init(KevSetIntMap* map, size_t capacity) {
-  if (!map) return false;
+  if (k_unlikely(!map)) return false;
 
   /* TODO: make sure capacity is power of 2 */
   capacity = pow_of_2_above(capacity);
   KevSetIntMapNode** array = (KevSetIntMapNode**)malloc(sizeof (KevSetIntMapNode*) * capacity);
-  if (!array) {
+  if (k_unlikely(!array)) {
     map->array = NULL;
     map->capacity = 0;
     map->size = 0;
@@ -86,24 +86,24 @@ bool kev_setintmap_init(KevSetIntMap* map, size_t capacity) {
 }
 
 void kev_setintmap_destroy(KevSetIntMap* map) {
-  if (map) {
-    KevSetIntMapNode** array = map->array;
-    size_t capacity = map->capacity;
-    for (size_t i = 0; i < capacity; ++i)
-      kev_setintmap_bucket_free(array[i]);
-    free(array);
-    map->array = NULL;
-    map->capacity = 0;
-    map->size = 0;
-  }
+  if (k_unlikely(!map)) return;
+  KevSetIntMapNode** array = map->array;
+  size_t capacity = map->capacity;
+  for (size_t i = 0; i < capacity; ++i)
+    kev_setintmap_bucket_free(array[i]);
+  free(array);
+  map->array = NULL;
+  map->capacity = 0;
+  map->size = 0;
+
 }
 
 bool kev_setintmap_insert(KevSetIntMap* map, KBitSet* key, size_t value) {
-  if (map->size >= map->capacity && !kev_setintmap_expand(map))
+  if (k_unlikely(map->size >= map->capacity && !kev_setintmap_expand(map)))
     return false;
 
   KevSetIntMapNode* new_node = (KevSetIntMapNode*)malloc(sizeof (KevSetIntMapNode));
-  if (!new_node) return false;
+  if (k_unlikely(!new_node)) return false;
 
   size_t hashval = kev_setintmap_hashing(key);
   size_t index = (map->capacity - 1) & hashval;

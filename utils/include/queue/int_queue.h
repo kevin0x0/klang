@@ -2,6 +2,7 @@
 #define KEVCC_UTILS_INCLUDE_QUEUE_INT_QUEUE_H
 
 #include "utils/include/general/global_def.h"
+#include "utils/include/utils/utils.h"
 
 typedef struct tagKevIntQueue {
   size_t* array;
@@ -24,7 +25,7 @@ static inline bool kev_intqueue_empty(KevIntQueue* queue) {
 static inline bool kev_intqueue_insert(KevIntQueue* queue, size_t element) {
   size_t new_tail = (queue->tail + 1) & (queue->capacity - 1);
   if (new_tail == queue->head) {
-    if (!kev_intqueue_expand(queue))
+    if (k_unlikely(!kev_intqueue_expand(queue)))
       return false;
     new_tail = (queue->tail + 1) & (queue->capacity - 1);
   }

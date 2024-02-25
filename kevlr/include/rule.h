@@ -2,6 +2,7 @@
 #define KEVCC_KEVLR_INCLUDE_RULE_H
 
 #include "utils/include/general/global_def.h"
+#include "utils/include/utils/utils.h"
 
 #define KLR_TERMINAL     ((KlrSymbolKind)0)
 #define KLR_NONTERMINAL  ((KlrSymbolKind)1)

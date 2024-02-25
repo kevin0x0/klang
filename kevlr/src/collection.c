@@ -4,7 +4,7 @@
 
 
 void klr_collection_delete(KlrCollection* collec) {
-  if (!collec) return;
+  if (k_unlikely(!collec)) return;
   free(collec->symbols);
   for (size_t i = 0; i < collec->symbol_no; ++i) {
     kbitset_delete(collec->firsts[i]);

@@ -31,49 +31,49 @@ static void klr_slr_destroy_collec(KlrSLRCollection* collec);
 
 KlrCollection* klr_collection_create_slr(KlrSymbol* start, KlrSymbol** ends, size_t ends_no) {
   KlrSLRCollection* collec = klr_slr_get_empty_collec();
-  if (!collec) return NULL;
+  if (k_unlikely(!collec)) return NULL;
   KlrSymbol* augmented_grammar_start = klr_util_augment(start);
-  if (!augmented_grammar_start) {
+  if (k_unlikely(!augmented_grammar_start)) {
     klr_slr_destroy_collec(collec);
     return NULL;
   }
   collec->start = augmented_grammar_start;
   collec->start_rule = augmented_grammar_start->rules->rule;
   collec->symbols = klr_util_get_symbol_array(augmented_grammar_start, ends, ends_no, &collec->symbol_no);
-  if (!collec->symbols) {
+  if (k_unlikely(!collec->symbols)) {
     klr_slr_destroy_collec(collec);
     return NULL;
   }
   collec->terminal_no = klr_util_symbol_array_partition(collec->symbols, collec->symbol_no);
   klr_util_label_symbols(collec->symbols, collec->symbol_no);
   collec->firsts = klr_util_compute_firsts(collec->symbols, collec->symbol_no, collec->terminal_no);
-  if (!collec->firsts) {
+  if (k_unlikely(!collec->firsts)) {
     klr_slr_destroy_collec(collec);
     return NULL;
   }
   collec->follows = klr_util_compute_follows(collec->symbols, collec->firsts, collec->symbol_no, collec->terminal_no, collec->start, ends, ends_no);
-  if (!collec->follows) {
+  if (k_unlikely(!collec->follows)) {
     klr_slr_destroy_collec(collec);
     return NULL;
   }
   KlrItemSet* start_iset = klr_util_get_start_itemset(augmented_grammar_start, ends, ends_no);
-  if (!start_iset) {
+  if (k_unlikely(!start_iset)) {
     klr_slr_destroy_collec(collec);
     return NULL;
   }
-  if (!klr_slr_get_all_itemsets(start_iset, collec)) {
+  if (k_unlikely(!klr_slr_get_all_itemsets(start_iset, collec))) {
     klr_slr_destroy_collec(collec);
     return NULL;
   }
   klr_util_label_itemsets(collec->itemsets, collec->itemset_no);
   KlrCollection* lr_collec = klr_slr_to_lr_collec(collec);
-  if (!lr_collec) klr_slr_destroy_collec(collec);
+  if (k_unlikely(!lr_collec)) klr_slr_destroy_collec(collec);
   return lr_collec;
 }
 
 static KlrSLRCollection* klr_slr_get_empty_collec(void) {
   KlrSLRCollection* collec = (KlrSLRCollection*)malloc(sizeof (KlrSLRCollection));
-  if (!collec) return NULL;
+  if (k_unlikely(!collec)) return NULL;
   collec->firsts = NULL;
   collec->follows = NULL;
   collec->symbols = NULL;
@@ -107,7 +107,7 @@ static bool klr_slr_get_all_itemsets(KlrItemSet* start_iset, KlrSLRCollection* c
   KlrItemSetClosure closure;
   size_t symbol_no = collec->symbol_no;
   KlrTransSet* transitions = klr_transset_create(symbol_no);
-  if (!itemset_array || !transitions || !iset_set || !klr_closure_init(&closure, symbol_no)) {
+  if (k_unlikely(!itemset_array || !transitions || !iset_set || !klr_closure_init(&closure, symbol_no))) {
     karray_delete(itemset_array);
     klr_transset_delete(transitions);
     klr_itemsetset_delete(iset_set);
@@ -115,7 +115,7 @@ static bool klr_slr_get_all_itemsets(KlrItemSet* start_iset, KlrSLRCollection* c
     return false;
   }
   
-  if (!karray_push_back(itemset_array, start_iset) || !klr_itemsetset_insert(iset_set, start_iset)) {
+  if (k_unlikely(!karray_push_back(itemset_array, start_iset) || !klr_itemsetset_insert(iset_set, start_iset))) {
     klr_slr_destroy_itemset_array(itemset_array);
     klr_transset_delete(transitions);
     klr_itemsetset_delete(iset_set);
@@ -127,14 +127,14 @@ static bool klr_slr_get_all_itemsets(KlrItemSet* start_iset, KlrSLRCollection* c
   size_t terminal_no = collec->terminal_no;
   for (size_t i = 0; i < karray_size(itemset_array); ++i) {
     KlrItemSet* itemset = (KlrItemSet*)karray_access(itemset_array, i);
-    if (!klr_slr_compute_transition(itemset, &closure, firsts, collec->follows, terminal_no, transitions)) {
+    if (k_unlikely(!klr_slr_compute_transition(itemset, &closure, firsts, collec->follows, terminal_no, transitions))) {
       klr_slr_destroy_itemset_array(itemset_array);
       klr_transset_delete(transitions);
       klr_itemsetset_delete(iset_set);
       klr_closure_destroy(&closure);
       return false;
     }
-    if (!klr_slr_merge_transition(iset_set, itemset_array, itemset)) {
+    if (k_unlikely(!klr_slr_merge_transition(iset_set, itemset_array, itemset))) {
       klr_slr_destroy_itemset_array(itemset_array);
       klr_transset_delete(transitions);
       klr_itemsetset_delete(iset_set);
@@ -169,8 +169,8 @@ static bool klr_slr_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_ar
       klr_itemset_delete(target);
       trans->target = node->element;
     } else {
-      if (!klr_itemsetset_insert(iset_set, target) ||
-          !karray_push_back(itemset_array, target)) {
+      if (k_unlikely(!klr_itemsetset_insert(iset_set, target) ||
+          !karray_push_back(itemset_array, target))) {
         for (; trans; trans = trans->next) {
           klr_itemset_delete(trans->target);
           trans->target = NULL;
@@ -192,19 +192,19 @@ bool klr_slr_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure
     if (rule->bodylen == kitem->dot) continue;
     KlrSymbol* symbol = rule->body[kitem->dot];
     KlrItem* item = klr_item_create(rule, kitem->dot + 1);
-    if (!item) return false;
-    if (!(item->lookahead = kbitset_create_copy(follows[rule->head->index]))) {
+    if (k_unlikely(!item)) return false;
+    if (k_unlikely(!(item->lookahead = kbitset_create_copy(follows[rule->head->index])))) {
       klr_item_delete(item);
       return false;
     }
     KlrItemSet* target = klr_transset_search(transitions, symbol);
     if (!target) {
-      if (!(target = klr_itemset_create())) {
+      if (k_unlikely(!(target = klr_itemset_create()))) {
         klr_item_delete(item);
         return false;
       }
-      if (!klr_itemset_goto(itemset, symbol, target) ||
-          !klr_transset_insert(transitions, symbol, target)) {
+      if (k_unlikely(!klr_itemset_goto(itemset, symbol, target) ||
+          !klr_transset_insert(transitions, symbol, target))) {
         klr_item_delete(item);
         klr_itemset_delete(target);
         return false;
@@ -223,19 +223,19 @@ bool klr_slr_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure
       if (rule->bodylen == 0) continue;
       KlrSymbol* symbol = rule->body[0];
       KlrItem* item = klr_item_create(rule, 1);
-      if (!item) return false;
-      if (!(item->lookahead = kbitset_create_copy(follows[rule->head->index]))) {
+      if (k_unlikely(!item)) return false;
+      if (k_unlikely(!(item->lookahead = kbitset_create_copy(follows[rule->head->index])))) {
         klr_item_delete(item);
         return false;
       }
       KlrItemSet* target = klr_transset_search(transitions, symbol);
       if (!target) {
-        if (!(target = klr_itemset_create())) {
+        if (k_unlikely(!(target = klr_itemset_create()))) {
           klr_item_delete(item);
           return false;
         }
-        if (!klr_itemset_goto(itemset, symbol, target) ||
-            !klr_transset_insert(transitions, symbol, target)) {
+        if (k_unlikely(!klr_itemset_goto(itemset, symbol, target) ||
+            !klr_transset_insert(transitions, symbol, target))) {
           klr_item_delete(item);
           klr_itemset_delete(target);
           return false;
@@ -248,9 +248,9 @@ bool klr_slr_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure
 }
 
 static bool klr_slr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, KBitSet** follows, size_t epsilon, KlrTransSet* transitions) {
-  if (!klr_closure_make(closure, itemset, firsts, epsilon))
+  if (k_unlikely(!klr_closure_make(closure, itemset, firsts, epsilon)))
     return false;
-  if (!klr_slr_generate_transition(itemset, closure, transitions, follows))
+  if (k_unlikely(!klr_slr_generate_transition(itemset, closure, transitions, follows)))
     return false;
   return true;
 }
@@ -270,7 +270,7 @@ static bool klr_slr_itemset_equal(KlrItemSet* itemset1, KlrItemSet* itemset2) {
 
 static KlrCollection* klr_slr_to_lr_collec(KlrSLRCollection* slr_collec) {
   KlrCollection* lr_collec = (KlrCollection*)malloc(sizeof (KlrCollection));
-  if (!lr_collec) return NULL;
+  if (k_unlikely(!lr_collec)) return NULL;
   lr_collec->firsts = slr_collec->firsts;
   lr_collec->symbols = slr_collec->symbols;
   lr_collec->terminal_no = slr_collec->terminal_no;

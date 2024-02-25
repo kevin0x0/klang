@@ -37,7 +37,7 @@ static void klr_itemsetset_rehash(KlrItemSetSet* to, KlrItemSetSet* from) {
 
 static bool klr_itemsetset_expand(KlrItemSetSet* set) {
   KlrItemSetSet new_set;
-  if (!klr_itemsetset_init(&new_set, set->capacity << 1, set->equal))
+  if (k_unlikely(!klr_itemsetset_init(&new_set, set->capacity << 1, set->equal)))
     return false;
   klr_itemsetset_rehash(&new_set, set);
   *set = new_set;
@@ -61,11 +61,11 @@ inline static size_t pow_of_2_above(size_t num) {
 }
 
 bool klr_itemsetset_init(KlrItemSetSet* set, size_t capacity, bool (*equal)(KlrItemSet*, KlrItemSet*)) {
-  if (!set) return false;
+  if (k_unlikely(!set)) return false;
 
   capacity = pow_of_2_above(capacity);
   KlrItemSetSetNode** array = (KlrItemSetSetNode**)malloc(sizeof (KlrItemSetSetNode*) * capacity);
-  if (!array) {
+  if (k_unlikely(!array)) {
     set->array = NULL;
     set->capacity = 0;
     set->size = 0;
@@ -84,21 +84,20 @@ bool klr_itemsetset_init(KlrItemSetSet* set, size_t capacity, bool (*equal)(KlrI
 }
 
 void klr_itemsetset_destroy(KlrItemSetSet* set) {
-  if (set) {
-    KlrItemSetSetNode** array = set->array;
-    size_t capacity = set->capacity;
-    for (size_t i = 0; i < capacity; ++i)
-      klr_itemsetset_bucket_free(array[i]);
-    free(array);
-    set->array = NULL;
-    set->capacity = 0;
-    set->size = 0;
-  }
+  if (k_unlikely(!set)) return;
+  KlrItemSetSetNode** array = set->array;
+  size_t capacity = set->capacity;
+  for (size_t i = 0; i < capacity; ++i)
+    klr_itemsetset_bucket_free(array[i]);
+  free(array);
+  set->array = NULL;
+  set->capacity = 0;
+  set->size = 0;
 }
 
 KlrItemSetSet* klr_itemsetset_create(size_t capacity, bool (*equal)(KlrItemSet*, KlrItemSet*)) {
   KlrItemSetSet* iset_set = (KlrItemSetSet*)malloc(sizeof (KlrItemSetSet));
-  if (!iset_set || !klr_itemsetset_init(iset_set, capacity, equal)) {
+  if (k_unlikely(!iset_set || !klr_itemsetset_init(iset_set, capacity, equal))) {
     klr_itemsetset_delete(iset_set);
     return NULL;
   }
@@ -106,11 +105,11 @@ KlrItemSetSet* klr_itemsetset_create(size_t capacity, bool (*equal)(KlrItemSet*,
 }
 
 bool klr_itemsetset_insert(KlrItemSetSet* set, KlrItemSet* element) {
-  if (set->size >= set->capacity && !klr_itemsetset_expand(set))
+  if (k_unlikely(set->size >= set->capacity && !klr_itemsetset_expand(set)))
     return false;
 
   KlrItemSetSetNode* new_node = (KlrItemSetSetNode*)malloc(sizeof (*new_node));
-  if (!new_node) return false;
+  if (k_unlikely(!new_node)) return false;
 
   size_t hashval = klr_itemsetset_hashing(element);
   size_t index = (set->capacity - 1) & hashval;

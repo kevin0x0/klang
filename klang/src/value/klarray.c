@@ -1,77 +1,63 @@
 #include "klang/include/value/klarray.h"
-#include "klang/include/value/value.h"
-#include "klang/include/value/typedecl.h"
 
 #include <stdlib.h>
 
-#define KLARRAY_DEFAULT_SIZE      (16)
+#define KLARRAY_DEFAULT_SIZE      (8)
 
-bool klarray_init(KlArray* array) {
-  if (!array) return false;
-  if (!(array->begin = (KlValue**)malloc(sizeof (KlValue*) * KLARRAY_DEFAULT_SIZE))) {
-    array->end = NULL;
-    array->current = NULL;
-    return false;
+static KlGCObject* klarray_propagate(KlArray* array, KlGCObject* gclist);
+static void klarray_delete(KlArray* array);
+
+static KlGCVirtualFunc klarray_gcvfunc = { .destructor = (KlGCDestructor)klarray_delete, .propagate = (KlGCProp)klarray_propagate };
+
+
+KlArray* klarray_create(KlClass* arrayclass, size_t capacity) {
+  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(arrayclass));
+  KlArray* array = (KlArray*)klclass_objalloc(arrayclass, klmm);
+  if (kl_unlikely(!array)) return NULL;
+  if (kl_unlikely(!(array->begin = (KlValue*)klmm_alloc(klmm, sizeof (KlValue) * capacity)))) {
+    klobject_free(klcast(KlObject*, array), klmm);
+    return NULL;
   }
-
-  array->end = array->begin + KLARRAY_DEFAULT_SIZE;
+  array->end = array->begin + capacity;
   array->current = array->begin;
-  return true;
-}
-
-bool klarray_init_copy(KlArray* array, KlArray* src) {
-  if (!klarray_init(array))
-    return false;
-  KlArrayIter begin = klarray_iter_begin(src);
-  KlArrayIter end = klarray_iter_end(src);
-  for (KlArrayIter itr = begin; itr != end; itr = klarray_iter_next(itr)) {
-    if (!klarray_push_back(array, *itr)) {
-      klarray_destroy(array);
-      return false;
-    }
-  }
-  return true;
-}
-
-void klarray_destroy(KlArray* array) {
-  if (!array) return;
-  free(array->begin);
-  array->begin = NULL;
-  array->end = NULL;
-  array->current = NULL;
-}
-
-KlArray* klarray_create(void) {
-  KlArray* array = (KlArray*)malloc(sizeof (KlArray));
-  if (!array || !klarray_init(array)) {
-    klarray_delete(array);
-    return NULL;
-  }
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(array), &klarray_gcvfunc);
   return array;
 }
 
-KlArray* klarray_create_copy(KlArray* src) {
-  KlArray* array = (KlArray*)malloc(sizeof (KlArray));
-  if (!array || !klarray_init_copy(array, src)) {
-    klarray_delete(array);
-    return NULL;
-  }
-  return array;
+static void klarray_delete(KlArray* array) {
+  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(array));
+  klmm_free(klmm, array->begin, klarray_capacity(array) * sizeof (KlValue));
+  klobject_free(klcast(KlObject*, array), klmm);
 }
 
-void klarray_delete(KlArray* array) {
-  klarray_destroy(array);
-  free(array);
+static KlArray* klarray_constructor(KlClass* arrayclass) {
+  return klarray_create(arrayclass, 0);
 }
 
-bool klarray_expand(KlArray* array) {
-  size_t new_size = klarray_size(array) * 2;
-  KlValue** new_array = (KlValue**)realloc(array->begin, sizeof (KlValue*) * new_size);
+KlClass* klarray_class(KlMM* klmm) {
+  return klclass_create(klmm, 32, klobject_attrarrayoffset(KlArray), NULL, (KlObjectConstructor)klarray_constructor);
+}
+
+bool klarray_check_capacity(KlArray* array, size_t new_capacity) {
+  new_capacity = new_capacity == 0 ? 4 : new_capacity;
+  if (klarray_capacity(array) >= new_capacity)
+    return true;
+  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(array));
+  KlValue* new_array = (KlValue*)klmm_realloc(klmm, array->begin, sizeof (KlValue) * new_capacity, sizeof (KlValue) * klarray_capacity(array));
   if (!new_array) return false;
   array->current = new_array + (array->current - array->begin);
   array->begin = new_array;
-  array->end = new_array + new_size;
+  array->end = new_array + new_capacity;
   return true;
 }
 
 
+static KlGCObject* klarray_propagate(KlArray* array, KlGCObject* gclist) {
+  KlArrayIter end = klarray_iter_end(array);
+  KlArrayIter begin = klarray_iter_begin(array);
+  for (KlArrayIter itr = begin; itr != end; itr = klarray_iter_next(itr)) {
+    if (klvalue_collectable(itr))
+      klmm_gcobj_mark_accessible(klvalue_getgcobj(itr), gclist);
+  }
+  return klobject_propagate(klcast(KlObject*, array), gclist);
+}

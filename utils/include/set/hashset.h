@@ -14,10 +14,10 @@ typedef struct tagKevHashSet {
   size_t size;
 } KevHashSet;
 
-bool kev_hashset_init(KevHashSet* set, size_t capacity);
-void kev_hashset_destroy(KevHashSet* set);
+bool khashset_init(KevHashSet* set, size_t capacity);
+void khashset_destroy(KevHashSet* set);
 
-bool kev_hashset_insert(KevHashSet* set, void* element);
-bool kev_hashset_has(KevHashSet* set, void* element);
+bool khashset_insert(KevHashSet* set, void* element);
+bool khashset_has(KevHashSet* set, void* element);
 
 #endif

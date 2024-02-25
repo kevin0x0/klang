@@ -5,8 +5,8 @@
 #define KARRAY_SIZE       (4)
 
 bool karray_init(KArray* array) {
-  if (!array) return false;
-  if (!(array->begin = (void**)malloc(sizeof (void*) * KARRAY_SIZE))) {
+  if (k_unlikely(!array)) return false;
+  if (k_unlikely(!(array->begin = (void**)malloc(sizeof (void*) * KARRAY_SIZE)))) {
     array->end = NULL;
     array->current = NULL;
     return false;
@@ -18,17 +18,16 @@ bool karray_init(KArray* array) {
 }
 
 void karray_destroy(KArray* array) {
-  if (array) {
-    free(array->begin);
-    array->begin = NULL;
-    array->end = NULL;
-    array->current = NULL;
-  }
+  if (k_unlikely(!array)) return;
+  free(array->begin);
+  array->begin = NULL;
+  array->end = NULL;
+  array->current = NULL;
 }
 
 KArray* karray_create(void) {
   KArray* array = (KArray*)malloc(sizeof (KArray));
-  if (!array || !karray_init(array)) {
+  if (k_unlikely(!array || !karray_init(array))) {
     karray_delete(array);
     return NULL;
   }
@@ -43,7 +42,7 @@ void karray_delete(KArray* array) {
 bool karray_expand(KArray* array) {
   size_t new_size = karray_size(array) * 2;
   void** new_array = (void**)realloc(array->begin, sizeof (void*) * new_size);
-  if (!new_array) return false;
+  if (k_unlikely(!new_array)) return false;
   array->current = new_array + (array->current - array->begin);
   array->begin = new_array;
   array->end = new_array + new_size;

@@ -1,27 +1,28 @@
 #include "utils/include/kio/kio.h"
-#include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include <stdbool.h>
 
-#define MBUFSIZE  (BUFSIZ)
 
 int main(void) {
-  FILE* in = fopen("test.txt", "rb");
+  while (true) {
+    const char* str = "hello, world!\n";
+    char wbuf[10240];
+    Ki* ki = kibuf_create(str, strlen(str));
+    Ko* ko = kobuf_create(wbuf, sizeof (wbuf));
 
-  FILE* out = fopen("test_output.txt", "wb");
-  //int ch = 0;
-  clock_t t = clock();
-  int ch = 0;
-  while ((ch = fgetc(in)) != EOF) {
-    fputc(ch, out);
+    int len = 0;
+    for (int i = 0; i < 10; ++i) {
+      //size_t size = ki_read(ki, buf, sizeof (buf));
+      ki_seek(ki, 0);
+      len += ko_printf(ko, "%d time %s", i, str);
+    }
+    wbuf[len] = '\0';
+    ki_delete(ki);
+    ko_delete(ko);
+    printf("%s", wbuf);
   }
-  //char buf[MBUFSIZE];
-  //size_t len = 0;
-  //while ((len = fread(buf, 1, MBUFSIZE, in))) {
-  //  fwrite(buf, 1, len, out);
-  //}
-  fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
-  fclose(out);
-  fclose(in);
-
   return 0;
 }
+
+

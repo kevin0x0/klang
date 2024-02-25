@@ -1,0 +1,38 @@
+|     28|     24|     20|     16|     12|      8|      4|      0|
+|-------|-------|-------|-------|-------|-------|-------|-------|
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
+
+ADD, SUB, MUL, DIV, MOD, CONCAT, INDEX, ASSIGN_INDEX,
+|------OP3------|------OP2------|------OP1------|----OPCODE-----|
+
+ADDI, SUBI, MULI, DIVI, MODI, INDEXI, ASSIGN_INDEXI,
+BNE, BE, BG, BL, BGE, BLE
+|------IMM------|------OP2------|------OP1------|----OPCODE-----|
+
+CALL,
+BNEI, BEI, BGI, BLI, BGEI, BLEI
+|------IMM2-----|------IMM1-----|------OP1------|----OPCODE-----|
+
+ADDPUSH, SUBPUSH, MULPUSH, DIVPUSH, MODPUSH, CONCATPUSH, INDEXPUSH, 
+|----------OP2----------|-----------OP1---------|----OPCODE-----|
+
+ADDIPUSH, SUBIPUSH, MULIPUSH, DIVIPUSH, MODIPUSH, INDEXIPUSH, 
+BTRUE, BFALSE
+LOADCONST, LOADREF
+MKCLOSURE
+|----------IMM----------|-----------OP1---------|----OPCODE-----|
+
+JMP
+|----------------------IMM----------------------|----OPCODE-----|
+
+MKMAP, MKARR
+|----------------------OP1----------------------|----OPCODE-----|
+
+let array = class : Hello final {
+  __constructor = () => {
+    private array = [];
+    public 
+  };
+  private get_access = () -> this.access;
+};
+

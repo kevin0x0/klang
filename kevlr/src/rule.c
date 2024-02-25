@@ -7,10 +7,10 @@ static inline void kev_rulenode_delete(KlrRuleNode* rulenode);
 
 KlrSymbol* klr_symbol_create(KlrSymbolKind kind, const char* name) {
   KlrSymbol* symbol = (KlrSymbol*)malloc(sizeof (KlrSymbol));
-  if (!symbol) return NULL;
+  if (k_unlikely(!symbol)) return NULL;
   symbol->kind = kind;
   symbol->name = NULL;
-  if (name && !(symbol->name = kev_str_copy(name))) {
+  if (k_unlikely(name && !(symbol->name = kev_str_copy(name)))) {
     free(symbol);
     return NULL;
   }
@@ -20,7 +20,7 @@ KlrSymbol* klr_symbol_create(KlrSymbolKind kind, const char* name) {
 
 KlrSymbol* klr_symbol_create_move(KlrSymbolKind kind, char* name) {
   KlrSymbol* symbol = (KlrSymbol*)malloc(sizeof (KlrSymbol));
-  if (!symbol) return NULL;
+  if (k_unlikely(!symbol)) return NULL;
   symbol->kind = kind;
   symbol->name = name;
   symbol->rules = NULL;
@@ -28,18 +28,17 @@ KlrSymbol* klr_symbol_create_move(KlrSymbolKind kind, char* name) {
 }
 
 void klr_symbol_delete(KlrSymbol* symbol) {
-  if (symbol) {
-    kev_rulenode_delete(symbol->rules);
-    free(symbol->name);
-    free(symbol);
-  }
+  if (k_unlikely(!symbol)) return;
+  kev_rulenode_delete(symbol->rules);
+  free(symbol->name);
+  free(symbol);
 }
 
 KlrRule* klr_rule_create(KlrSymbol* head, KlrSymbol** body, size_t body_length) {
   KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule));
   KlrSymbol** rulebody = (KlrSymbol**)malloc(sizeof (KlrSymbol*) * body_length);
   KlrRuleNode* rulenode = (KlrRuleNode*)malloc(sizeof (KlrRuleNode));
-  if (!rule || !rulebody || !rulenode) {
+  if (k_unlikely(!rule || !rulebody || !rulenode)) {
     free(rule);
     free(rulebody);
     free(rulenode);
@@ -59,7 +58,7 @@ KlrRule* klr_rule_create(KlrSymbol* head, KlrSymbol** body, size_t body_length) 
 KlrRule* klr_rule_create_move(KlrSymbol* head, KlrSymbol** body, size_t body_length) {
   KlrRule* rule = (KlrRule*)malloc(sizeof (KlrRule));
   KlrRuleNode* rulenode = (KlrRuleNode*)malloc(sizeof (KlrRuleNode));
-  if (!rule || !rulenode) {
+  if (k_unlikely(!rule || !rulenode)) {
     free(rule);
     free(rulenode);
     return NULL;
@@ -74,7 +73,7 @@ KlrRule* klr_rule_create_move(KlrSymbol* head, KlrSymbol** body, size_t body_len
 }
 
 void klr_rule_delete(KlrRule* rule) {
-  if (!rule) return;
+  if (k_unlikely(!rule)) return;
   free(rule->body);
   free(rule);
 }

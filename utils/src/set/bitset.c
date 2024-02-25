@@ -1,4 +1,5 @@
 #include "utils/include/set/bitset.h"
+#include "utils/include/utils/utils.h"
 
 #include <stdlib.h>
 
@@ -16,27 +17,22 @@ bool kbitset_expand(KBitSet* bitset, size_t new_size) {
 }
 
 inline static size_t kbitset_bit_count(KevBitSetInt word) {
-  word = word - ((word >> 1) & 0x5555555555555555);
-  word = (word & 0x3333333333333333) + ((word >> 2) & 0x3333333333333333);
-  word = (word + (word >> 4)) & 0x0f0f0f0f0f0f0f0f;
-  word = word + (word >> 8);
-  word = word + (word >> 16);
-  word = word + (word >> 32);
-  return word & 0x7f;
+  //word = word - ((word >> 1) & 0x5555555555555555);
+  //word = (word & 0x3333333333333333) + ((word >> 2) & 0x3333333333333333);
+  //word = (word + (word >> 4)) & 0x0f0f0f0f0f0f0f0f;
+  //word = word + (word >> 8);
+  //word = word + (word >> 16);
+  //word = word + (word >> 32);
+  //return word & 0x7f;
+  return kbitset_popcount(word);
 }
 
 bool kbitset_init(KBitSet* bitset, size_t initial_size) {
-  if (!bitset) return false;
-  if (sizeof (KevBitSetInt) != 8) {
-    bitset->bits = NULL;
-    bitset->length = 0;
-    return false;
-  }
-
+  if (k_unlikely(!bitset)) return false;
   initial_size = initial_size & KBITSET_MASK ? (initial_size >> KBITSET_SHIFT) + 1 : initial_size >> KBITSET_SHIFT;
   KevBitSetInt* bits = (KevBitSetInt*)malloc(sizeof (KevBitSetInt) * initial_size);
   bitset->bits = bits;
-  if (!bits) {
+  if (k_unlikely(!bits)) {
     bitset->length = 0;
     return false;
   }
@@ -47,8 +43,8 @@ bool kbitset_init(KBitSet* bitset, size_t initial_size) {
 }
 
 bool kbitset_init_copy(KBitSet* bitset, KBitSet* src) {
-  if (!bitset) return false;
-  if (!src || sizeof (KevBitSetInt) != 8) {
+  if (k_unlikely(!bitset)) return false;
+  if (k_unlikely(!src || sizeof (KevBitSetInt) != 8)) {
     bitset->bits = NULL;
     bitset->length = 0;
     return false;
@@ -57,7 +53,7 @@ bool kbitset_init_copy(KBitSet* bitset, KBitSet* src) {
   size_t length = src->length;
   KevBitSetInt* bits = (KevBitSetInt*)malloc(sizeof (KevBitSetInt) * length);
   bitset->bits = bits;
-  if (!bits) {
+  if (k_unlikely(!bits)) {
     bitset->length = 0;
     return false;
   }
@@ -70,7 +66,7 @@ bool kbitset_init_copy(KBitSet* bitset, KBitSet* src) {
 }
 
 void kbitset_destroy(KBitSet* bitset) {
-  if (bitset) {
+  if (k_likely(bitset)) {
     free(bitset->bits);
     bitset->length = 0;
     bitset->bits = NULL;
@@ -79,7 +75,7 @@ void kbitset_destroy(KBitSet* bitset) {
 
 KBitSet* kbitset_create(size_t initial_size) {
   KBitSet* bitset = (KBitSet*)malloc(sizeof (KBitSet));
-  if (!bitset || !kbitset_init(bitset, initial_size)) {
+  if (k_unlikely(!bitset || !kbitset_init(bitset, initial_size))) {
     kbitset_destroy(bitset);
     free(bitset);
     return NULL;
@@ -89,7 +85,7 @@ KBitSet* kbitset_create(size_t initial_size) {
 
 KBitSet* kbitset_create_copy(KBitSet* src) {
   KBitSet* bitset = (KBitSet*)malloc(sizeof (KBitSet));
-  if (!bitset || !kbitset_init_copy(bitset, src)) {
+  if (k_unlikely(!bitset || !kbitset_init_copy(bitset, src))) {
     kbitset_destroy(bitset);
     free(bitset);
     return NULL;
@@ -98,7 +94,7 @@ KBitSet* kbitset_create_copy(KBitSet* src) {
 }
 
 void kbitset_delete(KBitSet* bitset) {
-  if (!bitset) return;
+  if (k_unlikely(!bitset)) return;
   free(bitset->bits);
   free(bitset);
 }
@@ -120,7 +116,7 @@ bool kbitset_intersection(KBitSet* dest, KBitSet* src) {
 }
 
 bool kbitset_union(KBitSet* dest, KBitSet* src) {
-  if (dest->length < src->length && !kbitset_expand(dest, src->length << KBITSET_SHIFT)) {
+  if (k_unlikely(dest->length < src->length && !kbitset_expand(dest, src->length << KBITSET_SHIFT))) {
     return false;
   }
 
@@ -152,7 +148,7 @@ bool kbitset_difference(KBitSet* dest, KBitSet* src) {
 bool kbitset_assign(KBitSet* bitset, KBitSet* src) {
   if (bitset->length < src->length) {
     KevBitSetInt* buf = (KevBitSetInt*)malloc(sizeof (KevBitSetInt) * src->length);
-    if ( !buf) return false;
+    if (k_unlikely(!buf)) return false;
     bitset->bits = buf;
     bitset->length = src->length;
   }
@@ -192,26 +188,6 @@ bool kbitset_equal(KBitSet* set1, KBitSet* set2) {
 //  }
 //  return current_pos;
 //}
-static inline uint8_t kbitset_find_first_bit(KevBitSetInt bits, size_t begin_bit) {
-  bits >>= begin_bit;
-  uint8_t current_pos = begin_bit;
-  uint8_t masklen = (KBITSET_INTLEN - begin_bit);
-  KevBitSetInt mask = (~(KevBitSetInt)0) >> begin_bit;
-  while (masklen > 1) {
-    size_t lowhalf = masklen / 2;
-    KevBitSetInt lowmask = mask >> (masklen - lowhalf);
-    if ((bits & lowmask)) {
-      masklen = lowhalf;
-      mask = lowmask;
-    } else {
-      current_pos += lowhalf;
-      bits >>= lowhalf;
-      masklen -= lowhalf;
-      mask >>= lowhalf;
-    }
-  }
-  return current_pos;
-}
 //static inline uint8_t kbitset_find_first_bit(KevBitSetInt bits) {
 //  KevBitSetInt allone = ~(bits & (bits - 1));
 //  return kbitset_bit_count(allone);
@@ -223,13 +199,11 @@ size_t kbitset_iter_next(KBitSet* bitset, size_t previous) {
   size_t next = (previous + 1) & KBITSET_MASK;
   KevBitSetInt* bits = bitset->bits;
   if (bits[index] >> next)
-    return KBITSET_INTLEN * index + kbitset_find_first_bit(bits[index], next);
-    //return KBITSET_INTLEN * index + next + kbitset_find_first_bit(bits[index] >> next);
+    return previous + 1 + kbitset_ctz(bits[index] >> next);
 
   for (size_t i = index + 1; i < bitset->length; ++i) {
-    if (bits[i] != 0)
-      return KBITSET_INTLEN * i + kbitset_find_first_bit(bits[i], 0);
-      //return KBITSET_INTLEN * i + kbitset_find_first_bit(bits[i]);
+    if (bits[i])
+      return KBITSET_INTLEN * i + kbitset_ctz(bits[i]);
   }
   return previous;
 }

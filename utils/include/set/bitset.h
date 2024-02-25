@@ -2,10 +2,15 @@
 #define KEVCC_UTILS_INCLUDE_SET_BITSET_H
 
 #include "utils/include/general/global_def.h"
+#include "utils/include/bits/bitop.h"
+#include "utils/include/utils/utils.h"
 
 #define KBITSET_MASK        (0x3F)
 #define KBITSET_SHIFT       (6)
 #define KBITSET_INTLEN      (64)
+
+#define kbitset_ctz(x)      (kbit_ctz64(x))
+#define kbitset_popcount(x) (kbit_popcount64(x))
 
 typedef uint64_t KevBitSetInt;
 
@@ -45,7 +50,7 @@ static inline size_t kbitset_capacity(KBitSet* bitset);
 
 static inline bool kbitset_set(KBitSet* bitset, size_t bit) {
   KevBitSetInt i = bit >> KBITSET_SHIFT;
-  if (i >= bitset->length && !kbitset_expand(bitset, bit + 1)) {
+  if (k_unlikely(i >= bitset->length && !kbitset_expand(bitset, bit + 1))) {
     return false;
   }
   bitset->bits[i] |= ((KevBitSetInt)0x1 << (bit & KBITSET_MASK));
@@ -54,13 +59,13 @@ static inline bool kbitset_set(KBitSet* bitset, size_t bit) {
 
 static inline void kbitset_clear(KBitSet* bitset, size_t bit) {
   KevBitSetInt i = bit >> KBITSET_SHIFT;
-  if (i < bitset->length)
+  if (k_likely(i < bitset->length))
     bitset->bits[i] &= ~((KevBitSetInt)0x1 << (bit & KBITSET_MASK));
 }
 
 static inline bool kbitset_has_element(KBitSet* bitset, size_t bit) {
   KevBitSetInt i = bit >> KBITSET_SHIFT;
-  if (i >= bitset->length) {
+  if ((i >= bitset->length)) {
     return false;
   }
   return bitset->bits[i] & ((KevBitSetInt)0x1 << (bit & KBITSET_MASK));

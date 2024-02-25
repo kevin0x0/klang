@@ -24,8 +24,8 @@ static inline size_t kev_setarray_size(KevSetArray* array) {
 }
 
 static inline bool kev_setarray_push_back(KevSetArray* array, KBitSet* set) {
-  if (array->current == array->end &&
-      !kev_setarray_expand(array)) {
+  if (k_unlikely(array->current == array->end &&
+      !kev_setarray_expand(array))) {
     return false;
   }
   *array->current++ = set;

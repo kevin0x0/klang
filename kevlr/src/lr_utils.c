@@ -21,19 +21,19 @@ bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closur
     if (rule->bodylen == kitem->dot) continue;
     KlrSymbol* symbol = rule->body[kitem->dot];
     KlrItem* item = klr_item_create(rule, kitem->dot + 1);
-    if (!item) return false;
-    if (!(item->lookahead = kbitset_create_copy(kitem->lookahead))) {
+    if (k_unlikely(!item)) return false;
+    if (k_unlikely(!(item->lookahead = kbitset_create_copy(kitem->lookahead)))) {
       klr_item_delete(item);
       return false;
     }
     KlrItemSet* target = klr_transset_search(transitions, symbol);
     if (!target) {
-      if (!(target = klr_itemset_create())) {
+      if (k_unlikely(!(target = klr_itemset_create()))) {
         klr_item_delete(item);
         return false;
       }
-      if (!klr_itemset_goto(itemset, symbol, target) ||
-          !klr_transset_insert(transitions, symbol, target)) {
+      if (k_unlikely(!klr_itemset_goto(itemset, symbol, target) ||
+          !klr_transset_insert(transitions, symbol, target))) {
         klr_item_delete(item);
         klr_itemset_delete(target);
         return false;
@@ -52,19 +52,19 @@ bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closur
       if (rule->bodylen == 0) continue;
       KlrSymbol* symbol = rule->body[0];
       KlrItem* item = klr_item_create(rule, 1);
-      if (!item) return false;
-      if (!(item->lookahead = kbitset_create_copy(las[head->index]))) {
+      if (k_unlikely(!item)) return false;
+      if (k_unlikely(!(item->lookahead = kbitset_create_copy(las[head->index])))) {
         klr_item_delete(item);
         return false;
       }
       KlrItemSet* target = klr_transset_search(transitions, symbol);
       if (!target) {
-        if (!(target = klr_itemset_create())) {
+        if (k_unlikely(!(target = klr_itemset_create()))) {
           klr_item_delete(item);
           return false;
         }
-        if (!klr_itemset_goto(itemset, symbol, target) ||
-            !klr_transset_insert(transitions, symbol, target)) {
+        if (k_unlikely(!klr_itemset_goto(itemset, symbol, target) ||
+            !klr_transset_insert(transitions, symbol, target))) {
           klr_item_delete(item);
           klr_itemset_delete(target);
           return false;
@@ -105,9 +105,9 @@ static void klr_util_compute_first(KBitSet** firsts, KlrSymbol* symbol, size_t e
 
 KBitSet** klr_util_compute_firsts(KlrSymbol** symbols, size_t symbol_no, size_t terminal_no) {
   KBitSet** firsts = (KBitSet**)malloc(sizeof (KBitSet*) * symbol_no);
-  if (!firsts) return NULL;
+  if (k_unlikely(!firsts)) return NULL;
   KBitSet backup;
-  if (!kbitset_init(&backup, terminal_no + 1)) {
+  if (k_unlikely(!kbitset_init(&backup, terminal_no + 1))) {
     free (firsts);
     return NULL;
   }
@@ -115,7 +115,7 @@ KBitSet** klr_util_compute_firsts(KlrSymbol** symbols, size_t symbol_no, size_t 
   for (size_t i = 0; i < terminal_no; ++i)
     firsts[i] = NULL;
   for (size_t i = terminal_no; i < symbol_no; ++i) {
-    if (!(firsts[i] = kbitset_create(terminal_no + 1))) {
+    if (k_unlikely(!(firsts[i] = kbitset_create(terminal_no + 1)))) {
       for (size_t j = terminal_no; j < i; ++j)
         kbitset_delete(firsts[j]);
       free(firsts);
@@ -140,9 +140,9 @@ KBitSet** klr_util_compute_firsts(KlrSymbol** symbols, size_t symbol_no, size_t 
 
 KlrSymbol* klr_util_augment(KlrSymbol* start) {
   KlrSymbol* new_start = klr_symbol_create(KLR_NONTERMINAL, KLR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME);
-  if (!new_start) return NULL;
+  if (k_unlikely(!new_start)) return NULL;
   KlrRule* start_rule = klr_rule_create(new_start, &start, 1);
-  if (!start_rule) {
+  if (k_unlikely(!start_rule)) {
     klr_symbol_delete(new_start);
     return NULL;
   }
@@ -151,9 +151,9 @@ KlrSymbol* klr_util_augment(KlrSymbol* start) {
 
 KBitSet* klr_util_symbols_to_bitset(KlrSymbol** symbols, size_t length) {
   KBitSet* set = kbitset_create(1);
-  if (!set) return NULL;
+  if (k_unlikely(!set)) return NULL;
   for (size_t i = 0; i < length; ++i) {
-    if (!kbitset_set(set, symbols[i]->index)) {
+    if (k_unlikely(!kbitset_set(set, symbols[i]->index))) {
       kbitset_delete(set);
       return NULL;
     }
@@ -164,14 +164,14 @@ KBitSet* klr_util_symbols_to_bitset(KlrSymbol** symbols, size_t length) {
 KlrItemSet* klr_util_get_start_itemset(KlrSymbol* start, KlrSymbol** lookahead, size_t length) {
   KBitSet* la = klr_util_symbols_to_bitset(lookahead, length);
   KlrItemSet* iset = klr_itemset_create();
-  if (!iset || !la) {
+  if (k_unlikely(!iset || !la)) {
     kbitset_delete(la);
     klr_itemset_delete(iset);
     return NULL;
   }
   for (KlrRuleNode* node = start->rules; node; node = node->next) {
     KlrItem* item = klr_item_create(node->rule, 0);
-    if (!item || !(item->lookahead = kbitset_create_copy(la))) {
+    if (k_unlikely(!item || !(item->lookahead = kbitset_create_copy(la)))) {
       klr_itemset_delete(iset);
       kbitset_delete(la);
       return NULL;
@@ -194,9 +194,9 @@ static inline bool klr_util_symbol_is_in_array(KlrSymbol* symbol, KArray* array)
 
 KlrSymbol** klr_util_get_symbol_array(KlrSymbol* start, KlrSymbol** ends, size_t ends_no, size_t* p_size) {
   KArray array;
-  if (!karray_init(&array))
+  if (k_unlikely(!karray_init(&array)))
     return NULL;
-  if (!karray_push_back(&array, start)) {
+  if (k_unlikely(!karray_push_back(&array, start))) {
     karray_destroy(&array);
     return NULL;
   }
@@ -212,7 +212,7 @@ KlrSymbol** klr_util_get_symbol_array(KlrSymbol* start, KlrSymbol** ends, size_t
         if (klr_util_symbol_is_in_array(body[i], &array))
           continue;
         body[i]->index = karray_size(&array);
-        if (!karray_push_back(&array, body[i])) {
+        if (k_unlikely(!karray_push_back(&array, body[i]))) {
           karray_destroy(&array);
           return NULL;
         }
@@ -224,7 +224,7 @@ KlrSymbol** klr_util_get_symbol_array(KlrSymbol* start, KlrSymbol** ends, size_t
     if (klr_util_symbol_is_in_array(ends[i], &array))
       continue;
     ends[i]->index = karray_size(&array);
-    if (!karray_push_back(&array, ends[i])) {
+    if (k_unlikely(!karray_push_back(&array, ends[i]))) {
       karray_destroy(&array);
       return NULL;
     }
@@ -242,13 +242,13 @@ KlrSymbol** klr_util_get_symbol_array_with_index_unchanged(KlrSymbol* start, Klr
     return NULL;
 
   KevHashSet set;
-  if (!kev_hashset_init(&set, 64)) {
-    kev_hashset_destroy(&set);
+  if (!khashset_init(&set, 64)) {
+    khashset_destroy(&set);
     return NULL;
   }
-  if (!kev_hashset_insert(&set, start) ||
+  if (!khashset_insert(&set, start) ||
       !karray_push_back(&array, start)) {
-    kev_hashset_destroy(&set);
+    khashset_destroy(&set);
     karray_destroy(&array);
     return NULL;
   }
@@ -261,11 +261,11 @@ KlrSymbol** klr_util_get_symbol_array_with_index_unchanged(KlrSymbol* start, Klr
       KlrSymbol** rule_body = rule->rule->body;
       size_t len = rule->rule->bodylen;
       for (size_t i = 0; i < len; ++i) {
-        if (kev_hashset_has(&set, rule_body[i]))
+        if (khashset_has(&set, rule_body[i]))
           continue;
-        if (!kev_hashset_insert(&set, rule_body[i]) ||
+        if (!khashset_insert(&set, rule_body[i]) ||
             !karray_push_back(&array, rule_body[i])) {
-          kev_hashset_destroy(&set);
+          khashset_destroy(&set);
           karray_destroy(&array);
           return NULL;
         }
@@ -274,11 +274,11 @@ KlrSymbol** klr_util_get_symbol_array_with_index_unchanged(KlrSymbol* start, Klr
   }
 
   for (size_t i = 0; i < ends_no; ++i) {
-    if (kev_hashset_has(&set, ends[i]))
+    if (khashset_has(&set, ends[i]))
       continue;
-    if (!kev_hashset_insert(&set, ends[i]) ||
+    if (!khashset_insert(&set, ends[i]) ||
         !karray_push_back(&array, ends[i])) {
-      kev_hashset_destroy(&set);
+      khashset_destroy(&set);
       karray_destroy(&array);
       return NULL;
     }
@@ -287,7 +287,7 @@ KlrSymbol** klr_util_get_symbol_array_with_index_unchanged(KlrSymbol* start, Klr
   *p_size = karray_size(&array);
   KlrSymbol** symbol_array = (KlrSymbol**)karray_steal(&array);
   karray_destroy(&array);
-  kev_hashset_destroy(&set);
+  khashset_destroy(&set);
   return symbol_array;
 }
 
@@ -312,7 +312,7 @@ KBitSet** klr_util_compute_follows(KlrSymbol** symbols, KBitSet** firsts, size_t
   if (!kbitset_init(&curr_follow, terminal_no + 1))
     return NULL;
   KBitSet** follows = (KBitSet**)malloc(sizeof (KBitSet*) * symbol_no);
-  if (!follows) {
+  if (k_unlikely(!follows)) {
     kbitset_destroy(&curr_follow);
     return NULL;
   }
@@ -320,7 +320,7 @@ KBitSet** klr_util_compute_follows(KlrSymbol** symbols, KBitSet** firsts, size_t
   for (size_t i = 0; i < terminal_no; ++i)
     follows[i] = NULL;
   for (size_t i = terminal_no; i < symbol_no; ++i) {
-    if (!(follows[i] = kbitset_create(terminal_no + 1))) {
+    if (k_unlikely(!(follows[i] = kbitset_create(terminal_no + 1)))) {
       for (size_t j = terminal_no; j < i; ++j)
         kbitset_delete(follows[j]);
       free(follows);

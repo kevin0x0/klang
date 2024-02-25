@@ -1,6 +1,7 @@
 #ifndef KEVCC_UTILS_INCLUDE_ARRAY_KARRAY_H
 #define KEVCC_UTILS_INCLUDE_ARRAY_KARRAY_H
 
+#include "utils/include/utils/utils.h"
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -36,8 +37,8 @@ static inline size_t karray_capacity(KArray* array) {
 }
 
 static inline bool karray_push_back(KArray* array, void* addr) {
-  if (array->current == array->end &&
-      !karray_expand(array)) {
+  if (k_unlikely(array->current == array->end &&
+      !karray_expand(array))) {
     return false;
   }
   *array->current++ = addr;
