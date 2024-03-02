@@ -131,27 +131,49 @@ KlMapIter klmap_search(KlMap* map, KlValue* key) {
   size_t mask = map->capacity - 1;
   size_t index = mask & klmap_gethash(key);
   KlMapNode* node = map->array[index];
-  if (!node) return klmap_iter_end(map);
+  if (!node) return NULL;
   do {
     if (klvalue_equal(key, &node->key)) /* The implementation guarantees the uniqueness of klstring */
       return node;
     node = node->next;
   } while (node != &map->tail && (node->hash & mask) == index);
-  return klmap_iter_end(map);
+  return NULL;
 }
 
-KlMapIter klmap_search_string(KlMap* map, KlString* key) {
+KlMapIter klmap_searchstring(KlMap* map, KlString* str) {
   size_t mask = map->capacity - 1;
-  size_t index = mask & klstring_hash(key);
+  size_t index = mask & klstring_hash(str);
   KlMapNode* node = map->array[index];
-  if (kl_unlikely(!node)) return klmap_iter_end(map);
+  if (!node) return NULL;
   do {
-    if (klvalue_getobj(&node->key, KlString*) == key &&
-        klvalue_checktype(&node->key, KL_STRING)) /* The implementation guarantees the uniqueness of klstring */
+    if (str == klvalue_getobj(&node->key, KlString*) &&
+        klvalue_checktype(&node->key, KL_STRING))
       return node;
     node = node->next;
   } while (node != &map->tail && (node->hash & mask) == index);
-  return klmap_iter_end(map);
+  return NULL;
+}
+
+KlMapIter klmap_insertstring(KlMap* map, KlString* str, KlValue* val) {
+  if (kl_unlikely(map->size >= map->capacity && !klmap_expand(map)))
+    return NULL;
+
+  KlMapNode* new_node = klmapnodepool_alloc(map->nodepool);
+  if (kl_unlikely(!new_node)) return NULL;
+
+  size_t hash = klstring_hash(str);
+  size_t index = (map->capacity - 1) & hash;
+  new_node->hash = hash;
+  klvalue_setobj(&new_node->key, str, KL_STRING);
+  klvalue_setvalue(&new_node->value, val);
+  if (!map->array[index]) {
+    map->array[index] = new_node;
+    klmap_node_insert(map->head.next, new_node);
+  } else {
+    klmap_node_insert(map->array[index]->next, new_node);
+  }
+  map->size++;
+  return new_node;
 }
 
 KlMapIter klmap_erase(KlMap* map, KlMapIter iter) {
@@ -179,13 +201,6 @@ static KlMap* klmap_constructor(KlClass* klclass) {
 KlClass* klmap_class(KlMM* klmm, KlMapNodePool* mapnodepool) {
   KlClass* mapclass = klclass_create(klmm, 32, klobject_attrarrayoffset(KlMap), mapnodepool, (KlObjectConstructor)klmap_constructor);
   return mapclass;
-}
-
-static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* node) {
-  node->prev = insertpos->prev;
-  insertpos->prev->next = node;
-  node->next = insertpos;
-  insertpos->prev = node;
 }
 
 static KlGCObject* klmap_propagate(KlMap* map, KlGCObject* gclist) {

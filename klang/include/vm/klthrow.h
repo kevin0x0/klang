@@ -3,6 +3,7 @@
 
 #include "klang/include/vm/klexception.h"
 #include "klang/include/value/klvalue.h"
+#include <stdarg.h>
 
 
 typedef struct tagKlThrowInfo {

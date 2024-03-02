@@ -66,3 +66,20 @@ KlException klapi_storeref(KlState* state, KlClosure* clo, size_t refidx, int st
   return KL_E_NONE;
 }
 
+KlException klapi_loadglobal(KlState* state) {
+  KlString* varname = klapi_getstring(state, -1);
+  KlMapIter itr = klmap_searchstring(state->global, varname);
+  itr ? klapi_setvalue(state, -1, &itr->value) : klapi_setnil(state, -1);
+  return KL_E_NONE;
+}
+
+KlException klapi_storeglobal(KlState* state, KlString* varname) {
+  KlMapIter itr = klmap_searchstring(state->global, varname);
+  if (!itr) {
+    if (!klmap_insertstring(state->global, varname, klapi_access(state, -1)))
+      return KL_E_OOM;
+  } else {
+    klvalue_setvalue(&itr->value, klapi_access(state, -1));
+  }
+  return KL_E_NONE;
+}

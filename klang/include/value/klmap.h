@@ -39,19 +39,27 @@ KlClass* klmap_class(KlMM* klmm, KlMapNodePool* mapnodepool);
 
 static inline size_t klmap_size(KlMap* map);
 static inline size_t klmap_capacity(KlMap* map);
-
+static inline size_t klmap_mask(KlMap* map);
 
 KlMapIter klmap_insert(KlMap* map, KlValue* key, KlValue* value);
 KlMapIter klmap_erase(KlMap* map, KlMapIter iter);
 KlMapIter klmap_search(KlMap* map, KlValue* key);
+KlMapIter klmap_searchstring(KlMap* map, KlString* str);
+KlMapIter klmap_insertstring(KlMap* map, KlString* str, KlValue* val);
 static inline void klmap_index(KlMap* map, KlValue* key, KlValue* val);
 static inline bool klmap_indexas(KlMap* map, KlValue* key, KlValue* val);
+
+static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* node);
+
+static inline KlMapIter klmap_bucket(KlMap* map, size_t index);
+static inline bool klmap_inbucket(KlMap* map, KlMapIter iter, size_t mask, size_t index);
+static inline KlMapIter klmap_bucketinsert(KlMap* map, size_t index, KlValue* key, KlValue* val, size_t hash);
 
 
 static inline KlMapIter klmap_iter_begin(KlMap* map);
 static inline KlMapIter klmap_iter_end(KlMap* map);
 static inline KlMapIter klmap_iter_next(KlMapIter current);
-
+static inline KlMapIter klmap_iter_insert(KlMap* map, KlMapIter iter, KlValue* key, KlValue* val, size_t hash);
 
 static inline void klmap_index(KlMap* map, KlValue* key, KlValue* val) {
   KlMapIter iter = klmap_search(map, key);
@@ -87,6 +95,10 @@ static inline size_t klmap_size(KlMap* map) {
 
 static inline size_t klmap_capacity(KlMap* map) {
   return map->capacity;
+}
+
+static inline size_t klmap_mask(KlMap* map) {
+  return klmap_capacity(map) - 1;
 }
 
 static inline KlMapIter klmap_iter_next(KlMapIter current) {
@@ -144,5 +156,47 @@ static inline void klmapnodepool_freelist(KlMapNodePool* nodepool, KlMapNode* he
   nodepool->available += count;
 }
 
+
+
+
+
+static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* node) {
+  node->prev = insertpos->prev;
+  insertpos->prev->next = node;
+  node->next = insertpos;
+  insertpos->prev = node;
+}
+
+static inline KlMapIter klmap_bucket(KlMap* map, size_t index) {
+  return map->array[index];
+}
+
+static inline bool klmap_inbucket(KlMap* map, KlMapIter iter, size_t mask, size_t index) {
+  (void)map;
+  return (iter->hash & mask) == index;
+}
+
+static inline KlMapIter klmap_bucketinsert(KlMap* map, size_t index, KlValue* key, KlValue* val, size_t hash) {
+  KlMapNode* new_node = klmapnodepool_alloc(map->nodepool);
+  if (kl_unlikely(!new_node)) return NULL;
+  new_node->hash = hash;
+  klvalue_setvalue(&new_node->key, key);
+  klvalue_setvalue(&new_node->value, val);
+  map->array[index] = new_node;
+  klmap_node_insert(map->head.next, new_node);
+  ++map->size;
+  return new_node;
+}
+
+static inline KlMapIter klmap_iter_insert(KlMap* map, KlMapIter iter, KlValue* key, KlValue* val, size_t hash) {
+  KlMapNode* new_node = klmapnodepool_alloc(map->nodepool);
+  if (kl_unlikely(!new_node)) return NULL;
+  new_node->hash = hash;
+  klvalue_setvalue(&new_node->key, key);
+  klvalue_setvalue(&new_node->value, val);
+  klmap_node_insert(iter, new_node);
+  ++map->size;
+  return new_node;
+}
 
 #endif

@@ -1,38 +1,61 @@
 #ifndef KEVCC_KLANG_INCLUDE_PARSE_KLTOKENS_H
 #define KEVCC_KLANG_INCLUDE_PARSE_KLTOKENS_H
 
-#define KLTOK_ERR     (-1)
-#define KLTK_LET (0)
-#define KLTK_GLOBL (1)
-#define KLTK_ID (2)
-#define KLTK_STR (3)
-#define KLTK_LP (4)
-#define KLTK_RP (5)
-#define KLTK_LBE (6)
-#define KLTK_RBE (7)
-#define KLTK_LBC (8)
-#define KLTK_RBC (9)
-#define KLTK_COMMA (10)
-#define KLTK_COLON (11)
-#define KLTK_SEMI (12)
-#define KLTK_DOT (13)
-#define KLTK_BAR (14)
-#define KLTK_PIPE (15)
-#define KLTK_ASSIGN (16)
-#define KLTK_SFUNC (17)
-#define KLTK_EFUNC (18)
-#define KLTK_LESS (19)
-#define KLTK_NGREATER (20)
-#define KLTK_GREATER (21)
-#define KLTK_NLESS (22)
-#define KLTK_EQUAL (23)
-#define KLTK_NEQUAL (24)
-#define KLTK_CONCAT (25)
-#define KLTK_VARG (26)
-#define KLTK_BLKS (27)
-#define KLTK_NUM (28)
-#define KLTK_END (29)
+typedef enum tagKlToken {
+  KL_TK_ID,
+  KL_TK_INT,
+  KL_TK_STRING,
+  KL_TK_BOOLVAL,
+  KL_TK_VARARGS,
+  /* operators */
+  KL_TK_ADD,
+  KL_TK_SUB,
+  KL_TK_MUL,
+  KL_TK_DIV,
+  KL_TK_MOD,
+  KL_TK_CONCAT,
+  KL_TK_NEG,
+  KL_TK_DOT,
+  /* compare */
+  KL_TK_LT,
+  KL_TK_LE,
+  KL_TK_GT,
+  KL_TK_GE,
+  KL_TK_EQ,
+  KL_TK_NE,
 
+  KL_TK_NOT,
+  KL_TK_AND,
+  KL_TK_OR,
+
+  KL_TK_LPAREN,
+  KL_TK_RPAREN,
+  KL_TK_LBRACKET,
+  KL_TK_RBRACKET,
+  KL_TK_LBRACE,
+  KL_TK_RBRACE,
+
+  KL_TK_COMMA,
+  KL_TK_SEMI,
+  KL_TK_COLON,
+  KL_TK_QUESTION,
+  KL_TK_ARRAW,
+
+  KL_TK_ASSIGN,
+  KL_BAR,
+  /* keywords */
+  KL_TK_IF,
+  KL_TK_ELSE,
+  KL_TK_WHILE,
+  KL_TK_REPEAT,
+  KL_TK_UNTIL,
+  KL_TK_FOR,
+  KL_TK_IN,
+  KL_TK_LET,
+  KL_TK_LOCAL,
+  KL_TK_SHARED,
+  KL_TK_CLASS,
+} KlToken;
 
 
 #endif

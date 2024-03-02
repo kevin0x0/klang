@@ -28,7 +28,7 @@ struct tagKlCallInfo {
   KlCallInfo* next;
   KlValue env_this;             /* 'this' */
   union {
-    KlGCObject* clo;            /* klang closure or C closure(determined by status */
+    KlGCObject* clo;            /* klang closure or C closure(determined by status) */
     KlCFunction* cfunc;         /* C function in execution */
   } callable;
   KlValue* top;                 /* stack frame top for this call */

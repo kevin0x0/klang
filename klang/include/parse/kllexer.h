@@ -5,12 +5,9 @@
 #include "klang/include/parse/kltokens.h"
 #include "klang/include/value/klvalue.h"
 #include "utils/include/kio/kio.h"
-#include "utils/include/kstring/kstring.h"
 
 #include <stdint.h>
 
-#define KLLEXER_SEV_ERROR   (1)
-#define KLLEXER_SEV_FATAL   (2)
 
 
 typedef struct tagKlToken {
@@ -24,7 +21,7 @@ typedef struct tagKlToken {
   uint8_t kind;
 } KlToken;
 
-typedef struct tagKlLexer {
+typedef struct tagKlLex {
   Ki* ki;
   KlToken tok;
   uint8_t* buf;
@@ -32,16 +29,16 @@ typedef struct tagKlLexer {
   size_t currpos;
   size_t err_count;
   const char* stream_name;
-} KlLexer;
+} KlLex;
 
-bool kllexer_init(KlLexer* klex, Ki* ki);
-void kllexer_destroy(KlLexer* klex);
-KlLexer* kllexer_create(Ki* ki);
-void kllexer_delete(KlLexer* klex);
+bool kllexer_init(KlLex* klex, Ki* ki);
+void kllexer_destroy(KlLex* klex);
+KlLex* kllexer_create(Ki* ki);
+void kllexer_delete(KlLex* klex);
 
-bool kllexer_next(KlLexer* klex);
-const char* kllexer_tok_info(KlLexer* klex, uint8_t kind);
+bool kllexer_next(KlLex* klex);
+const char* kllexer_tok_info(KlLex* klex, uint8_t kind);
 
-void kllexer_throw_error(KlLexer* klex, int severity, const char** msg, size_t msg_count);
+void kllexer_throw_error(KlLex* klex, int severity, const char** msg, size_t msg_count);
 
 #endif

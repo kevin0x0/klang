@@ -2,6 +2,7 @@
 #define KEVCC_KLANG_INCLUDE_VM_KLEXEC_H
 
 #include "klang/include/value/klcfunc.h"
+#include "klang/include/vm/klexception.h"
 #include "klang/include/vm/klstate.h"
 
 
@@ -28,6 +29,11 @@ KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue
 KlException klexec_dobinopmethodi(KlState* state, KlValue* a, KlValue* b, KlInt c, KlString* op);
 static inline KlException klexec_callbinopmethod(KlState* state, KlString* op);
 
+KlException klexec_hashgeneric(KlState* state, KlValue* key, size_t* hash);
+static inline KlException klexec_equalgeneric(KlState* state, KlValue* a, KlValue* b, bool* equal);
+KlException klexec_mapsearch(KlState* state, KlMap* map, KlValue* key, KlValue* res);
+KlException klexec_mapinsert(KlState* state, KlMap* map, KlValue* key, KlValue* val);
+
 KlException klexec_equal(KlState* state, KlValue* a, KlValue* b);
 KlException klexec_notequal(KlState* state, KlValue* a, KlValue* b);
 KlException klexec_lt(KlState* state, KlValue* a, KlValue* b);
@@ -52,7 +58,6 @@ static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int r
   if (kl_unlikely(!callinfo)) return NULL;
   callinfo->nret = nret;
   callinfo->retoff = retoff;
-  callinfo->status = KLSTATE_CI_STATUS_NORM;
   return callinfo;
 }
 
@@ -86,6 +91,24 @@ static inline KlException klexec_method(KlState* state, KlValue* thisobj, KlValu
   return KL_E_NONE;
 }
 
+static inline KlException klexec_callophash(KlState* state, size_t* hash, KlValue* key, KlValue* hashmethod) {
+  if (kl_unlikely(!klvalue_callable(hashmethod))) {
+    return klstate_throw(state, KL_E_TYPE,
+                         "hash method is expected to be closure or C function , got %s",
+                         klvalue_typename(klvalue_gettype(hashmethod)));
+  }
+  KlException exception = klexec_method(state, key, hashmethod, 0, 1);
+  if (kl_unlikely(exception)) return exception;
+  KlValue* res = klstate_getval(state, -1);
+  if (kl_unlikely(!klvalue_checktype(res, KL_INT))) {
+    return klstate_throw(state, KL_E_TYPE,
+                         "expect integer returned by hash method, got %s",
+                         klvalue_typename(klvalue_gettype(res)));
+  }
+  *hash = klvalue_getint(res);
+  return KL_E_NONE;
+}
+
 static inline KlException klexec_callopindex(KlState* state, KlValue* res, KlValue* indexable, KlValue* key) {
   ptrdiff_t resdiff = klexec_savestack(state, res);
   klstack_pushvalue(klstate_getstk(state), key);
@@ -98,8 +121,7 @@ static inline KlException klexec_callopindex(KlState* state, KlValue* res, KlVal
     klstack_move_top(klstate_getstk(state), -1);
     return exception;
   }
-  klvalue_setvalue(klexec_restorestack(state, resdiff), klstate_stktop(state) - 1);
-  klstack_move_top(klstate_getstk(state), -1);
+  klvalue_setvalue(klexec_restorestack(state, resdiff), klstate_getval(state, -1));
   return KL_E_NONE;
 }
 
@@ -111,7 +133,6 @@ static inline KlException klexec_callopindexas(KlState* state, KlValue* indexabl
     return klstate_throw(state, KL_E_INVLD, "can not find operator \'%s\'", klstring_content(state->common->string.indexas));
   }
   KlException exception = klexec_method(state, indexable, method, 2, 0);
-  klstack_move_top(klstate_getstk(state), -2);
   return exception;
 }
 
@@ -121,10 +142,29 @@ static inline KlException klexec_callbinopmethod(KlState* state, KlString* op) {
   KlValue* method = klexec_getfield(state, l, op);
   if (!method) method = klexec_getfield(state, r, op);
   if (kl_unlikely(!method)) {
-    return klstate_throw(state, KL_E_INVLD, "can not find operator \'%s\'", klstring_content(op));
+    return klstate_throw(state, KL_E_INVLD, "can not find operator \'%s\' for type %s and %s",
+                         klstring_content(op),
+                         klvalue_typename(klvalue_gettype(l)),
+                         klvalue_typename(klvalue_gettype(r)));
   }
   return klexec_call(state, method, 2, 1);
 }
 
+static inline KlException klexec_equalgeneric(KlState* state, KlValue* a, KlValue* b, bool* equal) {
+  if (kl_unlikely(!klvalue_sametype(a, b))) {
+    *equal = false;
+    return KL_E_NONE;
+  }
+  if (klvalue_sameinstance(a, b)) {
+    *equal = true;
+  } else if (!klvalue_canrawequal(a)) {
+    KlException exception = klexec_equal(state, a, b);
+    if (kl_unlikely(exception)) return exception;
+    *equal = klexec_if(klstate_getval(state, -1));
+  } else {
+    *equal = false;
+  }
+  return KL_E_NONE;
+}
 
 #endif

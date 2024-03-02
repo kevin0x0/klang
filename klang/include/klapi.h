@@ -1,6 +1,8 @@
 #ifndef KEVCC_KLANG_INCLUDE_VM_KLAPI_H
 #define KEVCC_KLANG_INCLUDE_VM_KLAPI_H
 
+#include "klang/include/value/klcfunc.h"
+#include "klang/include/vm/klexception.h"
 #include "klang/include/vm/klexec.h"
 #include "klang/include/vm/klstate.h"
 #include "klang/include/value/klarray.h"
@@ -48,6 +50,8 @@ static inline KlArray* klapi_getarray(KlState* state, int index);
 
 KlException klapi_loadref(KlState* state, KlClosure* clo, int stkidx, size_t refidx);
 KlException klapi_storeref(KlState* state, KlClosure* clo, size_t refidx, int stkidx);
+KlException klapi_loadglobal(KlState* state);
+KlException klapi_storeglobal(KlState* state, KlString* varname);
 
 
 
@@ -225,7 +229,7 @@ static inline KlMap* klapi_getmap(KlState* state, int index) {
   kl_assert(val != NULL, "index out of range");
   kl_assert(klvalue_checktype(val, KL_MAP), "expected type KL_MAP");
 
-  return klvalue_getobj(klapi_access(state, index), KlMap*);
+  return klvalue_getobj(val, KlMap*);
 }
 
 static inline KlArray* klapi_getarray(KlState* state, int index) {
@@ -234,7 +238,7 @@ static inline KlArray* klapi_getarray(KlState* state, int index) {
   kl_assert(val != NULL, "index out of range");
   kl_assert(klvalue_checktype(val, KL_ARRAY), "expected type KL_ARRAY");
 
-  return klvalue_getobj(klapi_access(state, index), KlArray*);
+  return klvalue_getobj(val, KlArray*);
 }
 
 static inline bool klapi_checktype(KlState* state, int index, KlType type) {
