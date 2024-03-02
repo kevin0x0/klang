@@ -11,12 +11,13 @@ int main(void) {
   KlMM klmm;
   klmm_init(&klmm, 1024);
   KlState* state = klapi_new_state(&klmm);
-  concat(state);
-  size_t narg = 3;
-  //klapi_pushint(state, 35);
-  klapi_pushstring(state, "hello,");
-  klapi_pushstring(state, " ");
-  klapi_pushstring(state, "world!");
+  fibonacci(state);
+  //concat(state);
+  size_t narg = 1;
+  klapi_pushint(state, 35);
+  //klapi_pushstring(state, "hello,");
+  //klapi_pushstring(state, " ");
+  //klapi_pushstring(state, "world!");
   clock_t t = clock();
   KlException exception = klapi_call(state, klapi_access(state, -1 - narg), narg, 1);
   printf("%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
@@ -24,8 +25,8 @@ int main(void) {
     fprintf(stderr, "%s\n", state->throwinfo.exception.message);
     return 0;
   }
-  printf("%s", klstring_content(klapi_getstring(state, -1)));
-  //printf("fibonacci(%d) = %zd\n", 35, klapi_getint(state, -1));
+  //printf("%s", klstring_content(klapi_getstring(state, -1)));
+  printf("fibonacci(%d) = %zd\n", 35, klapi_getint(state, -1));
   klmm_destroy(&klmm);
   return 0;
 }

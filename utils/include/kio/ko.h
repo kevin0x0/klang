@@ -1,13 +1,15 @@
 #ifndef KEVCC_UTILS_INCLUDE_KIO_KO_H
 #define KEVCC_UTILS_INCLUDE_KIO_KO_H
 
+#include <stdarg.h>
 #include <stdint.h>
+#include <stddef.h>
 
-struct tagKo;
+typedef struct tagKo Ko;
 
-typedef void (*KoWriter)(struct tagKo* ko);
-typedef void (*KoDelete)(struct tagKo* ko);
-typedef size_t (*KoSize)(struct tagKo* ko);
+typedef void (*KoWriter)(Ko* ko);
+typedef void (*KoDelete)(Ko* ko);
+typedef size_t (*KoSize)(Ko* ko);
 
 
 typedef struct KoVirtualFunc {
@@ -16,13 +18,13 @@ typedef struct KoVirtualFunc {
   KoSize size;
 } KoVirtualFunc;
 
-typedef struct tagKo {
+struct tagKo {
   KoVirtualFunc* vfunc;
   char* buf;
   char* curr;
   char* end;
   size_t headpos;
-} Ko;
+};
 
 
 static inline void ko_init(Ko* ko, KoVirtualFunc* vfunc);
@@ -39,7 +41,8 @@ size_t ko_write(Ko* ko, void* buf, size_t bufsize);
 void ko_flush(Ko* ko);
 void ko_writenext(Ko* ko, int ch);
 
-int ko_printf(Ko* ko, const char* fmt, ...);
+static inline int ko_printf(Ko* ko, const char* fmt, ...);
+int ko_vprintf(Ko* ko, const char* fmt, va_list arglist);
 
 
 static inline void* ko_getbuf(Ko* ko);
@@ -94,6 +97,14 @@ static inline void ko_putc(Ko* ko, int ch) {
   }
 }
 
+static inline int ko_printf(Ko* ko, const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  int n = ko_vprintf(ko, fmt, ap);
+  va_end(ap);
+  return n;
+}
+
 static inline void* ko_getbuf(Ko* ko) {
   return ko->buf;
 }
@@ -101,7 +112,7 @@ static inline void* ko_getbuf(Ko* ko) {
 static inline void ko_setbuf(Ko* ko, void* buf, size_t size, size_t headpos) {
   ko->buf = buf;
   ko->curr = buf;
-  ko->end = buf + size;
+  ko->end = (char*)buf + size;
   ko->headpos = headpos;
 }
 

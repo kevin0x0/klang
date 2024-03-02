@@ -2,12 +2,15 @@
 #define KEVCC_UTILS_INCLUDE_KIO_KI_H
 
 #include <stdint.h>
+#include <stddef.h>
 
-struct tagKi;
+#define KOF   EOF
 
-typedef void (*KiReader)(struct tagKi* ki);
-typedef void (*KiDelete)(struct tagKi* ki);
-typedef size_t (*KiSize)(struct tagKi* ki);
+typedef struct tagKi Ki;
+
+typedef void (*KiReader)(Ki* ki);
+typedef void (*KiDelete)(Ki* ki);
+typedef size_t (*KiSize)(Ki* ki);
 
 
 typedef struct KiVirtualFunc {
@@ -16,13 +19,13 @@ typedef struct KiVirtualFunc {
   KiSize size;
 } KiVirtualFunc;
 
-typedef struct tagKi {
+struct tagKi {
   KiVirtualFunc* vfunc;
   const char* buf;
   const char* curr;
   const char* end;
   size_t headpos;
-} Ki;
+};
 
 static inline void ki_init(Ki* ki, KiVirtualFunc* vfunc);
 static inline void ki_delete(Ki* ki);
@@ -100,7 +103,7 @@ static inline void* ki_getbuf(Ki* ki) {
 static inline void ki_setbuf(Ki* ki, const void* buf, size_t size, size_t headpos) {
   ki->buf = buf;
   ki->curr = buf;
-  ki->end = buf + size;
+  ki->end = (char*)buf + size;
   ki->headpos = headpos;
 }
 

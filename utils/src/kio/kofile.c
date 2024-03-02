@@ -44,8 +44,7 @@ Ko* kofile_attach(FILE* file) {
 
 void kofile_writer(KoFile* kofile) {
   size_t writepos = ko_tell((Ko*)kofile) - ko_bufused((Ko*)kofile);
-  fpos_t fpos = writepos;
-  if (fsetpos(kofile->file, &fpos)) {
+  if (fseek(kofile->file, writepos, SEEK_SET)) {
     ko_setbuf((Ko*)kofile, ko_getbuf((Ko*)kofile), 0, writepos);
     return;
   }

@@ -5,7 +5,7 @@
 
 size_t ko_write(Ko* ko, void* buf, size_t bufsize) {
   size_t restsize = bufsize;
-  buf += bufsize;
+  buf = (char*)buf + bufsize;
   while (restsize != 0) {
     size_t kobufrest = ko->end - ko->curr;
     if (kobufrest == 0) {
@@ -14,7 +14,7 @@ size_t ko_write(Ko* ko, void* buf, size_t bufsize) {
         break;
     }
     size_t writesize = kobufrest < restsize ? kobufrest : restsize;
-    memcpy(ko->curr, buf - restsize, writesize);
+    memcpy(ko->curr, (char*)buf - restsize, writesize);
     restsize -= writesize;
     ko->curr += writesize;
   }

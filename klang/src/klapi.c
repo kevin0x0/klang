@@ -51,21 +51,6 @@ KlState* klapi_new_state(KlMM* klmm) {
   return state;
 }
 
-KlException klapi_loadref(KlState* state, KlClosure* clo, int stkidx, size_t refidx) {
-  if (!klclosure_checkrange(clo, refidx))
-    return KL_E_RANGE;
-  return klapi_setvalue(state, stkidx, klref_getval(klclosure_getref(clo, refidx)));
-}
-
-KlException klapi_storeref(KlState* state, KlClosure* clo, size_t refidx, int stkidx) {
-  if (!klclosure_checkrange(clo, refidx))
-    return KL_E_RANGE;
-  KlValue* val = klapi_access(state, stkidx);
-  if (!val) return KL_E_RANGE;
-  klvalue_setvalue(klref_getval(klclosure_getref(clo, refidx)), val);
-  return KL_E_NONE;
-}
-
 KlException klapi_loadglobal(KlState* state) {
   KlString* varname = klapi_getstring(state, -1);
   KlMapIter itr = klmap_searchstring(state->global, varname);

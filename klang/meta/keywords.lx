@@ -1,0 +1,140 @@
+import "charset/unicode
+
+# comment = $#[^\n\r\xFF]*
+# func-name = $([A-Za-z_] | [:uni-non-ascii:])([A-Za-z0-9_] | [:uni-non-ascii:])*
+def integer(KLTK_INT):
+  (KLTK_INT) $[1-9][0-9]* | 0[0-9]+ | 0[xX][A-Fa-f0-9]+
+
+def string(KLTK_STRING):
+  (KLTK_STRING) $\" | `
+
+def boolean(KLTK_BOOLVAL):
+  (KLTK_BOOLVAL) $true | false
+
+def vararg(KLTK_VARARGS):
+  (KLTK_VARARGS) $\.\.\.
+
+def add(KLTK_ADD):
+  (KLTK_ADD) $\+
+
+def minus(KLTK_MINUS):
+  (KLTK_MINUS) $-
+
+def mul(KLTK_MUL):
+  (KLTK_MUL) $\*
+
+def div(KLTK_DIV):
+  (KLTK_DIV) $/
+
+def mod(KLTK_MOD):
+  (KLTK_MOD) $%
+
+def concat(KLTK_CONCAT):
+  (KLTK_CONCAT) $\.\.
+
+def dot(KLTK_DOT):
+  (KLTK_DOT) $\.
+
+def lt(KLTK_LT):
+  (KLTK_LT) $<
+
+def le(KLTK_LE):
+  (KLTK_LE) $<=
+
+def gt(KLTK_GT):
+  (KLTK_GT) $>
+
+def ge(KLTK_GE):
+  (KLTK_GE) $>=
+
+def eq(KLTK_EQ):
+  (KLTK_EQ) $==
+
+def ne(KLTK_NE):
+  (KLTK_NE) $!=
+
+def not(KLTK_NOT):
+  (KLTK_NOT) $not | !
+
+def and(KLTK_AND):
+  (KLTK_AND) $&&
+
+def or(KLTK_OR):
+  (KLTK_OR) $\|\|
+
+def lp(KLTK_LPAREN):
+  (KLTK_LPAREN) $\(
+
+def rp(KLTK_RPAREN):
+  (KLTK_RPAREN) $\)
+
+def lb(KLTK_LBRACKET):
+  (KLTK_LBRACKET) $\[
+
+def rb(KLTK_RBRACKET):
+  (KLTK_RBRACKET) $\]
+
+def lbr(KLTK_LBRACE):
+  (KLTK_LBRACE) $\{
+
+def rbr(KLTK_RBRACE):
+  (KLTK_RBRACE) $\}
+
+def comma(KLTK_COMMA):
+  (KLTK_COMMA) $,
+
+def semi(KLTK_SEMI):
+  (KLTK_SEMI) $\;
+
+def colon(KLTK_COLON):
+  (KLTK_COLON) $\:
+
+def ques(KLTK_QUESTION):
+  (KLTK_QUESTION) $\?
+
+def arraw(KLTK_ARRAW):
+  (KLTK_ARRAW) $->
+
+def assign(KLTK_ASSIGN):
+  (KLTK_ASSIGN) $=
+
+def bar(KL_BAR):
+  (KLTK_BAR) $\|
+
+def if (KLTK_IF):
+  (KLTK_IF) $if
+
+def else (KLTK_ELSE):
+  (KLTK_ELSE) $else
+
+def while (KLTK_WHILE):
+  (KLTK_WHILE) $while
+
+def repeat (KLTK_REPEAT):
+  (KLTK_REPEAT) $repeat
+
+def until (KLTK_UNTIL):
+  (KLTK_UNTIL) $until
+
+def for (KLTK_FOR):
+  (KLTK_FOR) $for
+
+def in (KLTK_IN):
+  (KLTK_IN) $in
+
+def let (KLTK_LET):
+  (KLTK_LET) $let
+
+def local (KLTK_LOCAL):
+  (KLTK_LOCAL) $local
+
+def shared (KLTK_SHARED):
+  (KLTK_SHARED) $shared
+
+def class (KLTK_CLASS):
+  (KLTK_CLASS) $class
+
+def identifier (KLTK_ID):
+  (KLTK_ID)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])*
+
+%error-handler = "KLTK_ERR

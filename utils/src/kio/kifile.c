@@ -44,8 +44,7 @@ Ki* kifile_attach(FILE* file) {
 
 void kifile_reader(KiFile* kifile) {
   size_t readpos = ki_tell((Ki*)kifile);
-  fpos_t fpos = readpos;
-  if (fsetpos(kifile->file, &fpos)) {
+  if (fseek(kifile->file, readpos, SEEK_SET)) {
     ki_setbuf((Ki*)kifile, ki_getbuf((Ki*)kifile), 0, readpos);
     return;
   }

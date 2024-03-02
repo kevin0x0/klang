@@ -3,14 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int ko_printf(Ko* ko, const char* fmt, ...) {
-  va_list list;
-  va_start(list, fmt);
+int ko_vprintf(Ko* ko, const char* fmt, va_list arglist) {
   int bufsize = 128;
   char* buffer = (char*)malloc(bufsize);
   if (!buffer) return -1;
 
-  int len = vsnprintf(buffer, bufsize, fmt, list);
+  va_list ap;
+  va_copy(ap, arglist);
+  int len = vsnprintf(buffer, bufsize, fmt, ap);
   if (len < 0) {
     free(buffer);
     return len;
@@ -20,9 +20,9 @@ int ko_printf(Ko* ko, const char* fmt, ...) {
     bufsize = len + 1;
     buffer = (char*)malloc(bufsize);
     if (!buffer) return -1;
-    len = vsnprintf(buffer, bufsize, fmt, list);
+    va_copy(ap, arglist);
+    len = vsnprintf(buffer, bufsize, fmt, ap);
   }
-  va_end(list);
   if (len < 0) {
     free(buffer);
     return len;

@@ -27,7 +27,10 @@ GEN_INC_DIR = $(INC_DIR)general/
 
 
 
-$(LIB_DIR)libutils.a : $(LIB_DIR)dir.o $(LIB_DIR)intsetmap_node_pool.o $(LIB_DIR)intset_map.o $(LIB_DIR)setint_map.o $(LIB_DIR)str_map.o $(LIB_DIR)strx_map.o $(LIB_DIR)func_map.o $(LIB_DIR)address_map.o $(LIB_DIR)bitset.o $(LIB_DIR)hashset.o $(LIB_DIR)set_array.o $(LIB_DIR)int_queue.o $(LIB_DIR)addr_queue.o $(LIB_DIR)karray.o $(LIB_DIR)kev_string.o $(LIB_DIR)kstring.o $(LIB_DIR)kio.o | create_lib_dir
+$(LIB_DIR)libutils.a : $(LIB_DIR)dir.o $(LIB_DIR)intsetmap_node_pool.o $(LIB_DIR)intset_map.o $(LIB_DIR)setint_map.o $(LIB_DIR)str_map.o $(LIB_DIR)strx_map.o \
+	                     $(LIB_DIR)func_map.o $(LIB_DIR)address_map.o $(LIB_DIR)bitset.o $(LIB_DIR)hashset.o $(LIB_DIR)set_array.o $(LIB_DIR)int_queue.o \
+											 $(LIB_DIR)addr_queue.o $(LIB_DIR)karray.o $(LIB_DIR)kev_string.o $(LIB_DIR)ko.o $(LIB_DIR)ki.o  $(LIB_DIR)kobuf.o $(LIB_DIR)kibuf.o \
+											 $(LIB_DIR)kofile.o $(LIB_DIR)kifile.o $(LIB_DIR)ko_printf.o | create_lib_dir
 	$(AR) $@ $^
 
 
@@ -35,9 +38,6 @@ $(LIB_DIR)dir.o : $(OS_SPEC_DIR)dir.c $(OS_SPEC_INC_DIR)dir.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
 $(LIB_DIR)kev_string.o : $(STR_DIR)kev_string.c $(STR_INC_DIR)kev_string.h | create_lib_dir
-	$(CC) -c -o $@ $< $(CFLAGS) 
-
-$(LIB_DIR)kstring.o : $(KSTR_DIR)kstring.c $(KSTR_INC_DIR)kstring.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
 $(LIB_DIR)intsetmap_node_pool.o : $(OBJP_DIR)intsetmap_node_pool.c  $(OBJP_INC_DIR)intsetmap_node_pool.h $(SET_INC_DIR)bitset.h $(GEN_INC_DIR)global_def.h | create_lib_dir
@@ -82,7 +82,25 @@ $(LIB_DIR)addr_queue.o : $(QUEUE_DIR)addr_queue.c $(QUEUE_INC_DIR)addr_queue.h $
 $(LIB_DIR)plugin.o : $(OS_SPEC_DIR)plugin.c $(OS_SPEC_INC_DIR)plugin.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(LIB_DIR)kio.o : $(KIO_DIR)kio.c $(KIO_INC_DIR)kio.h | create_lib_dir
+$(LIB_DIR)ki.o : $(KIO_DIR)ki.c $(KIO_INC_DIR)ki.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)ko.o : $(KIO_DIR)ko.c $(KIO_INC_DIR)ko.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)kibuf.o : $(KIO_DIR)kibuf.c $(KIO_INC_DIR)kibuf.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)kobuf.o : $(KIO_DIR)kobuf.c $(KIO_INC_DIR)kobuf.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)kifile.o : $(KIO_DIR)kifile.c $(KIO_INC_DIR)kifile.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)kofile.o : $(KIO_DIR)kofile.c $(KIO_INC_DIR)kofile.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)ko_printf.o : $(KIO_DIR)ko_printf.c $(KIO_INC_DIR)kio.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 
