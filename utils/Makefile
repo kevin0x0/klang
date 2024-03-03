@@ -27,14 +27,17 @@ GEN_INC_DIR = $(INC_DIR)general/
 
 
 
-$(LIB_DIR)libutils.a : $(LIB_DIR)dir.o $(LIB_DIR)intsetmap_node_pool.o $(LIB_DIR)intset_map.o $(LIB_DIR)setint_map.o $(LIB_DIR)str_map.o $(LIB_DIR)strx_map.o \
-	                     $(LIB_DIR)func_map.o $(LIB_DIR)address_map.o $(LIB_DIR)bitset.o $(LIB_DIR)hashset.o $(LIB_DIR)set_array.o $(LIB_DIR)int_queue.o \
-											 $(LIB_DIR)addr_queue.o $(LIB_DIR)karray.o $(LIB_DIR)kev_string.o $(LIB_DIR)ko.o $(LIB_DIR)ki.o  $(LIB_DIR)kobuf.o $(LIB_DIR)kibuf.o \
-											 $(LIB_DIR)kofile.o $(LIB_DIR)kifile.o $(LIB_DIR)ko_printf.o | create_lib_dir
+$(LIB_DIR)libutils.a : $(LIB_DIR)dir.o $(LIB_DIR)file.o $(LIB_DIR)intsetmap_node_pool.o $(LIB_DIR)intset_map.o $(LIB_DIR)setint_map.o $(LIB_DIR)str_map.o \
+											 $(LIB_DIR)strx_map.o $(LIB_DIR)func_map.o $(LIB_DIR)address_map.o $(LIB_DIR)bitset.o $(LIB_DIR)hashset.o $(LIB_DIR)set_array.o \
+											 $(LIB_DIR)int_queue.o $(LIB_DIR)addr_queue.o $(LIB_DIR)karray.o $(LIB_DIR)kev_string.o $(LIB_DIR)ko.o $(LIB_DIR)ki.o  $(LIB_DIR)kobuf.o \
+											 $(LIB_DIR)kibuf.o $(LIB_DIR)kofile.o $(LIB_DIR)kifile.o $(LIB_DIR)ko_printf.o | create_lib_dir
 	$(AR) $@ $^
 
 
 $(LIB_DIR)dir.o : $(OS_SPEC_DIR)dir.c $(OS_SPEC_INC_DIR)dir.h | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS) 
+
+$(LIB_DIR)file.o : $(OS_SPEC_DIR)file.c $(OS_SPEC_INC_DIR)file.h | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS) 
 
 $(LIB_DIR)kev_string.o : $(STR_DIR)kev_string.c $(STR_INC_DIR)kev_string.h | create_lib_dir

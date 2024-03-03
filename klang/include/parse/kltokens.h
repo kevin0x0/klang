@@ -7,6 +7,7 @@ typedef enum tagKlToken {
   KLTK_INT,
   KLTK_STRING,
   KLTK_BOOLVAL,
+  KLTK_NIL,
   KLTK_VARARGS,
   /* operators */
   KLTK_ADD,
@@ -58,7 +59,10 @@ typedef enum tagKlToken {
   KLTK_CLASS,
 
   KLTK_END,
+  KLTK_NTOKEN,
 } KlToken;
+
+const char* kltoken_desc(KlToken kind);
 
 
 #endif

@@ -1,13 +1,14 @@
 #ifndef KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 #define KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 
+#include "klang/include/parse/klstrtab.h"
 #include "klang/include/parse/kltokens.h"
 #include "klang/include/value/klvalue.h"
 #include "utils/include/kio/kio.h"
 
 #include <stdint.h>
 
-#define KLLEX_BUFSIZE (4096)
+#define KLLEX_STRLIMIT  (KLSTRTAB_EXTRA)
 
 
 typedef struct tagKlFilePos {
@@ -16,6 +17,7 @@ typedef struct tagKlFilePos {
 } KlFilePos;
 
 typedef struct tagKlLex {
+  KlStrTab* strtab;         /* string table */
   Ki* input;                /* input stream */
   char* inputname;          /* name of input stream */
   Ko* err;                  /* error information puts here. */
@@ -27,20 +29,19 @@ typedef struct tagKlLex {
     union {
       KlInt intval;
       KlBool boolval;
-      char* string;
-      char* id;
+      KlStrDesc string;
     };
     KlToken kind;
   } tok;                    /* token information */
-  char buf[KLLEX_BUFSIZE];
 } KlLex;
 
-bool kllex_init(KlLex* lex, Ki* ki, Ko* err, const char* inputname);
+bool kllex_init(KlLex* lex, Ki* ki, Ko* err, const char* inputname, KlStrTab* strtab);
 void kllex_destroy(KlLex* lex);
-KlLex* kllex_create(Ki* ki, Ko* err, const char* inputname);
+KlLex* kllex_create(Ki* ki, Ko* err, const char* inputname, KlStrTab* strtab);
 void kllex_delete(KlLex* lex);
 
 void kllex_next(KlLex* lex);
+
 
 void kllex_error(KlLex* lex, const char* format, ...);
 void kllex_show_info(KlLex* lex, const char* format, va_list vlst);

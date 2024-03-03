@@ -20,9 +20,9 @@ typedef struct KoVirtualFunc {
 
 struct tagKo {
   KoVirtualFunc* vfunc;
-  char* buf;
-  char* curr;
-  char* end;
+  unsigned char* buf;
+  unsigned char* curr;
+  unsigned char* end;
   size_t headpos;
 };
 
@@ -41,7 +41,7 @@ size_t ko_write(Ko* ko, void* buf, size_t bufsize);
 void ko_flush(Ko* ko);
 void ko_writenext(Ko* ko, int ch);
 
-static inline int ko_printf(Ko* ko, const char* fmt, ...);
+int ko_printf(Ko* ko, const char* fmt, ...);
 int ko_vprintf(Ko* ko, const char* fmt, va_list arglist);
 
 
@@ -97,14 +97,6 @@ static inline void ko_putc(Ko* ko, int ch) {
   }
 }
 
-static inline int ko_printf(Ko* ko, const char* fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  int n = ko_vprintf(ko, fmt, ap);
-  va_end(ap);
-  return n;
-}
-
 static inline void* ko_getbuf(Ko* ko) {
   return ko->buf;
 }
@@ -112,7 +104,7 @@ static inline void* ko_getbuf(Ko* ko) {
 static inline void ko_setbuf(Ko* ko, void* buf, size_t size, size_t headpos) {
   ko->buf = buf;
   ko->curr = buf;
-  ko->end = (char*)buf + size;
+  ko->end = (unsigned char*)buf + size;
   ko->headpos = headpos;
 }
 

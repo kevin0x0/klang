@@ -2,74 +2,67 @@
 #define KEVCC_KLANG_INCLUDE_AST_KLAST_EXPR_H
 
 #include "klang/include/ast/klast_base.h"
-#include "klang/include/value/value.h"
+#include "klang/include/parse/klstrtab.h"
+#include "klang/include/value/klvalue.h"
+#include <stddef.h>
 
-typedef enum tagKlAstBinOp {
-  KLAST_BINOP_ADD,
-  KLAST_BINOP_SUB,
-  KLAST_BINOP_MUL,
-  KLAST_BINOP_DIV,
-  KLAST_BINOP_CON,
-} KlAstBinOp;
-
-typedef enum tagKlAstPreOp {
-  KLAST_PREOP_POS,
-  KLAST_PREOP_NEG,
-} KlAstPreOp;
-
-typedef enum tagKlAstPostOp {
-  KLAST_POSTOP_INDEX,
-  KLAST_POSTOP_CALL,
-} KlAstPostOp;
-
-typedef enum tagKlAstUnit {
-  KLAST_UNIT_MAP,
-  KLAST_UNIT_ARR,
-  KLAST_UNIT_STR,
-  KLAST_UNIT_NUM,
-  KLAST_UNIT_CLO,
-} KlAstUnitType;
+typedef struct tagKlAstExprUnit {
+  KlAstBase base;
+  union {
+    KlStrDesc id;         /* identifier */
+    struct {
+      KlAstBase** elems;  /* elements of tuple */
+      size_t nelem;       /* number of elements */
+    } tuple;              /* tuple */
+    struct {
+      KlAstBase* block;   /* assignment statements */
+    } map;                /* map constructor */
+    struct {
+      KlAstBase** exprs;  /* expressions */
+      size_t nstmt;       /* number of expressions */
+    } array;              /* array constructor */
+    struct {
+      KlType type;        /* boolean, integer, string or nil */
+      union {
+        KlStrDesc string; /* literal string */
+        KlInt intval;
+        KlBool boolval;
+      };
+    } literal;
+  };
+} KlAstExprUnit;
 
 typedef struct tagKlAstExprBin {
   KlAstBase base;
-  KlAstBinOp op;
   KlAstBase* loprand;
   KlAstBase* roprand;
 } KlAstExprBin;
 
 typedef struct tagKlAstExprPre {
   KlAstBase base;
-  KlAstBinOp op;
   KlAstBase* oprand;
 } KlAstExprPre;
 
 typedef struct tagKlAstExprPost {
   KlAstBase base;
-  KlAstBinOp op;
-  KlAstBase* oprand;
+  union {
+    struct {
+      KlAstBase* block;     /* function body */
+      KlStrDesc* params;    /* parameters */
+      size_t nparam;        /* number of parameters */
+    } func;                 /* is a function */
+    struct {
+      KlAstBase* oprand;
+      KlAstBase* trailing;
+    } other;
+  };
 } KlAstExprPost;
 
-typedef struct tagKlAstExprUnit {
+typedef struct tagKlAstExprTri {
   KlAstBase base;
-  KlAstUnitType type;
-  union {
-    KlInt intval;
-    KString string;
-    KlAstBase* array;
-    KlAstBase* map;
-    KlAstBase* closure;
-  } val;
-} KlAstExprUnit;
-
-if(a != 0, () -> {
-    print("Hello");
-  }, () -> {
-    print("Oh...");
-  }
-);
-
-if = (cond, then_blk, else_blk):
-  cond and then_blk or else_blk;
-
+  KlAstBase* cond;
+  KlAstBase* lexpr;
+  KlAstBase* rexpr;
+} KlAstExprTri;
 
 #endif

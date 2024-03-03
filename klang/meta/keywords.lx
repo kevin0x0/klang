@@ -11,6 +11,9 @@ def string(KLTK_STRING):
 def boolean(KLTK_BOOLVAL):
   (KLTK_BOOLVAL) $true | false
 
+def nil(KLTK_NIL):
+  (KLTK_NIL) $nil
+
 def vararg(KLTK_VARARGS):
   (KLTK_VARARGS) $\.\.\.
 
@@ -135,6 +138,6 @@ def class (KLTK_CLASS):
   (KLTK_CLASS) $class
 
 def identifier (KLTK_ID):
-  (KLTK_ID)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])*
+  (KLTK_ID)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])* | '
 
 %error-handler = "KLTK_ERR

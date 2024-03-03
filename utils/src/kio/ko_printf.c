@@ -3,6 +3,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int ko_printf(Ko* ko, const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  int n = ko_vprintf(ko, fmt, ap);
+  va_end(ap);
+  return n;
+}
+
+
 int ko_vprintf(Ko* ko, const char* fmt, va_list arglist) {
   int bufsize = 128;
   char* buffer = (char*)malloc(bufsize);

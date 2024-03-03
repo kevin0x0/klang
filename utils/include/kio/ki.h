@@ -21,9 +21,9 @@ typedef struct KiVirtualFunc {
 
 struct tagKi {
   KiVirtualFunc* vfunc;
-  const char* buf;
-  const char* curr;
-  const char* end;
+  const unsigned char* buf;
+  const unsigned char* curr;
+  const unsigned char* end;
   size_t headpos;
 };
 
@@ -103,7 +103,7 @@ static inline void* ki_getbuf(Ki* ki) {
 static inline void ki_setbuf(Ki* ki, const void* buf, size_t size, size_t headpos) {
   ki->buf = buf;
   ki->curr = buf;
-  ki->end = (char*)buf + size;
+  ki->end = (unsigned char*)buf + size;
   ki->headpos = headpos;
 }
 
