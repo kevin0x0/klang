@@ -32,7 +32,7 @@ static inline void klreflist_delete(KlRef* reflist, KlMM* klmm);
 static inline bool klref_closed(KlRef* ref);
 
 KlRef* klref_new(KlMM* klmm, KlRef** reflist, KlValue* stkval);
-static KlRef* klref_get(KlMM* klmm, KlRef** reflist, KlValue* stkval);
+static inline KlRef* klref_get(KlMM* klmm, KlRef** reflist, KlValue* stkval);
 void klref_close(KlRef** reflist, KlValue* bound, KlMM* klmm);
 
 

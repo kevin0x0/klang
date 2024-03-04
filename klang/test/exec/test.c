@@ -4,6 +4,21 @@
 #include <stdio.h>
 #include <time.h>
 
+
+
+extern void* expect(size_t n) {
+  if (kl_unlikely(n > 100)) {
+    return malloc(n * n);
+  } else {
+    return malloc(n + 2);
+  }
+}
+
+
+
+
+
+
 void fibonacci(KlState* state);
 void concat(KlState* state);
 

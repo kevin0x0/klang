@@ -1,81 +1,109 @@
 #ifndef KEVCC_KLANG_INCLUDE_AST_KLAST_STMT_H
 #define KEVCC_KLANG_INCLUDE_AST_KLAST_STMT_H
-#include "klang/include/ast/klast_base.h"
+#include "klang/include/ast/klast.h"
 #include "klang/include/parse/klstrtab.h"
 #include <stddef.h>
 
 
 typedef struct tagKlAstStmtLet {
-  KlAstBase base;
+  KlAst base;
   KlStrDesc* lvals;         /* list of identifiers */
   size_t nlval;             /* number of ids */
-  KlAstBase* rvals;         /* right values(must be tuple or single value). */
+  KlAst* rvals;             /* right values(must be tuple or single value). */
 } KlAstStmtLet;
 
 typedef struct tagKlAstStmtAssign {
-  KlAstBase base;
-  KlAstBase* lvals;         /* left values(single value or tuple) */
-  KlAstBase* rvals;         /* right values(single value or tuple) */
+  KlAst base;
+  KlAst* lvals;             /* left values(single value or tuple) */
+  KlAst* rvals;             /* right values(single value or tuple) */
 } KlAstStmtAssign;
 
 typedef struct tagKlAstStmtExpr {
-  KlAstBase base;
-  KlAstBase* expr;
+  KlAst base;
+  KlAst* expr;
 } KlAstStmtExpr;
 
 typedef struct tagKlAstStmtIf {
-  KlAstBase base;
-  KlAstBase* cond;
-  KlAstBase* if_block;
-  KlAstBase* else_block;    /* optional. no else block if NULL */
+  KlAst base;
+  KlAst* cond;
+  KlAst* if_block;
+  KlAst* else_block;        /* optional. no else block if NULL */
 } KlAstStmtIf;
 
 /* variable arguments for */
 typedef struct tagKlAstStmtVFor {
-  KlAstBase base;
+  KlAst base;
   KlStrDesc id;
-} KlAstStmteVFor;
+} KlAstStmtVFor;
 
 /* integer for */
 typedef struct tagKlAstStmtIFor {
-  KlAstBase base;
+  KlAst base;
   KlStrDesc id;
-  KlAstBase* begin;
-  KlAstBase* end;
-  KlAstBase* step;
-} KlAstStmteIFor;
+  KlAst* begin;
+  KlAst* end;
+  KlAst* step;    /* nil if NULL */
+} KlAstStmtIFor;
 
 /* generic for */
 typedef struct tagKlAstStmtGFor {
-  KlAstBase base;
+  KlAst base;
   KlStrDesc* ids;
   size_t nid;
-  KlAstBase* expr;
-} KlAstStmteGFor;
+  KlAst* expr;
+} KlAstStmtGFor;
 
 /* c-style for */
 typedef struct tagKlAstStmtCFor {
-  KlAstBase base;
-  KlStrDesc* ids;
-  size_t nid;
-  KlAstBase* expr;
-} KlAstStmteCFor;
+  KlAst base;
+  KlAst* init;
+  KlAst* cond;
+  KlAst* post;
+} KlAstStmtCFor;
 
 typedef struct tagKlAstStmtWhile {
-  KlAstBase base;
-  KlAstBase* cond;
-  KlAstBase* block;
+  KlAst base;
+  KlAst* cond;
+  KlAst* block;
 } KlAstStmtWhile;
 
 typedef struct tagKlAstStmtBlock {
-  KlAstBase** stmts;
+  KlAst** stmts;
   size_t nstmt;
 } KlAstStmtBlock;
 
 typedef struct tagKlAstStmtRepeat {
-  KlAstBase base;
-  KlAstBase* block;
-  KlAstBase* cond;
+  KlAst base;
+  KlAst* block;
+  KlAst* cond;
 } KlAstStmtRepeat;
+
+typedef struct tagKlAstStmtReturn {
+  KlAst base;
+  KlAst* retval;  /* single value or tuple. no return value if NULL */
+} KlAstStmtReturn;
+
+typedef struct tagKlAstStmtBreak {
+  KlAst base;
+} KlAstStmtBreak;
+
+typedef struct tagKlAstStmtContinue {
+  KlAst base;
+} KlAstStmtContinue;
+
+KlAstStmtLet* klast_stmtlet_create(void);
+KlAstStmtAssign* klast_stmtassign_create(void);
+KlAstStmtExpr* klast_stmtexpr_create(void);
+KlAstStmtIf* klast_stmtif_create(void);
+KlAstStmtVFor* klast_stmtvfor_create(void);
+KlAstStmtIFor* klast_stmtifor_create(void);
+KlAstStmtGFor* klast_stmtgfor_create(void);
+KlAstStmtCFor* klast_stmtcfor_create(void);
+KlAstStmtWhile* klast_stmtwhile_create(void);
+KlAstStmtBlock* klast_stmtblock_create(void);
+KlAstStmtRepeat* klast_stmtrepeat_create(void);
+KlAstStmtReturn* klast_stmtreturn_create(void);
+KlAstStmtBreak* klast_stmtbreak_create(void);
+KlAstStmtContinue* klast_stmtcontinue_create(void);
 
 #endif

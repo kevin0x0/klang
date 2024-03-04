@@ -47,6 +47,9 @@ static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_LOCAL] = "local",
   [KLTK_SHARED] = "shared",
   [KLTK_CLASS] = "class",
+  [KLTK_RETURN] = "return",
+  [KLTK_BREAK] = "break",
+  [KLTK_CONTINUE] = "continue",
   [KLTK_END] = "EOF",
 };
 

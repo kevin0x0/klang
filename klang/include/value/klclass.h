@@ -102,7 +102,12 @@ static inline KlException klclass_newshared(KlClass* klclass, KlString* key, KlV
 #define klobject_attrs_by_class(obj, klclass) (klcast(KlValue*, klcast(char*, (obj)) + (klclass)->attroffset))
 #define klobject_attrs(obj)                   (klobject_attrs_by_class((obj), (obj)->klclass))
 
-#define KLOBJECT_DEFAULT_ATTROFF              (klobject_attrarrayoffset(struct { KlObject objbase; klobject_tail; }))
+struct tagKlObjectInstance {
+  KlObject objbase;
+  klobject_tail;
+};
+
+#define KLOBJECT_DEFAULT_ATTROFF              (klobject_attrarrayoffset(struct tagKlObjectInstance))
 
 
 

@@ -1513,7 +1513,7 @@ KlException klexec_execute(KlState* state) {
         klexec_savestate(a + 3, callinfo);
         KlException exception = klexec_iforprep(state, a, offset);
         if (kl_unlikely(exception)) return exception;
-        pc = callinfo->savedpc;
+        pc = callinfo->savedpc; /* pc may be changed by klexec_iforprep() */
         break;
       }
       case KLOPCODE_IFORLOOP: {

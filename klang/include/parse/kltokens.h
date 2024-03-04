@@ -57,6 +57,9 @@ typedef enum tagKlToken {
   KLTK_LOCAL,
   KLTK_SHARED,
   KLTK_CLASS,
+  KLTK_RETURN,
+  KLTK_BREAK,
+  KLTK_CONTINUE,
 
   KLTK_END,
   KLTK_NTOKEN,

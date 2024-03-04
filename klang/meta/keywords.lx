@@ -137,6 +137,15 @@ def shared (KLTK_SHARED):
 def class (KLTK_CLASS):
   (KLTK_CLASS) $class
 
+def return (KLTK_RETURN):
+  (KLTK_RETURN) $return
+
+def break (KLTK_BREAK):
+  (KLTK_BREAK) $break
+
+def continue (KLTK_CONTINUE):
+  (KLTK_CONTINUE) $continue
+
 def identifier (KLTK_ID):
   (KLTK_ID)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])* | '
 
