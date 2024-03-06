@@ -141,6 +141,7 @@ static inline void* klmm_realloc(KlMM* klmm, void* blk, size_t new_size, size_t 
 }
 
 static inline void klmm_free(KlMM* klmm, void* blk, size_t size) {
+  if (blk == NULL) return;
   free(blk);
   klmm->mem_used -= size;
 }

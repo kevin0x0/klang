@@ -14,7 +14,7 @@
 #define kl_isnl(ch)       ((ch) == '\n' || (ch) == '\r')
 
 
-static KlToken tokenkind[97];
+static KlTokenKind tokenkind[97];
 static uint8_t transition[97][256];
 static size_t start;
 
@@ -303,7 +303,7 @@ void kllex_next(KlLex* lex) {
     ch = ki_getc(input);
   }
   if (ch != KOF) ki_ungetc(input);
-  KlToken kind = tokenkind[state];
+  KlTokenKind kind = tokenkind[state];
   switch (kind) {
     case KLTK_STRING: {
       kllex_handlestring(lex, buf, buf[0]);
@@ -2184,7 +2184,7 @@ static uint8_t transition[97][256] = {
   },
 };
 
-static KlToken tokenkind[97] = {
+static KlTokenKind tokenkind[97] = {
   KLTK_ERR,
   KLTK_ERR,
   KLTK_ERR,

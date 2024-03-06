@@ -31,7 +31,7 @@ typedef struct tagKlLex {
       KlBool boolval;
       KlStrDesc string;
     };
-    KlToken kind;
+    KlTokenKind kind;
   } tok;                    /* token information */
 } KlLex;
 
@@ -41,9 +41,19 @@ KlLex* kllex_create(Ki* ki, Ko* err, const char* inputname, KlStrTab* strtab);
 void kllex_delete(KlLex* lex);
 
 void kllex_next(KlLex* lex);
+static inline KlTokenKind kllex_tokkind(KlLex* lex);
+static inline bool kllex_check(KlLex* lex, KlTokenKind kind);
 
 
 void kllex_error(KlLex* lex, const char* format, ...);
 void kllex_show_info(KlLex* lex, const char* format, va_list vlst);
+
+static inline KlTokenKind kllex_tokkind(KlLex* lex) {
+  return lex->tok.kind;
+}
+
+static inline bool kllex_check(KlLex* lex, KlTokenKind kind) {
+  return kllex_tokkind(lex) == kind;
+}
 
 #endif

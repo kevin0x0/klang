@@ -23,8 +23,9 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
   KlRef** ref = kclo->refs;
   KlRefInfo* end = refinfo + nref;
   for (; refinfo != end; ++refinfo, ++ref) {
-    if (!refinfo->in_stack) {
-      *ref = refs[refinfo->index];
+    if (!refinfo->in_stack) {       /* not in the stack */
+      *ref = refs[refinfo->index];  /* in parent closure */
+      klref_pin(*ref);
       continue;
     }
     KlRef* newref = klref_get(klmm, openreflist, stkbase + refinfo->index);
@@ -33,6 +34,7 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
       klmm_free(klmm, kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kfunc->nref);
       return NULL;
     }
+    klref_pin(newref);
     *ref = newref;
   }
 
@@ -41,6 +43,11 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
 }
 
 static void klkclosure_delete(KlKClosure* kclo) {
+  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(kclo));
+  KlRef** refs = kclo->refs;
+  size_t nref = kclo->nref;
+  for (size_t i = 0; i < nref; ++i)
+    klref_unpin(klmm, refs[i]);
   klmm_free(klmm_gcobj_getmm(klmm_to_gcobj(kclo)), kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kclo->nref);
 }
 
@@ -48,7 +55,7 @@ static KlGCObject* klkclosure_propagate(KlKClosure* kclo, KlGCObject* gclist) {
   klmm_gcobj_mark_accessible(klmm_to_gcobj(kclo->kfunc), gclist);
   for (size_t i = 0; i < kclo->nref; ++i) {
     if (klref_closed(kclo->refs[i]))
-      klmm_gcobj_mark_accessible(klmm_to_gcobj(kclo->refs[i]), gclist);
+      gclist = klref_propagate(kclo->refs[i], gclist);
   }
   return gclist;
 }
@@ -68,6 +75,7 @@ KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, 
       klmm_free(klmm, cclo, sizeof (KlCClosure) + sizeof (KlRef*) * cclo->nref);
       return NULL;
     }
+    klref_pin(newref);
     *ref = newref;
   }
 
@@ -76,12 +84,18 @@ KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, 
 }
 
 static void klcclosure_delete(KlCClosure* cclo) {
-  klmm_free(klmm_gcobj_getmm(klmm_to_gcobj(cclo)), cclo, sizeof (KlCClosure) + sizeof (KlRef*) * cclo->nref);
+  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(cclo));
+  KlRef** refs = cclo->refs;
+  size_t nref = cclo->nref;
+  for (size_t i = 0; i < nref; ++i)
+    klref_unpin(klmm, refs[i]);
+  klmm_free(klmm_gcobj_getmm(klmm_to_gcobj(cclo)), cclo, sizeof (KlKClosure) + sizeof (KlRef*) * cclo->nref);
 }
 
 static KlGCObject* klcclosure_propagate(KlCClosure* cclo, KlGCObject* gclist) {
   for (size_t i = 0; i < cclo->nref; ++i) {
-    klmm_gcobj_mark_accessible(klmm_to_gcobj(cclo->refs[i]), gclist);
+    if (klref_closed(cclo->refs[i]))
+      gclist = klref_propagate(cclo->refs[i], gclist);
   }
   return gclist;
 }

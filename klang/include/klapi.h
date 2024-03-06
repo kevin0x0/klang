@@ -84,7 +84,7 @@ static inline void klapi_pop(KlState* state, size_t count) {
   size_t stksize = klstack_size(&state->stack);
   count = stksize < count ? stksize : count;
   KlValue* bound = klstate_stktop(state) - count;
-  klref_close(&state->reflist, bound, klstate_getmm(state));
+  klreflist_close(&state->reflist, bound, klstate_getmm(state));
   klstack_set_top(&state->stack, bound);
 }
 

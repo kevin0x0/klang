@@ -4,6 +4,7 @@
 #include "utils/include/utils/utils.h"
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 typedef struct tagKArray {
   void** begin;
@@ -25,6 +26,8 @@ static inline void* karray_access(KArray* array, size_t index);
 static inline void* karray_top(KArray* array);
 static inline size_t karray_size(KArray* array);
 static inline size_t karray_capacity(KArray* array);
+/* shrink the array to exactly fit its size */
+static inline void karray_shrink(KArray* array);
 static inline void** karray_steal(KArray* array);
 static inline void** karray_raw(KArray* array);
 
@@ -34,6 +37,16 @@ static inline size_t karray_size(KArray* array) {
 
 static inline size_t karray_capacity(KArray* array) {
   return array->end - array->begin;
+}
+
+static inline void karray_shrink(KArray* array) {
+  size_t size = karray_size(array);
+  void** newarr = (void**)realloc(array->begin, size * sizeof (void*));
+  if (k_likely(newarr)) {
+    array->begin = newarr;
+    array->current = array->begin + size;
+    array->end = array->current;
+  }
 }
 
 static inline bool karray_push_back(KArray* array, void* addr) {

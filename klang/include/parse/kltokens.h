@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_PARSE_KLTOKENS_H
 #define KEVCC_KLANG_INCLUDE_PARSE_KLTOKENS_H
 
-typedef enum tagKlToken {
+typedef enum tagKlTokenKind {
   KLTK_ERR = -1,
   KLTK_ID = 0,
   KLTK_INT,
@@ -40,7 +40,7 @@ typedef enum tagKlToken {
   KLTK_SEMI,
   KLTK_COLON,
   KLTK_QUESTION,
-  KLTK_ARRAW,
+  KLTK_ARROW,
 
   KLTK_ASSIGN,
   KLTK_BAR,
@@ -63,9 +63,9 @@ typedef enum tagKlToken {
 
   KLTK_END,
   KLTK_NTOKEN,
-} KlToken;
+} KlTokenKind;
 
-const char* kltoken_desc(KlToken kind);
+const char* kltoken_desc(KlTokenKind kind);
 
 
 #endif

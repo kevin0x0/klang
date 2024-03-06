@@ -1449,7 +1449,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_CLOSE: {
         KlValue* bound = stkbase + KLINST_X_GETX(inst);
-        klref_close(&state->reflist, bound, klstate_getmm(state));
+        klreflist_close(&state->reflist, bound, klstate_getmm(state));
         break;
       }
       case KLOPCODE_NEWOBJ: {
@@ -1518,14 +1518,13 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_IFORLOOP: {
         KlValue* a = stkbase + KLINST_AI_GETA(inst);
-        int offset = KLINST_AI_GETI(inst);
         kl_assert(klvalue_checktype(a, KL_INT) && klvalue_checktype(a, KL_INT) && klvalue_checktype(a, KL_INT), "");
         KlInt i = klvalue_getint(a);
         KlInt end = klvalue_getint(a + 1);
         KlInt step = klvalue_getint(a + 2);
         i += step;
         if (i != end) {
-          pc += offset;
+          pc += KLINST_AI_GETI(inst);
           klvalue_setint(a, i);
         }
         break;
