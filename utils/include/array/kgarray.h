@@ -37,11 +37,12 @@ static inline size_t prefix##_capacity(arrname* array) {                        
                                                                                 \
 static inline void prefix##_shrink(arrname* array) {                            \
   size_t size = prefix##_size(array);                                           \
-  KType* newarr = (KType*)realloc(array->begin, size * sizeof (KType));         \
+  size_t shrinksize = size == 0 ? 1 : size;                                     \
+  KType* newarr = (KType*)realloc(array->begin, shrinksize * sizeof (KType));   \
   if (k_likely(newarr)) {                                                       \
     array->begin = newarr;                                                      \
     array->current = array->begin + size;                                       \
-    array->end = array->current;                                                \
+    array->end = array->begin + shrinksize;                                     \
   }                                                                             \
 }                                                                               \
                                                                                 \

@@ -6,7 +6,6 @@ static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_STRING] = "string",
   [KLTK_BOOLVAL] = "boolean",
   [KLTK_NIL] = "nil",
-  [KLTK_VARARGS] = "...",
   [KLTK_ADD] = "+",
   [KLTK_MINUS] = "-",
   [KLTK_MUL] = "*",
@@ -33,7 +32,7 @@ static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_SEMI] = ";",
   [KLTK_COLON] = ":",
   [KLTK_QUESTION] = "?",
-  [KLTK_ARRAW] = "->",
+  [KLTK_ARROW] = "->",
   [KLTK_ASSIGN] = "=",
   [KLTK_BAR] = "|",
   [KLTK_IF] = "if",
@@ -53,6 +52,6 @@ static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_END] = "EOF",
 };
 
-const char* kltoken_desc(KlToken kind) {
+const char* kltoken_desc(KlTokenKind kind) {
   return kind == KLTK_ERR ? "error" : descrition[kind];
 }

@@ -12,8 +12,8 @@
 
 
 typedef struct tagKlFilePos {
-  uint32_t line;
-  uint32_t offset;
+  unsigned int line;
+  unsigned int offset;
 } KlFilePos;
 
 typedef struct tagKlLex {
@@ -41,19 +41,33 @@ KlLex* kllex_create(Ki* ki, Ko* err, const char* inputname, KlStrTab* strtab);
 void kllex_delete(KlLex* lex);
 
 void kllex_next(KlLex* lex);
-static inline KlTokenKind kllex_tokkind(KlLex* lex);
+static inline bool kllex_trymatch(KlLex* lex, KlTokenKind kind);
 static inline bool kllex_check(KlLex* lex, KlTokenKind kind);
+static inline KlTokenKind kllex_tokkind(KlLex* lex);
+static inline Ki* kllex_inputstream(KlLex* lex);
 
 
 void kllex_error(KlLex* lex, const char* format, ...);
 void kllex_show_info(KlLex* lex, const char* format, va_list vlst);
 
-static inline KlTokenKind kllex_tokkind(KlLex* lex) {
-  return lex->tok.kind;
+static inline bool kllex_trymatch(KlLex* lex, KlTokenKind kind) {
+  if (lex->tok.kind == kind) {
+    kllex_next(lex);
+    return true;
+  }
+  return false;
 }
 
 static inline bool kllex_check(KlLex* lex, KlTokenKind kind) {
   return kllex_tokkind(lex) == kind;
+}
+
+static inline KlTokenKind kllex_tokkind(KlLex* lex) {
+  return lex->tok.kind;
+}
+
+static inline Ki* kllex_inputstream(KlLex* lex) {
+  return lex->input;
 }
 
 #endif

@@ -58,8 +58,10 @@ KlCommon* klcommon_create(KlStrPool* strpool, KlMapNodePool* mapnodepool) {
   done = done && (common->klclass.phony[KL_NIL] = klcommon_phonyclass(klmm));
   done = done && (common->klclass.phony[KL_KCLOSURE] = klcommon_phonyclass(klmm));
   done = done && (common->klclass.phony[KL_CCLOSURE] = klcommon_phonyclass(klmm));
-  if (kl_unlikely(!done))
+  if (kl_unlikely(!done)) {
     klmm_free(klmm, common, sizeof (KlCommon));
+    return NULL;
+  }
   return common;
 }
 

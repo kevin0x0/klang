@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/* ensure at leat this many space on the top of string stack */
 #define KLSTRTAB_EXTRA    (4096)
 
 typedef struct tagKlStrDesc {
@@ -30,8 +29,8 @@ static inline size_t klstrtab_size(KlStrTab* strtab);
 char* klstrtab_grow(KlStrTab* strtab, size_t extra);
 static inline bool klstrtab_checkspace(KlStrTab* strtab, size_t space);
 /* get a pointer to the top of the stack. */
-static inline char* klstrtab_allocstring(KlStrTab* strtab);
-static inline void klstrtab_pushstring(KlStrTab* strtab, size_t length);
+static inline char* klstrtab_allocstring(KlStrTab* strtab, size_t size);
+static inline size_t klstrtab_pushstring(KlStrTab* strtab, size_t length);
 /* get offset(id) of a string in the string table. */
 static inline size_t klstrtab_stringid(KlStrTab* strtab, char* str);
 /* get string by offset(id). */
@@ -54,14 +53,16 @@ static inline bool klstrtab_checkspace(KlStrTab* strtab, size_t space) {
   return klstrtab_residual(strtab) >= space;
 }
 
-static inline char* klstrtab_allocstring(KlStrTab* strtab) {
-  if (kl_unlikely(!klstrtab_checkspace(strtab, KLSTRTAB_EXTRA)))
-    return klstrtab_grow(strtab, KLSTRTAB_EXTRA);
+static inline char* klstrtab_allocstring(KlStrTab* strtab, size_t size) {
+  if (kl_unlikely(!klstrtab_checkspace(strtab, size)))
+    return klstrtab_grow(strtab, size);
   return strtab->curr;
 }
 
-static inline void klstrtab_pushstring(KlStrTab* strtab, size_t length) {
+static inline size_t klstrtab_pushstring(KlStrTab* strtab, size_t length) {
+  size_t id = strtab->curr - strtab->stack;
   strtab->curr += length;
+  return id;
 }
 
 static inline size_t klstrtab_stringid(KlStrTab* strtab, char* str) {

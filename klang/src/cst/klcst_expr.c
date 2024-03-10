@@ -5,16 +5,16 @@ static void klcst_exprunit_delete(KlCstExprUnit* unit);
 static void klcst_exprbin_delete(KlCstExprBin* bin);
 static void klcst_exprpre_delete(KlCstExprPre* pre);
 static void klcst_exprpost_delete(KlCstExprPost* post);
-static void klcst_exprtri_delete(KlCstExprTri* tri);
+static void klcst_exprter_delete(KlCstExprTer* ter);
 
-static KlCstVirtualFunc klcst_exprunit_vfunc = { .astdelete = (KlCstDelete)klcst_exprunit_delete };
-static KlCstVirtualFunc klcst_exprbin_vfunc = { .astdelete = (KlCstDelete)klcst_exprbin_delete };
-static KlCstVirtualFunc klcst_exprpre_vfunc = { .astdelete = (KlCstDelete)klcst_exprpre_delete };
-static KlCstVirtualFunc klcst_exprpost_vfunc = { .astdelete = (KlCstDelete)klcst_exprpost_delete };
-static KlCstVirtualFunc klcst_exprtri_vfunc = { .astdelete = (KlCstDelete)klcst_exprtri_delete };
+static KlCstVirtualFunc klcst_exprunit_vfunc = { .cstdelete = (KlCstDelete)klcst_exprunit_delete };
+static KlCstVirtualFunc klcst_exprbin_vfunc = { .cstdelete = (KlCstDelete)klcst_exprbin_delete };
+static KlCstVirtualFunc klcst_exprpre_vfunc = { .cstdelete = (KlCstDelete)klcst_exprpre_delete };
+static KlCstVirtualFunc klcst_exprpost_vfunc = { .cstdelete = (KlCstDelete)klcst_exprpost_delete };
+static KlCstVirtualFunc klcst_exprter_vfunc = { .cstdelete = (KlCstDelete)klcst_exprter_delete };
 
 
-KlCstExprUnit* klcst_exprunit_create(KlCstType type) {
+KlCstExprUnit* klcst_exprunit_create(KlCstKind type) {
   kl_assert(klcst_is_exprunit(type), "");
 
   KlCstExprUnit* unit = (KlCstExprUnit*)malloc(sizeof (KlCstExprUnit));
@@ -23,16 +23,15 @@ KlCstExprUnit* klcst_exprunit_create(KlCstType type) {
   return unit;
 }
 
-KlCstExprBin* klcst_exprbin_create(KlCstType type) {
-  kl_assert(klcst_is_exprbin(type), "");
-
+KlCstExprBin* klcst_exprbin_create(KlTokenKind op) {
   KlCstExprBin* bin = (KlCstExprBin*)malloc(sizeof (KlCstExprBin));
   if (kl_unlikely(!bin)) return NULL;
-  klcst_init((KlCst*)bin, type, &klcst_exprbin_vfunc);
+  klcst_init((KlCst*)bin, KLCST_EXPR_BIN, &klcst_exprbin_vfunc);
+  bin->binop = op;
   return bin;
 }
 
-KlCstExprPre* klcst_exprpre_create(KlCstType type) {
+KlCstExprPre* klcst_exprpre_create(KlCstKind type) {
   kl_assert(klcst_is_exprpre(type), "");
 
   KlCstExprPre* pre = (KlCstExprPre*)malloc(sizeof (KlCstExprPre));
@@ -41,7 +40,7 @@ KlCstExprPre* klcst_exprpre_create(KlCstType type) {
   return pre;
 }
 
-KlCstExprPost* klcst_exprpost_create(KlCstType type) {
+KlCstExprPost* klcst_exprpost_create(KlCstKind type) {
   kl_assert(klcst_is_exprpost(type), "");
 
   KlCstExprPost* post = (KlCstExprPost*)malloc(sizeof (KlCstExprPost));
@@ -50,17 +49,15 @@ KlCstExprPost* klcst_exprpost_create(KlCstType type) {
   return post;
 }
 
-KlCstExprTri* klcst_exprtri_create(KlCstType type) {
-  kl_assert(klcst_is_exprtri(type), "");
-
-  KlCstExprTri* tri = (KlCstExprTri*)malloc(sizeof (KlCstExprTri));
+KlCstExprTer* klcst_exprter_create(void) {
+  KlCstExprTer* tri = (KlCstExprTer*)malloc(sizeof (KlCstExprTer));
   if (kl_unlikely(!tri)) return NULL;
-  klcst_init((KlCst*)tri, type, &klcst_exprtri_vfunc);
+  klcst_init((KlCst*)tri, KLCST_EXPR_TER, &klcst_exprter_vfunc);
   return tri;
 }
 
 static void klcst_exprunit_delete(KlCstExprUnit* unit) {
-  switch (klcst_type(klcast(KlCst*, unit))) {
+  switch (klcst_kind(klcast(KlCst*, unit))) {
     case KLCST_EXPR_TUPLE: {
       size_t nelem = unit->tuple.nelem;
       KlCst** elems = unit->tuple.elems;
@@ -82,7 +79,9 @@ static void klcst_exprunit_delete(KlCstExprUnit* unit) {
       break;
     }
     case KLCST_EXPR_ARR: {
-      klcst_delete(unit->array.arrgen);
+      klcst_delete(unit->array.exprs);
+      if (unit->array.stmts)
+        klcst_delete(unit->array.stmts);
       break;
     }
     case KLCST_EXPR_CLASS: {
@@ -107,30 +106,47 @@ static void klcst_exprunit_delete(KlCstExprUnit* unit) {
 }
 
 static void klcst_exprbin_delete(KlCstExprBin* bin) {
-  klcst_delete(bin->loprand);
-  klcst_delete(bin->roprand);
+  klcst_delete(bin->loperand);
+  klcst_delete(bin->roperand);
   free(bin);
 }
 
 static void klcst_exprpre_delete(KlCstExprPre* pre) {
-  klcst_delete(pre->oprand);
+  klcst_delete(pre->operand);
+  if (klcst_kind(klcast(KlCst*, pre)) == KLCST_EXPR_NEW)
+    klcst_delete(pre->params);
   free(pre);
 }
 
 static void klcst_exprpost_delete(KlCstExprPost* post) {
-  if (klcst_type(klcast(KlCst*, post)) == KLCST_EXPR_FUNC) {
+  if (klcst_kind(klcast(KlCst*, post)) == KLCST_EXPR_FUNC) {
     klcst_delete(post->func.block);
     free(post->func.params);
-  } else {
-    klcst_delete(post->other.oprand);
-    klcst_delete(post->other.trailing);
+  } else if (klcst_kind(klcast(KlCst*, post)) == KLCST_EXPR_INDEX) {
+    klcst_delete(post->index.indexable);
+    klcst_delete(post->index.index);
+  } else if (klcst_kind(klcast(KlCst*, post)) == KLCST_EXPR_DOT) {
+    klcst_delete(post->dot.operand);
+  } else if (klcst_kind(klcast(KlCst*, post)) == KLCST_EXPR_CALL) {
+    klcst_delete(post->call.callable);
+    klcst_delete(post->call.param);
   }
   free(post);
 }
 
-static void klcst_exprtri_delete(KlCstExprTri* tri) {
-  klcst_delete(tri->cond);
-  klcst_delete(tri->lexpr);
-  klcst_delete(tri->rexpr);
-  free(tri);
+static void klcst_exprter_delete(KlCstExprTer* ter) {
+  klcst_delete(ter->cond);
+  klcst_delete(ter->lexpr);
+  klcst_delete(ter->rexpr);
+  free(ter);
+}
+
+void klcst_expr_tuple_delete_after_stolen(KlCst* tuple) {
+  kl_assert(klcst_kind(tuple) == KLCST_EXPR_TUPLE, "");
+  KlCstExprUnit* incomplete = klcast(KlCstExprUnit*, tuple);
+  size_t nelem = incomplete->tuple.nelem;
+  KlCst** elems = incomplete->tuple.elems;
+  for (size_t i = 0; i < nelem; ++i)
+    if (elems[i]) klcst_delete(elems[i]);
+  free(elems);
 }

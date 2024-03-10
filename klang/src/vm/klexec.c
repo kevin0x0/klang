@@ -142,6 +142,18 @@ static KlException klexec_handle_newlocal_exception(KlState* state, KlException 
   return KL_E_NONE;
 }
 
+static KlException klexec_handle_arrayindexas_exception(KlState* state, KlException exception, KlArray* arr, KlValue* key) {
+  if (exception == KL_E_OOM) {
+    return klstate_throw(state, exception, "out of memory when indexing an array");
+  } else if (exception == KL_E_RANGE) {
+    return klstate_throw(state, exception,
+                         "index out of range: index = %zd, array size = %zu.",
+                         klvalue_getint(key), klarray_size(arr));
+  }
+  kl_assert(false, "control flow should not reach here");
+  return KL_E_NONE;
+}
+
 KlCallInfo* klexec_alloc_callinfo(KlState* state) {
   KlCallInfo* callinfo = (KlCallInfo*)klmm_alloc(klstate_getmm(state), sizeof (KlCallInfo));
   if (kl_unlikely(!callinfo)) return NULL;
@@ -1197,18 +1209,15 @@ KlException klexec_execute(KlState* state) {
         KlValue* key = stkbase + KLINST_ABC_GETC(inst);
         if (klvalue_checktype(indexable, KL_ARRAY)) {         /* is array? */
           KlArray* arr = klvalue_getobj(indexable, KlArray*);
+          klexec_savestate(callinfo->top, callinfo);
           if (kl_unlikely(!klvalue_checktype(key, KL_INT))) { /* only integer can index array */
-            klexec_savestate(callinfo->top, callinfo);
             return klstate_throw(state, KL_E_TYPE,
                                  "type error occurred when indexing an array: expected %s, got %s.",
                                  klvalue_typename(KL_INT), klvalue_typename(klvalue_gettype(key)));
           }
-          if (!klarray_indexas(arr, klvalue_getint(key), val)) {  /* index out of range */
-            klexec_savestate(callinfo->top, callinfo);
-            return klstate_throw(state, KL_E_RANGE,
-                                 "index out of range: index = %zd, array size = %zu.",
-                                 klvalue_getint(key), klarray_size(arr));
-          }
+          KlException exception = klarray_indexas(arr, klvalue_getint(key), val);
+          if (kl_unlikely(exception))
+            return klexec_handle_arrayindexas_exception(state, exception, arr, key);
         } else if (klvalue_checktype(indexable, KL_MAP)) {    /* is map? */
           KlMap* map = klvalue_getobj(indexable, KlMap*);
           klexec_savestate(callinfo->top, callinfo);
@@ -1370,7 +1379,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_AXI_GETA(inst);
         KlValue* b = constants + KLINST_AXI_GETX(inst);
         int offset = KLINST_AXI_GETI(inst);
-        kl_assert(klvalue_canrawequal(b), "something wrong in BEC");
+        kl_assert(klvalue_canrawequal(b), "something wrong in BNEC");
         if (!klvalue_equal(a, b))
           pc += offset;
         break;
@@ -1460,7 +1469,6 @@ KlException klexec_execute(KlState* state) {
         KlObject* object = klclass_new_object(klvalue_getobj(klclass, KlClass*));
         if (kl_unlikely(!object))
           return klstate_throw(state, KL_E_OOM, "out of memory when constructing object");
-        klexec_savestate(callinfo->top, callinfo);
         klvalue_setobj(stkbase + KLINST_ABC_GETA(inst), object, KL_OBJECT);
         break;
       }
@@ -1487,10 +1495,19 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_VFORPREP: {
         KlValue* a = stkbase + KLINST_AI_GETA(inst);
-        size_t nextra = callinfo->narg - klkfunc_nparam(closure->kfunc);
+        kl_assert(klvalue_checktype(a, KL_INT), "compiler error");
+        KlInt nextra = callinfo->narg - klkfunc_nparam(closure->kfunc);
+        KlInt step = klvalue_getint(a);
+        kl_assert(step > 0, "compiler error");
         if (nextra != 0) {
-          klvalue_setint(a, -nextra);
-          klvalue_setvalue(a + 1, stkbase - nextra);
+          KlValue* varpos = a + 2;
+          KlValue* argpos = stkbase - nextra;
+          size_t nvalid = step > nextra ? nextra : step;
+          klvalue_setint(a + 1, nextra - nvalid);  /* set index for next iteration */
+          while (nvalid--)
+            klvalue_setvalue(varpos++, argpos++);
+          while (step-- > nextra)
+            klvalue_setnil(varpos++);
         } else {
           pc += KLINST_AI_GETI(inst);
         }
@@ -1499,11 +1516,18 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_VFORLOOP: {
         KlValue* a = stkbase + KLINST_AI_GETA(inst);
         kl_assert(klvalue_checktype(a, KL_INT), "");
-        KlInt idx = klvalue_getint(a) + 1;
+        KlInt step = klvalue_getint(a);
+        KlInt idx = klvalue_getint(a + 1);
         if (idx != 0) {
+          KlValue* varpos = a + 2;
+          KlValue* argpos = stkbase - idx;
+          size_t nvalid = step > idx ? idx : step;
+          klvalue_setint(a + 1, idx - nvalid);
+          while (nvalid--)
+            klvalue_setvalue(varpos++, argpos++);
+          while (step-- > idx)
+            klvalue_setnil(varpos++);
           pc += KLINST_AI_GETI(inst);
-          klvalue_setint(a, idx);
-          klvalue_setvalue(a + 1, stkbase + idx);
         }
         break;
       }
@@ -1541,8 +1565,7 @@ KlException klexec_execute(KlState* state) {
         if (kl_unlikely(exception)) return exception;
         stkbase = klexec_restorestack(state, stkdiff);
         a = stkbase + KLINST_AX_GETA(inst);
-        if (!klvalue_checktype(a + 1, KL_NIL))
-          pc += KLINST_I_GETI(*pc);
+        klvalue_checktype(a + 1, KL_NIL) ? ++pc : (pc += KLINST_I_GETI(*pc));
         break;
       }
       default: {

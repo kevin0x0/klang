@@ -3,6 +3,7 @@
 
 #include "klang/include/cst/klcst.h"
 #include "klang/include/parse/klstrtab.h"
+#include "klang/include/parse/kltokens.h"
 #include "klang/include/value/klvalue.h"
 #include <stddef.h>
 
@@ -30,7 +31,8 @@ typedef struct tagKlCstExprUnit {
       size_t npair;                     /* number of k-v pairs */
     } map;
     struct {
-      KlCst* arrgen;                    /* code that generates an array, or a tuple(elements list) */
+      KlCst* exprs;                     /* expressions */
+      KlCst* stmts;                     /* code that generates an array */
     } array;                            /* array constructor */
     struct {
       KlType type;                      /* boolean, integer, string or nil */
@@ -45,13 +47,15 @@ typedef struct tagKlCstExprUnit {
 
 typedef struct tagKlCstExprBin {
   KlCst base;
-  KlCst* loprand;
-  KlCst* roprand;
+  KlTokenKind binop;
+  KlCst* loperand;
+  KlCst* roperand;
 } KlCstExprBin;
 
 typedef struct tagKlCstExprPre {
   KlCst base;
-  KlCst* oprand;
+  KlCst* operand;
+  KlCst* params;            /* parameters for new operator */
 } KlCstExprPre;
 
 typedef struct tagKlCstExprPost {
@@ -64,23 +68,33 @@ typedef struct tagKlCstExprPost {
       bool vararg;          /* has variable arguments */
     } func;
     struct {
-      KlCst* oprand;
-      KlCst* trailing;
-    } other;
+      KlCst* indexable;
+      KlCst* index;
+    } index;
+    struct {
+      KlCst* callable;
+      KlCst* param;
+    } call;
+    struct  {
+      KlCst* operand;
+      KlStrDesc field;
+    } dot;
   };
 } KlCstExprPost;
 
-typedef struct tagKlCstExprTri {
+typedef struct tagKlCstExprTer {
   KlCst base;
   KlCst* cond;
   KlCst* lexpr;
   KlCst* rexpr;
-} KlCstExprTri;
+} KlCstExprTer;
 
-KlCstExprUnit* klcst_exprunit_create(KlCstType tpye);
-KlCstExprBin* klcst_exprbin_create(KlCstType type);
-KlCstExprPre* klcst_exprpre_create(KlCstType type);
-KlCstExprPost* klcst_exprpost_create(KlCstType type);
-KlCstExprTri* klcst_exprtri_create(KlCstType type);
+KlCstExprUnit* klcst_exprunit_create(KlCstKind tpye);
+KlCstExprBin* klcst_exprbin_create(KlTokenKind op);
+KlCstExprPre* klcst_exprpre_create(KlCstKind type);
+KlCstExprPost* klcst_exprpost_create(KlCstKind type);
+KlCstExprTer* klcst_exprter_create(void);
+
+void klcst_expr_tuple_delete_after_stolen(KlCst* tuple);
 
 #endif

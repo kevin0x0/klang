@@ -194,7 +194,6 @@ KlString* klstrpool_string_concat(KlStrPool* strpool, KlString* str1, KlString* 
     klmm_free(klmm, klstr, klstring_size(klstr));
     return res;
   }
-  if (!klstr) return NULL;
   klstr->hash = hash;
   klstr->strpool = strpool;
   return klstrpool_insert(strpool, klstr);

@@ -16,8 +16,11 @@ void kofile_writer(KoFile* kofile);
 void kofile_close(KoFile* kofile);
 void kofile_detach(KoFile* kofile);
 
+void kofile_stdwriter(KoFile* kofile);  /* writer for stderr and stdout */
+
 static KoVirtualFunc kofile_create_vfunc = { .size = (KoSize)kofile_size, .delete = (KoDelete)kofile_close, .writer = (KoWriter)kofile_writer };
 static KoVirtualFunc kofile_attach_vfunc = { .size = (KoSize)kofile_size, .delete = (KoDelete)kofile_detach, .writer = (KoWriter)kofile_writer };
+static KoVirtualFunc kofile_stdstream_vfunc = { .size = (KoSize)kofile_size, .delete = (KoDelete)kofile_detach, .writer = (KoWriter)kofile_stdwriter };
 
 Ko* kofile_create(const char* filepath) {
   FILE* file = fopen(filepath, "wb");
@@ -38,7 +41,11 @@ Ko* kofile_attach(FILE* file) {
   if (!kofile) return NULL;
   kofile->file = file;
   kofile->default_bufsize = KIFILE_BUFSIZE;
-  ko_init((Ko*)kofile, &kofile_attach_vfunc);
+  if (file == stderr || file == stdout) {
+    ko_init((Ko*)kofile, &kofile_stdstream_vfunc);
+  } else {
+    ko_init((Ko*)kofile, &kofile_attach_vfunc);
+  }
   return (Ko*)kofile;
 }
 
@@ -51,6 +58,16 @@ void kofile_writer(KoFile* kofile) {
   void* buf = ko_getbuf((Ko*)kofile);
   if (!buf && !(buf = malloc(kofile->default_bufsize)))
       return;
+  size_t writesize = fwrite(buf, 1, ko_bufused((Ko*)kofile), kofile->file);
+  ko_setbuf((Ko*)kofile, buf, kofile->default_bufsize, writepos + writesize);
+}
+
+void kofile_stdwriter(KoFile* kofile) {
+  size_t writepos = ko_tell((Ko*)kofile) - ko_bufused((Ko*)kofile);
+  void* buf = ko_getbuf((Ko*)kofile);
+  if (!buf && !(buf = malloc(kofile->default_bufsize)))
+      return;
+  /* always write to tail */
   size_t writesize = fwrite(buf, 1, ko_bufused((Ko*)kofile), kofile->file);
   ko_setbuf((Ko*)kofile, buf, kofile->default_bufsize, writepos + writesize);
 }

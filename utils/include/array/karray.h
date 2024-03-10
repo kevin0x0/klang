@@ -24,6 +24,7 @@ static inline void karray_make_empty(KArray* array);
 bool karray_expand(KArray* array);
 static inline void* karray_access(KArray* array, size_t index);
 static inline void* karray_top(KArray* array);
+static inline void* karray_front(KArray* array);
 static inline size_t karray_size(KArray* array);
 static inline size_t karray_capacity(KArray* array);
 /* shrink the array to exactly fit its size */
@@ -41,11 +42,12 @@ static inline size_t karray_capacity(KArray* array) {
 
 static inline void karray_shrink(KArray* array) {
   size_t size = karray_size(array);
-  void** newarr = (void**)realloc(array->begin, size * sizeof (void*));
+  size_t shrinksize = size == 0 ? 1 : size;
+  void** newarr = (void**)realloc(array->begin, shrinksize * sizeof (void*));
   if (k_likely(newarr)) {
     array->begin = newarr;
     array->current = array->begin + size;
-    array->end = array->current;
+    array->end = array->begin + shrinksize;
   }
 }
 
@@ -68,6 +70,10 @@ static inline void* karray_access(KArray* array, size_t index) {
 
 static inline void* karray_top(KArray* array) {
   return *(array->current - 1);
+}
+
+static inline void* karray_front(KArray* array) {
+  return array->begin[0];
 }
 
 static inline void karray_make_empty(KArray* array) {

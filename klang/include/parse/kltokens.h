@@ -8,15 +8,13 @@ typedef enum tagKlTokenKind {
   KLTK_STRING,
   KLTK_BOOLVAL,
   KLTK_NIL,
-  KLTK_VARARGS,
   /* operators */
+  KLTK_CONCAT,
   KLTK_ADD,
   KLTK_MINUS,
   KLTK_MUL,
   KLTK_DIV,
   KLTK_MOD,
-  KLTK_CONCAT,
-  KLTK_DOT,
   /* compare */
   KLTK_LT,
   KLTK_LE,
@@ -24,10 +22,11 @@ typedef enum tagKlTokenKind {
   KLTK_GE,
   KLTK_EQ,
   KLTK_NE,
-
-  KLTK_NOT,
+  /* boolean */
   KLTK_AND,
   KLTK_OR,
+  KLTK_NOT,
+
 
   KLTK_LPAREN,
   KLTK_RPAREN,
@@ -36,6 +35,7 @@ typedef enum tagKlTokenKind {
   KLTK_LBRACE,
   KLTK_RBRACE,
 
+  KLTK_DOT,
   KLTK_COMMA,
   KLTK_SEMI,
   KLTK_COLON,
@@ -54,16 +54,19 @@ typedef enum tagKlTokenKind {
   KLTK_FOR,
   KLTK_IN,
   KLTK_LET,
-  KLTK_LOCAL,
-  KLTK_SHARED,
   KLTK_CLASS,
   KLTK_RETURN,
   KLTK_BREAK,
   KLTK_CONTINUE,
+  KLTK_LOCAL,
+  KLTK_SHARED,
+  KLTK_NEW,
 
   KLTK_END,
   KLTK_NTOKEN,
 } KlTokenKind;
+
+#define kltoken_isbinop(kind)   ((kind) >= KLTK_CONCAT && (kind) <= KLTK_OR)
 
 const char* kltoken_desc(KlTokenKind kind);
 

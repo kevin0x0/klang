@@ -33,7 +33,9 @@ typedef struct tagKlCstStmtIf {
 /* variable arguments for */
 typedef struct tagKlCstStmtVFor {
   KlCst base;
-  KlStrDesc id;
+  KlStrDesc* ids;
+  size_t nid;
+  KlCst* block;
 } KlCstStmtVFor;
 
 /* integer for */
@@ -43,6 +45,7 @@ typedef struct tagKlCstStmtIFor {
   KlCst* begin;
   KlCst* end;
   KlCst* step;    /* nil if NULL */
+  KlCst* block;
 } KlCstStmtIFor;
 
 /* generic for */
@@ -51,6 +54,7 @@ typedef struct tagKlCstStmtGFor {
   KlStrDesc* ids;
   size_t nid;
   KlCst* expr;
+  KlCst* block;
 } KlCstStmtGFor;
 
 /* c-style for */
@@ -59,6 +63,7 @@ typedef struct tagKlCstStmtCFor {
   KlCst* init;
   KlCst* cond;
   KlCst* post;
+  KlCst* block;
 } KlCstStmtCFor;
 
 typedef struct tagKlCstStmtWhile {
@@ -67,10 +72,11 @@ typedef struct tagKlCstStmtWhile {
   KlCst* block;
 } KlCstStmtWhile;
 
-typedef struct tagKlCstStmtBlock {
+typedef struct tagKlCstStmtList {
+  KlCst base;
   KlCst** stmts;
   size_t nstmt;
-} KlCstStmtBlock;
+} KlCstStmtList;
 
 typedef struct tagKlCstStmtRepeat {
   KlCst base;
@@ -100,7 +106,7 @@ KlCstStmtIFor* klcst_stmtifor_create(void);
 KlCstStmtGFor* klcst_stmtgfor_create(void);
 KlCstStmtCFor* klcst_stmtcfor_create(void);
 KlCstStmtWhile* klcst_stmtwhile_create(void);
-KlCstStmtBlock* klcst_stmtblock_create(void);
+KlCstStmtList* klcst_stmtlist_create(void);
 KlCstStmtRepeat* klcst_stmtrepeat_create(void);
 KlCstStmtReturn* klcst_stmtreturn_create(void);
 KlCstStmtBreak* klcst_stmtbreak_create(void);

@@ -3,7 +3,7 @@ import "charset/unicode
 # comment = $#[^\n\r\xFF]*
 # func-name = $([A-Za-z_] | [:uni-non-ascii:])([A-Za-z0-9_] | [:uni-non-ascii:])*
 def integer(KLTK_INT):
-  (KLTK_INT) $[1-9][0-9]* | 0[0-9]+ | 0[xX][A-Fa-f0-9]+
+  (KLTK_INT) $[1-9][0-9]* | 0[0-9]* | 0[xX][A-Fa-f0-9]+
 
 def string(KLTK_STRING):
   (KLTK_STRING) $\" | `
@@ -13,9 +13,6 @@ def boolean(KLTK_BOOLVAL):
 
 def nil(KLTK_NIL):
   (KLTK_NIL) $nil
-
-def vararg(KLTK_VARARGS):
-  (KLTK_VARARGS) $\.\.\.
 
 def add(KLTK_ADD):
   (KLTK_ADD) $\+
@@ -95,8 +92,8 @@ def colon(KLTK_COLON):
 def ques(KLTK_QUESTION):
   (KLTK_QUESTION) $\?
 
-def arraw(KLTK_ARRAW):
-  (KLTK_ARRAW) $->
+def arraw(KLTK_ARROW):
+  (KLTK_ARROW) $->
 
 def assign(KLTK_ASSIGN):
   (KLTK_ASSIGN) $=
@@ -146,7 +143,10 @@ def break (KLTK_BREAK):
 def continue (KLTK_CONTINUE):
   (KLTK_CONTINUE) $continue
 
+def new (KLTK_NEW):
+  (KLTK_NEW) $new
+
 def identifier (KLTK_ID):
-  (KLTK_ID)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])* | '
+  (KLTK_ID)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])* | \.\.\. | '
 
 %error-handler = "KLTK_ERR
