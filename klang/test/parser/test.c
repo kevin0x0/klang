@@ -10,7 +10,7 @@ int main(void) {
 }
 
 void loop(void) {
-  const char* filename = "test.txt";
+  const char* filename = "test.kl";
   KlStrTab* strtab = klstrtab_create();
   Ki* input = kifile_create(filename);
   Ko* err = kofile_attach(stderr);
@@ -18,7 +18,7 @@ void loop(void) {
   KlParser parser;
   parser.err = err;
   parser.errcount = 0;
-  parser.inputname = "test.txt";
+  parser.inputname = (char*)filename;
   parser.config.curl = '~';
   parser.config.tabstop = 8;
 

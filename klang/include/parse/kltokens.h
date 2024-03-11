@@ -8,6 +8,8 @@ typedef enum tagKlTokenKind {
   KLTK_STRING,
   KLTK_BOOLVAL,
   KLTK_NIL,
+  KLTK_THIS,
+  KLTK_VARARG,
   /* operators */
   KLTK_CONCAT,
   KLTK_ADD,

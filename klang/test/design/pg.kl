@@ -1,17 +1,2 @@
-let sorter = algorithm.sorter.integer({ order = "inc" });
-io.stdout.print(sorter([3, 4, 1, 3, 10, 3, 0]));
-
-Console = tool.require("console.kl");
-Image = tool.require("image.kl");
-
-let console = new Console();
-
-if console.OK() and console.drawable(): {
-  console.draw(new Image("./cat.png"));
-}
-
-let video = new Video("./djo.mkv");
-let thread = new Thread(console.draw(() -> video.nextframe()));
-thread.join();
-
-let pipe = new ReadThread("file.kl");
+let gcd = (a, b) -> a == 0 ? b : gcd(b % a, a);
+print(gcd(4, 5));

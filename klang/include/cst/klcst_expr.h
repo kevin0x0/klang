@@ -65,7 +65,7 @@ typedef struct tagKlCstExprPost {
       KlCst* block;         /* function body */
       KlStrDesc* params;    /* parameters */
       uint32_t nparam;      /* number of parameters */
-      bool vararg;          /* has variable arguments */
+      bool vararg;          /* has variable argument */
     } func;
     struct {
       KlCst* indexable;

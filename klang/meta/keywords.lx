@@ -143,10 +143,16 @@ def break (KLTK_BREAK):
 def continue (KLTK_CONTINUE):
   (KLTK_CONTINUE) $continue
 
+def new (KLTK_THIS):
+  (KLTK_THIS) $this
+
+def new (KLTK_VARARG):
+  (KLTK_VARARG) $\.\.\.
+
 def new (KLTK_NEW):
   (KLTK_NEW) $new
 
 def identifier (KLTK_ID):
-  (KLTK_ID)  $([A-Za-z_\-] | [:uni-non-ascii:])([A-Za-z0-9_\-] | [:uni-non-ascii:])* | \.\.\. | '
+  (KLTK_ID)  $([A-Za-z_] | [:uni-non-ascii:])([A-Za-z0-9_] | [:uni-non-ascii:])* | '
 
 %error-handler = "KLTK_ERR

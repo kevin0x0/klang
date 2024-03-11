@@ -93,6 +93,8 @@ static void klcst_exprunit_delete(KlCstExprUnit* unit) {
       }
       break;
     }
+    case KLCST_EXPR_THIS:
+    case KLCST_EXPR_VARARG:
     case KLCST_EXPR_CONSTANT:
     case KLCST_EXPR_ID: {
       break;

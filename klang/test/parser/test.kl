@@ -1,0 +1,15 @@
+let Person = {
+  local name;
+  local age;
+  local gender;
+  constructor = (name, age, gender, ...) {
+    this.name = name;
+    this.age = age;
+    this.gender = gender;
+  };
+  sayHello = -> print "Hello, I am " this.name;
+};
+
+let kevin = new Person("Kevin", 3, "male");
+kevin.sayHello();
+
