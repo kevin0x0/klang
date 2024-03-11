@@ -1,4 +1,5 @@
 #include "kevlr/include/collection.h"
+#include "kevlr/include/itemset_def.h"
 #include "kevlr/include/lr_utils.h"
 #include "kevlr/include/set/itemset_set.h"
 
@@ -20,6 +21,7 @@ typedef struct tagKlrLALRCollection {
   KBitSet** firsts;
   KlrSymbol* start;
   KlrRule* start_rule;
+  KlrItemPoolCollec pool;
 } KlrLALRCollection;
 
 
@@ -28,7 +30,7 @@ static bool klr_lalr_do_lookahead_propagation(KlrLookaheadPropagation* propagati
 static bool klr_lalr_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_array, KlrLALRCollection* collec, KlrItemSet* itemset);
 static bool klr_lalr_merge_itemset(KlrItemSet* new_itemset, KlrItemSet* old_itemset, KlrItemSet* itemset, KlrLALRCollection* collec);
 static bool klr_lalr_add_new_itemset(KlrItemSet* new_itemset, KlrItemSetSet* iset_set, KlrItemSet* itemset, KlrLALRCollection* collec);
-static bool klr_lalr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransSet* transitions);
+static bool klr_lalr_compute_transition(KlrItemPoolCollec* pool, KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransSet* transitions);
 /* initialize lookahead for kernel items in itemset */
 static inline bool klr_lalr_init_kitem_la(KlrItemSet* itemset, size_t epsilon);
 static inline void klr_lalr_final_kitem_la(KlrItemSet* itemset, size_t epsilon);
@@ -40,12 +42,12 @@ static bool klr_lalr_itemset_equal(KlrItemSet* itemset1, KlrItemSet* itemset2);
 static inline KlrLookaheadPropagation* klr_lalr_propagation_create(KBitSet* from, KBitSet* to);
 static KlrCollection* klr_lalr_to_lr_collec(KlrLALRCollection* lalr_collec);
 
-static void klr_lalr_destroy_itemset_array(KArray* itemset_array);
+static void klr_lalr_destroy_itemset_array(KlrItemPoolCollec* pool, KArray* itemset_array);
 static void klr_lalr_destroy_collec(KlrLALRCollection* collec);
-static void klr_lalr_clear_trans(KlrItemSetTransition* trans);
+static void klr_lalr_clear_trans(KlrItemPoolCollec* pool, KlrItemSetTransition* trans);
 
 
-KlrCollection* klr_collection_create_lalr(KlrSymbol* start, KlrSymbol** ends, size_t ends_no) {
+KlrCollection* klr_collection_create_lalr(KlrSymbol* start, KlrSymbol** ends, size_t nend) {
   KlrLALRCollection* collec = klr_lalr_get_empty_collec();
   if (k_unlikely(!collec)) return NULL;
   KlrSymbol* augmented_grammar_start = klr_util_augment(start);
@@ -55,7 +57,7 @@ KlrCollection* klr_collection_create_lalr(KlrSymbol* start, KlrSymbol** ends, si
   }
   collec->start = augmented_grammar_start;
   collec->start_rule = augmented_grammar_start->rules->rule;
-  collec->symbols = klr_util_get_symbol_array(augmented_grammar_start, ends, ends_no, &collec->symbol_no);
+  collec->symbols = klr_util_get_symbol_array(augmented_grammar_start, ends, nend, &collec->symbol_no);
   if (k_unlikely(!collec->symbols)) {
     klr_lalr_destroy_collec(collec);
     return NULL;
@@ -67,7 +69,7 @@ KlrCollection* klr_collection_create_lalr(KlrSymbol* start, KlrSymbol** ends, si
     klr_lalr_destroy_collec(collec);
     return NULL;
   }
-  KlrItemSet* start_iset = klr_util_get_start_itemset(augmented_grammar_start, ends, ends_no);
+  KlrItemSet* start_iset = klr_util_get_start_itemset(&collec->pool, augmented_grammar_start, ends, nend);
   if (k_unlikely(!start_iset)) {
     klr_lalr_destroy_collec(collec);
     return NULL;
@@ -95,6 +97,7 @@ static KlrLALRCollection* klr_lalr_get_empty_collec(void) {
   collec->propagation = NULL;
   collec->start = NULL;
   collec->start_rule = NULL;
+  klr_itempoolcollec_init(&collec->pool);
   return collec;
 }
 
@@ -103,7 +106,7 @@ static void klr_lalr_destroy_collec(KlrLALRCollection* collec) {
     klr_util_destroy_terminal_set_array(collec->firsts, collec->symbol_no);
   if (collec->itemsets) {
     for (size_t i = 0; i < collec->itemset_no; ++i) {
-      klr_itemset_delete(collec->itemsets[i]);
+      klr_itemset_delete(&collec->pool, collec->itemsets[i]);
     }
     free(collec->itemsets);
   }
@@ -119,19 +122,20 @@ static void klr_lalr_destroy_collec(KlrLALRCollection* collec) {
   }
   klr_symbol_delete(collec->start);
   klr_rule_delete(collec->start_rule);
+  klr_itempoolcollec_destroy(&collec->pool);
   free(collec);
 }
 
 static bool klr_lalr_get_all_itemsets(KlrItemSet* start_iset, KlrLALRCollection* collec) {
   KArray* itemset_array = karray_create();
   KlrItemSetSet* iset_set = klr_itemsetset_create(32, klr_lalr_itemset_equal);
-  /* to store the closure of a itemset */
+  /* to store the closure of an itemset */
   KlrItemSetClosure closure;
-  size_t symbol_no = collec->symbol_no;
-  KlrTransSet* transitions = klr_transset_create(symbol_no);
-  if (k_unlikely(!itemset_array || !transitions || !iset_set || !klr_closure_init(&closure, symbol_no) ||
+  size_t nsymbol = collec->symbol_no;
+  KlrTransSet* transitions = klr_transset_create(nsymbol);
+  if (k_unlikely(!itemset_array || !transitions || !iset_set || !klr_closure_init(&closure, nsymbol) ||
       !karray_push_back(itemset_array, start_iset) || !klr_itemsetset_insert(iset_set, start_iset))) {
-    klr_lalr_destroy_itemset_array(itemset_array);
+    klr_lalr_destroy_itemset_array(&collec->pool, itemset_array);
     klr_transset_delete(transitions);
     klr_itemsetset_delete(iset_set);
     klr_closure_destroy(&closure);
@@ -139,16 +143,16 @@ static bool klr_lalr_get_all_itemsets(KlrItemSet* start_iset, KlrLALRCollection*
   }
   
   KBitSet** firsts = collec->firsts;
-  size_t terminal_no = collec->terminal_no;
+  size_t nterminal = collec->terminal_no;
   /* main loop */
   for (size_t i = 0; i < karray_size(itemset_array); ++i) {
     /* iterate all itemset int the itemset_array */
     KlrItemSet* itemset = (KlrItemSet*)karray_access(itemset_array, i);
     /* compute all transitions from this itemset
      * then add target itemsets of these transitions to itemset_array if not exist. */
-    if (k_unlikely(!klr_lalr_compute_transition(itemset, &closure, firsts, terminal_no, transitions) ||
+    if (k_unlikely(!klr_lalr_compute_transition(&collec->pool, itemset, &closure, firsts, nterminal, transitions) ||
         !klr_lalr_merge_transition(iset_set, itemset_array, collec, itemset))) {
-      klr_lalr_destroy_itemset_array(itemset_array);
+      klr_lalr_destroy_itemset_array(&collec->pool, itemset_array);
       klr_transset_delete(transitions);
       klr_itemsetset_delete(iset_set);
       klr_closure_destroy(&closure);
@@ -169,17 +173,17 @@ static bool klr_lalr_get_all_itemsets(KlrItemSet* start_iset, KlrLALRCollection*
   return true;
 }
 
-static void klr_lalr_destroy_itemset_array(KArray* itemset_array) {
+static void klr_lalr_destroy_itemset_array(KlrItemPoolCollec* pool, KArray* itemset_array) {
   if (k_unlikely(!itemset_array)) return;
   for (size_t i = 0; i < karray_size(itemset_array); ++i) {
-    klr_itemset_delete((KlrItemSet*)karray_access(itemset_array, i));
+    klr_itemset_delete(pool, (KlrItemSet*)karray_access(itemset_array, i));
   }
   karray_delete(itemset_array);
 }
 
-static void klr_lalr_clear_trans(KlrItemSetTransition* trans) {
+static void klr_lalr_clear_trans(KlrItemPoolCollec* pool, KlrItemSetTransition* trans) {
   for (; trans; trans = trans->next) {
-    klr_itemset_delete(trans->target);
+    klr_itemset_delete(pool, trans->target);
     trans->target = NULL;
   }
 }
@@ -194,16 +198,16 @@ static bool klr_lalr_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_a
     if (node) { /* is this target already exists ? */
       /* yes, merge them */
       if (k_unlikely(!klr_lalr_merge_itemset(target, node->element, itemset, collec))) {
-        klr_lalr_clear_trans(trans);
+        klr_lalr_clear_trans(&collec->pool, trans);
         return false;
       }
-      klr_itemset_delete(target);
+      klr_itemset_delete(&collec->pool, target);
       trans->target = node->element;
     } else {
       /* no, add this new itemset */
       if (k_unlikely(!klr_lalr_add_new_itemset(target, iset_set, itemset, collec) ||
           !karray_push_back(itemset_array, target))) {
-        klr_lalr_clear_trans(trans);
+        klr_lalr_clear_trans(&collec->pool, trans);
         return false;
       }
     }
@@ -211,7 +215,7 @@ static bool klr_lalr_merge_transition(KlrItemSetSet* iset_set, KArray* itemset_a
   return true;
 }
 
-static bool klr_lalr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransSet* transitions) {
+static bool klr_lalr_compute_transition(KlrItemPoolCollec* pool, KlrItemSet* itemset, KlrItemSetClosure* closure, KBitSet** firsts, size_t epsilon, KlrTransSet* transitions) {
   /* 0 ... epsilon - 1 are indexes of terminal,
    * use epsilon + 1, epsilon + 2 ... as temporary propagation symbol for each kernel item */
   if (k_unlikely(!klr_lalr_init_kitem_la(itemset, epsilon)))
@@ -220,7 +224,7 @@ static bool klr_lalr_compute_transition(KlrItemSet* itemset, KlrItemSetClosure* 
   if (k_unlikely(!klr_closure_make(closure, itemset, firsts, epsilon)))
     return false;
   /* compute all transitions starts from itemset */
-  if (k_unlikely(!klr_util_generate_transition(itemset, closure, transitions)))
+  if (k_unlikely(!klr_util_generate_transition(pool, itemset, closure, transitions)))
     return false;
   /* clean the temporary propagation symbol */
   klr_lalr_final_kitem_la(itemset, epsilon);
@@ -344,22 +348,24 @@ static KlrCollection* klr_lalr_to_lr_collec(KlrLALRCollection* lalr_collec) {
   if (!lr_collec) return NULL;
   lr_collec->firsts = lalr_collec->firsts;
   lr_collec->symbols = lalr_collec->symbols;
-  lr_collec->terminal_no = lalr_collec->terminal_no;
-  lr_collec->symbol_no = lalr_collec->symbol_no;
+  lr_collec->nterminal = lalr_collec->terminal_no;
+  lr_collec->nsymbol = lalr_collec->symbol_no;
   lr_collec->itemsets = lalr_collec->itemsets;
-  lr_collec->itemset_no = lalr_collec->itemset_no;
+  lr_collec->nitemset = lalr_collec->itemset_no;
   lr_collec->start = lalr_collec->start;
   lr_collec->start_rule = lalr_collec->start_rule;
+  lr_collec->pool = lalr_collec->pool;
   lalr_collec->itemsets = NULL;
   lalr_collec->symbols = NULL;
   lalr_collec->firsts = NULL;
   lalr_collec->start = NULL;
   lalr_collec->start_rule = NULL;
+  klr_itempoolcollec_init(&lalr_collec->pool);
   klr_lalr_destroy_collec(lalr_collec);
   return lr_collec;
 }
 
-static inline void klr_lalr_assign_itemset_id(KlrItemSet** itemsets, size_t itemset_no) {
-  for (size_t i = 0; i < itemset_no; ++i)
+static inline void klr_lalr_assign_itemset_id(KlrItemSet** itemsets, size_t nitemset) {
+  for (size_t i = 0; i < nitemset; ++i)
     itemsets[i]->id = i;
 }

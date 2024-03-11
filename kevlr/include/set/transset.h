@@ -9,8 +9,8 @@ typedef struct tagKlrTransSet {
   KlrItemSet** targets;
 } KlrTransSet;
 
-bool klr_transset_init(KlrTransSet* transset, size_t symbol_no);
-KlrTransSet* klr_transset_create(size_t symbol_no);
+bool klr_transset_init(KlrTransSet* transset, size_t nsymbol);
+KlrTransSet* klr_transset_create(size_t nsymbol);
 void klr_transset_destroy(KlrTransSet* transset);
 void klr_transset_delete(KlrTransSet* transset);
 

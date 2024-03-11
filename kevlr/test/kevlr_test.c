@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
 
   clock_t t = clock();
   for (size_t i = 0; i < 1000; ++i) {
-    KlrCollection* collec = klr_collection_create_lr1(E, &end, 1);
+    KlrCollection* collec = klr_collection_create_lalr(E, &end, 1);
     //klr_print_collection(stdout, collec, true);
     //KlrConflictHandler handler = { NULL, conflict_report };
 

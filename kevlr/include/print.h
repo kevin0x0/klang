@@ -6,6 +6,10 @@
 
 #include <stdio.h>
 
+typedef struct tagKlrPrintConfig {
+  const char* unnamed;
+} KlrPrintConfig;
+
 static inline void klr_print_item(FILE* out, KlrCollection* collec, KlrItem* item);
 bool klr_print_itemset(FILE* out, KlrCollection* collec, KlrItemSet* itemset, bool print_closure);
 void klr_print_itemset_with_closure(FILE* out, KlrCollection* collec, KlrItemSet* itemset, KlrItemSetClosure* closure);

@@ -52,9 +52,9 @@ bool klr_print_itemset(FILE* out, KlrCollection* collec, KlrItemSet* itemset, bo
     fputc('\n', out);
   }
   if (!print_closure) return true;
-  KlrItemSetClosure* closure = klr_closure_create(collec->symbol_no);
+  KlrItemSetClosure* closure = klr_closure_create(collec->nsymbol);
   if (!closure) return false;
-  if (!klr_closure_make(closure, itemset, collec->firsts, collec->terminal_no)) {
+  if (!klr_closure_make(closure, itemset, collec->firsts, collec->nterminal)) {
     klr_closure_delete(closure);
     return false;
   }
@@ -75,7 +75,7 @@ bool klr_print_itemset(FILE* out, KlrCollection* collec, KlrItemSet* itemset, bo
 
 bool klr_print_collection(FILE* out, KlrCollection* collec, bool print_closure) {
   if (!print_closure) {
-    for (size_t i = 0; i < collec->itemset_no; ++i) {
+    for (size_t i = 0; i < collec->nitemset; ++i) {
       KlrItemSet* itemset = collec->itemsets[i];
       fprintf(out, "item set %d:\n", (int)itemset->id);
       klr_print_itemset_with_closure(out, collec, itemset, NULL);
@@ -83,11 +83,11 @@ bool klr_print_collection(FILE* out, KlrCollection* collec, bool print_closure) 
     }
   }
 
-  KlrItemSetClosure* closure = klr_closure_create(collec->symbol_no);
+  KlrItemSetClosure* closure = klr_closure_create(collec->nsymbol);
   if (!closure) return false;
-  for (size_t i = 0; i < collec->itemset_no; ++i) {
+  for (size_t i = 0; i < collec->nitemset; ++i) {
     KlrItemSet* itemset = collec->itemsets[i];
-    if (!klr_closure_make(closure, itemset, collec->firsts, collec->terminal_no)) {
+    if (!klr_closure_make(closure, itemset, collec->firsts, collec->nterminal)) {
       klr_closure_delete(closure);
       return false;
     }
@@ -101,15 +101,15 @@ bool klr_print_collection(FILE* out, KlrCollection* collec, bool print_closure) 
 }
 
 bool klr_print_symbols(FILE* out, KlrCollection* collec) {
-  size_t user_symbol_no = klr_collection_get_user_symbol_no(collec);
-  KlrSymbol** symbol_array = (KlrSymbol**)malloc(sizeof(KlrSymbol*) * user_symbol_no);
+  size_t nusersymbol = klr_collection_nusersymbol(collec);
+  KlrSymbol** symbol_array = (KlrSymbol**)malloc(sizeof(KlrSymbol*) * nusersymbol);
   if (!symbol_array) return false;
   KlrSymbol** symbols = klr_collection_get_symbols(collec);
   memcpy(symbol_array, symbols, sizeof (KlrSymbol*) * (collec->start->index));
-  memcpy(symbol_array, symbols + collec->start->index + 1, sizeof (KlrSymbol*) * (user_symbol_no - collec->start->index));
-  qsort(symbol_array, user_symbol_no, sizeof (KlrSymbol*), kev_symbol_compare);
+  memcpy(symbol_array, symbols + collec->start->index + 1, sizeof (KlrSymbol*) * (nusersymbol - collec->start->index));
+  qsort(symbol_array, nusersymbol, sizeof (KlrSymbol*), kev_symbol_compare);
   size_t width = 0;
-  for (size_t i = 0; i < user_symbol_no; ++i) {
+  for (size_t i = 0; i < nusersymbol; ++i) {
     size_t namelen = symbol_array[i] ? strlen(symbol_array[i]->name) : (sizeof ("<no name>") / sizeof ("<no name>"[0]) - 1);
     if (namelen > width) width = namelen;
   }
@@ -181,7 +181,7 @@ void klr_print_terminal_set(FILE* out, KlrCollection* collec, KBitSet* lookahead
     fprintf(out, "[]");
     return;
   }
-  size_t epsilon = collec->terminal_no;
+  size_t epsilon = collec->nterminal;
   size_t symbol_index = kbitset_iter_begin(lookahead);
   size_t next_index = 0;
   char* name = collec->symbols[symbol_index]->name;
@@ -201,39 +201,39 @@ void klr_print_terminal_set(FILE* out, KlrCollection* collec, KBitSet* lookahead
 }
 
 void klr_print_trans_table(FILE* out, KlrTable* table) {
-  size_t width = kev_numlen(kev_max(table->table_symbol_no, table->state_no)) + 1;
+  size_t width = kev_numlen(kev_max(table->ntblsymbol, table->nstate)) + 1;
   width = kev_max(width, 5);
   char num_format[sizeof (size_t) * 4];
   char str_format[sizeof (size_t) * 4];
   sprintf(num_format, "%%%llud", (unsigned long long)width);
   sprintf(str_format, "%%%llus", (unsigned long long)width);
   fprintf(out, str_format, "GOTO");
-  for (size_t i = 0; i < table->table_symbol_no; ++i)
+  for (size_t i = 0; i < table->ntblsymbol; ++i)
     fprintf(out, num_format, (int)i);
   fputc('\n', out);
-  for (size_t i = 0; i < table->state_no; ++i) {
+  for (size_t i = 0; i < table->nstate; ++i) {
     fprintf(out, num_format, (int)i);
-    for (size_t j = 0; j < table->table_symbol_no; ++j)
+    for (size_t j = 0; j < table->ntblsymbol; ++j)
       fprintf(out, num_format, (int)table->entries[i][j].trans);
     fputc('\n', out);
   }
 }
 
 void klr_print_action_table(FILE* out, KlrTable* table) {
-  size_t width = kev_numlen(kev_max(table->table_symbol_no, table->state_no)) + 1;
+  size_t width = kev_numlen(kev_max(table->ntblsymbol, table->nstate)) + 1;
   width = kev_max(width, 7);
   char num_format[sizeof (size_t) * 4];
   char str_format[sizeof (size_t) * 4];
   sprintf(num_format, "%%%llud", (unsigned long long)width);
   sprintf(str_format, "%%%llus", (unsigned long long)width);
   fprintf(out, str_format, "ACTION");
-  for (size_t i = 0; i < table->table_symbol_no; ++i)
+  for (size_t i = 0; i < table->ntblsymbol; ++i)
     fprintf(out, num_format, (int)i);
   fputc('\n', out);
 
-  for (size_t i = 0; i < table->state_no; ++i) {
+  for (size_t i = 0; i < table->nstate; ++i) {
     fprintf(out, num_format, (int)i);
-    for (size_t j = 0; j < table->table_symbol_no; ++j) {
+    for (size_t j = 0; j < table->ntblsymbol; ++j) {
       const char* action = NULL;
       switch (table->entries[i][j].action) {
         case KLR_ACTION_ACC: action = "ACC"; break;
@@ -247,7 +247,7 @@ void klr_print_action_table(FILE* out, KlrTable* table) {
     }
     fputc('\n', out);
     fprintf(out, str_format, " ");
-    for (size_t j = 0; j < table->table_symbol_no; ++j) {
+    for (size_t j = 0; j < table->ntblsymbol; ++j) {
       KlrTableEntry* entry = &table->entries[i][j];
       if (entry->action == KLR_ACTION_SHI) {
         fprintf(out, num_format, entry->info.itemset_id);

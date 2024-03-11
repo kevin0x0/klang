@@ -7,13 +7,14 @@
 
 typedef struct tagKlrCollection {
   KlrSymbol** symbols;
-  size_t symbol_no;
-  size_t terminal_no;
+  size_t nsymbol;
+  size_t nterminal;
   KlrItemSet** itemsets;
-  size_t itemset_no;
+  size_t nitemset;
   KBitSet** firsts;
   KlrSymbol* start;
   KlrRule* start_rule;
+  KlrItemPoolCollec pool;
 } KlrCollection;
 
 /* generation of lr collection */
@@ -26,12 +27,12 @@ void klr_collection_delete(KlrCollection* collec);
 /* get methods */
 static inline KlrItemSet* klr_collection_get_itemset_by_index(KlrCollection* collec, size_t index);
 static inline KBitSet* klr_collection_get_firstset_by_index(KlrCollection* collec, size_t index);
-static inline size_t klr_collection_get_itemset_no(KlrCollection* collec);
+static inline size_t klr_collection_nitemset(KlrCollection* collec);
 /* An augmented grammar nonterminal symbol is included */
-static inline size_t klr_collection_get_symbol_no(KlrCollection* collec);
+static inline size_t klr_collection_nsymbol(KlrCollection* collec);
 /* An augmented grammar nonterminal symbol is excluded */
-static inline size_t klr_collection_get_user_symbol_no(KlrCollection* collec);
-static inline size_t klr_collection_get_terminal_no(KlrCollection* collec);
+static inline size_t klr_collection_nusersymbol(KlrCollection* collec);
+static inline size_t klr_collection_nterminal(KlrCollection* collec);
 static inline KlrSymbol** klr_collection_get_symbols(KlrCollection* collec);
 static inline KlrItemSet* klr_collection_get_start_itemset(KlrCollection* collec);
 static inline KlrRule* klr_collection_get_start_rule(KlrCollection* collec);
@@ -45,25 +46,25 @@ static inline KBitSet* klr_collection_get_firstset_by_index(KlrCollection* colle
   return collec->firsts[index];
 }
 
-static inline size_t klr_collection_get_itemset_no(KlrCollection* collec) {
-  return collec->itemset_no;
+static inline size_t klr_collection_nitemset(KlrCollection* collec) {
+  return collec->nitemset;
 }
 
-static inline size_t klr_collection_get_symbol_no(KlrCollection* collec) {
-  return collec->symbol_no;
+static inline size_t klr_collection_nsymbol(KlrCollection* collec) {
+  return collec->nsymbol;
 }
-static inline size_t klr_collection_get_user_symbol_no(KlrCollection* collec) {
+static inline size_t klr_collection_nusersymbol(KlrCollection* collec) {
   /* start symbol should be excluded, so the actual symbol number created by user is
-   * collec->symbol_no - 1. */
-  return collec->symbol_no - 1;
+   * collec->nsymbol - 1. */
+  return collec->nsymbol - 1;
 }
 
 static inline KlrSymbol** klr_collection_get_symbols(KlrCollection* collec) {
   return collec->symbols;
 }
 
-static inline size_t klr_collection_get_terminal_no(KlrCollection* collec) {
-  return collec->terminal_no;
+static inline size_t klr_collection_nterminal(KlrCollection* collec) {
+  return collec->nterminal;
 }
 
 static inline KlrItemSet* klr_collection_get_start_itemset(KlrCollection* collec) {

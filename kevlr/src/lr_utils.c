@@ -1,16 +1,15 @@
 #include "kevlr/include/lr_utils.h"
+#include "kevlr/include/itemset_def.h"
 #include "utils/include/set/hashset.h"
 
 #include <stdlib.h>
-
-#define KLR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME   "G"
 
 
 static void klr_util_compute_first(KBitSet** firsts, KlrSymbol* symbol, size_t epsilon);
 
 static inline bool klr_util_symbol_is_in_array(KlrSymbol* symbol, KArray* array);
 
-bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closure, KlrTransSet* transitions) {
+bool klr_util_generate_transition(KlrItemPoolCollec* pool, KlrItemSet* itemset, KlrItemSetClosure* closure, KlrTransSet* transitions) {
   klr_transset_make_empty(transitions);
   KArray* symbols = closure->symbols;
   KBitSet** las = closure->lookaheads;
@@ -20,22 +19,22 @@ bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closur
     KlrRule* rule = kitem->rule;
     if (rule->bodylen == kitem->dot) continue;
     KlrSymbol* symbol = rule->body[kitem->dot];
-    KlrItem* item = klr_item_create(rule, kitem->dot + 1);
+    KlrItem* item = klr_item_create(&pool->itempool, rule, kitem->dot + 1);
     if (k_unlikely(!item)) return false;
     if (k_unlikely(!(item->lookahead = kbitset_create_copy(kitem->lookahead)))) {
-      klr_item_delete(item);
+      klr_item_delete(&pool->itempool, item);
       return false;
     }
     KlrItemSet* target = klr_transset_search(transitions, symbol);
     if (!target) {
-      if (k_unlikely(!(target = klr_itemset_create()))) {
-        klr_item_delete(item);
+      if (k_unlikely(!(target = klr_itemset_create(&pool->itemsetpool)))) {
+        klr_item_delete(&pool->itempool, item);
         return false;
       }
-      if (k_unlikely(!klr_itemset_goto(itemset, symbol, target) ||
+      if (k_unlikely(!klr_itemset_goto(&pool->itemsettranspool, itemset, symbol, target) ||
           !klr_transset_insert(transitions, symbol, target))) {
-        klr_item_delete(item);
-        klr_itemset_delete(target);
+        klr_item_delete(&pool->itempool, item);
+        klr_itemset_delete(pool, target);
         return false;
       }
     }
@@ -51,22 +50,22 @@ bool klr_util_generate_transition(KlrItemSet* itemset, KlrItemSetClosure* closur
       KlrRule* rule = rulenode->rule;
       if (rule->bodylen == 0) continue;
       KlrSymbol* symbol = rule->body[0];
-      KlrItem* item = klr_item_create(rule, 1);
+      KlrItem* item = klr_item_create(&pool->itempool, rule, 1);
       if (k_unlikely(!item)) return false;
       if (k_unlikely(!(item->lookahead = kbitset_create_copy(las[head->index])))) {
-        klr_item_delete(item);
+        klr_item_delete(&pool->itempool, item);
         return false;
       }
       KlrItemSet* target = klr_transset_search(transitions, symbol);
       if (!target) {
-        if (k_unlikely(!(target = klr_itemset_create()))) {
-          klr_item_delete(item);
+        if (k_unlikely(!(target = klr_itemset_create(&pool->itemsetpool)))) {
+          klr_item_delete(&pool->itempool, item);
           return false;
         }
-        if (k_unlikely(!klr_itemset_goto(itemset, symbol, target) ||
+        if (k_unlikely(!klr_itemset_goto(&pool->itemsettranspool, itemset, symbol, target) ||
             !klr_transset_insert(transitions, symbol, target))) {
-          klr_item_delete(item);
-          klr_itemset_delete(target);
+          klr_item_delete(&pool->itempool, item);
+          klr_itemset_delete(pool, target);
           return false;
         }
       }
@@ -87,36 +86,35 @@ static void klr_util_compute_first(KBitSet** firsts, KlrSymbol* symbol, size_t e
       for (; i < bodylen; ++i) {
         if (body[i]->kind == KLR_TERMINAL) {
           kbitset_set(first, body[i]->index);
+          if (!first_has_epsilon) kbitset_clear(first, epsilon);
           break;
         }
         KBitSet* curr = firsts[body[i]->index];
-        /* all first sets has same size, so union will never fail */
+        /* all first sets have same size, so union will never fail */
         kbitset_union(first, curr);
         if (!kbitset_has_element(curr, epsilon)) {
-          if (!first_has_epsilon)
-            kbitset_clear(first, epsilon);
+          if (!first_has_epsilon) kbitset_clear(first, epsilon);
           break;
         }
       }
-      if (i == bodylen)
-        kbitset_set(first, epsilon);
+      if (i == bodylen) kbitset_set(first, epsilon);
     }
 }
 
-KBitSet** klr_util_compute_firsts(KlrSymbol** symbols, size_t symbol_no, size_t terminal_no) {
-  KBitSet** firsts = (KBitSet**)malloc(sizeof (KBitSet*) * symbol_no);
+KBitSet** klr_util_compute_firsts(KlrSymbol** symbols, size_t nsymbol, size_t nterminal) {
+  KBitSet** firsts = (KBitSet**)malloc(sizeof (KBitSet*) * nsymbol);
   if (k_unlikely(!firsts)) return NULL;
   KBitSet backup;
-  if (k_unlikely(!kbitset_init(&backup, terminal_no + 1))) {
+  if (k_unlikely(!kbitset_init(&backup, nterminal + 1))) {
     free (firsts);
     return NULL;
   }
   /* initialize */
-  for (size_t i = 0; i < terminal_no; ++i)
+  for (size_t i = 0; i < nterminal; ++i)
     firsts[i] = NULL;
-  for (size_t i = terminal_no; i < symbol_no; ++i) {
-    if (k_unlikely(!(firsts[i] = kbitset_create(terminal_no + 1)))) {
-      for (size_t j = terminal_no; j < i; ++j)
+  for (size_t i = nterminal; i < nsymbol; ++i) {
+    if (k_unlikely(!(firsts[i] = kbitset_create(nterminal + 1)))) {
+      for (size_t j = nterminal; j < i; ++j)
         kbitset_delete(firsts[j]);
       free(firsts);
       kbitset_destroy(&backup);
@@ -127,9 +125,9 @@ KBitSet** klr_util_compute_firsts(KlrSymbol** symbols, size_t symbol_no, size_t 
   bool loop = true;
   while (loop) {
     loop = false;
-    for (size_t i = terminal_no; i < symbol_no; ++i) {
+    for (size_t i = nterminal; i < nsymbol; ++i) {
       if (!loop) kbitset_assign(&backup, firsts[i]);
-      klr_util_compute_first(firsts, symbols[i], terminal_no);
+      klr_util_compute_first(firsts, symbols[i], nterminal);
       if (!loop && !kbitset_equal(&backup, firsts[i]))
         loop = true;
     }
@@ -139,7 +137,7 @@ KBitSet** klr_util_compute_firsts(KlrSymbol** symbols, size_t symbol_no, size_t 
 }
 
 KlrSymbol* klr_util_augment(KlrSymbol* start) {
-  KlrSymbol* new_start = klr_symbol_create(KLR_NONTERMINAL, KLR_AUGMENTED_GRAMMAR_START_SYMBOL_NAME);
+  KlrSymbol* new_start = klr_symbol_create(KLR_NONTERMINAL, "");
   if (k_unlikely(!new_start)) return NULL;
   KlrRule* start_rule = klr_rule_create(new_start, &start, 1);
   if (k_unlikely(!start_rule)) {
@@ -161,18 +159,18 @@ KBitSet* klr_util_symbols_to_bitset(KlrSymbol** symbols, size_t length) {
   return set;
 }
 
-KlrItemSet* klr_util_get_start_itemset(KlrSymbol* start, KlrSymbol** lookahead, size_t length) {
+KlrItemSet* klr_util_get_start_itemset(KlrItemPoolCollec* pool, KlrSymbol* start, KlrSymbol** lookahead, size_t length) {
   KBitSet* la = klr_util_symbols_to_bitset(lookahead, length);
-  KlrItemSet* iset = klr_itemset_create();
+  KlrItemSet* iset = klr_itemset_create(&pool->itemsetpool);
   if (k_unlikely(!iset || !la)) {
     kbitset_delete(la);
-    klr_itemset_delete(iset);
+    klr_itemset_delete(pool, iset);
     return NULL;
   }
   for (KlrRuleNode* node = start->rules; node; node = node->next) {
-    KlrItem* item = klr_item_create(node->rule, 0);
+    KlrItem* item = klr_item_create(&pool->itempool, node->rule, 0);
     if (k_unlikely(!item || !(item->lookahead = kbitset_create_copy(la)))) {
-      klr_itemset_delete(iset);
+      klr_itemset_delete(pool, iset);
       kbitset_delete(la);
       return NULL;
     }
@@ -192,7 +190,7 @@ static inline bool klr_util_symbol_is_in_array(KlrSymbol* symbol, KArray* array)
   return symbol->index < karray_size(array) && karray_access(array, symbol->index) == symbol;
 }
 
-KlrSymbol** klr_util_get_symbol_array(KlrSymbol* start, KlrSymbol** ends, size_t ends_no, size_t* p_size) {
+KlrSymbol** klr_util_get_symbol_array(KlrSymbol* start, KlrSymbol** ends, size_t nend, size_t* p_size) {
   KArray array;
   if (k_unlikely(!karray_init(&array)))
     return NULL;
@@ -220,7 +218,7 @@ KlrSymbol** klr_util_get_symbol_array(KlrSymbol* start, KlrSymbol** ends, size_t
     }
   }
 
-  for (size_t i = 0; i < ends_no; ++i) {
+  for (size_t i = 0; i < nend; ++i) {
     if (klr_util_symbol_is_in_array(ends[i], &array))
       continue;
     ends[i]->index = karray_size(&array);
@@ -236,7 +234,7 @@ KlrSymbol** klr_util_get_symbol_array(KlrSymbol* start, KlrSymbol** ends, size_t
   return symbol_array;
 }
 
-KlrSymbol** klr_util_get_symbol_array_with_index_unchanged(KlrSymbol* start, KlrSymbol** ends, size_t ends_no, size_t* p_size) {
+KlrSymbol** klr_util_get_symbol_array_with_index_unchanged(KlrSymbol* start, KlrSymbol** ends, size_t nend, size_t* p_size) {
   KArray array;
   if (!karray_init(&array))
     return NULL;
@@ -273,7 +271,7 @@ KlrSymbol** klr_util_get_symbol_array_with_index_unchanged(KlrSymbol* start, Klr
     }
   }
 
-  for (size_t i = 0; i < ends_no; ++i) {
+  for (size_t i = 0; i < nend; ++i) {
     if (khashset_has(&set, ends[i]))
       continue;
     if (!khashset_insert(&set, ends[i]) ||
@@ -307,35 +305,35 @@ size_t klr_util_symbol_array_partition(KlrSymbol** array, size_t size) {
   return (*left)->kind == KLR_TERMINAL ? left - array + 1 : left - array;
 }
 
-KBitSet** klr_util_compute_follows(KlrSymbol** symbols, KBitSet** firsts, size_t symbol_no, size_t terminal_no, KlrSymbol* start, KlrSymbol** ends, size_t ends_no) {
+KBitSet** klr_util_compute_follows(KlrSymbol** symbols, KBitSet** firsts, size_t nsymbol, size_t nterminal, KlrSymbol* start, KlrSymbol** ends, size_t nend) {
   KBitSet curr_follow;
-  if (!kbitset_init(&curr_follow, terminal_no + 1))
+  if (!kbitset_init(&curr_follow, nterminal + 1))
     return NULL;
-  KBitSet** follows = (KBitSet**)malloc(sizeof (KBitSet*) * symbol_no);
+  KBitSet** follows = (KBitSet**)malloc(sizeof (KBitSet*) * nsymbol);
   if (k_unlikely(!follows)) {
     kbitset_destroy(&curr_follow);
     return NULL;
   }
   /* initialize */
-  for (size_t i = 0; i < terminal_no; ++i)
+  for (size_t i = 0; i < nterminal; ++i)
     follows[i] = NULL;
-  for (size_t i = terminal_no; i < symbol_no; ++i) {
-    if (k_unlikely(!(follows[i] = kbitset_create(terminal_no + 1)))) {
-      for (size_t j = terminal_no; j < i; ++j)
+  for (size_t i = nterminal; i < nsymbol; ++i) {
+    if (k_unlikely(!(follows[i] = kbitset_create(nterminal + 1)))) {
+      for (size_t j = nterminal; j < i; ++j)
         kbitset_delete(follows[j]);
       free(follows);
       kbitset_destroy(&curr_follow);
       return NULL;
     }
   }
-  for (size_t i = 0; i < ends_no; ++i)
+  for (size_t i = 0; i < nend; ++i)
     kbitset_set(follows[start->index], ends[i]->index);
 
   bool loop = true;
-  size_t epsilon = terminal_no;
+  size_t epsilon = nterminal;
   while (loop) {
     loop = false;
-    for (size_t i = 0; i < symbol_no; ++i) {
+    for (size_t i = 0; i < nsymbol; ++i) {
       KlrSymbol* head = symbols[i];
       KBitSet* head_follow = follows[head->index];
       for (KlrRuleNode* rulenode = head->rules; rulenode; rulenode = rulenode->next) {
@@ -372,8 +370,8 @@ KBitSet** klr_util_compute_follows(KlrSymbol** symbols, KBitSet** firsts, size_t
 size_t klr_util_user_symbol_max_id(KlrCollection* collec) {
   size_t max_id = 0;
   KlrSymbol** symbols = klr_collection_get_symbols(collec);
-  size_t symbol_no = collec->symbol_no;
-  for (size_t i = 0; i < symbol_no; ++i) {
+  size_t nsymbol = collec->nsymbol;
+  for (size_t i = 0; i < nsymbol; ++i) {
     /* collec->start is not defined by user */
     if (symbols[i] != collec->start && max_id < symbols[i]->id)
       max_id = symbols[i]->id;
@@ -384,8 +382,8 @@ size_t klr_util_user_symbol_max_id(KlrCollection* collec) {
 size_t klr_util_user_terminal_max_id(KlrCollection* collec) {
   size_t max_id = 0;
   KlrSymbol** symbols = klr_collection_get_symbols(collec);
-  size_t terminal_no = collec->terminal_no;
-  for (size_t i = 0; i < terminal_no; ++i) {
+  size_t nterminal = collec->nterminal;
+  for (size_t i = 0; i < nterminal; ++i) {
     /* collec->start is non-terminal */
     if (max_id < symbols[i]->id)
       max_id = symbols[i]->id;
@@ -396,8 +394,8 @@ size_t klr_util_user_terminal_max_id(KlrCollection* collec) {
 size_t klr_util_user_nonterminal_max_id(KlrCollection* collec) {
   size_t max_id = 0;
   KlrSymbol** symbols = klr_collection_get_symbols(collec);
-  size_t symbol_no = collec->symbol_no;
-  for (size_t i = collec->terminal_no; i < symbol_no; ++i) {
+  size_t nsymbol = collec->nsymbol;
+  for (size_t i = collec->nterminal; i < nsymbol; ++i) {
     /* collec->start is not defined by user */
     if (symbols[i] != collec->start && max_id < symbols[i]->id)
       max_id = symbols[i]->id;

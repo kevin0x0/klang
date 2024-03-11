@@ -2,6 +2,7 @@
 #define KEVCC_KEVLR_INCLUDE_TABLE_H
 
 #include "kevlr/include/collection.h"
+#include "kevlr/include/itemset_def.h"
 
 #define KLR_ACTION_ERR     ((KlrAction)0)
 #define KLR_ACTION_SHI     ((KlrAction)1)
@@ -41,12 +42,13 @@ typedef struct tagKlrTableEntry {
 typedef struct tagKlrTable {
   KlrTableEntry** entries;
   size_t start_state;
-  size_t state_no;
-  size_t total_symbol_no;
-  size_t table_symbol_no;
-  size_t terminal_no;
+  size_t nstate;
+  size_t total_symbol;
+  size_t ntblsymbol;
+  size_t nterminal;
   size_t max_terminal_id;
   KlrConflict* conflicts;
+  KlrItemPoolCollec pool;
 } KlrTable;
 
 typedef bool KlrConflictCallback(void* object, KlrConflict* conflict, KlrCollection* collec);
@@ -62,9 +64,9 @@ KlrTable* klr_table_create(KlrCollection* collec, KlrConflictHandler* conf_handl
 void klr_table_delete(KlrTable* table);
 
 static inline KlrConflict* klr_table_get_conflict(KlrTable* table);
-static inline size_t klr_table_get_symbol_no(KlrTable* table);
-static inline size_t klr_table_get_terminal_no(KlrTable* table);
-static inline size_t klr_table_get_state_no(KlrTable* table);
+static inline size_t klr_table_nsymbol(KlrTable* table);
+static inline size_t klr_table_nterminal(KlrTable* table);
+static inline size_t klr_table_nstate(KlrTable* table);
 static inline size_t klr_table_get_start_state(KlrTable* table);
 static inline KlrConflict* klr_table_conflict_next(KlrConflict* conflict);
 
@@ -73,8 +75,8 @@ static inline KlrAction klr_table_get_action(KlrTable* table, KlrID itemset_id, 
 static inline KlrActionInfo* klr_table_get_action_info(KlrTable* table, KlrID itemset_id, KlrID symbol_id);
 
 /* conflict */
-KlrConflict* klr_conflict_create(KlrItemSet* itemset, KlrSymbol* symbol, KlrTableEntry* entry);
-void klr_conflict_delete(KlrConflict* conflict);
+KlrConflict* klr_conflict_create(KlrItemSetPool* pool, KlrItemSet* itemset, KlrSymbol* symbol, KlrTableEntry* entry);
+void klr_conflict_delete(KlrItemPoolCollec* pool, KlrConflict* conflict);
 static inline void klr_conflict_add_item(KlrConflict* conflict, KlrItem* item);
 static inline bool klr_conflict_handle(KlrConflictHandler* handler, KlrConflict* conflict, KlrCollection* collec);
 
@@ -99,20 +101,20 @@ static inline KlrConflict* klr_table_get_conflict(KlrTable* table) {
   return table->conflicts;
 }
 
-static inline size_t klr_table_get_symbol_no(KlrTable* table) {
-  return table->table_symbol_no;
+static inline size_t klr_table_nsymbol(KlrTable* table) {
+  return table->ntblsymbol;
 }
 
-static inline size_t klr_table_get_terminal_no(KlrTable* table) {
-  return table->terminal_no;
+static inline size_t klr_table_nterminal(KlrTable* table) {
+  return table->nterminal;
 }
 
 static inline size_t klr_table_get_max_terminal_id(KlrTable* table) {
   return table->max_terminal_id;
 }
 
-static inline size_t klr_table_get_state_no(KlrTable* table) {
-  return table->state_no;
+static inline size_t klr_table_nstate(KlrTable* table) {
+  return table->nstate;
 }
 
 static inline size_t klr_table_get_start_state(KlrTable* table) {

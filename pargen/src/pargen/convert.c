@@ -12,9 +12,9 @@ static void kev_pargen_convert_symbols(KevPTableInfo* table_info, KevPParserStat
 
 
 void kev_pargen_convert(KevPTableInfo* table_info, KlrTable* table, KevPParserState* parser_state) {
-  table_info->terminal_no = klr_table_get_terminal_no(table);
-  table_info->state_no = klr_table_get_state_no(table);
-  table_info->goto_col_no = klr_table_get_symbol_no(table);
+  table_info->terminal_no = klr_table_nterminal(table);
+  table_info->state_no = klr_table_nstate(table);
+  table_info->goto_col_no = klr_table_nsymbol(table);
   table_info->action_col_no = klr_table_get_max_terminal_id(table) + 1;
   table_info->start_state = klr_table_get_start_state(table);
   kev_pargen_convert_goto_table_and_state_to_id(table_info, table);

@@ -3,17 +3,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-bool klr_transset_init(KlrTransSet* transset, size_t symbol_no) {
+bool klr_transset_init(KlrTransSet* transset, size_t nsymbol) {
   if (k_unlikely(!transset)) return false;
   transset->targets = NULL;
   if (k_unlikely(!karray_init(&transset->symbols)))
     return false;
-  transset->targets = (KlrItemSet**)malloc(sizeof (KlrItemSet*) * symbol_no);
+  transset->targets = (KlrItemSet**)malloc(sizeof (KlrItemSet*) * nsymbol);
   if (k_unlikely(!transset->targets)) {
     karray_destroy(&transset->symbols);
     return false;
   }
-  memset(transset->targets, 0, sizeof (KlrItemSet*) * symbol_no);
+  memset(transset->targets, 0, sizeof (KlrItemSet*) * nsymbol);
   return true;
 }
 

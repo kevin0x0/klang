@@ -1,4 +1,5 @@
 #include "kevlr/include/itemset.h"
+#include "kevlr/include/itemset_def.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -7,11 +8,11 @@ static KBitSet* klr_get_kernel_item_follows(KlrItem* kitem, KBitSet** firsts, si
 static KBitSet* klr_get_non_kernel_item_follows(KlrRule* rule, KBitSet* lookahead, KBitSet** firsts, size_t epsilon);
 static bool klr_closure_propagate(KlrItemSetClosure* closure, size_t epsilon);
 
-void klr_itemset_delete(KlrItemSet* itemset) {
+void klr_itemset_delete(KlrItemPoolCollec* pool, KlrItemSet* itemset) {
   KlrItem* item = itemset->items;
   while (item) {
     KlrItem* tmp = item->next;
-    klr_item_delete(item);
+    klr_item_delete(&pool->itempool, item);
     item = tmp;
   }
   KlrItemSetTransition* trans = itemset->trans;
@@ -20,7 +21,7 @@ void klr_itemset_delete(KlrItemSet* itemset) {
     free(trans);
     trans = tmp;
   }
-  klr_itemset_pool_deallocate(itemset);
+  klr_itemsetpool_deallocate(&pool->itemsetpool, itemset);
 }
 
 void klr_itemset_add_item(KlrItemSet* itemset, KlrItem* item) {
@@ -68,23 +69,23 @@ void klr_closure_make_empty(KlrItemSetClosure* closure) {
   karray_make_empty(symbols);
 }
 
-bool klr_closure_init(KlrItemSetClosure* closure, size_t symbol_no) {
+bool klr_closure_init(KlrItemSetClosure* closure, size_t nsymbol) {
   KArray* symbols = karray_create();
-  KBitSet** las = (KBitSet**)malloc(sizeof (KBitSet*) * symbol_no);
+  KBitSet** las = (KBitSet**)malloc(sizeof (KBitSet*) * nsymbol);
   if (k_unlikely(!symbols || !las)) {
     free(symbols);
     free(las);
     return false;
   }
-  memset(las, 0, sizeof (KBitSet*) * symbol_no);
+  memset(las, 0, sizeof (KBitSet*) * nsymbol);
   closure->lookaheads = las;
   closure->symbols = symbols;
   return true;
 }
 
-KlrItemSetClosure* klr_closure_create(size_t symbol_no) {
+KlrItemSetClosure* klr_closure_create(size_t nsymbol) {
   KlrItemSetClosure* closure = (KlrItemSetClosure*)malloc(sizeof (KlrItemSetClosure));
-  if (k_unlikely(!closure || !klr_closure_init(closure, symbol_no))) {
+  if (k_unlikely(!closure || !klr_closure_init(closure, nsymbol))) {
     free(closure);
     return NULL;
   }
