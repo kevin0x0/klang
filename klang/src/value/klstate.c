@@ -1,4 +1,4 @@
-#include "klang/include/vm/klstate.h"
+#include "klang/include/value/klstate.h"
 #include "klang/include/vm/klexception.h"
 #include "klang/include/vm/klstack.h"
 #include <stdarg.h>
@@ -15,12 +15,12 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
   KlState* state = (KlState*)klmm_alloc(klmm, sizeof (KlState));
   if (!state) return NULL;
 
-  if (kl_unlikely(!klstack_init(klstate_getstk(state), klmm))) {
+  if (kl_unlikely(!klstack_init(klstate_stack(state), klmm))) {
     klmm_free(klmm, state, sizeof (KlState));
     return NULL;
   }
   if (kl_unlikely(!(state->reflist = klreflist_create(klmm)))) {
-    klstack_destroy(klstate_getstk(state), klmm);
+    klstack_destroy(klstate_stack(state), klmm);
     klmm_free(klmm, state, sizeof (KlState));
     return NULL;
   }
@@ -36,7 +36,7 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
   state->baseci.callable.cfunc = NULL;
   state->baseci.next = NULL;
   state->baseci.prev = NULL;
-  state->baseci.top = klstack_raw(klstate_getstk(state));
+  state->baseci.top = klstack_raw(klstate_stack(state));
   state->baseci.status = KLSTATE_CI_STATUS_NORM;
 
   klmm_gcobj_enable(klmm, klmm_to_gcobj(state), &klstate_gcvfunc);
@@ -45,7 +45,7 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
 
 void klstate_delete(KlState* state) {
   KlMM* klmm = klstate_getmm(state);
-  klstack_destroy(klstate_getstk(state), klmm);
+  klstack_destroy(klstate_stack(state), klmm);
   klreflist_delete(state->reflist, klmm);
   klthrow_destroy(&state->throwinfo, klmm);
   klmapnodepool_unpin(state->mapnodepool);
@@ -60,7 +60,7 @@ void klstate_delete(KlState* state) {
 }
 
 static KlGCObject* klstate_propagate(KlState* state, KlGCObject* gclist) {
-  gclist = klstack_propagate(klstate_getstk(state), gclist);
+  gclist = klstack_propagate(klstate_stack(state), gclist);
   gclist = klcommon_propagate(state->common, gclist);
   gclist = klthrow_propagate(&state->throwinfo, gclist);
   KlCallInfo* callinfo = state->callinfo;
@@ -86,16 +86,16 @@ static void klstate_correct_callinfo(KlState* state, ptrdiff_t diff) {
 }
 
 KlException klstate_growstack(KlState* state, size_t framesize) {
-  KlValue* oristk = klstack_raw(klstate_getstk(state));
-  size_t expected_cap = klstack_size(klstate_getstk(state)) + framesize;
+  KlValue* oristk = klstack_raw(klstate_stack(state));
+  size_t expected_cap = klstack_size(klstate_stack(state)) + framesize;
   KlException exception = KL_E_NONE;
   do {
-    if (kl_unlikely(!klstack_expand(klstate_getstk(state), klstate_getmm(state)))) {
+    if (kl_unlikely(!klstack_expand(klstate_stack(state), klstate_getmm(state)))) {
       exception = KL_E_OOM;
       break;
     }
-  } while (klstack_capacity(klstate_getstk(state)) < expected_cap);
-  KlValue* newstk = klstack_raw(klstate_getstk(state));
+  } while (klstack_capacity(klstate_stack(state)) < expected_cap);
+  KlValue* newstk = klstack_raw(klstate_stack(state));
   ptrdiff_t diff = newstk - oristk;
   klreflist_correct(state->reflist, diff);
   klstate_correct_callinfo(state, diff);

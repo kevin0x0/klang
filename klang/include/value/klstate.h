@@ -40,7 +40,7 @@ struct tagKlCallInfo {
 };
 
 typedef struct tagKlState {
-  KlGCObject base;
+  KlGCObject gcbase;
   KlStack stack;                /* stack */
   KlThrowInfo throwinfo;        /* store the throwed but not handled exception */
   KlCommon* common;             /* store some gcobjects that are often used */
@@ -58,7 +58,11 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
 void klstate_delete(KlState* state);
 
 static inline KlMM* klstate_getmm(KlState* state);
-static inline KlStack* klstate_getstk(KlState* state);
+static inline KlStack* klstate_stack(KlState* state);
+static inline KlCommon* klstate_common(KlState* state);
+static inline KlMap* klstate_global(KlState* state);
+static inline KlStrPool* klstate_strpool(KlState* state);
+static inline KlMapNodePool* klstate_mapnodepool(KlState* state);
 
 static inline size_t klstate_getnarg(KlState* state);
 
@@ -83,8 +87,24 @@ static inline KlMM* klstate_getmm(KlState* state) {
   return klmm_gcobj_getmm(klmm_to_gcobj(state));
 }
 
-static inline KlStack* klstate_getstk(KlState* state) {
+static inline KlStack* klstate_stack(KlState* state) {
   return &state->stack;
+}
+
+static inline KlCommon* klstate_common(KlState* state) {
+  return state->common;
+}
+
+static inline KlMap* klstate_global(KlState* state) {
+  return state->global;
+}
+
+static inline KlStrPool* klstate_strpool(KlState* state) {
+  return state->strpool;
+}
+
+static inline KlMapNodePool* klstate_mapnodepool(KlState* state) {
+  return state->mapnodepool;
 }
 
 static inline size_t klstate_getnarg(KlState* state) {
@@ -92,7 +112,7 @@ static inline size_t klstate_getnarg(KlState* state) {
 }
 
 static inline KlValue* klstate_stktop(KlState* state) {
-  return klstack_top(klstate_getstk(state));
+  return klstack_top(klstate_stack(state));
 }
 
 static inline KlValue* klstate_getval(KlState* state, int offset) {
@@ -104,7 +124,7 @@ static inline void klstate_set_this(KlCallInfo* callinfo, KlValue* val) {
 }
 
 static inline KlException klstate_checkframe(KlState* state, size_t framesize) {
-  if (kl_unlikely(klstack_residual(klstate_getstk(state)) < framesize))
+  if (kl_unlikely(klstack_residual(klstate_stack(state)) < framesize))
     return klstate_growstack(state, framesize);
   return KL_E_NONE;
 }

@@ -3,11 +3,11 @@
 
 #include "klang/include/value/klcfunc.h"
 #include "klang/include/vm/klexception.h"
-#include "klang/include/vm/klstate.h"
+#include "klang/include/value/klstate.h"
 
 
-#define klexec_savestack(state, stkptr)     ((stkptr) - klstack_raw(klstate_getstk((state))))
-#define klexec_restorestack(state, diff)    (klstack_raw(klstate_getstk((state))) + (diff))
+#define klexec_savestack(state, stkptr)     ((stkptr) - klstack_raw(klstate_stack((state))))
+#define klexec_restorestack(state, diff)    (klstack_raw(klstate_stack((state))) + (diff))
 
 
 KlValue* klexec_getfield(KlState* state, KlValue* callable, KlString* op);
@@ -111,23 +111,20 @@ static inline KlException klexec_callophash(KlState* state, size_t* hash, KlValu
 
 static inline KlException klexec_callopindex(KlState* state, KlValue* res, KlValue* indexable, KlValue* key) {
   ptrdiff_t resdiff = klexec_savestack(state, res);
-  klstack_pushvalue(klstate_getstk(state), key);
+  klstack_pushvalue(klstate_stack(state), key);
   KlValue* method = klexec_getfield(state, indexable, state->common->string.index);
   if (kl_unlikely(!method)) {
     return klstate_throw(state, KL_E_INVLD, "can not find operator \'%s\'", klstring_content(state->common->string.index));
   }
   KlException exception = klexec_method(state, indexable, method, 1, 1);
-  if (kl_unlikely(exception)) {
-    klstack_move_top(klstate_getstk(state), -1);
-    return exception;
-  }
+  if (kl_unlikely(exception)) return exception;
   klvalue_setvalue(klexec_restorestack(state, resdiff), klstate_getval(state, -1));
   return KL_E_NONE;
 }
 
 static inline KlException klexec_callopindexas(KlState* state, KlValue* indexable, KlValue* key, KlValue* val) {
-  klstack_pushvalue(klstate_getstk(state), key);
-  klstack_pushvalue(klstate_getstk(state), val);
+  klstack_pushvalue(klstate_stack(state), key);
+  klstack_pushvalue(klstate_stack(state), val);
   KlValue* method = klexec_getfield(state, indexable, state->common->string.indexas);
   if (kl_unlikely(!method)) {
     return klstate_throw(state, KL_E_INVLD, "can not find operator \'%s\'", klstring_content(state->common->string.indexas));

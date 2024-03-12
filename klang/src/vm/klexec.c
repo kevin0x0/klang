@@ -6,7 +6,6 @@
 #include "klang/include/vm/klexception.h"
 #include "klang/include/vm/klexec.h"
 #include "klang/include/vm/klinst.h"
-#include "klang/include/vm/klstate.h"
 #include "klang/include/vm/klstack.h"
 #include <stddef.h>
 #include <string.h>
@@ -167,10 +166,10 @@ KlException klexec_dobinopmethodi(KlState* state, KlValue* a, KlValue* b, KlInt 
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  kl_assert(klstack_residual(klstate_getstk(state)) >= 2, "stack size not enough for calling binary operator");
+  kl_assert(klstack_residual(klstate_stack(state)) >= 2, "stack size not enough for calling binary operator");
 
-  klstack_pushvalue(klstate_getstk(state), b);
-  klstack_pushint(klstate_getstk(state), c);
+  klstack_pushvalue(klstate_stack(state), b);
+  klstack_pushint(klstate_stack(state), c);
   ptrdiff_t adiff = klexec_savestack(state, a);
   KlException exception = klexec_callbinopmethod(state, op);
   if (kl_unlikely(exception)) return exception;
@@ -182,10 +181,10 @@ KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  kl_assert(klstack_residual(klstate_getstk(state)) >= 2, "stack size not enough for calling binary operator");
+  kl_assert(klstack_residual(klstate_stack(state)) >= 2, "stack size not enough for calling binary operator");
 
-  klstack_pushvalue(klstate_getstk(state), b);
-  klstack_pushvalue(klstate_getstk(state), c);
+  klstack_pushvalue(klstate_stack(state), b);
+  klstack_pushvalue(klstate_stack(state), c);
   ptrdiff_t adiff = klexec_savestack(state, a);
   KlException exception = klexec_callbinopmethod(state, op);
   if (kl_unlikely(exception)) return exception;
@@ -194,19 +193,19 @@ KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue
 }
 
 KlException klexec_callc(KlState* state, KlCFunction* cfunc, size_t narg, size_t nret) {
-  size_t stkbase = klstack_size(klstate_getstk(state)) - narg;
+  size_t stkbase = klstack_size(klstate_stack(state)) - narg;
   KlException exception = cfunc(state);
-  size_t currtop = klstack_size(klstate_getstk(state));
+  size_t currtop = klstack_size(klstate_stack(state));
 
   kl_assert(currtop >= stkbase, "stack operation error in C function(or closure)");
 
   size_t nres = currtop - stkbase;
   if (nres < nret) {
     /* Complete missing returned values */
-    klstack_pushnil(klstate_getstk(state), nret - nres);
+    klstack_pushnil(klstate_stack(state), nret - nres);
   } else {
     /* Pop excess returned value */
-    klstack_move_top(klstate_getstk(state), nres - nret);
+    klstack_move_top(klstate_stack(state), nres - nret);
   }
   return exception;
 }
@@ -228,7 +227,7 @@ KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* ca
     }
     size_t nparam = klkfunc_nparam(kfunc);
     if (narg < nparam) {  /* complete missing arguments */
-      klstack_pushnil(klstate_getstk(state), nparam - narg);
+      klstack_pushnil(klstate_stack(state), nparam - narg);
       narg = nparam;
     }
     /* fill callinfo, newci->narg is not necessary for klang closure. */
@@ -286,7 +285,7 @@ KlException klexec_methodprepare(KlState* state, KlCallInfo* callinfo, KlValue* 
     }
     size_t nparam = klkfunc_nparam(kfunc);
     if (narg < nparam) {  /* complete missing arguments */
-      klstack_pushnil(klstate_getstk(state), nparam - narg);
+      klstack_pushnil(klstate_stack(state), nparam - narg);
       narg = nparam;
     }
     /* fill callinfo, newci->narg is not necessary for klang closure. */
@@ -336,7 +335,7 @@ KlException klexec_concat(KlState* state, size_t nparam) {
       KlString* res = klstrpool_string_concat(state->strpool, klvalue_getobj(l, KlString*), klvalue_getobj(r, KlString*));
       if (kl_unlikely(!res)) return klstate_throw(state, KL_E_OOM, "out of memory when do concat");
       klvalue_setobj(l, res, KL_STRING);
-      klstack_move_top(klstate_getstk(state), -1);
+      klstack_move_top(klstate_stack(state), -1);
     } else {
       KlException exception = klexec_callbinopmethod(state, state->common->string.concat);
       if (kl_unlikely(exception)) return exception;
@@ -353,14 +352,14 @@ KlException klexec_equal(KlState* state, KlValue* a, KlValue* b) {
   KlValue* method = klexec_getfield(state, a, eq);
   if (!method) method = klexec_getfield(state, b, eq);
   if (!method) {
-    klstack_pushbool(klstate_getstk(state), KL_FALSE);
+    klstack_pushbool(klstate_stack(state), KL_FALSE);
     return KL_E_NONE;
   }
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  klstack_pushvalue(klstate_getstk(state), a);
-  klstack_pushvalue(klstate_getstk(state), b);
+  klstack_pushvalue(klstate_stack(state), a);
+  klstack_pushvalue(klstate_stack(state), b);
   KlException exception = klexec_call(state, method, 2, 1);
   if (kl_unlikely(exception)) return exception;
   return KL_E_NONE;
@@ -374,14 +373,14 @@ KlException klexec_notequal(KlState* state, KlValue* a, KlValue* b) {
   KlValue* method = klexec_getfield(state, a, neq);
   if (!method) method = klexec_getfield(state, b, neq);
   if (!method) {
-    klstack_pushbool(klstate_getstk(state), KL_TRUE);
+    klstack_pushbool(klstate_stack(state), KL_TRUE);
     return KL_E_NONE;
   }
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  klstack_pushvalue(klstate_getstk(state), a);
-  klstack_pushvalue(klstate_getstk(state), b);
+  klstack_pushvalue(klstate_stack(state), a);
+  klstack_pushvalue(klstate_stack(state), b);
   KlException exception = klexec_call(state, method, 2, 1);
   if (kl_unlikely(exception)) return exception;
   return KL_E_NONE;
@@ -393,9 +392,9 @@ KlException klexec_lt(KlState* state, KlValue* a, KlValue* b) {
 
   if (klvalue_checktype(a, KL_STRING) && klvalue_checktype(b, KL_STRING)) {
     if (klstring_compare(klvalue_getobj(a, KlString*), klvalue_getobj(b, KlString*)) < 0) {
-      klstack_pushbool(klstate_getstk(state), KL_TRUE);
+      klstack_pushbool(klstate_stack(state), KL_TRUE);
     } else {
-      klstack_pushbool(klstate_getstk(state), KL_FALSE);
+      klstack_pushbool(klstate_stack(state), KL_FALSE);
     }
   }
   KlString* lt = state->common->string.lt;
@@ -407,8 +406,8 @@ KlException klexec_lt(KlState* state, KlValue* a, KlValue* b) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  klstack_pushvalue(klstate_getstk(state), a);
-  klstack_pushvalue(klstate_getstk(state), b);
+  klstack_pushvalue(klstate_stack(state), a);
+  klstack_pushvalue(klstate_stack(state), b);
   KlException exception = klexec_callbinopmethod(state, lt);
   if (kl_unlikely(exception)) return exception;
   return KL_E_NONE;
@@ -420,9 +419,9 @@ KlException klexec_le(KlState* state, KlValue* a, KlValue* b) {
 
   if (klvalue_checktype(a, KL_STRING) && klvalue_checktype(b, KL_STRING)) {
     if (klstring_compare(klvalue_getobj(a, KlString*), klvalue_getobj(b, KlString*)) <= 0) {
-      klstack_pushbool(klstate_getstk(state), KL_TRUE);
+      klstack_pushbool(klstate_stack(state), KL_TRUE);
     } else {
-      klstack_pushbool(klstate_getstk(state), KL_FALSE);
+      klstack_pushbool(klstate_stack(state), KL_FALSE);
     }
   }
   KlString* le = state->common->string.le;
@@ -434,8 +433,8 @@ KlException klexec_le(KlState* state, KlValue* a, KlValue* b) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  klstack_pushvalue(klstate_getstk(state), a);
-  klstack_pushvalue(klstate_getstk(state), b);
+  klstack_pushvalue(klstate_stack(state), a);
+  klstack_pushvalue(klstate_stack(state), b);
   KlException exception = klexec_callbinopmethod(state, le);
   if (kl_unlikely(exception)) return exception;
   return KL_E_NONE;
@@ -447,9 +446,9 @@ KlException klexec_gt(KlState* state, KlValue* a, KlValue* b) {
 
   if (klvalue_checktype(a, KL_STRING) && klvalue_checktype(b, KL_STRING)) {
     if (klstring_compare(klvalue_getobj(a, KlString*), klvalue_getobj(b, KlString*)) > 0) {
-      klstack_pushbool(klstate_getstk(state), KL_TRUE);
+      klstack_pushbool(klstate_stack(state), KL_TRUE);
     } else {
-      klstack_pushbool(klstate_getstk(state), KL_FALSE);
+      klstack_pushbool(klstate_stack(state), KL_FALSE);
     }
   }
   KlString* gt = state->common->string.gt;
@@ -461,8 +460,8 @@ KlException klexec_gt(KlState* state, KlValue* a, KlValue* b) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  klstack_pushvalue(klstate_getstk(state), a);
-  klstack_pushvalue(klstate_getstk(state), b);
+  klstack_pushvalue(klstate_stack(state), a);
+  klstack_pushvalue(klstate_stack(state), b);
   KlException exception = klexec_callbinopmethod(state, gt);
   if (kl_unlikely(exception)) return exception;
   return KL_E_NONE;
@@ -474,9 +473,9 @@ KlException klexec_ge(KlState* state, KlValue* a, KlValue* b) {
 
   if (klvalue_checktype(a, KL_STRING) && klvalue_checktype(b, KL_STRING)) {
     if (klstring_compare(klvalue_getobj(a, KlString*), klvalue_getobj(b, KlString*)) >= 0) {
-      klstack_pushbool(klstate_getstk(state), KL_TRUE);
+      klstack_pushbool(klstate_stack(state), KL_TRUE);
     } else {
-      klstack_pushbool(klstate_getstk(state), KL_FALSE);
+      klstack_pushbool(klstate_stack(state), KL_FALSE);
     }
   }
   KlString* ge = state->common->string.ge;
@@ -488,8 +487,8 @@ KlException klexec_ge(KlState* state, KlValue* a, KlValue* b) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  klstack_pushvalue(klstate_getstk(state), a);
-  klstack_pushvalue(klstate_getstk(state), b);
+  klstack_pushvalue(klstate_stack(state), a);
+  klstack_pushvalue(klstate_stack(state), b);
   KlException exception = klexec_callbinopmethod(state, ge);
   if (kl_unlikely(exception)) return exception;
   return KL_E_NONE;
@@ -612,7 +611,7 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
 }
 
 #define klexec_savestate(top, callinfo) {                                         \
-  klstack_set_top(klstate_getstk(state), top);                                    \
+  klstack_set_top(klstate_stack(state), top);                                     \
   (callinfo)->savedpc = pc;                                                       \
 }
 
@@ -952,7 +951,7 @@ KlException klexec_execute(KlState* state) {
                                  "can not apply unary \'-\' to a value with type \'%s\'",
                                  klvalue_typename(klvalue_gettype(b)));
           }
-          klstack_pushvalue(klstate_getstk(state), b);
+          klstack_pushvalue(klstate_stack(state), b);
           KlException exception = klexec_call(state, method, 1, 1);
           if (kl_unlikely(exception)) return exception;
           stkbase = klexec_restorestack(state, stkdiff);
@@ -1019,9 +1018,9 @@ KlException klexec_execute(KlState* state) {
         KlValue* retpos = stkbase + callinfo->retoff;
         while (ncopy--) /* copy results to their position. */
           klvalue_setvalue(retpos++, res++);
-        klstack_set_top(klstate_getstk(state), retpos);
+        klstack_set_top(klstate_stack(state), retpos);
         if (nres < nret)  /* complete missing returned value */
-          klstack_pushnil(klstate_getstk(state), nret - nres);
+          klstack_pushnil(klstate_stack(state), nret - nres);
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
         klexec_pop_callinfo(state);
@@ -1030,8 +1029,8 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_RETURN0: {
         size_t nret = callinfo->nret;
-        klstack_set_top(klstate_getstk(state), stkbase + callinfo->retoff);
-        klstack_pushnil(klstate_getstk(state), nret);
+        klstack_set_top(klstate_stack(state), stkbase + callinfo->retoff);
+        klstack_pushnil(klstate_stack(state), nret);
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
         klexec_pop_callinfo(state);
@@ -1044,8 +1043,8 @@ KlException klexec_execute(KlState* state) {
           KlValue* retpos = stkbase + callinfo->retoff;
           KlValue* res = stkbase + KLINST_A_GETA(inst);
           klvalue_setvalue(retpos, res);
-          klstack_set_top(klstate_getstk(state), retpos + 1);
-          klstack_pushnil(klstate_getstk(state), nret - 1); /* rest results is nil. */
+          klstack_set_top(klstate_stack(state), retpos + 1);
+          klstack_pushnil(klstate_stack(state), nret - 1); /* rest results is nil. */
         }
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
@@ -1489,7 +1488,7 @@ KlException klexec_execute(KlState* state) {
           callinfo->top += narg;
           callinfo->retoff -= narg;
           stkbase += narg;
-          klstack_set_top(klstate_getstk(state), stktop);
+          klstack_set_top(klstate_stack(state), stktop);
         }
         break;
       }

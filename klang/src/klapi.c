@@ -1,7 +1,7 @@
 #include "klang/include/klapi.h"
 #include "klang/include/mm/klmm.h"
 #include "klang/include/vm/klexec.h"
-#include "klang/include/vm/klstate.h"
+#include "klang/include/value/klstate.h"
 #include "klang/include/value/klref.h"
 
 KlState* klapi_new_state(KlMM* klmm) {

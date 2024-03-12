@@ -4,7 +4,7 @@
 #include "klang/include/value/klcfunc.h"
 #include "klang/include/vm/klexception.h"
 #include "klang/include/vm/klexec.h"
-#include "klang/include/vm/klstate.h"
+#include "klang/include/value/klstate.h"
 #include "klang/include/value/klarray.h"
 #include "klang/include/misc/klutils.h"
 
