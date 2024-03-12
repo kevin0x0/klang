@@ -2,6 +2,8 @@
 #include "klang/include/value/klcfunc.h"
 #include "klang/include/value/klclass.h"
 #include "klang/include/value/klclosure.h"
+#include "klang/include/value/klcoroutine.h"
+#include "klang/include/value/klstate.h"
 #include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klexception.h"
 #include "klang/include/vm/klexec.h"
@@ -237,6 +239,8 @@ KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* ca
     callinfo->top = klstate_stktop(state) + framesize - narg;
     klexec_push_callinfo(state);
     return KL_E_NONE;
+  } else if (kl_likely(klvalue_checktype(callable, KL_COROUTINE))) {  /* is a coroutine ? */
+    return klco_call(klvalue_getobj(callable, KlCoroutine*), state, narg, callinfo->nret);
   } else if (kl_likely(klvalue_checktype(callable, KL_CFUNCTION))) {  /* is a C function ? */
     KlCFunction* cfunc = klvalue_getcfunc(callable);
     callinfo->callable.cfunc = cfunc;
@@ -295,6 +299,8 @@ KlException klexec_methodprepare(KlState* state, KlCallInfo* callinfo, KlValue* 
     callinfo->top = klstate_stktop(state) + framesize - narg;
     klexec_push_callinfo(state);
     return KL_E_NONE;
+  } else if (kl_likely(klvalue_checktype(method, KL_COROUTINE))) {  /* is a coroutine ? */
+    return klco_call(klvalue_getobj(method, KlCoroutine*), state, narg, callinfo->nret);
   } else if (kl_likely(klvalue_checktype(method, KL_CFUNCTION))) {  /* is a C function ? */
     KlCFunction* cfunc = klvalue_getcfunc(method);
     callinfo->callable.cfunc = cfunc;
@@ -807,6 +813,7 @@ KlException klexec_execute(KlState* state) {
   KlInstruction* pc = callinfo->savedpc;
   KlValue* constants = klkfunc_constants(closure->kfunc);
   KlValue* stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+  kl_assert(callinfo->top >= klstate_stktop(state), "stack size not enough");
 
   while (true) {
     KlInstruction inst = *pc++;
@@ -1021,9 +1028,9 @@ KlException klexec_execute(KlState* state) {
         klstack_set_top(klstate_stack(state), retpos);
         if (nres < nret)  /* complete missing returned value */
           klstack_pushnil(klstate_stack(state), nret - nres);
+        klexec_pop_callinfo(state);
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
-        klexec_pop_callinfo(state);
         klexec_updateglobal(state->callinfo->top - klkfunc_framesize(klcast(KlKClosure*, state->callinfo->callable.clo)->kfunc));
         break;
       }
@@ -1031,24 +1038,26 @@ KlException klexec_execute(KlState* state) {
         size_t nret = callinfo->nret;
         klstack_set_top(klstate_stack(state), stkbase + callinfo->retoff);
         klstack_pushnil(klstate_stack(state), nret);
+        klexec_pop_callinfo(state);
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
-        klexec_pop_callinfo(state);
         klexec_updateglobal(state->callinfo->top - klkfunc_framesize(klcast(KlKClosure*, state->callinfo->callable.clo)->kfunc));
         break;
       }
       case KLOPCODE_RETURN1: {
         size_t nret = callinfo->nret;
+        KlValue* retpos = stkbase + callinfo->retoff;
         if (nret != 0) {  /* at least one results wanted */
-          KlValue* retpos = stkbase + callinfo->retoff;
           KlValue* res = stkbase + KLINST_A_GETA(inst);
           klvalue_setvalue(retpos, res);
           klstack_set_top(klstate_stack(state), retpos + 1);
           klstack_pushnil(klstate_stack(state), nret - 1); /* rest results is nil. */
+        } else {
+          klstack_set_top(klstate_stack(state), retpos);
         }
+        klexec_pop_callinfo(state);
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
-        klexec_pop_callinfo(state);
         klexec_updateglobal(state->callinfo->top - klkfunc_framesize(klcast(KlKClosure*, state->callinfo->callable.clo)->kfunc));
         break;
       }
@@ -1566,6 +1575,35 @@ KlException klexec_execute(KlState* state) {
         a = stkbase + KLINST_AX_GETA(inst);
         klvalue_checktype(a + 1, KL_NIL) ? ++pc : (pc += KLINST_I_GETI(*pc));
         break;
+      }
+      case KLOPCODE_ASYNC: {
+        KlValue* f = stkbase + KLINST_ABC_GETA(inst);
+        klexec_savestate(callinfo->top, callinfo);
+        if (kl_unlikely(klvalue_checktype(f, KL_KCLOSURE))) {
+          return klstate_throw(state, KL_E_TYPE,
+                               "async should be applied to a closure, got '%s'",
+                               klvalue_typename(klvalue_gettype(f)));
+        }
+        KlCoroutine* co = klco_create(klstate_getmm(state), klvalue_getobj(f, KlKClosure*), state);
+        if (kl_unlikely(!co)) return klstate_throw(state, KL_E_OOM, "out of memory when creating a coroutine");
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        klvalue_setobj(a, co, KL_COROUTINE);
+        break;
+      }
+      case KLOPCODE_YIELD: {
+        KlValue* coval = klstack_raw(klstate_stack(state));
+        KlCoroutine* co = NULL;
+        KlValue* res = stkbase + KLINST_AXY_GETA(inst);
+        size_t nres = KLINST_AXY_GETX(inst);
+        klexec_savestate(res + nres, callinfo);
+        if (kl_unlikely(klstack_size(klstate_stack(state)) == 0                         ||
+                        !klvalue_checktype(coval, KL_COROUTINE)                         ||
+                        klco_state(co = klvalue_getobj(coval, KlCoroutine*)) != state)) {
+          return klstate_throw(state, KL_E_INVLD, "can not yield from outside a coroutine");
+        }
+        co->nyield = nres;
+        co->nwanted = KLINST_AXY_GETY(inst);
+        return KL_E_NONE;
       }
       default: {
         kl_assert(false, "control flow should not reach here");

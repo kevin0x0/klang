@@ -1,6 +1,8 @@
 #include "klang/include/klapi.h"
 #include "klang/include/value/klclosure.h"
+#include "klang/include/value/klcoroutine.h"
 #include "klang/include/value/klstring.h"
+#include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klinst.h"
 #include <stdio.h>
 #include <time.h>
@@ -8,18 +10,19 @@
 void fibonacci(KlState* state);
 void concat(KlState* state);
 void arithsum(KlState* state);
+void coroutine(KlState* state);
 
 int main(void) {
   KlMM klmm;
   klmm_init(&klmm, 1024);
   KlState* state = klapi_new_state(&klmm);
-  concat(state);
+  coroutine(state);
   //concat(state);
-  size_t narg = 3;
-  //klapi_pushint(state, 35);
-  klapi_pushstring(state, "hello,");
-  klapi_pushstring(state, " ");
-  klapi_pushstring(state, "world!");
+  size_t narg = 1;
+  klapi_pushint(state, 35);
+  //klapi_pushstring(state, "hello,");
+  //klapi_pushstring(state, " ");
+  //klapi_pushstring(state, "world!");
   clock_t t = clock();
   KlException exception = klapi_call(state, klapi_access(state, -1 - narg), narg, 1);
   printf("%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
@@ -27,9 +30,9 @@ int main(void) {
     fprintf(stderr, "%s\n", state->throwinfo.exception.message);
     return 0;
   }
-  printf("%s\n", klstring_content(klapi_getstring(state, -1)));
+  //printf("%s\n", klstring_content(klapi_getstring(state, -1)));
   //printf("\n%c", klstring_content(klapi_getstring(state, -1))[klstring_length(klapi_getstring(state, -1))]);
-  //printf("fibonacci(%d) = %zd\n", 35, klapi_getint(state, -1));
+  printf("fibonacci(%d) = %zd\n", 35, klapi_getint(state, -1));
   klmm_destroy(&klmm);
   return 0;
 }
@@ -61,6 +64,12 @@ void fibonacci(KlState* state) {
   klapi_setobj(state, -1, kclo, KL_KCLOSURE);
   klreflist_close(&state->reflist, klstate_getval(state, -1), klstate_getmm(state));
   // klapi_storeglobal(state, klstrpool_new_string(state->strpool, "fibonacci"));
+}
+
+void coroutine(KlState* state) {
+  fibonacci(state);
+  KlCoroutine* co = klco_create(klstate_getmm(state), klvalue_getobj(klstate_getval(state, -1), KlKClosure*), state);
+  klapi_setobj(state, -1, co, KL_COROUTINE);
 }
 
 void concat(KlState* state) {

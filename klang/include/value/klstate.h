@@ -58,6 +58,7 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
 void klstate_delete(KlState* state);
 
 static inline KlMM* klstate_getmm(KlState* state);
+static inline KlCallInfo* klstate_currci(KlState* state);
 static inline KlStack* klstate_stack(KlState* state);
 static inline KlCommon* klstate_common(KlState* state);
 static inline KlMap* klstate_global(KlState* state);
@@ -65,6 +66,8 @@ static inline KlStrPool* klstate_strpool(KlState* state);
 static inline KlMapNodePool* klstate_mapnodepool(KlState* state);
 
 static inline size_t klstate_getnarg(KlState* state);
+
+static inline bool klstate_isrunning(KlState* state);
 
 static inline KlValue* klstate_stktop(KlState* state);
 
@@ -85,6 +88,10 @@ KlException klstate_growstack(KlState* state, size_t capacity);
 
 static inline KlMM* klstate_getmm(KlState* state) {
   return klmm_gcobj_getmm(klmm_to_gcobj(state));
+}
+
+static inline KlCallInfo* klstate_currci(KlState* state) {
+  return state->callinfo;
 }
 
 static inline KlStack* klstate_stack(KlState* state) {
@@ -109,6 +116,10 @@ static inline KlMapNodePool* klstate_mapnodepool(KlState* state) {
 
 static inline size_t klstate_getnarg(KlState* state) {
   return state->callinfo->narg;
+}
+
+static inline bool klstate_isrunning(KlState* state) {
+  return klstate_currci(state) != &state->baseci;
 }
 
 static inline KlValue* klstate_stktop(KlState* state) {
