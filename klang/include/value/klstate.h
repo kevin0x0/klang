@@ -20,6 +20,8 @@
 #define KLSTATE_CI_STATUS_CCLO  (klbit(2))
 /* callable.kclo valid */
 #define KLSTATE_CI_STATUS_KCLO  (klbit(3))
+/* conditional jump requires a boolean value in the callinfo->top */
+#define KLSTATE_CI_STATUS_CJMP  (klbit(4))
 
 
 typedef struct tagKlCallInfo KlCallInfo;

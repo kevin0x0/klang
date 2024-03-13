@@ -54,6 +54,7 @@ typedef struct tagKlCstExprBin {
 
 typedef struct tagKlCstExprPre {
   KlCst base;
+  KlTokenKind op;
   KlCst* operand;
   KlCst* params;            /* parameters for new operator */
 } KlCstExprPre;
@@ -91,7 +92,7 @@ typedef struct tagKlCstExprTer {
 
 KlCstExprUnit* klcst_exprunit_create(KlCstKind tpye);
 KlCstExprBin* klcst_exprbin_create(KlTokenKind op);
-KlCstExprPre* klcst_exprpre_create(KlCstKind type);
+KlCstExprPre* klcst_exprpre_create(KlTokenKind op);
 KlCstExprPost* klcst_exprpost_create(KlCstKind type);
 KlCstExprTer* klcst_exprter_create(void);
 

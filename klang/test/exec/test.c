@@ -16,7 +16,7 @@ int main(void) {
   KlMM klmm;
   klmm_init(&klmm, 1024);
   KlState* state = klapi_new_state(&klmm);
-  coroutine(state);
+  fibonacci(state);
   //concat(state);
   size_t narg = 1;
   klapi_pushint(state, 35);

@@ -30,10 +30,11 @@ KlCoroutine* klco_create(KlMM* klmm, KlKClosure* kclo, KlState* state) {
     klmm_newlevel_abort(klmm);
     return NULL;
   }
+  klstack_pushobj(klstate_stack(newstate), co, KL_COROUTINE);
   co->status = KLCO_NORMAL;
   co->state = newstate;
   co->kclo = kclo;
-  klstack_pushobj(klstate_stack(newstate), co, KL_COROUTINE);
+  co->respos_save = klexec_savestack(newstate, klstate_stktop(newstate));
   klmm_newlevel_done(klmm, &klco_gcvfunc);
   return co;
 }
@@ -74,13 +75,13 @@ KlException klco_start(KlCoroutine* co, KlState* caller, size_t narg, size_t nre
     klstack_move_top(klstate_stack(costate), -nres);
     klco_setstatus(co, KLCO_BLOCKED);
     return KL_E_NONE;
-  } else {  /* else is dead */
-    KlValue* firstres = klstate_getval(costate, -nret);
+  } else {  /* else returned */
+    KlValue* firstres = klexec_restorestack(costate, co->respos_save);
     size_t ncopy = nret;
     while (ncopy--)   /* copy results */
       klvalue_setvalue(argbase++, firstres++);
     klstack_set_top(klstate_stack(caller), argbase);
-    klstack_move_top(klstate_stack(costate), -nret);
+    klstack_set_top(klstate_stack(costate), klexec_restorestack(costate, co->respos_save));
     klco_setstatus(co, KLCO_DEAD);
     return KL_E_NONE;
   }
@@ -123,13 +124,13 @@ KlException klco_resume(KlCoroutine* co, KlState* caller, size_t narg, size_t nr
     klstack_move_top(klstate_stack(costate), -nres);
     klco_setstatus(co, KLCO_BLOCKED);
     return KL_E_NONE;
-  } else {  /* else is dead */
-    KlValue* firstres = klstate_getval(costate, -nret);
+  } else {  /* else returned */
+    KlValue* firstres = klexec_restorestack(costate, co->respos_save);
     size_t ncopy = nret;
     while (ncopy--)   /* copy results */
       klvalue_setvalue(argbase++, firstres++);
     klstack_set_top(klstate_stack(caller), argbase);
-    klstack_move_top(klstate_stack(costate), -nret);
+    klstack_set_top(klstate_stack(costate), klexec_restorestack(costate, co->respos_save));
     klco_setstatus(co, KLCO_DEAD);
     return KL_E_NONE;
   }

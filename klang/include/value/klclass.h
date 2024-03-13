@@ -112,6 +112,7 @@ struct tagKlObjectInstance {
 
 
 static inline KlValue* klobject_getfield(KlObject* object, KlString* key);
+static inline KlClass* klobject_class(KlObject* object);
 static inline size_t klobject_size(KlObject* object);
 KlGCObject* klobject_propagate(KlObject* object, KlGCObject* gclist);
 static inline void klobject_free(KlObject* object, KlMM* klmm);
@@ -125,6 +126,10 @@ static inline KlValue* klobject_getfield(KlObject* object, KlString* key) {
   } else {
     return &ceil->value;
   }
+}
+
+static inline KlClass* klobject_class(KlObject* object) {
+  return object->klclass;
 }
 
 static inline size_t klobject_size(KlObject* object) {

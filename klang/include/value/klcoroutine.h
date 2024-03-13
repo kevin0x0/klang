@@ -6,6 +6,7 @@
 #include "klang/include/value/klclosure.h"
 #include "klang/include/value/klstate.h"
 #include "klang/include/vm/klexception.h"
+#include <stddef.h>
 
 typedef struct tagKlState KlState;
 
@@ -18,11 +19,12 @@ typedef enum tagKlCoStatus {
 
 typedef struct tagKlCoroutine {
   KlGCObject gcbase;
-  KlState* state;       /* virtual machine */
-  KlKClosure* kclo;     /* to be executed function */
-  KlCoStatus status;    /* state of this coroutine */
-  size_t nyield;        /* number of yielded value */
-  size_t nwanted;       /* number of wanted arguments when resuming */
+  KlState* state;         /* virtual machine */
+  KlKClosure* kclo;       /* to be executed function */
+  KlCoStatus status;      /* state of this coroutine */
+  size_t nyield;          /* number of yielded value */
+  size_t nwanted;         /* number of wanted arguments when resuming */
+  ptrdiff_t respos_save;  /* save the offset of to be returned values */
 } KlCoroutine;
 
 KlCoroutine* klco_create(KlMM* klmm, KlKClosure* kclo, KlState* state);

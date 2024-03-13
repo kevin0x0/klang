@@ -63,6 +63,8 @@ typedef enum tagKlTokenKind {
   KLTK_LOCAL,
   KLTK_SHARED,
   KLTK_NEW,
+  KLTK_ASYNC,
+  KLTK_YIELD,
 
   KLTK_END,
   KLTK_NTOKEN,
@@ -71,6 +73,5 @@ typedef enum tagKlTokenKind {
 #define kltoken_isbinop(kind)   ((kind) >= KLTK_CONCAT && (kind) <= KLTK_OR)
 
 const char* kltoken_desc(KlTokenKind kind);
-
 
 #endif

@@ -152,6 +152,12 @@ def new (KLTK_VARARG):
 def new (KLTK_NEW):
   (KLTK_NEW) $new
 
+def async (KLTK_ASYNC):
+  (KLTK_ASYNC) $async
+
+def yield (KLTK_YIELD):
+  (KLTK_YIELD) $yield
+
 def identifier (KLTK_ID):
   (KLTK_ID)  $([A-Za-z_] | [:uni-non-ascii:])([A-Za-z0-9_] | [:uni-non-ascii:])* | '
 

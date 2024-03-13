@@ -4,6 +4,7 @@
 #include "klang/include/value/klcfunc.h"
 #include "klang/include/vm/klexception.h"
 #include "klang/include/value/klstate.h"
+#include <stddef.h>
 
 
 #define klexec_savestack(state, stkptr)     ((stkptr) - klstack_raw(klstate_stack((state))))
@@ -11,10 +12,8 @@
 
 
 KlValue* klexec_getfield(KlState* state, KlValue* callable, KlString* op);
-KlException klexec_concat(KlState* state, size_t nparam);
 KlException klexec_callc(KlState* state, KlCFunction* cfunc, size_t narg, size_t nret);
 KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* callable, size_t narg);
-KlException klexec_methodprepare(KlState* state, KlCallInfo* callinfo, KlValue* method, size_t narg);
 static inline KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret);
 static inline KlException klexec_method(KlState* state, KlValue* thisobj, KlValue* callable, size_t narg, size_t nret);
 KlException klexec_execute(KlState* state);
@@ -25,21 +24,9 @@ KlCallInfo* klexec_alloc_callinfo(KlState* state);
 
 /* 'a' should be stack value */
 KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue* c, KlString* op);
-/* 'a' should be stack value */
-KlException klexec_dobinopmethodi(KlState* state, KlValue* a, KlValue* b, KlInt c, KlString* op);
-static inline KlException klexec_callbinopmethod(KlState* state, KlString* op);
 
-KlException klexec_hashgeneric(KlState* state, KlValue* key, size_t* hash);
-static inline KlException klexec_equalgeneric(KlState* state, KlValue* a, KlValue* b, bool* equal);
 KlException klexec_mapsearch(KlState* state, KlMap* map, KlValue* key, KlValue* res);
 KlException klexec_mapinsert(KlState* state, KlMap* map, KlValue* key, KlValue* val);
-
-KlException klexec_equal(KlState* state, KlValue* a, KlValue* b);
-KlException klexec_notequal(KlState* state, KlValue* a, KlValue* b);
-KlException klexec_lt(KlState* state, KlValue* a, KlValue* b);
-KlException klexec_le(KlState* state, KlValue* a, KlValue* b);
-KlException klexec_gt(KlState* state, KlValue* a, KlValue* b);
-KlException klexec_ge(KlState* state, KlValue* a, KlValue* b);
 
 static inline bool klexec_if(KlValue* val) {
   return !(klvalue_checktype(val, KL_NIL) || (klvalue_checktype(val, KL_BOOL) && klvalue_getbool(val) == KL_FALSE));
@@ -67,11 +54,14 @@ static inline KlException klexec_call(KlState* state, KlValue* callable, size_t 
   if (kl_unlikely(!newci))
     return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
   klvalue_setnil(&newci->env_this);
+  ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
   KlException exception = klexec_callprepare(state, newci, callable, narg);
   if (exception) return exception;
   if (kl_likely(prevci != state->callinfo)) { /* is a klang call ? */
     state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
-    return klexec_execute(state);
+    KlException exception = klexec_execute(state);
+    if (kl_unlikely(exception)) return exception;
+    klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
   }
   return KL_E_NONE;
 }
@@ -82,7 +72,7 @@ static inline KlException klexec_method(KlState* state, KlValue* thisobj, KlValu
   if (kl_unlikely(!newci))
     return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
   klvalue_setvalue(&newci->env_this, thisobj);
-  KlException exception = klexec_methodprepare(state, newci, callable, narg);
+  KlException exception = klexec_callprepare(state, newci, callable, narg);
   if (exception) return exception;
   if (kl_likely(prevci != state->callinfo)) { /* is a klang call ? */
     state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
@@ -109,19 +99,6 @@ static inline KlException klexec_callophash(KlState* state, size_t* hash, KlValu
   return KL_E_NONE;
 }
 
-static inline KlException klexec_callopindex(KlState* state, KlValue* res, KlValue* indexable, KlValue* key) {
-  ptrdiff_t resdiff = klexec_savestack(state, res);
-  klstack_pushvalue(klstate_stack(state), key);
-  KlValue* method = klexec_getfield(state, indexable, state->common->string.index);
-  if (kl_unlikely(!method)) {
-    return klstate_throw(state, KL_E_INVLD, "can not find operator \'%s\'", klstring_content(state->common->string.index));
-  }
-  KlException exception = klexec_method(state, indexable, method, 1, 1);
-  if (kl_unlikely(exception)) return exception;
-  klvalue_setvalue(klexec_restorestack(state, resdiff), klstate_getval(state, -1));
-  return KL_E_NONE;
-}
-
 static inline KlException klexec_callopindexas(KlState* state, KlValue* indexable, KlValue* key, KlValue* val) {
   klstack_pushvalue(klstate_stack(state), key);
   klstack_pushvalue(klstate_stack(state), val);
@@ -131,37 +108,6 @@ static inline KlException klexec_callopindexas(KlState* state, KlValue* indexabl
   }
   KlException exception = klexec_method(state, indexable, method, 2, 0);
   return exception;
-}
-
-static inline KlException klexec_callbinopmethod(KlState* state, KlString* op) {
-  KlValue* l = klstate_getval(state, -2);
-  KlValue* r = klstate_getval(state, -1);
-  KlValue* method = klexec_getfield(state, l, op);
-  if (!method) method = klexec_getfield(state, r, op);
-  if (kl_unlikely(!method)) {
-    return klstate_throw(state, KL_E_INVLD, "can not find operator \'%s\' for type %s and %s",
-                         klstring_content(op),
-                         klvalue_typename(klvalue_gettype(l)),
-                         klvalue_typename(klvalue_gettype(r)));
-  }
-  return klexec_call(state, method, 2, 1);
-}
-
-static inline KlException klexec_equalgeneric(KlState* state, KlValue* a, KlValue* b, bool* equal) {
-  if (kl_unlikely(!klvalue_sametype(a, b))) {
-    *equal = false;
-    return KL_E_NONE;
-  }
-  if (klvalue_sameinstance(a, b)) {
-    *equal = true;
-  } else if (!klvalue_canrawequal(a)) {
-    KlException exception = klexec_equal(state, a, b);
-    if (kl_unlikely(exception)) return exception;
-    *equal = klexec_if(klstate_getval(state, -1));
-  } else {
-    *equal = false;
-  }
-  return KL_E_NONE;
 }
 
 #endif

@@ -13,3 +13,14 @@ let Person = {
 let kevin = new Person("Kevin", 3, "male");
 kevin.sayHello();
 
+let f = async (name) {
+  print "Hello" name "\n";
+  print "Could you tell me your age?\n";
+  let age = yield();
+  print "Oh! you are" age "now!";
+};
+
+let a = async f;
+
+f("Kevin");
+f(13);

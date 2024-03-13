@@ -133,7 +133,7 @@ KlMapIter klmap_search(KlMap* map, KlValue* key) {
   KlMapNode* node = map->array[index];
   if (!node) return NULL;
   do {
-    if (klvalue_equal(key, &node->key)) /* The implementation guarantees the uniqueness of klstring */
+    if (klvalue_equal(key, &node->key))
       return node;
     node = node->next;
   } while (node != &map->tail && (node->hash & mask) == index);

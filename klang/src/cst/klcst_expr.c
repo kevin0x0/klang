@@ -31,12 +31,11 @@ KlCstExprBin* klcst_exprbin_create(KlTokenKind op) {
   return bin;
 }
 
-KlCstExprPre* klcst_exprpre_create(KlCstKind type) {
-  kl_assert(klcst_is_exprpre(type), "");
-
+KlCstExprPre* klcst_exprpre_create(KlTokenKind op) {
   KlCstExprPre* pre = (KlCstExprPre*)malloc(sizeof (KlCstExprPre));
   if (kl_unlikely(!pre)) return NULL;
-  klcst_init((KlCst*)pre, type, &klcst_exprpre_vfunc);
+  klcst_init((KlCst*)pre, KLCST_EXPR_PRE, &klcst_exprpre_vfunc);
+  pre->op = op;
   return pre;
 }
 
@@ -115,7 +114,7 @@ static void klcst_exprbin_delete(KlCstExprBin* bin) {
 
 static void klcst_exprpre_delete(KlCstExprPre* pre) {
   klcst_delete(pre->operand);
-  if (klcst_kind(klcast(KlCst*, pre)) == KLCST_EXPR_NEW)
+  if (pre->op == KLTK_NEW)
     klcst_delete(pre->params);
   free(pre);
 }

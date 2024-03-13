@@ -51,6 +51,9 @@ static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_RETURN] = "return",
   [KLTK_BREAK] = "break",
   [KLTK_CONTINUE] = "continue",
+  [KLTK_NEW] = "new",
+  [KLTK_ASYNC] = "async",
+  [KLTK_YIELD] = "yield",
   [KLTK_END] = "EOF",
 };
 

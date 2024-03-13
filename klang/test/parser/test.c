@@ -25,8 +25,8 @@ void loop(void) {
   kllex_next(lex);
   KlCst* expr = klparser_stmtlist(&parser, lex);
 
-  if (expr) {
-    printf("maybe success... root kind : %d\n", klcst_kind(expr));
+  if (parser.errcount == 0) {
+    printf("root kind : %d\n", klcst_kind(expr));
   }
 
   if (expr) klcst_delete(expr);
