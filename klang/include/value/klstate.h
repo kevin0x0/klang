@@ -2,6 +2,7 @@
 #define KEVCC_KLANG_INCLUDE_VM_KLSTATE_H
 
 #include "klang/include/mm/klmm.h"
+#include "klang/include/value/klcoroutine.h"
 #include "klang/include/vm/klstack.h"
 #include "klang/include/value/klmap.h"
 #include "klang/include/value/klclosure.h"
@@ -20,7 +21,7 @@
 #define KLSTATE_CI_STATUS_CCLO  (klbit(2))
 /* callable.kclo valid */
 #define KLSTATE_CI_STATUS_KCLO  (klbit(3))
-/* conditional jump requires a boolean value in the callinfo->top */
+/* conditional jump requires a boolean value at callinfo->top */
 #define KLSTATE_CI_STATUS_CJMP  (klbit(4))
 
 
@@ -52,12 +53,14 @@ typedef struct tagKlState {
   KlCallInfo* callinfo;         /* call information of the closure in execution */
   KlMap* global;                /* store global variables */
   KlCallInfo baseci;            /* the bottom of callinfo stack, never actually used. */
+  KlCoroutine coinfo;           /* coroutine information */
 } KlState;
 
 
 
-KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlMapNodePool* mapnodepool);
+KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlMapNodePool* mapnodepool, KlKClosure* kclo);
 void klstate_delete(KlState* state);
+static inline KlState* klstate_attach_coroutine(KlState* state, KlCoroutine* co);
 
 static inline KlMM* klstate_getmm(KlState* state);
 static inline KlCallInfo* klstate_currci(KlState* state);
@@ -73,6 +76,7 @@ static inline bool klstate_isrunning(KlState* state);
 
 static inline KlValue* klstate_stktop(KlState* state);
 
+KlException klstate_throw_link(KlState* state, KlState* src);
 KlException klstate_throw(KlState* state, KlException type, const char* format, ...);
 
 /* offset must be negative */

@@ -23,4 +23,4 @@ let f = async (name) {
 let a = async f;
 
 f("Kevin");
-f(13);
+f(3);

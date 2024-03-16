@@ -2,6 +2,8 @@
 #define KEVCC_KLANG_INCLUDE_VM_KLEXEC_H
 
 #include "klang/include/value/klcfunc.h"
+#include "klang/include/value/klcoroutine.h"
+#include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klexception.h"
 #include "klang/include/value/klstate.h"
 #include <stddef.h>
@@ -14,13 +16,16 @@
 KlValue* klexec_getfield(KlState* state, KlValue* callable, KlString* op);
 KlException klexec_callc(KlState* state, KlCFunction* cfunc, size_t narg, size_t nret);
 KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* callable, size_t narg);
-static inline KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret);
+KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret);
+KlException klexec_call_noyield(KlState* state, KlValue* callable, size_t narg, size_t nret);
 static inline KlException klexec_method(KlState* state, KlValue* thisobj, KlValue* callable, size_t narg, size_t nret);
 KlException klexec_execute(KlState* state);
 static inline void klexec_pop_callinfo(KlState* state);
 static inline void klexec_push_callinfo(KlState* state);
 static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff);
 KlCallInfo* klexec_alloc_callinfo(KlState* state);
+
+static inline void klexec_setnils(KlValue* vals, size_t ncopy);
 
 /* 'a' should be stack value */
 KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue* c, KlString* op);
@@ -48,22 +53,8 @@ static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int r
   return callinfo;
 }
 
-static inline KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret) {
-  KlCallInfo* prevci = state->callinfo;
-  KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
-  if (kl_unlikely(!newci))
-    return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
-  klvalue_setnil(&newci->env_this);
-  ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
-  KlException exception = klexec_callprepare(state, newci, callable, narg);
-  if (exception) return exception;
-  if (kl_likely(prevci != state->callinfo)) { /* is a klang call ? */
-    state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
-    KlException exception = klexec_execute(state);
-    if (kl_unlikely(exception)) return exception;
-    klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
-  }
-  return KL_E_NONE;
+static inline void klexec_setnils(KlValue* vals, size_t ncopy) {
+  while (ncopy--) klvalue_setnil(vals);
 }
 
 static inline KlException klexec_method(KlState* state, KlValue* thisobj, KlValue* callable, size_t narg, size_t nret) {

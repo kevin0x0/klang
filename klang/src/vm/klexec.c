@@ -16,8 +16,6 @@
 /* extra stack frame size for calling operator method */
 #define KLEXEC_STACKFRAME_EXTRA             (3)
 
-static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset);
-
 static KlException klexec_handle_setfield_exception(KlState* state, KlException exception, KlString* key) {
   if (exception == KL_E_OOM)
     return klstate_throw(state, exception, "out of memory when setting a new field: %s", klstring_content(key));
@@ -57,10 +55,6 @@ KlCallInfo* klexec_alloc_callinfo(KlState* state) {
   return callinfo;
 }
 
-static inline void klexec_setnils(KlValue* vals, size_t ncopy) {
-  while (ncopy--) klvalue_setnil(vals);
-}
-
 KlException klexec_callc(KlState* state, KlCFunction* cfunc, size_t narg, size_t nret) {
   kl_assert(false, "deprecated");
   size_t stkbase = klstack_size(klstate_stack(state)) - narg;
@@ -78,6 +72,53 @@ KlException klexec_callc(KlState* state, KlCFunction* cfunc, size_t narg, size_t
     klstack_move_top(klstate_stack(state), nres - nret);
   }
   return exception;
+}
+
+KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret) {
+  KlCallInfo* prevci = state->callinfo;
+  KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
+  if (kl_unlikely(!newci))
+    return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
+  klvalue_setnil(&newci->env_this);
+  ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
+  KlException exception = klexec_callprepare(state, newci, callable, narg);
+  if (exception) return exception;
+  if (prevci == state->callinfo) {
+    klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
+    return KL_E_NONE;
+  }
+  if (klco_status(&state->coinfo) != KLCO_BLOCKED) {
+    state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
+    exception = klexec_execute(state);
+    if (kl_unlikely(exception)) return exception;
+    if (klco_status(&state->coinfo) != KLCO_BLOCKED)  /* not yield? */
+      klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
+  }
+  return KL_E_NONE;
+}
+
+KlException klexec_call_noyield(KlState* state, KlValue* callable, size_t narg, size_t nret) {
+  KlCallInfo* prevci = state->callinfo;
+  KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
+  if (kl_unlikely(!newci))
+    return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
+  klvalue_setnil(&newci->env_this);
+  ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
+  KlException exception = klexec_callprepare(state, newci, callable, narg);
+  if (exception) return exception;
+  if (prevci == state->callinfo) {
+    klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
+    return KL_E_NONE;
+  }
+  if (klco_status(&state->coinfo) == KLCO_BLOCKED)
+      return klstate_throw(state, KL_E_INVLD, "can not yield across a C function that does not support coroutine");
+  state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
+  exception = klexec_execute(state);
+  if (kl_unlikely(exception)) return exception;
+  if (klco_status(&state->coinfo) == KLCO_BLOCKED)  /* coroutine yield? */
+    return klstate_throw(state, KL_E_INVLD, "can not yield across a C function that does not support coroutine");
+  klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
+  return KL_E_NONE;
 }
 
 /* Prepare for calling a callable object (C function, C closure, klang closure).
@@ -108,7 +149,7 @@ KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* ca
     klexec_push_callinfo(state);
     return KL_E_NONE;
   } else if (kl_likely(klvalue_checktype(callable, KL_COROUTINE))) {  /* is a coroutine ? */
-    return klco_call(klvalue_getobj(callable, KlCoroutine*), state, narg, callinfo->nret);
+    return klco_call(klvalue_getobj(callable, KlState*), state, narg, callinfo->nret);
   } else if (kl_likely(klvalue_checktype(callable, KL_CFUNCTION))) {  /* is a C function ? */
     KlCFunction* cfunc = klvalue_getcfunc(callable);
     callinfo->callable.cfunc = cfunc;
@@ -1510,18 +1551,23 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_GFORLOOP: {
-        /* next instruction must be extra */
-        kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_EXTRA, "something wrong in code generation");
-
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         size_t nret = KLINST_AX_GETX(inst);
-        klexec_savestate(a + nret + 1, callinfo);
-        ptrdiff_t stkbase_save = klexec_savestack(state, stkbase);
-        KlException exception = klexec_call(state, a, nret, nret);
+        KlValue* argbase = a + 1;
+        klexec_savestate(argbase + nret, callinfo);
+        KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
+        if (kl_unlikely(!newci))
+          return klstate_throw(state, KL_E_OOM, "out of memory when do generic for loop");
+        klvalue_setnil(&newci->env_this);   /* just a function call, no 'this' */
+        ptrdiff_t argbase_save = klexec_savestack(state, argbase);
+        KlException exception = klexec_callprepare(state, newci, a, nret);
         if (kl_unlikely(exception)) return exception;
-        stkbase = klexec_restorestack(state, stkbase_save);
-        a = stkbase + KLINST_AX_GETA(inst);
-        klvalue_checktype(a + 1, KL_NIL) ? ++pc : (pc += KLINST_I_GETI(*pc));
+        if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
+          klexec_updateglobal(klexec_restorestack(state, argbase_save));
+        } else {  /* C function or C closure */
+          /* stack may have grown. restore stkbase. */
+          stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+        }
         break;
       }
       case KLOPCODE_ASYNC: {
@@ -1529,28 +1575,22 @@ KlException klexec_execute(KlState* state) {
         klexec_savestate(callinfo->top, callinfo);
         if (kl_unlikely(klvalue_checktype(f, KL_KCLOSURE))) {
           return klstate_throw(state, KL_E_TYPE,
-                               "async should be applied to a closure, got '%s'",
+                               "async should be applied to a klang closure, got '%s'",
                                klvalue_typename(klvalue_gettype(f)));
         }
-        KlCoroutine* co = klco_create(klstate_getmm(state), klvalue_getobj(f, KlKClosure*), state);
-        if (kl_unlikely(!co)) return klstate_throw(state, KL_E_OOM, "out of memory when creating a coroutine");
+        KlState* costate = klco_create(state, klvalue_getobj(f, KlKClosure*));
+        if (kl_unlikely(!costate)) return klstate_throw(state, KL_E_OOM, "out of memory when creating a coroutine");
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);
-        klvalue_setobj(a, co, KL_COROUTINE);
+        klvalue_setobj(a, costate, KL_COROUTINE);
         break;
       }
       case KLOPCODE_YIELD: {
-        KlValue* coval = klstack_raw(klstate_stack(state));
-        KlCoroutine* co = NULL;
+        if (kl_unlikely(!klco_valid(&state->coinfo)))   /* is this 'state' a valid coroutine? */
+          return klstate_throw(state, KL_E_INVLD, "can not yield from outside a coroutine");
         KlValue* res = stkbase + KLINST_AXY_GETA(inst);
         size_t nres = KLINST_AXY_GETX(inst);
         klexec_savestate(res + nres, callinfo);
-        if (kl_unlikely(klstack_size(klstate_stack(state)) == 0                         ||
-                        !klvalue_checktype(coval, KL_COROUTINE)                         ||
-                        klco_state(co = klvalue_getobj(coval, KlCoroutine*)) != state)) {
-          return klstate_throw(state, KL_E_INVLD, "can not yield from outside a coroutine");
-        }
-        co->nyield = nres;
-        co->nwanted = KLINST_AXY_GETY(inst);
+        klco_yield(&state->coinfo, nres, KLINST_AXY_GETY(inst));
         return KL_E_NONE;
       }
       default: {

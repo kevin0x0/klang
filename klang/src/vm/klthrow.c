@@ -10,7 +10,7 @@ bool klthrow_init(KlThrowInfo* info, KlMM* klmm, size_t buflen) {
   info->type = KL_E_NONE;
   info->buflen = buflen;
   info->exception.message = buf;
-  klvalue_setnil(&info->exception.user);
+  klvalue_setnil(&info->exception.eobj);
   return true;
 }
 
@@ -20,8 +20,14 @@ KlException klthrow_internal(KlThrowInfo* info, KlException type, const char* fo
   return type;
 }
 
+KlException klthrow_link(KlThrowInfo* info, KlState* src) {
+  info->type = KL_E_LINK;
+  info->exception.esrc = src;
+  return KL_E_LINK;
+}
+
 KlException klthrow_user(KlThrowInfo* info, KlValue* user_exception) {
   info->type = KL_E_USER;
-  klvalue_setvalue(&info->exception.user, user_exception);
+  klvalue_setvalue(&info->exception.eobj, user_exception);
   return KL_E_USER;
 }

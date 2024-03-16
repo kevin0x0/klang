@@ -11,7 +11,7 @@ static KlGCVirtualFunc klstate_gcvfunc = { .propagate = (KlGCProp)klstate_propag
 static void klstate_correct_callinfo(KlState* state, ptrdiff_t diff);
 
 
-KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlMapNodePool* mapnodepool) {
+KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlMapNodePool* mapnodepool, KlKClosure* kclo) {
   KlState* state = (KlState*)klmm_alloc(klmm, sizeof (KlState));
   if (!state) return NULL;
 
@@ -25,6 +25,7 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
     return NULL;
   }
   klthrow_init(&state->throwinfo, klmm, 128);
+  klco_init(&state->coinfo, kclo);
   state->strpool = strpool;
   state->global = global;
   state->mapnodepool = mapnodepool;
@@ -63,6 +64,7 @@ static KlGCObject* klstate_propagate(KlState* state, KlGCObject* gclist) {
   gclist = klstack_propagate(klstate_stack(state), gclist);
   gclist = klcommon_propagate(state->common, gclist);
   gclist = klthrow_propagate(&state->throwinfo, gclist);
+  gclist = klco_propagate(&state->coinfo, gclist);
   KlCallInfo* callinfo = state->callinfo;
   while (callinfo) {
     if ((callinfo->status & KLSTATE_CI_STATUS_KCLO) || callinfo->status & KLSTATE_CI_STATUS_CCLO)
@@ -110,3 +112,6 @@ KlException klstate_throw(KlState* state, KlException type, const char* format, 
   return exception;
 }
 
+KlException klstate_throw_link(KlState* state, KlState* src) {
+  return klthrow_link(&state->throwinfo, src);
+}
