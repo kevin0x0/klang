@@ -155,6 +155,7 @@ KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* ca
     callinfo->callable.cfunc = cfunc;
     callinfo->status = KLSTATE_CI_STATUS_CFUN;
     callinfo->narg = narg;
+    callinfo->base = klstate_stktop(state) - narg;
     klexec_push_callinfo(state);
     /* do the call */
     KlException exception = klexec_callc(state, cfunc, narg, callinfo->nret);
@@ -165,6 +166,7 @@ KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* ca
     callinfo->callable.clo = klmm_to_gcobj(cclo);
     callinfo->status = KLSTATE_CI_STATUS_CCLO;
     callinfo->narg = narg;
+    callinfo->base = klstate_stktop(state) - narg;
     klexec_push_callinfo(state);
     /* do the call */
     KlException exception = klexec_callc(state, cclo->cfunc, narg, callinfo->nret);

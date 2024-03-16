@@ -1,5 +1,6 @@
 #include "klang/include/value/klcoroutine.h"
 #include "klang/include/mm/klmm.h"
+#include "klang/include/value/klclosure.h"
 #include "klang/include/value/klstate.h"
 #include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klexception.h"
@@ -72,17 +73,21 @@ KlException klco_start(KlState* costate, KlState* caller, size_t narg, size_t nr
 static KlException klco_resume_execute(KlState* costate) {
   KlException exception;
   while (true) {
-    exception = klexec_execute(costate);
-    if (kl_unlikely(exception)) {
-      klco_setstatus(&costate->coinfo, KLCO_DEAD);
-      return exception;
+    KlCallInfo* ci = klstate_currci(costate);
+    if (ci->status & KLSTATE_CI_STATUS_KCLO) {
+      exception = klexec_execute(costate);
+      if (kl_unlikely(exception)) return exception;
+    } else if (ci->status & KLSTATE_CI_STATUS_CFUN) {
+      if (kl_unlikely(exception = ci->callable.cfunc(costate)))
+        return exception;
+      klexec_pop_callinfo(costate);
+    } else if (ci->status & KLSTATE_CI_STATUS_CCLO) {
+      if (kl_unlikely(exception = klcast(KlCClosure*, ci->callable.clo)->cfunc(costate)))
+        return exception;
+      klexec_pop_callinfo(costate);
     }
     if (klco_status(&costate->coinfo) == KLCO_BLOCKED || !klstate_isrunning(costate))
       break;
-
-    /* returned but should continue executing (must be a C function or C closure */
-    /* TODO: execute the finish function */
-    kl_assert(false, "not implemented");
   }
   return KL_E_NONE;
 }

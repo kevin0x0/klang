@@ -24,6 +24,13 @@
 /* conditional jump requires a boolean value at callinfo->top */
 #define KLSTATE_CI_STATUS_CJMP  (klbit(4))
 
+typedef union tagKlCIUD {
+  size_t ui;
+  long long i;
+  float f32;
+  double f64;
+  void* p;
+} KlCIUD;
 
 typedef struct tagKlCallInfo KlCallInfo;
 struct tagKlCallInfo {
@@ -34,8 +41,14 @@ struct tagKlCallInfo {
     KlGCObject* clo;            /* klang closure or C closure(determined by status) */
     KlCFunction* cfunc;         /* C function in execution */
   } callable;
-  KlValue* top;                 /* stack frame top for this call */
-  KlInstruction* savedpc;       /* pointed to current instruction */
+  union {
+    KlValue* top;               /* stack frame top for this klang call */
+    KlValue* base;              /* stack base for C call */
+  };
+  union {
+    KlInstruction* savedpc;     /* pointed to current klang instruction */
+    KlCIUD resume_ud;           /* userdata for C call when coroutine resuming */
+  };
   uint8_t nret;                 /* expected number of returned value */
   uint8_t narg;                 /* actual number of received arguments */
   int16_t retoff;               /* the offset of position relative to stkbase where returned values place. */
