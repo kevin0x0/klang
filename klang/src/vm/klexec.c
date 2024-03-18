@@ -11,6 +11,7 @@
 #include "klang/include/vm/klstack.h"
 #include <stddef.h>
 #include <string.h>
+#include <unistd.h>
 
 
 /* extra stack frame size for calling operator method */
@@ -83,40 +84,11 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
   ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
   KlException exception = klexec_callprepare(state, newci, callable, narg);
   if (exception) return exception;
-  if (prevci == state->callinfo) {
-    klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
-    return KL_E_NONE;
-  }
-  if (klco_status(&state->coinfo) != KLCO_BLOCKED) {
+  if (prevci != state->callinfo) {  /* not executed klang call */
     state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
     exception = klexec_execute(state);
     if (kl_unlikely(exception)) return exception;
-    if (klco_status(&state->coinfo) != KLCO_BLOCKED)  /* not yield? */
-      klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
   }
-  return KL_E_NONE;
-}
-
-KlException klexec_call_noyield(KlState* state, KlValue* callable, size_t narg, size_t nret) {
-  KlCallInfo* prevci = state->callinfo;
-  KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
-  if (kl_unlikely(!newci))
-    return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
-  klvalue_setnil(&newci->env_this);
-  ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
-  KlException exception = klexec_callprepare(state, newci, callable, narg);
-  if (exception) return exception;
-  if (prevci == state->callinfo) {
-    klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
-    return KL_E_NONE;
-  }
-  if (klco_status(&state->coinfo) == KLCO_BLOCKED)
-      return klstate_throw(state, KL_E_INVLD, "can not yield across a C function that does not support coroutine");
-  state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
-  exception = klexec_execute(state);
-  if (kl_unlikely(exception)) return exception;
-  if (klco_status(&state->coinfo) == KLCO_BLOCKED)  /* coroutine yield? */
-    return klstate_throw(state, KL_E_INVLD, "can not yield across a C function that does not support coroutine");
   klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
   return KL_E_NONE;
 }
@@ -282,6 +254,19 @@ static KlException klexec_doindexasmethod(KlState* state, KlValue* indexable, Kl
   klstack_pushvalue(klstate_stack(state), key);
   klstack_pushvalue(klstate_stack(state), val);
   return klexec_callprepare(state, newci, method, 2);
+}
+
+static KlException klexec_domultiargsmethod(KlState* state, KlValue* obj, KlValue* res, size_t narg, KlString* op) {
+  KlValue* method = klexec_getfield(state, obj, op);
+  if (kl_unlikely(!method)) {
+    return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s'",
+                         klstring_content(op), klvalue_typename(klvalue_gettype(obj)));
+  }
+  KlCallInfo* newci = klexec_new_callinfo(state, 1, res - (klstate_stktop(state) - narg));
+  if (kl_unlikely(!newci))
+    return klstate_throw(state, KL_E_OOM, "out of memory when calling indexas operator method");
+  klvalue_setvalue(&newci->env_this, obj);
+  return klexec_callprepare(state, newci, method, narg);
 }
 
 static KlException klexec_dolt(KlState* state, KlValue* a, KlValue* b, KlValue* c) {
@@ -891,7 +876,7 @@ KlException klexec_execute(KlState* state) {
         KlException exception = klexec_callprepare(state, newci, callable, narg);
         if (kl_unlikely(exception)) return exception;
         if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
-          klexec_updateglobal(klexec_restorestack(state, argbase_save) + 1);
+          klexec_updateglobal(klexec_restorestack(state, argbase_save));
         } else {  /* C function or C closure */
           /* stack may have grown. restore stkbase. */
           stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
@@ -1036,6 +1021,28 @@ KlException klexec_execute(KlState* state) {
         klvalue_setobj(a, arr, KL_ARRAY);
         break;
       }
+      case KLOPCODE_ARRPUSH: {
+        KlValue* a = stkbase + KLINST_ABX_GETA(inst);
+        /* first value to be inserted to the array */
+        KlValue* first = stkbase + KLINST_ABX_GETB(inst);
+        size_t nelem = KLINST_ABX_GETX(inst);
+        /* now stack top is first + nelem */
+        klexec_savestate(first + nelem, callinfo);  /* creating array may trigger gc */
+        if (kl_likely(klvalue_checktype(a, KL_ARRAY))) {
+          klarray_push_back(klvalue_getobj(a, KlArray*), first, nelem);
+        } else {
+          ptrdiff_t newbase_save = klexec_savestack(state, first);
+          KlException exception = klexec_domultiargsmethod(state, a, a, nelem, state->common->string.arrpush);
+          if (kl_unlikely(exception)) return exception;
+          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
+            klexec_updateglobal(klexec_restorestack(state, newbase_save));
+          } else {  /* C function or C closure */
+            /* stack may have grown. restore stkbase. */
+            stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+          }
+        }
+        break;
+      }
       case KLOPCODE_MKCLASS: {
         KlValue* a = stkbase + KLINST_ABTX_GETA(inst);
         /* this instruction tells us current stack top */
@@ -1110,7 +1117,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           if (klvalue_checktype(indexable, KL_MAP)) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
-            if (klvalue_canrawequal(key)) {
+            if (klvalue_canrawequal(key)) { /* simple types that can apply raw equal. fast search and set */
               KlMapIter itr = klmap_search(map, key);
               if (itr) {
                 klvalue_setvalue(&itr->value, val);
@@ -1120,7 +1127,7 @@ KlException klexec_execute(KlState* state) {
                   return klstate_throw(state, KL_E_OOM, "out of memory when inserting a k-v pair to a map");
               }
               break;
-            }
+            } /* else fall through. try operator method */
           }
           klexec_savestate(callinfo->top, callinfo);
           KlException exception = klexec_doindexasmethod(state, val, indexable, key);
@@ -1592,7 +1599,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* res = stkbase + KLINST_AXY_GETA(inst);
         size_t nres = KLINST_AXY_GETX(inst);
         klexec_savestate(res + nres, callinfo);
-        klco_yield(&state->coinfo, nres, KLINST_AXY_GETY(inst));
+        klco_yield(&state->coinfo, res, nres, KLINST_AXY_GETY(inst));
         return KL_E_NONE;
       }
       default: {

@@ -78,9 +78,11 @@ static void klcst_exprunit_delete(KlCstExprUnit* unit) {
       break;
     }
     case KLCST_EXPR_ARR: {
-      klcst_delete(unit->array.exprs);
-      if (unit->array.stmts)
-        klcst_delete(unit->array.stmts);
+      klcst_delete(unit->array.vals);
+      break;
+    }
+    case KLCST_EXPR_ARRGEN: {
+      klcst_delete(unit->array.generator.stmts);
       break;
     }
     case KLCST_EXPR_CLASS: {

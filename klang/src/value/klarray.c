@@ -42,6 +42,7 @@ bool klarray_check_capacity(KlArray* array, size_t new_capacity) {
   new_capacity = new_capacity == 0 ? 4 : new_capacity;
   if (klarray_capacity(array) >= new_capacity)
     return true;
+  new_capacity = klarray_capacity(array) * 2 > new_capacity ? klarray_capacity(array) * 2 : new_capacity;
   KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(array));
   KlValue* new_array = (KlValue*)klmm_realloc(klmm, array->begin, sizeof (KlValue) * new_capacity, sizeof (KlValue) * klarray_capacity(array));
   if (!new_array) return false;

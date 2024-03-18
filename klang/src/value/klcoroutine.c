@@ -14,6 +14,7 @@
 void klco_init(KlCoroutine* co, KlKClosure* kclo) {
   co->kclo = kclo;
   co->status = KLCO_NORMAL;
+  co->allow_yield = kclo != NULL;
 }
 
 KlState* klco_create(KlState* state, KlKClosure* kclo) {
@@ -42,24 +43,14 @@ KlException klco_start(KlState* costate, KlState* caller, size_t narg, size_t nr
   KlValue kclo;
   klvalue_setobj(&kclo, costate->coinfo.kclo, KL_KCLOSURE);
   klco_setstatus(&costate->coinfo, KLCO_RUNNING); /* now we run this coroutine */
-  KlException exception = klexec_call(costate, &kclo, narg, nret);
-  if (kl_unlikely(exception)) {
-    klco_setstatus(&costate->coinfo, KLCO_DEAD);
-    return exception;
-  }
-  /* the caller will never be called until this function return, so the argbase should not change. */
-  kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
-  if (klco_status(&costate->coinfo) == KLCO_BLOCKED) { /* yield ? */
-    size_t nres = costate->coinfo.nyield;
-    KlValue* firstres = klstate_getval(costate, -nres);
-    size_t ncopy = nret < nres ? nret : nres;
-    while (ncopy--)   /* copy results */
-      klvalue_setvalue(argbase++, firstres++);
-    if (nret > nres)  /* completing missing returned value */
-      klexec_setnils(argbase, nret - nres);
-    klstack_move_top(klstate_stack(costate), -nres);
-    return KL_E_NONE;
-  } else {  /* else returned */
+  if (setjmp(costate->coinfo.yieldpos) == KLCOJMP_NORMAL) {
+    KlException exception = klexec_call(costate, &kclo, narg, nret);
+    if (kl_unlikely(exception)) {
+      klco_setstatus(&costate->coinfo, KLCO_DEAD);
+      return exception;
+    }
+    /* the caller will never be called until this function return, so the argbase should not change. */
+    kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
     KlValue* firstres = klexec_restorestack(costate, costate->coinfo.respos_save);
     size_t ncopy = nret;
     while (ncopy--)   /* copy results */
@@ -67,12 +58,24 @@ KlException klco_start(KlState* costate, KlState* caller, size_t narg, size_t nr
     klstack_set_top(klstate_stack(costate), klexec_restorestack(costate, costate->coinfo.respos_save));
     klco_setstatus(&costate->coinfo, KLCO_DEAD);
     return KL_E_NONE;
+  } else {  /* yielded */
+    /* the caller will never be called until this function return, so the argbase should not change. */
+    kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
+    size_t nres = costate->coinfo.nyield;
+    KlValue* firstres = costate->coinfo.yieldvals;
+    size_t ncopy = nret < nres ? nret : nres;
+    while (ncopy--)   /* copy results */
+      klvalue_setvalue(argbase++, firstres++);
+    if (nret > nres)  /* completing missing returned value */
+      klexec_setnils(argbase, nret - nres);
+    klstack_set_top(klstate_stack(costate), costate->coinfo.yieldvals);
+    return KL_E_NONE;
   }
 }
 
 static KlException klco_resume_execute(KlState* costate) {
   KlException exception;
-  while (true) {
+  while (klstate_isrunning(costate)) {
     KlCallInfo* ci = klstate_currci(costate);
     if (ci->status & KLSTATE_CI_STATUS_KCLO) {
       exception = klexec_execute(costate);
@@ -86,8 +89,6 @@ static KlException klco_resume_execute(KlState* costate) {
         return exception;
       klexec_pop_callinfo(costate);
     }
-    if (klco_status(&costate->coinfo) == KLCO_BLOCKED || !klstate_isrunning(costate))
-      break;
   }
   return KL_E_NONE;
 }
@@ -111,30 +112,32 @@ KlException klco_resume(KlState* costate, KlState* caller, size_t narg, size_t n
   if (narg < nwanted)
     klstack_pushnil(klstate_stack(costate), nwanted - narg);
   klco_setstatus(&costate->coinfo, KLCO_RUNNING);
-  KlException exception = klco_resume_execute(costate);
-  if (kl_unlikely(exception)) {
-    klco_setstatus(&costate->coinfo, KLCO_DEAD);
-    return exception;
-  }
-  /* the caller will never be called until this function return, so the argbase should not change. */
-  kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
-  if (klco_status(&costate->coinfo) == KLCO_BLOCKED) { /* yield ? */
-    size_t nres = costate->coinfo.nyield;
-    KlValue* firstres = klstate_getval(costate, -nres);
-    size_t ncopy = nret < nres ? nret : nres;
-    while (ncopy--)   /* copy results */
-      klvalue_setvalue(argbase++, firstres++);
-    if (nret > nres)  /* completing missing returned value */
-      klexec_setnils(argbase, nret - nres);
-    klstack_move_top(klstate_stack(costate), -nres);
-    return KL_E_NONE;
-  } else {  /* else returned */
+  if (setjmp(costate->coinfo.yieldpos) == KLCOJMP_NORMAL) {
+    KlException exception = klco_resume_execute(costate);
+    if (kl_unlikely(exception)) {
+      klco_setstatus(&costate->coinfo, KLCO_DEAD);
+      return exception;
+    }
+    /* the caller will never be called until this function return, so the argbase should not change. */
+    kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
     KlValue* firstres = klexec_restorestack(costate, costate->coinfo.respos_save);
     size_t ncopy = nret;
     while (ncopy--)   /* copy results */
       klvalue_setvalue(argbase++, firstres++);
     klstack_set_top(klstate_stack(costate), klexec_restorestack(costate, costate->coinfo.respos_save));
     klco_setstatus(&costate->coinfo, KLCO_DEAD);
+    return KL_E_NONE;
+  } else {  /* yielded */
+    /* the caller will never be called until this function return, so the argbase should not change. */
+    kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
+    size_t nres = costate->coinfo.nyield;
+    KlValue* firstres = costate->coinfo.yieldvals;
+    size_t ncopy = nret < nres ? nret : nres;
+    while (ncopy--)   /* copy results */
+      klvalue_setvalue(argbase++, firstres++);
+    if (nret > nres)  /* completing missing returned value */
+      klexec_setnils(argbase, nret - nres);
+    klstack_set_top(klstate_stack(costate), costate->coinfo.yieldvals);
     return KL_E_NONE;
   }
 }

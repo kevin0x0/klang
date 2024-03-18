@@ -24,6 +24,7 @@ typedef struct tagKlCommon {
     KlString* le;
     KlString* ge;
     KlString* hash;
+    KlString* arrpush;
   } string;
   struct {
     KlClass* map;

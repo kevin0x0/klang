@@ -30,9 +30,12 @@ typedef struct tagKlCstExprUnit {
       KlCst** vals;                     /* values */
       size_t npair;                     /* number of k-v pairs */
     } map;
-    struct {
-      KlCst* exprs;                     /* expressions */
-      KlCst* stmts;                     /* code that generates an array */
+    union {
+      struct {
+        KlStrDesc arrid;                /* temporary identifier for array */
+        KlCst* stmts;                   /* code that generates an array */
+      } generator;
+      KlCst* vals;                      /* tuple */
     } array;                            /* array constructor */
     struct {
       KlType type;                      /* boolean, integer, string or nil */
@@ -80,6 +83,10 @@ typedef struct tagKlCstExprPost {
       KlCst* operand;
       KlStrDesc field;
     } dot;
+    struct {
+      KlCst* operand;
+      KlCst* vals;
+    } arrpush;
   };
 } KlCstExprPost;
 

@@ -16,11 +16,7 @@ void loop(void) {
   Ko* err = kofile_attach(stderr);
   KlLex* lex = kllex_create(input, err, filename, strtab);
   KlParser parser;
-  parser.err = err;
-  parser.errcount = 0;
-  parser.inputname = (char*)filename;
-  parser.config.curl = '~';
-  parser.config.tabstop = 8;
+  klparser_init(&parser, lex->strtab, err, (char*)filename);
 
   kllex_next(lex);
   KlCst* expr = klparser_stmtlist(&parser, lex);

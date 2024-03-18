@@ -28,7 +28,7 @@ static inline size_t klarray_capacity(KlArray* array);
 
 static inline bool klarray_expand(KlArray* array);
 
-static inline bool klarray_push_back(KlArray* array, KlValue* value);
+static inline bool klarray_push_back(KlArray* array, KlValue* vals, size_t nval);
 static inline void klarray_pop_back(KlArray* array);
 static inline void klarray_multipop(KlArray* array, size_t count);
 static inline KlValue* klarray_top(KlArray* array);
@@ -59,11 +59,12 @@ static inline bool klarray_expand(KlArray* array) {
   return klarray_check_capacity(array, klarray_size(array) * 2);
 }
 
-static inline bool klarray_push_back(KlArray* array, KlValue* value) {
-  if (kl_unlikely(array->current == array->end && !klarray_expand(array))) {
+static inline bool klarray_push_back(KlArray* array, KlValue* vals, size_t nval) {
+  if (kl_unlikely(!klarray_check_capacity(array, klarray_size(array) + nval))) {
     return false;
   }
-  klvalue_setvalue(array->current++, value);
+  while (nval--)
+    klvalue_setvalue(array->current++, vals++);
   return true;
 }
 
@@ -95,10 +96,6 @@ static inline void klarray_index(KlArray* array, size_t index, KlValue* val) {
 static inline KlException klarray_indexas(KlArray* array, size_t index, KlValue* val) {
   if (index < klarray_size(array)) {
     klvalue_setvalue(klarray_access(array, index), val);
-    return KL_E_NONE;
-  } else if (index == klarray_size(array)) {
-    if (kl_unlikely(!klarray_push_back(array, val)))
-      return KL_E_OOM;
     return KL_E_NONE;
   }
   return KL_E_RANGE;

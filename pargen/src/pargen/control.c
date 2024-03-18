@@ -73,10 +73,10 @@ void kev_pargen_control(KevPOptions* options) {
   kev_pargen_output_set_func(&func_group, options->strs[KEV_PARGEN_LANG_NAME]);
   KevFuncMap* funcs = kev_pargen_control_get_funcmap(&table_info, &func_group);
   /* generate source code from a template file if output path is specified */
-  if (options->strs[KEV_PARGEN_OUT_SRC_PATH])
-    kev_pargen_output(options->strs[KEV_PARGEN_OUT_SRC_PATH], options->strs[KEV_PARGEN_SRC_TMPL_PATH], parser_state.vars, funcs);
-  if (options->strs[KEV_PARGEN_OUT_INC_PATH])
-    kev_pargen_output(options->strs[KEV_PARGEN_OUT_INC_PATH], options->strs[KEV_PARGEN_INC_TMPL_PATH], parser_state.vars, funcs);
+//  if (options->strs[KEV_PARGEN_OUT_SRC_PATH])
+ //   kev_pargen_output(options->strs[KEV_PARGEN_OUT_SRC_PATH], options->strs[KEV_PARGEN_SRC_TMPL_PATH], parser_state.vars, funcs);
+  //if (options->strs[KEV_PARGEN_OUT_INC_PATH])
+   // kev_pargen_output(options->strs[KEV_PARGEN_OUT_INC_PATH], options->strs[KEV_PARGEN_INC_TMPL_PATH], parser_state.vars, funcs);
   /* release resources */
   kev_funcmap_delete(funcs);
   kev_pargen_convert_destroy(&table_info);

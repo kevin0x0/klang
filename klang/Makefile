@@ -52,6 +52,9 @@ $(LIB_DIR)klstring.o : $(SRC_DIR)value/klstring.c | create_lib_dir
 $(LIB_DIR)klvalue.o : $(SRC_DIR)value/klvalue.c | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+$(LIB_DIR)klstate.o : $(SRC_DIR)value/klstate.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
 
 # klang/vm/
 $(LIB_DIR)klcommon.o : $(SRC_DIR)vm/klcommon.c | create_lib_dir
@@ -61,9 +64,6 @@ $(LIB_DIR)klexec.o : $(SRC_DIR)vm/klexec.c | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(LIB_DIR)klstack.o : $(SRC_DIR)vm/klstack.c | create_lib_dir
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-$(LIB_DIR)klstate.o : $(SRC_DIR)vm/klstate.c | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(LIB_DIR)klthrow.o : $(SRC_DIR)vm/klthrow.c | create_lib_dir

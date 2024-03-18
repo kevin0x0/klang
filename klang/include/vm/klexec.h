@@ -17,7 +17,6 @@ KlValue* klexec_getfield(KlState* state, KlValue* callable, KlString* op);
 KlException klexec_callc(KlState* state, KlCFunction* cfunc, size_t narg, size_t nret);
 KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* callable, size_t narg);
 KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret);
-KlException klexec_call_noyield(KlState* state, KlValue* callable, size_t narg, size_t nret);
 static inline KlException klexec_method(KlState* state, KlValue* thisobj, KlValue* callable, size_t narg, size_t nret);
 KlException klexec_execute(KlState* state);
 static inline void klexec_pop_callinfo(KlState* state);

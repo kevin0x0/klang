@@ -68,7 +68,7 @@ void fibonacci(KlState* state) {
 
 void coroutine(KlState* state) {
   fibonacci(state);
-  KlCoroutine* co = klco_create(klstate_getmm(state), klvalue_getobj(klstate_getval(state, -1), KlKClosure*), state);
+  KlState* co = klco_create(state, klvalue_getobj(klstate_getval(state, -1), KlKClosure*));
   klapi_setobj(state, -1, co, KL_COROUTINE);
 }
 

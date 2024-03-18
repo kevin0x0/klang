@@ -38,7 +38,7 @@ KlState* klapi_new_state(KlMM* klmm) {
     return NULL;
   }
 
-  KlState* state = klstate_create(klmm, global, common, strpool, mapnodepool);
+  KlState* state = klstate_create(klmm, global, common, strpool, mapnodepool, NULL);
   if (!state) {
     klmm_register_root(klmm, original_root);
     klmapnodepool_unpin(mapnodepool);

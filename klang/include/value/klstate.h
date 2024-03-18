@@ -73,7 +73,6 @@ typedef struct tagKlState {
 
 KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlMapNodePool* mapnodepool, KlKClosure* kclo);
 void klstate_delete(KlState* state);
-static inline KlState* klstate_attach_coroutine(KlState* state, KlCoroutine* co);
 
 static inline KlMM* klstate_getmm(KlState* state);
 static inline KlCallInfo* klstate_currci(KlState* state);
