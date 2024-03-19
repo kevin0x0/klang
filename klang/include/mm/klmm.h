@@ -23,11 +23,11 @@
 typedef enum tagKlGCStat { KL_GC_INACCESSIBLE, KL_GC_ACCESSIBLE } KlGCStat;
 
 
-struct tagKlGCObject;
-struct tagKlMM;
+typedef struct tagKlGCObject KlGCObject;
+typedef struct tagKlMM KlMM;
 
-typedef void (*KlGCDestructor)(struct tagKlGCObject* gcobj);
-typedef struct tagKlGCObject* (*KlGCProp)(struct tagKlGCObject* gcobj, struct tagKlGCObject* gclist);
+typedef void (*KlGCDestructor)(KlGCObject* gcobj);
+typedef struct tagKlGCObject* (*KlGCProp)(KlGCObject* gcobj, KlGCObject* gclist);
 
 typedef struct tagKlGCVirtualFunc {
   KlGCDestructor destructor;
@@ -35,24 +35,24 @@ typedef struct tagKlGCVirtualFunc {
 } KlGCVirtualFunc;
 
 /* this serves as the base class of collectable object */
-typedef struct tagKlGCObject {
-  struct tagKlGCObject* next;               /* link all object in the same level */
+struct tagKlGCObject {
+  KlGCObject* next;                         /* link all object in the same level */
   union {
     struct {
-      struct tagKlGCObject* next_reachable; /* link all accessible object in the same level */
-      struct tagKlMM* klmm;
+      KlGCObject* next_reachable;           /* link all accessible object in the same level */
+      KlMM* klmm;
       KlGCVirtualFunc* virtualfunc;
       KlGCStat gc_state;
     } created;
     struct {
-      struct tagKlGCObject* next_level;
-      struct tagKlGCObject* tail;           /* point to the list tail of current level */
+      KlGCObject* next_level;
+      KlGCObject* tail;                     /* point to the list tail of current level */
     } creating;
   };                                        /* anonymous union */
-} KlGCObject;
+};
 
 
-typedef struct tagKlMM {
+struct tagKlMM {
   KlGCObject allgc;                         /* top level */
   KlGCObject* currlevel;                    /* current level */
   KlGCObject* root;
@@ -60,7 +60,7 @@ typedef struct tagKlMM {
   /* if mem_used exceeds this limit, the garbage collection will start.
    * the value of limit will dynamically change. */
   size_t limit; 
-} KlMM;
+};
 
 static inline void klmm_init(KlMM* klmm, size_t limit);
 void klmm_destroy(KlMM* klmm);
