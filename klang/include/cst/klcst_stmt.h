@@ -1,6 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_AST_KLCST_STMT_H
 #define KEVCC_KLANG_INCLUDE_AST_KLCST_STMT_H
 #include "klang/include/cst/klcst.h"
+#include "klang/include/parse/kllex.h"
 #include "klang/include/parse/klstrtab.h"
 #include <stddef.h>
 
@@ -97,19 +98,19 @@ typedef struct tagKlCstStmtContinue {
   KlCst base;
 } KlCstStmtContinue;
 
-KlCstStmtLet* klcst_stmtlet_create(void);
-KlCstStmtAssign* klcst_stmtassign_create(void);
-KlCstStmtExpr* klcst_stmtexpr_create(void);
-KlCstStmtIf* klcst_stmtif_create(void);
-KlCstStmtVFor* klcst_stmtvfor_create(void);
-KlCstStmtIFor* klcst_stmtifor_create(void);
-KlCstStmtGFor* klcst_stmtgfor_create(void);
-KlCstStmtCFor* klcst_stmtcfor_create(void);
-KlCstStmtWhile* klcst_stmtwhile_create(void);
-KlCstStmtList* klcst_stmtlist_create(void);
-KlCstStmtRepeat* klcst_stmtrepeat_create(void);
-KlCstStmtReturn* klcst_stmtreturn_create(void);
-KlCstStmtBreak* klcst_stmtbreak_create(void);
-KlCstStmtContinue* klcst_stmtcontinue_create(void);
+KlCstStmtLet* klcst_stmtlet_create(KlStrDesc* lvals, size_t nlval, KlCst* rvals, KlFilePos begin, KlFilePos end);
+KlCstStmtAssign* klcst_stmtassign_create(KlCst* lvals, KlCst* rvals, KlFilePos begin, KlFilePos end);
+KlCstStmtExpr* klcst_stmtexpr_create(KlCst* expr, KlFilePos begin, KlFilePos end);
+KlCstStmtIf* klcst_stmtif_create(KlCst* cond, KlCst* if_block, KlCst* else_block, KlFilePos begin, KlFilePos end);
+KlCstStmtVFor* klcst_stmtvfor_create(KlStrDesc* ids, size_t nid, KlCst* block, KlFilePos begin, KlFilePos end);
+KlCstStmtIFor* klcst_stmtifor_create(KlStrDesc id, KlCst* ibegin, KlCst* iend, KlCst* istep, KlCst* block, KlFilePos begin, KlFilePos end);
+KlCstStmtGFor* klcst_stmtgfor_create(KlStrDesc* ids, size_t nid, KlCst* expr, KlCst* block, KlFilePos begin, KlFilePos end);
+KlCstStmtCFor* klcst_stmtcfor_create(KlCst* init, KlCst* cond, KlCst* post, KlCst* block, KlFilePos begin, KlFilePos end);
+KlCstStmtWhile* klcst_stmtwhile_create(KlCst* cond, KlCst* block, KlFilePos begin, KlFilePos end);
+KlCstStmtList* klcst_stmtlist_create(KlCst** stmts, size_t nstmt, KlFilePos begin, KlFilePos end);
+KlCstStmtRepeat* klcst_stmtrepeat_create(KlCst* block, KlCst* cond, KlFilePos begin, KlFilePos end);
+KlCstStmtReturn* klcst_stmtreturn_create(KlCst* retval, KlFilePos begin, KlFilePos end);
+KlCstStmtBreak* klcst_stmtbreak_create(KlFilePos begin, KlFilePos end);
+KlCstStmtContinue* klcst_stmtcontinue_create(KlFilePos begin, KlFilePos end);
 
 #endif

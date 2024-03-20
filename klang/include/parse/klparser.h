@@ -34,7 +34,7 @@ KlCst* klparser_exprunit(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprpost(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprpre(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprbin(KlParser* parser, KlLex* lex, int prio);
-KlCst* klparser_exprter(KlParser* parser, KlLex* lex);
+KlCst* klparser_exprsel(KlParser* parser, KlLex* lex);
 
 KlCst* klparser_stmt(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtlet(KlParser* parser, KlLex* lex);
@@ -74,28 +74,22 @@ static inline bool klparser_check(KlParser* parser, KlLex* lex, KlTokenKind kind
 }
 
 static inline KlCst* klparser_expr(KlParser* parser, KlLex* lex) {
-  return klparser_exprter(parser, lex);
+  return klparser_exprsel(parser, lex);
 }
 
 static inline KlCst* klparser_stmtbreak(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_BREAK), "expect 'break'");
-  KlFilePos begin = lex->tok.begin;
-  KlFilePos end = lex->tok.end;
+  KlCstStmtBreak* stmtbreak = klcst_stmtbreak_create(lex->tok.begin, lex->tok.end);
   kllex_next(lex);
-  KlCstStmtBreak* stmtbreak = klcst_stmtbreak_create();
   if (kl_unlikely(!stmtbreak)) return klparser_error_oom(parser, lex);
-  klcst_setposition(klcast(KlCst*, stmtbreak), begin, end);
   return klcast(KlCst*, stmtbreak);
 }
 
 static inline KlCst* klparser_stmtcontinue(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_CONTINUE), "expect 'continue'");
-  KlFilePos begin = lex->tok.begin;
-  KlFilePos end = lex->tok.end;
+  KlCstStmtContinue* stmtcontinue = klcst_stmtcontinue_create(lex->tok.begin, lex->tok.end);
   kllex_next(lex);
-  KlCstStmtContinue* stmtcontinue = klcst_stmtcontinue_create();
   if (kl_unlikely(!stmtcontinue)) return klparser_error_oom(parser, lex);
-  klcst_setposition(klcast(KlCst*, stmtcontinue), begin, end);
   return klcast(KlCst*, stmtcontinue);
 }
 

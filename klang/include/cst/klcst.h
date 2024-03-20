@@ -3,6 +3,19 @@
 
 
 #include "klang/include/parse/kllex.h"
+
+#define klcst_alloc(Type)                   ((Type*)malloc(sizeof (Type)))
+
+#define klcst_begin(cst)                    (klcast(KlCst*, (cst))->begin)
+#define klcst_end(cst)                      (klcast(KlCst*, (cst))->end)
+#define klcst_setposition(cst, begin, end)  (klcst_setposition_raw(klcast(KlCst*, (cst)), (begin), (end)))
+#define klcst_init(cst, vfunc)              (klcst_init_raw(klcast(KlCst*, (cst)), (vfunc)))
+#define klcst_kind(cst)                     (klcst_kind_raw(klcast(KlCst*, (cst))))
+#define klcst_destroy(cst)                  (klcst_destroy_raw(klcast(KlCst*, (cst))))
+#define klcst_delete(cst)                   (klcst_delete_raw(klcast(KlCst*, (cst))))
+#define klcst(cst)                          (klcast(KlCst*, (cst)))
+
+
 typedef enum tagKlCstKind {
   KLCST_EXPR_ARR, KLCST_EXPR_UNIT = KLCST_EXPR_ARR, KLCST_EXPR = KLCST_EXPR_ARR,
   KLCST_EXPR_ARRGEN,
@@ -15,6 +28,7 @@ typedef enum tagKlCstKind {
   KLCST_EXPR_TUPLE, KLCST_EXPR_UNIT_END = KLCST_EXPR_TUPLE,
 
   KLCST_EXPR_PRE,
+  KLCST_EXPR_NEW,
 
   KLCST_EXPR_INDEX, KLCST_EXPR_POST = KLCST_EXPR_INDEX,
   KLCST_EXPR_DOT,
@@ -24,7 +38,7 @@ typedef enum tagKlCstKind {
 
   KLCST_EXPR_BIN,
 
-  KLCST_EXPR_TER, KLCST_EXPR_END = KLCST_EXPR_TER,
+  KLCST_EXPR_SEL, KLCST_EXPR_END = KLCST_EXPR_SEL,
 
   KLCST_STMT_LET, KLCST_STMT = KLCST_STMT_LET,
   KLCST_STMT_ASSIGN,
@@ -52,44 +66,49 @@ typedef enum tagKlCstKind {
 #define klcst_is_expr(type)         (type >= KLCST_EXPR && type <= KLCST_EXPR_END)
 
 
-typedef struct tagKlCstVirtualFunc KlCstVirtualFunc;
+typedef struct tagKlCstInfo KlCstInfo;
 
 /* this serves as the base class of concrete syntax tree node,
  * and will be contained to the header of any other node.
  */
 
 typedef struct tagKlCst {
-  KlCstKind kind;
-  KlCstVirtualFunc* vfunc;
+  KlCstInfo* info;
   KlFilePos begin;
   KlFilePos end;
 } KlCst;
 
 typedef void (*KlCstDelete)(KlCst* ast);
 
-struct tagKlCstVirtualFunc {
-  KlCstDelete cstdelete;
+struct tagKlCstInfo {
+  KlCstDelete destructor;
+  KlCstKind kind;
 };
 
-static inline void klcst_init(KlCst* cst, KlCstKind type, KlCstVirtualFunc* vfunc);
-static inline void klcst_delete(KlCst* cst);
-static inline KlCstKind klcst_kind(KlCst* cst);
-static inline void klcst_setposition(KlCst* cst, KlFilePos begin, KlFilePos end);
+static inline void klcst_init_raw(KlCst* cst, KlCstInfo* vfunc);
+static inline void klcst_delete_raw(KlCst* cst);
+static inline void klcst_destroy_raw(KlCst* cst);
+static inline KlCstKind klcst_kind_raw(KlCst* cst);
+static inline void klcst_setposition_raw(KlCst* cst, KlFilePos begin, KlFilePos end);
 
-static inline void klcst_init(KlCst* cst, KlCstKind type, KlCstVirtualFunc* vfunc) {
-  cst->kind = type;
-  cst->vfunc = vfunc;
+static inline void klcst_init_raw(KlCst* cst, KlCstInfo* vfunc) {
+  cst->info = vfunc;
 }
 
-static inline void klcst_delete(KlCst* cst) {
-  cst->vfunc->cstdelete(cst);
+static inline void klcst_delete_raw(KlCst* cst) {
+  cst->info->destructor(cst);
+  free(cst);
 }
 
-static inline KlCstKind klcst_kind(KlCst* cst) {
-  return cst->kind;
+static inline void klcst_destroy_raw(KlCst* cst) {
+  cst->info->destructor(cst);
 }
 
-static inline void klcst_setposition(KlCst* cst, KlFilePos begin, KlFilePos end) {
+static inline KlCstKind klcst_kind_raw(KlCst* cst) {
+  return cst->info->kind;
+}
+
+static inline void klcst_setposition_raw(KlCst* cst, KlFilePos begin, KlFilePos end) {
   cst->begin = begin;
   cst->end = end;
 }
