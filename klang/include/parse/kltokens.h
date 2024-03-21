@@ -17,6 +17,7 @@ typedef enum tagKlTokenKind {
   KLTK_MUL,
   KLTK_DIV,
   KLTK_MOD,
+  KLTK_APPEND,
   /* compare */
   KLTK_LT,
   KLTK_LE,

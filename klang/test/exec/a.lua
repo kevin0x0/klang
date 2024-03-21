@@ -11,4 +11,4 @@ local f = nil
 f = function(n)
   return n <= 1 and n or f(n - 1) + f(n - 2)
 end
-print(f(35))
+print(f(36))

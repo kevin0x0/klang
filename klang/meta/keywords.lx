@@ -14,6 +14,9 @@ def boolean(KLTK_BOOLVAL):
 def nil(KLTK_NIL):
   (KLTK_NIL) $nil
 
+def concat(KLTK_CONCAT):
+  (KLTK_CONCAT) $\.\.
+
 def add(KLTK_ADD):
   (KLTK_ADD) $\+
 
@@ -29,8 +32,8 @@ def div(KLTK_DIV):
 def mod(KLTK_MOD):
   (KLTK_MOD) $%
 
-def concat(KLTK_CONCAT):
-  (KLTK_CONCAT) $\.\.
+def append(KLTK_APPEND):
+  (KLTK_APPEND) $\+\+
 
 def dot(KLTK_DOT):
   (KLTK_DOT) $\.

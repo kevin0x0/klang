@@ -36,7 +36,7 @@ static KlCstInfo klcst_dot_vfunc = { .destructor = (KlCstDelete)klcst_dot_destro
 static KlCstInfo klcst_func_vfunc = { .destructor = (KlCstDelete)klcst_func_destroy, .kind = KLCST_EXPR_FUNC };
 static KlCstInfo klcst_sel_vfunc = { .destructor = (KlCstDelete)klcst_sel_destroy, .kind = KLCST_EXPR_SEL };
 
-KlCstIdentifier* klcst_id_create(KlStrDesc id, KlFilePos begin, KlFilePos end) {
+KlCstIdentifier* klcst_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset end) {
   KlCstIdentifier* cstid = klcst_alloc(KlCstIdentifier);
   if (kl_unlikely(!cstid)) return NULL;
   cstid->id = id;
@@ -45,7 +45,7 @@ KlCstIdentifier* klcst_id_create(KlStrDesc id, KlFilePos begin, KlFilePos end) {
   return cstid;
 }
 
-KlCstMap* klcst_map_create(KlCst** keys, KlCst** vals, size_t npair, KlFilePos begin, KlFilePos end) {
+KlCstMap* klcst_map_create(KlCst** keys, KlCst** vals, size_t npair, KlFileOffset begin, KlFileOffset end) {
   KlCstMap* cstmap = klcst_alloc(KlCstMap);
   if (kl_unlikely(!cstmap)) {
     for (size_t i = 0; i < npair; ++i) {
@@ -64,7 +64,7 @@ KlCstMap* klcst_map_create(KlCst** keys, KlCst** vals, size_t npair, KlFilePos b
   return cstmap;
 }
 
-KlCstArray* klcst_array_create(KlCst* vals, KlFilePos begin, KlFilePos end) {
+KlCstArray* klcst_array_create(KlCst* vals, KlFileOffset begin, KlFileOffset end) {
   KlCstArray* cstarray = klcst_alloc(KlCstArray);
   if (kl_unlikely(!cstarray)) {
       klcst_delete_raw(vals);
@@ -76,20 +76,20 @@ KlCstArray* klcst_array_create(KlCst* vals, KlFilePos begin, KlFilePos end) {
   return cstarray;
 }
 
-KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCst* stmts, KlFilePos begin, KlFilePos end) {
+KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCst* block, KlFileOffset begin, KlFileOffset end) {
   KlCstArrayGenerator* cstarraygenerator = klcst_alloc(KlCstArrayGenerator);
   if (kl_unlikely(!cstarraygenerator)) {
-      klcst_delete_raw(stmts);
+      klcst_delete_raw(block);
     return NULL;
   }
   cstarraygenerator->arrid = arrid;
-  cstarraygenerator->stmts = stmts;
+  cstarraygenerator->block = block;
   klcst_setposition(cstarraygenerator, begin, end);
   klcst_init(cstarraygenerator, &klcst_arraygenerator_vfunc);
   return cstarraygenerator;
 }
 
-KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlFilePos begin, KlFilePos end) {
+KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlFileOffset begin, KlFileOffset end) {
   KlCstClass* cstclass = klcst_alloc(KlCstClass);
   if (kl_unlikely(!cstclass)) {
     for (size_t i = 0; i < nfield; ++i) {
@@ -107,7 +107,7 @@ KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t
   return cstclass;
 }
 
-KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFilePos begin, KlFilePos end) {
+KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
   cstconstant->string = string;
@@ -117,7 +117,7 @@ KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFilePos begin, K
   return cstconstant;
 }
 
-KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFilePos begin, KlFilePos end) {
+KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
   cstconstant->intval = intval;
@@ -127,7 +127,7 @@ KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFilePos begin, KlFi
   return cstconstant;
 }
 
-KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFilePos begin, KlFilePos end) {
+KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
   cstconstant->boolval = boolval;
@@ -137,7 +137,7 @@ KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFilePos begin, KlF
   return cstconstant;
 }
 
-KlCstConstant* klcst_constant_create_nil(KlFilePos begin, KlFilePos end) {
+KlCstConstant* klcst_constant_create_nil(KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
   cstconstant->type = KL_NIL;
@@ -146,7 +146,7 @@ KlCstConstant* klcst_constant_create_nil(KlFilePos begin, KlFilePos end) {
   return cstconstant;
 }
 
-KlCstVararg* klcst_vararg_create(KlFilePos begin, KlFilePos end) {
+KlCstVararg* klcst_vararg_create(KlFileOffset begin, KlFileOffset end) {
   KlCstVararg* cstvararg = klcst_alloc(KlCstVararg);
   if (kl_unlikely(!cstvararg)) return NULL;
   klcst_setposition(cstvararg, begin, end);
@@ -154,7 +154,7 @@ KlCstVararg* klcst_vararg_create(KlFilePos begin, KlFilePos end) {
   return cstvararg;
 }
 
-KlCstThis* klcst_this_create(KlFilePos begin, KlFilePos end) {
+KlCstThis* klcst_this_create(KlFileOffset begin, KlFileOffset end) {
   KlCstThis* cstthis = klcst_alloc(KlCstThis);
   if (kl_unlikely(!cstthis)) return NULL;
   klcst_setposition(cstthis, begin, end);
@@ -162,7 +162,7 @@ KlCstThis* klcst_this_create(KlFilePos begin, KlFilePos end) {
   return cstthis;
 }
 
-KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFilePos begin, KlFilePos end) {
+KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFileOffset begin, KlFileOffset end) {
   KlCstTuple* csttuple = klcst_alloc(KlCstTuple);
   if (kl_unlikely(!csttuple)) {
     for (size_t i = 0; i < nelem; ++i) {
@@ -178,7 +178,7 @@ KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFilePos begin, KlF
   return csttuple;
 }
 
-KlCstBin* klcst_bin_create(KlTokenKind op, KlCst* loperand, KlCst* roperand, KlFilePos begin, KlFilePos end) {
+KlCstBin* klcst_bin_create(KlTokenKind op, KlCst* loperand, KlCst* roperand, KlFileOffset begin, KlFileOffset end) {
   KlCstBin* cstbin = klcst_alloc(KlCstBin);
   if (kl_unlikely(!cstbin)) {
     klcst_delete_raw(loperand);
@@ -193,7 +193,7 @@ KlCstBin* klcst_bin_create(KlTokenKind op, KlCst* loperand, KlCst* roperand, KlF
   return cstbin;
 }
 
-KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFilePos begin, KlFilePos end) {
+KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFileOffset begin, KlFileOffset end) {
   KlCstPre* cstpre = klcst_alloc(KlCstPre);
   if (kl_unlikely(!cstpre)) {
     klcst_delete_raw(operand);
@@ -206,7 +206,7 @@ KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFilePos begin, KlFi
   return cstpre;
 }
 
-KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFilePos begin, KlFilePos end) {
+KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFileOffset begin, KlFileOffset end) {
   KlCstNew* cstnew = klcst_alloc(KlCstNew);
   if (kl_unlikely(!cstnew)) {
     klcst_delete_raw(klclass);
@@ -220,7 +220,7 @@ KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFilePos begin, KlFil
   return cstnew;
 }
 
-KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFilePos begin, KlFilePos end) {
+KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFileOffset begin, KlFileOffset end) {
   KlCstPost* cstpost = klcst_alloc(KlCstPost);
   if (kl_unlikely(!cstpost)) {
     klcst_delete_raw(operand);
@@ -235,7 +235,7 @@ KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFile
   return cstpost;
 }
 
-KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, KlFilePos begin, KlFilePos end) {
+KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, KlFileOffset begin, KlFileOffset end) {
   KlCstFunc* cstfunc = klcst_alloc(KlCstFunc);
   if (kl_unlikely(!cstfunc)) {
     klcst_delete_raw(block);
@@ -251,7 +251,7 @@ KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bo
   return cstfunc;
 }
 
-KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFilePos begin, KlFilePos end) {
+KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end) {
   KlCstDot* cstdot = klcst_alloc(KlCstDot);
   if (kl_unlikely(!cstdot)) {
     klcst_delete_raw(operand);
@@ -264,7 +264,7 @@ KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFilePos begin, KlF
   return cstdot;
 }
 
-KlCstSel* klcst_sel_create(KlCst* cond, KlCst* texpr, KlCst* fexpr, KlFilePos begin, KlFilePos end) {
+KlCstSel* klcst_sel_create(KlCst* cond, KlCst* texpr, KlCst* fexpr, KlFileOffset begin, KlFileOffset end) {
   KlCstSel* cstsel = klcst_alloc(KlCstSel);
   if (kl_unlikely(!cstsel)) {
     klcst_delete_raw(cond);
@@ -303,7 +303,7 @@ static void klcst_array_destroy(KlCstArray* cstarray) {
 }
 
 static void klcst_arraygenerator_destroy(KlCstArrayGenerator* cstarraygenerator) {
-  klcst_delete_raw(cstarraygenerator->stmts);
+  klcst_delete_raw(cstarraygenerator->block);
 }
 
 static void klcst_class_destroy(KlCstClass* cstclass) {

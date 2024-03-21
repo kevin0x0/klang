@@ -24,15 +24,15 @@ typedef struct tagKlCstMap {
   size_t npair;                     /* number of k-v pairs */
 } KlCstMap;
 
-typedef union tagKlCstArray {
+typedef struct tagKlCstArray {
   KlCst base;
   KlCst* vals;                      /* tuple */
 } KlCstArray;
 
-typedef union tagKlCstArrayGenerator {
+typedef struct tagKlCstArrayGenerator {
   KlCst base;
   KlStrDesc arrid;                  /* temporary identifier for array */
-  KlCst* stmts;                     /* code that generates an array */
+  KlCst* block;                     /* code that generates an array */
 } KlCstArrayGenerator;
 
 typedef struct tagKlCstClass {
@@ -115,25 +115,25 @@ typedef struct tagKlCstSel {
 } KlCstSel;
 
 
-KlCstIdentifier* klcst_id_create(KlStrDesc id, KlFilePos begin, KlFilePos end);
-KlCstMap* klcst_map_create(KlCst** keys, KlCst** vals, size_t npair, KlFilePos begin, KlFilePos end);
-KlCstArray* klcst_array_create(KlCst* vals, KlFilePos begin, KlFilePos end);
-KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCst* stmts, KlFilePos begin, KlFilePos end);
-KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlFilePos begin, KlFilePos end);
-KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFilePos begin, KlFilePos end);
-KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFilePos begin, KlFilePos end);
-KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFilePos begin, KlFilePos end);
-KlCstConstant* klcst_constant_create_nil(KlFilePos begin, KlFilePos end);
-KlCstVararg* klcst_vararg_create(KlFilePos begin, KlFilePos end);
-KlCstThis* klcst_this_create(KlFilePos begin, KlFilePos end);
-KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFilePos begin, KlFilePos end);
-KlCstBin* klcst_bin_create(KlTokenKind op, KlCst* loperand, KlCst* roperand, KlFilePos begin, KlFilePos end);
-KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFilePos begin, KlFilePos end);
-KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFilePos begin, KlFilePos end);
-KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFilePos begin, KlFilePos end);
-KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, KlFilePos begin, KlFilePos end);
-KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFilePos begin, KlFilePos end);
-KlCstSel* klcst_sel_create(KlCst* cond, KlCst* texpr, KlCst* fexpr, KlFilePos begin, KlFilePos end);
+KlCstIdentifier* klcst_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset end);
+KlCstMap* klcst_map_create(KlCst** keys, KlCst** vals, size_t npair, KlFileOffset begin, KlFileOffset end);
+KlCstArray* klcst_array_create(KlCst* vals, KlFileOffset begin, KlFileOffset end);
+KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCst* stmts, KlFileOffset begin, KlFileOffset end);
+KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlFileOffset begin, KlFileOffset end);
+KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFileOffset begin, KlFileOffset end);
+KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, KlFileOffset end);
+KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, KlFileOffset end);
+KlCstConstant* klcst_constant_create_nil(KlFileOffset begin, KlFileOffset end);
+KlCstVararg* klcst_vararg_create(KlFileOffset begin, KlFileOffset end);
+KlCstThis* klcst_this_create(KlFileOffset begin, KlFileOffset end);
+KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFileOffset begin, KlFileOffset end);
+KlCstBin* klcst_bin_create(KlTokenKind op, KlCst* loperand, KlCst* roperand, KlFileOffset begin, KlFileOffset end);
+KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFileOffset begin, KlFileOffset end);
+KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFileOffset begin, KlFileOffset end);
+KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFileOffset begin, KlFileOffset end);
+KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, KlFileOffset begin, KlFileOffset end);
+KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
+KlCstSel* klcst_sel_create(KlCst* cond, KlCst* texpr, KlCst* fexpr, KlFileOffset begin, KlFileOffset end);
 
 
 static inline void klcst_tuple_shallow_replace(KlCstTuple* tuple, KlCst** elems, size_t nelem) {

@@ -14,6 +14,7 @@ typedef struct tagKlParser {
   struct {
     unsigned int tabstop;
     char curl;
+    char zerocurl;
   } config;
 } KlParser;
 
@@ -53,7 +54,7 @@ static inline KlCst* klparser_stmtcontinue(KlParser* parser, KlLex* lex);
 
 
 
-void klparser_error(KlParser* parser, Ki* input, KlFilePos begin, KlFilePos end, const char* format, ...);
+void klparser_error(KlParser* parser, Ki* input, size_t begin, size_t end, const char* format, ...);
 static KlCst* klparser_error_oom(KlParser* parser, KlLex* lex);
 
 static inline bool klparser_match(KlParser* parser, KlLex* lex, KlTokenKind kind) {

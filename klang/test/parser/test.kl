@@ -1,2 +1,9 @@
-let arr = { x + y, x - y | x = 1, 101 };
+return callvararg(f, 1, 2, 3, 4, [ x | x in ... ]);
 
+let makecfg = usercfg -> usercfg.fallback(defaultconfig);
+
+let mycfg = makecfg({ curl = "~", zerocurl = "^", tabstop = 8 });
+(a1, a2) -> 3;
+let abs = a if a >= 0 else -a;
+mycfg.abs = abs;
+a ++ (1, 2, 3);

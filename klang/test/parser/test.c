@@ -5,7 +5,9 @@ void loop(void);
 
 
 int main(void) {
-  loop();
+  while (true) {
+    loop();
+  }
   return 0;
 }
 

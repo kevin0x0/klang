@@ -10,11 +10,7 @@
 
 #define KLLEX_STRLIMIT  (KLSTRTAB_EXTRA)
 
-
-typedef struct tagKlFilePos {
-  unsigned int line;
-  unsigned int offset;
-} KlFilePos;
+typedef size_t KlFileOffset;
 
 typedef struct tagKlLex {
   KlStrTab* strtab;         /* string table */
@@ -24,8 +20,8 @@ typedef struct tagKlLex {
   size_t nerror;            /* number of lexical error */
   size_t currline;          /* current line number */
   struct {
-    KlFilePos begin;        /* begin position of this token */
-    KlFilePos end;          /* end position of this token */
+    KlFileOffset begin;     /* begin position of this token */
+    KlFileOffset end;       /* end position of this token */
     union {
       KlInt intval;
       KlBool boolval;

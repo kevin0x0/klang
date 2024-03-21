@@ -74,8 +74,8 @@ typedef struct tagKlCstInfo KlCstInfo;
 
 typedef struct tagKlCst {
   KlCstInfo* info;
-  KlFilePos begin;
-  KlFilePos end;
+  KlFileOffset begin;
+  KlFileOffset end;
 } KlCst;
 
 typedef void (*KlCstDelete)(KlCst* ast);
@@ -89,7 +89,7 @@ static inline void klcst_init_raw(KlCst* cst, KlCstInfo* vfunc);
 static inline void klcst_delete_raw(KlCst* cst);
 static inline void klcst_destroy_raw(KlCst* cst);
 static inline KlCstKind klcst_kind_raw(KlCst* cst);
-static inline void klcst_setposition_raw(KlCst* cst, KlFilePos begin, KlFilePos end);
+static inline void klcst_setposition_raw(KlCst* cst, KlFileOffset begin, KlFileOffset end);
 
 static inline void klcst_init_raw(KlCst* cst, KlCstInfo* vfunc) {
   cst->info = vfunc;
@@ -108,7 +108,7 @@ static inline KlCstKind klcst_kind_raw(KlCst* cst) {
   return cst->info->kind;
 }
 
-static inline void klcst_setposition_raw(KlCst* cst, KlFilePos begin, KlFilePos end) {
+static inline void klcst_setposition_raw(KlCst* cst, KlFileOffset begin, KlFileOffset end) {
   cst->begin = begin;
   cst->end = end;
 }
