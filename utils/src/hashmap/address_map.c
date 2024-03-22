@@ -90,7 +90,6 @@ void kev_addressmap_destroy(KevAddressMap* map) {
   map->array = NULL;
   map->capacity = 0;
   map->size = 0;
-
 }
 
 bool kev_addressmap_insert(KevAddressMap* map, void* key, void* value) {

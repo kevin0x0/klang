@@ -110,8 +110,8 @@ KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t
 KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
-  cstconstant->string = string;
-  cstconstant->type = KL_STRING;
+  cstconstant->con.string = string;
+  cstconstant->con.type = KL_STRING;
   klcst_setposition(cstconstant, begin, end);
   klcst_init(cstconstant, &klcst_constant_vfunc);
   return cstconstant;
@@ -120,8 +120,8 @@ KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFileOffset begin
 KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
-  cstconstant->intval = intval;
-  cstconstant->type = KL_INT;
+  cstconstant->con.intval = intval;
+  cstconstant->con.type = KL_INT;
   klcst_setposition(cstconstant, begin, end);
   klcst_init(cstconstant, &klcst_constant_vfunc);
   return cstconstant;
@@ -130,8 +130,8 @@ KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, K
 KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
-  cstconstant->boolval = boolval;
-  cstconstant->type = KL_BOOL;
+  cstconstant->con.boolval = boolval;
+  cstconstant->con.type = KL_BOOL;
   klcst_setposition(cstconstant, begin, end);
   klcst_init(cstconstant, &klcst_constant_vfunc);
   return cstconstant;
@@ -140,7 +140,7 @@ KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, 
 KlCstConstant* klcst_constant_create_nil(KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
-  cstconstant->type = KL_NIL;
+  cstconstant->con.type = KL_NIL;
   klcst_setposition(cstconstant, begin, end);
   klcst_init(cstconstant, &klcst_constant_vfunc);
   return cstconstant;

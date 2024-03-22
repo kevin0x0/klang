@@ -42,14 +42,18 @@ typedef struct tagKlCstClass {
   size_t nfield;
 } KlCstClass;
 
-typedef struct tagKlCstConstant {
-  KlCst base;
+typedef struct tagKlConstant {
   KlType type;                      /* boolean, integer, string or nil */
   union {
     KlStrDesc string;               /* literal string */
     KlInt intval;
     KlBool boolval;
   };
+} KlConstant;
+
+typedef struct tagKlCstConstant {
+  KlCst base;
+  KlConstant con;
 } KlCstConstant;
 
 typedef struct tagKlCstVararg {
