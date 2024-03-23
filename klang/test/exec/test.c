@@ -16,7 +16,7 @@ int main(void) {
   KlMM klmm;
   klmm_init(&klmm, 1024);
   KlState* state = klapi_new_state(&klmm);
-  fibonacci(state);
+  arithsum(state);
   //concat(state);
   size_t narg = 1;
   klapi_pushint(state, 36);
@@ -99,16 +99,20 @@ void arithsum(KlState* state) {
   KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
   KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 1, 0, 100, 0);
   KlValue* constants = klkfunc_constants(kfunc);
-  klapi_pushint(state, 1000000001);
+  klapi_pushint(state, 1000000);
   klvalue_setvalue(&constants[0], klapi_access(state, -1));
-  code[0] = klinst_loadi(0, 0);
-  code[1] = klinst_loadi(1, 1);
-  code[2] = klinst_loadc(2, 0);
-  code[3] = klinst_loadnil(3, 1);
-  code[4] = klinst_iforprep(1, 2);
-  code[5] = klinst_add(0, 0, 1);
-  code[6] = klinst_iforloop(1, -2);
-  code[7] = klinst_return1(0);
+  code[0] = klinst_loadi(0, 0); /* sum */
+  code[1] = klinst_loadi(1, 0); /* i */
+  code[2] = klinst_loadi(2, 1); /* j */
+  code[3] = klinst_ltc(1, 0);
+  code[4] = klinst_condjmp(false, 5);
+  code[5] = klinst_mul(3, 1, 2);
+  code[6] = klinst_add(0, 0, 3);
+  code[7] = klinst_neg(2, 2);
+  code[8] = klinst_addi(1, 1, 1);
+  code[9] = klinst_jmp(-7);
+  code[10] = klinst_return1(0);
+
   KlKClosure* kclo = klkclosure_create(klmm, kfunc, klapi_access(state, -1), &state->reflist, NULL);
   klkfunc_initdone(klmm, kfunc);
   klapi_setobj(state, -1, kclo, KL_KCLOSURE);

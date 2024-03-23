@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 typedef struct tagKlRefInfo {
-  unsigned int index;
+  uint8_t index;
   bool in_stack;
 } KlRefInfo;
 

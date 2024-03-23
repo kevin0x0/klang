@@ -204,7 +204,7 @@ typedef uint32_t KlInstruction;
 #define klinst_mulc(a, b, x)                              klinst_ABX(KLOPCODE_MULC, (a), (b), (x))
 #define klinst_divc(a, b, x)                              klinst_ABX(KLOPCODE_DIVC, (a), (b), (x))
 #define klinst_modc(a, b, x)                              klinst_ABX(KLOPCODE_MODC, (a), (b), (x))
-#define klinst_neg(a, b)                                  klinst_ABC(KLOPCODE_NEG, (a,) (b), 0)
+#define klinst_neg(a, b)                                  klinst_ABC(KLOPCODE_NEG, (a), (b), 0)
 #define klinst_call(callable, narg, nret)                 klinst_AXY(KLOPCODE_CALL, (callable), (narg), (nret))
 #define klinst_method(thisobj, field)                     klinst_AX(KLOPCODE_METHOD, (thisobj), (field))
 #define klinst_methodextra(narg, nret)                    klinst_extra_xyz(narg, nret, 0)

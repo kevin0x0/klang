@@ -4,14 +4,10 @@
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/parse/klstrtab.h"
 
-typedef enum tagKlSymDuration {
-  KLSYMDUR_STACK,
-  KLSYMDUR_REF,
-} KlSymDuration;
-
 typedef struct tagKlConEntry KlConEntry;
 struct tagKlConEntry {
   KlConstant con;
+  size_t hash;
   KlConEntry* next;
 };
 
@@ -28,7 +24,7 @@ void klcontbl_destroy(KlConTbl* contbl);
 KlConTbl* klcontbl_create(size_t capacity, KlStrTab* strtab);
 void klcontbl_delete(KlConTbl* contbl);
 
-KlConTbl* klcontbl_insert(KlConTbl* contbl, KlConstant* con);
-KlConTbl* klcontbl_search(KlConTbl* map, KlConstant* con);
+KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con);
+KlConEntry* klcontbl_search(KlConTbl* map, KlConstant* con);
 
 #endif
