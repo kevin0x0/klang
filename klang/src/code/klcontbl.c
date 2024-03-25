@@ -147,16 +147,16 @@ KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
     return NULL;
 
   KlConEntry* newconentry = (KlConEntry*)malloc(sizeof (*newconentry));
-  if (kl_unlikely(!newconentry)) return false;
+  if (kl_unlikely(!newconentry)) return NULL;
 
   size_t hash = klcontbl_hashing(contbl->strtab, con);
   size_t index = (contbl->capacity - 1) & hash;
   newconentry->con = *con;
   newconentry->hash = hash;
+  newconentry->index = contbl->size++;
   newconentry->next = contbl->array[index];
   contbl->array[index] = newconentry;
-  contbl->size++;
-  return true;
+  return newconentry;
 }
 
 KlConEntry* klcontbl_search(KlConTbl* contbl, KlConstant* constant) {
@@ -169,4 +169,26 @@ KlConEntry* klcontbl_search(KlConTbl* contbl, KlConstant* constant) {
   }
 
   return NULL;
+}
+
+KlConEntry* klcontbl_get(KlConTbl* contbl, KlConstant* constant) {
+  size_t hash = klcontbl_hashing(contbl->strtab, constant);
+  size_t index = (contbl->capacity - 1) & hash;
+  KlConEntry* conentry = contbl->array[index];
+  for (; conentry; conentry = conentry->next) {
+    if (hash == conentry->hash && klcontbl_constant_equal(contbl->strtab, constant, &conentry->con))
+      return conentry;
+  }
+  /* not found, insert */
+  if (kl_unlikely(contbl->size >= contbl->capacity && !klcontbl_expand(contbl)))
+    return NULL;
+  KlConEntry* newconentry = (KlConEntry*)malloc(sizeof (*newconentry));
+  if (kl_unlikely(!newconentry)) return false;
+
+  newconentry->con = *constant;
+  newconentry->hash = hash;
+  newconentry->index = contbl->size++;
+  newconentry->next = contbl->array[index];
+  contbl->array[index] = newconentry;
+  return newconentry;
 }

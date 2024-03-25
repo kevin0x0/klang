@@ -103,6 +103,7 @@ typedef struct tagKlCstFunc {
   KlStrDesc* params;    /* parameters */
   uint8_t nparam;       /* number of parameters */
   bool vararg;          /* has variable argument */
+  bool is_method;
 } KlCstFunc;
 
 typedef struct tagKlCstDot {
@@ -129,13 +130,12 @@ KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, K
 KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_nil(KlFileOffset begin, KlFileOffset end);
 KlCstVararg* klcst_vararg_create(KlFileOffset begin, KlFileOffset end);
-KlCstThis* klcst_this_create(KlFileOffset begin, KlFileOffset end);
 KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFileOffset begin, KlFileOffset end);
 KlCstBin* klcst_bin_create(KlTokenKind op, KlCst* loperand, KlCst* roperand, KlFileOffset begin, KlFileOffset end);
 KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFileOffset begin, KlFileOffset end);
 KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFileOffset begin, KlFileOffset end);
 KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFileOffset begin, KlFileOffset end);
-KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, KlFileOffset begin, KlFileOffset end);
+KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
 KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
 KlCstSel* klcst_sel_create(KlCst* cond, KlCst* texpr, KlCst* fexpr, KlFileOffset begin, KlFileOffset end);
 

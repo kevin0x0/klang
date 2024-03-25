@@ -20,7 +20,7 @@ static KlFileOffset ph_filepos = ~(size_t)0;
 
 
 
-void klparser_init(KlParser* parser, KlStrTab* strtab, Ko* err, char* inputname) {
+bool klparser_init(KlParser* parser, KlStrTab* strtab, Ko* err, char* inputname) {
   parser->strtab = strtab;
   parser->err = err;
   parser->errcount = 0;
@@ -29,6 +29,13 @@ void klparser_init(KlParser* parser, KlStrTab* strtab, Ko* err, char* inputname)
   parser->config.curl = '~';
   parser->config.zerocurl = '^';
   parser->config.tabstop = 8;
+  int thislen = strlen("this");
+  char* this = klstrtab_allocstring(strtab, thislen);
+  if (kl_unlikely(!this)) return false;
+  strncpy(this, "this", thislen);
+  parser->string.this.id = klstrtab_pushstring(strtab, thislen);
+  parser->string.this.length = thislen;
+  return true;
 }
 
 static KlStrDesc klparser_newtmpid(KlParser* parser, KlLex* lex) {
@@ -183,12 +190,6 @@ KlCst* klparser_exprunit(KlParser* parser, KlLex* lex) {
     }
     case KLTK_VARARG: {
       KlCstVararg* cst = klcst_vararg_create(lex->tok.begin, lex->tok.end);
-      if (kl_unlikely(!cst)) return klparser_error_oom(parser, lex);
-      kllex_next(lex);
-      return klcst(cst);
-    }
-    case KLTK_THIS: {
-      KlCstThis* cst = klcst_this_create(lex->tok.begin, lex->tok.end);
       if (kl_unlikely(!cst)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klcst(cst);
@@ -434,7 +435,7 @@ static KlCst* klparser_generatorclass(KlParser* parser, KlLex* lex) {
   klparser_oomifnull(stmtexpr);
   KlCst* generator = klparser_generator(parser, lex, klcast(KlCst*, stmtexpr));
   klparser_returnifnull(generator);
-  KlCstFunc* func = klcst_func_create(generator, NULL, 0, false, klcst_begin(stmtexpr), klcst_end(generator));
+  KlCstFunc* func = klcst_func_create(generator, NULL, 0, false, false, klcst_begin(stmtexpr), klcst_end(generator));
   klparser_oomifnull(func);
   KlCstPre* asyncexpr = klcst_pre_create(KLTK_ASYNC, klcst(func), ph_filepos, ph_filepos);
   klparser_oomifnull(asyncexpr);
@@ -530,7 +531,7 @@ KlCst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       KlFileOffset begin = lex->tok.begin;
       KlCst* block = klparser_arrowfuncbody(parser, lex);
       klparser_returnifnull(block);
-      KlCstFunc* func = klcst_func_create(block, NULL, 0, false, begin, block->end);
+      KlCstFunc* func = klcst_func_create(block, NULL, 0, false, false, begin, block->end);
       klparser_oomifnull(func);
       return klcst(func);
     }
@@ -551,6 +552,30 @@ KlCst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       KlCstPre* asyncexpr = klcst_pre_create(KLTK_ASYNC, expr, begin, expr->end);
       klparser_oomifnull(asyncexpr);
       return klcst(asyncexpr);
+    }
+    case KLTK_DOT: {
+      KlFileOffset begin = lex->tok.begin;
+      kllex_next(lex);
+      KlCst* expr = klparser_exprpost(parser, lex);
+      klparser_returnifnull(expr);
+      if (kl_unlikely(klcst_kind(expr) != KLCST_EXPR_FUNC)) {
+        klparser_error(parser, kllex_inputstream(lex), expr->begin, expr->end,
+                       "prefix unary operator '.' must be followed by a function construction");
+        return expr;
+      }
+      KlCstFunc* func = klcast(KlCstFunc*, expr);
+      KlStrDesc* params = func->params;
+      KlStrDesc* newparams = realloc(params, func->nparam * sizeof (KlStrDesc));
+      if (kl_unlikely(!newparams)) {
+        klcst_delete(expr);
+        return klparser_error_oom(parser, lex);
+      }
+      memmove(newparams + 1, newparams, func->nparam * sizeof (KlStrDesc));
+      newparams[0] = parser->string.this; /* add a parameter named 'this' */
+      ++func->nparam;
+      func->is_method = true;
+      klcst_setposition(expr, begin, expr->end);
+      return expr;
     }
     case KLTK_ADD: {
       kllex_next(lex);
@@ -653,7 +678,7 @@ KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
         bool vararg;
         klparser_tofuncparams(parser, lex, postexpr, &params, &vararg);
         size_t nparam = klidarr_size(&params);
-        KlCstFunc* func = klcst_func_create(block, klidarr_steal(&params), nparam, vararg, postexpr->begin, block->end);
+        KlCstFunc* func = klcst_func_create(block, klidarr_steal(&params), nparam, vararg, false, postexpr->begin, block->end);
         klcst_delete(postexpr);
         klparser_oomifnull(func);
         postexpr = klcst(func);
@@ -675,7 +700,7 @@ KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
         bool vararg;
         klparser_tofuncparams(parser, lex, postexpr, &params, &vararg);
         size_t nparam = klidarr_size(&params);
-        KlCstFunc* func = klcst_func_create(block, klidarr_steal(&params), nparam, vararg, postexpr->begin, block->end);
+        KlCstFunc* func = klcst_func_create(block, klidarr_steal(&params), nparam, vararg, false, postexpr->begin, block->end);
         klcst_delete(postexpr);
         klparser_oomifnull(func);
         postexpr = klcst(func);
@@ -1341,10 +1366,10 @@ static void klparser_tupletoidarray(KlParser* parser, KlLex* lex, KlCstTuple* tu
 
 
 /* error handler */
-size_t klparser_helper_locateline(Ki* input, size_t offset);
+size_t klparser_helper_locateline(Ki* input, KlFileOffset offset);
 bool klparser_helper_showline_withcurl(KlParser* parser, Ki* input, KlFileOffset begin, KlFileOffset end);
 
-void klparser_error(KlParser* parser, Ki* input, size_t begin, size_t end, const char* format, ...) {
+void klparser_error(KlParser* parser, Ki* input, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
   kl_assert(begin != ph_filepos && end != ph_filepos, "position of a syntax tree not set!");
   ++parser->errcount;
   Ko* err = parser->err;
@@ -1369,7 +1394,7 @@ void klparser_error(KlParser* parser, Ki* input, size_t begin, size_t end, const
 
 #define kl_isnl(ch)       ((ch) == '\n' || (ch) == '\r')
 
-size_t klparser_helper_locateline(Ki* input, size_t offset) {
+size_t klparser_helper_locateline(Ki* input, KlFileOffset offset) {
   ki_seek(input, 0);
   size_t currline = 1;
   size_t lineoff = 0;

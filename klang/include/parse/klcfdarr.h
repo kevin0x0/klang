@@ -4,6 +4,6 @@
 #include "klang/include/cst/klcst_expr.h"
 #include "utils/include/array/kgarray.h"
 
-kgarray_decl(KlCstClassFieldDesc, KlCfdArray, klcfd,)
+kgarray_decl(KlCstClassFieldDesc, KlCfdArray, klcfd, pass_ref,)
 
 #endif

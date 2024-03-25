@@ -7,7 +7,7 @@ static void klkfunc_delete(KlKFunction* kfunc);
 static KlGCVirtualFunc klkfunc_gcvfunc = { .destructor = (KlGCDestructor)klkfunc_delete, .propagate = (KlGCProp)klkfunc_propagate };
 
 
-KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, size_t codelen, size_t nconst, size_t nref, size_t framesize, size_t nparam) {
+KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, size_t codelen, size_t nconst, size_t nref, size_t framesize, size_t nparam, bool is_method) {
   KlKFunction* kfunc = (KlKFunction*)klmm_alloc(klmm, sizeof (KlKFunction));
   KlValue* constants = (KlValue*)klmm_alloc(klmm, sizeof (KlValue) * nconst);
   KlRefInfo* refinfo = (KlRefInfo*)klmm_alloc(klmm, sizeof (KlRefInfo) * nref);
@@ -25,6 +25,7 @@ KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, size_t codelen, size
   kfunc->nref = nref;
   kfunc->framesize = framesize;
   kfunc->nparam = nparam;
+  kfunc->is_method = is_method;
   return kfunc;
 }
 

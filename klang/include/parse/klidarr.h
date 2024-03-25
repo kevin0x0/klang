@@ -5,6 +5,6 @@
 #include "klang/include/parse/klstrtab.h"
 #include "utils/include/array/kgarray.h"
 
-kgarray_decl(KlStrDesc, KlIdArray, klidarr,)
+kgarray_decl(KlStrDesc, KlIdArray, klidarr, pass_ref,)
 
 #endif

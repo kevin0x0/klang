@@ -6,6 +6,8 @@
 #define kl_likely(expr)       (__builtin_expect(!!(expr), 1))
 #define kl_unlikely(expr)     (__builtin_expect(!!(expr), 0))
 
+#define kl_noreturn           _Noreturn
+
 
 #define klcast(totype, obj)   ((totype)(obj))
 #define klbit(idx)            ((size_t)1 << (idx))

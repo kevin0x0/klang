@@ -6,4 +6,9 @@ let mycfg = makecfg({ curl = "~", zerocurl = "^", tabstop = 8 });
 (a1, a2) -> 3;
 let abs = a if a >= 0 else -a;
 mycfg.abs = abs;
-a ++ (1, 2, 3);
+
+let method = .self -> print "AAA";
+let class = { say = method };
+class.say();
+
+let f = .n -> n if n <= 1 else f(n - 1) + f(n - 2);

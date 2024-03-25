@@ -28,6 +28,7 @@ struct tagKlCode {
 KlCode* klcode_create(KlCst* cst);
 void klcode_delete(KlCode* code);
 
-kgarray_decl(KlCode, KlCodeArray, klcodearr,)
+kgarray_decl(KlCode, KlCodeArray, klcodearr, pass_ref,)
+kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val,)
 
 #endif

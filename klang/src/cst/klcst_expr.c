@@ -9,7 +9,6 @@ static void klcst_arraygenerator_destroy(KlCstArrayGenerator* cstarraygenerator)
 static void klcst_class_destroy(KlCstClass* cstclass);
 static void klcst_constant_destroy(KlCstConstant* cstconstant);
 static void klcst_vararg_destroy(KlCstVararg* cstvararg);
-static void klcst_this_destroy(KlCstThis* cstthis);
 static void klcst_tuple_destroy(KlCstTuple* csttuple);
 static void klcst_bin_destroy(KlCstBin* cstbin);
 static void klcst_pre_destroy(KlCstPre* cstpre);
@@ -26,7 +25,6 @@ static KlCstInfo klcst_arraygenerator_vfunc = { .destructor = (KlCstDelete)klcst
 static KlCstInfo klcst_class_vfunc = { .destructor = (KlCstDelete)klcst_class_destroy, .kind = KLCST_EXPR_CLASS };
 static KlCstInfo klcst_constant_vfunc = { .destructor = (KlCstDelete)klcst_constant_destroy, .kind = KLCST_EXPR_CONSTANT };
 static KlCstInfo klcst_vararg_vfunc = { .destructor = (KlCstDelete)klcst_vararg_destroy, .kind = KLCST_EXPR_VARARG };
-static KlCstInfo klcst_this_vfunc = { .destructor = (KlCstDelete)klcst_this_destroy, .kind = KLCST_EXPR_THIS };
 static KlCstInfo klcst_tuple_vfunc = { .destructor = (KlCstDelete)klcst_tuple_destroy, .kind = KLCST_EXPR_TUPLE };
 static KlCstInfo klcst_bin_vfunc = { .destructor = (KlCstDelete)klcst_bin_destroy, .kind = KLCST_EXPR_BIN };
 static KlCstInfo klcst_pre_vfunc = { .destructor = (KlCstDelete)klcst_pre_destroy, .kind = KLCST_EXPR_PRE };
@@ -154,14 +152,6 @@ KlCstVararg* klcst_vararg_create(KlFileOffset begin, KlFileOffset end) {
   return cstvararg;
 }
 
-KlCstThis* klcst_this_create(KlFileOffset begin, KlFileOffset end) {
-  KlCstThis* cstthis = klcst_alloc(KlCstThis);
-  if (kl_unlikely(!cstthis)) return NULL;
-  klcst_setposition(cstthis, begin, end);
-  klcst_init(cstthis, &klcst_this_vfunc);
-  return cstthis;
-}
-
 KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFileOffset begin, KlFileOffset end) {
   KlCstTuple* csttuple = klcst_alloc(KlCstTuple);
   if (kl_unlikely(!csttuple)) {
@@ -235,7 +225,7 @@ KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFile
   return cstpost;
 }
 
-KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, KlFileOffset begin, KlFileOffset end) {
+KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end) {
   KlCstFunc* cstfunc = klcst_alloc(KlCstFunc);
   if (kl_unlikely(!cstfunc)) {
     klcst_delete_raw(block);
@@ -246,6 +236,7 @@ KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bo
   cstfunc->params = params;
   cstfunc->nparam = nparam;
   cstfunc->vararg = vararg;
+  cstfunc->is_method = is_method;
   klcst_setposition(cstfunc, begin, end);
   klcst_init(cstfunc, &klcst_func_vfunc);
   return cstfunc;
@@ -322,10 +313,6 @@ static void klcst_constant_destroy(KlCstConstant* cstconstant) {
 
 static void klcst_vararg_destroy(KlCstVararg* cstvararg) {
   (void)cstvararg;
-}
-
-static void klcst_this_destroy(KlCstThis* cstthis) {
-  (void)cstthis;
 }
 
 static void klcst_tuple_destroy(KlCstTuple* csttuple) {

@@ -9,7 +9,7 @@
 
 #define klvalue_collectable(value)          ((value)->type >= KL_COLLECTABLE)
 #define klvalue_dotable(value)              ((value)->type >= KL_DOTABLE && (value)->type <= KL_DOTABLE_END)
-#define klvalue_callable(value)             ((value)->type == KL_CFUNCTION || (value)->type == KL_CCLOSURE || (value)->type == KL_KCLOSURE)
+#define klvalue_callable(value)             ((value)->type == KL_CFUNCTION || (value)->type == KL_CCLOSURE || (value)->type == KL_KCLOSURE || (value)->type == KL_COROUTINE)
 #define klvalue_canrawequal(value)          ((value)->type <= KL_RAWEQUAL)
 #define klvalue_checktype(value, valtype)   ((value)->type == (valtype))
 #define klvalue_gettype(value)              ((value)->type)

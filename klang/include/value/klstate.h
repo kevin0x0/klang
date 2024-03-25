@@ -21,8 +21,6 @@
 #define KLSTATE_CI_STATUS_CCLO  (klbit(2))
 /* callable.kclo valid */
 #define KLSTATE_CI_STATUS_KCLO  (klbit(3))
-/* conditional jump requires a boolean value at callinfo->top */
-#define KLSTATE_CI_STATUS_CJMP  (klbit(4))
 
 typedef union tagKlCIUD {
   size_t ui;
@@ -36,23 +34,20 @@ typedef struct tagKlCallInfo KlCallInfo;
 struct tagKlCallInfo {
   KlCallInfo* prev;
   KlCallInfo* next;
-  KlValue env_this;             /* 'this' */
   union {
     KlGCObject* clo;            /* klang closure or C closure(determined by status) */
     KlCFunction* cfunc;         /* C function in execution */
   } callable;
-  union {
-    KlValue* top;               /* stack frame top for this klang call */
-    KlValue* base;              /* stack base for C call */
-  };
+  KlValue* top;                 /* stack frame top for this klang call */
+  KlValue* base;                /* stack base */
   union {
     KlInstruction* savedpc;     /* pointed to current klang instruction */
     KlCIUD resume_ud;           /* userdata for C call when coroutine resuming */
   };
+  uint32_t status;
+  int32_t retoff;               /* the offset of position relative to stkbase where returned values place. */
   uint8_t nret;                 /* expected number of returned value */
   uint8_t narg;                 /* actual number of received arguments */
-  int16_t retoff;               /* the offset of position relative to stkbase where returned values place. */
-  uint32_t status;
 };
 
 typedef struct tagKlState {
@@ -96,7 +91,6 @@ static inline KlValue* klstate_getval(KlState* state, int offset);
 
 
 KlValue* klstate_getmethod(KlState* state, KlValue* val, KlString* methodname);
-static inline void klstate_set_this(KlCallInfo* callinfo, KlValue* val);
 
 
 KlException klstate_alter_stack(KlState* state, size_t size);
@@ -146,10 +140,6 @@ static inline KlValue* klstate_stktop(KlState* state) {
 
 static inline KlValue* klstate_getval(KlState* state, int offset) {
   return klstate_stktop(state) + offset;
-}
-
-static inline void klstate_set_this(KlCallInfo* callinfo, KlValue* val) {
-  klvalue_setvalue(&callinfo->env_this, val);
 }
 
 static inline KlException klstate_checkframe(KlState* state, size_t framesize) {

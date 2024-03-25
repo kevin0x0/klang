@@ -16,7 +16,7 @@ int main(void) {
   KlMM klmm;
   klmm_init(&klmm, 1024);
   KlState* state = klapi_new_state(&klmm);
-  arithsum(state);
+  fibonacci(state);
   //concat(state);
   size_t narg = 1;
   klapi_pushint(state, 36);
@@ -40,7 +40,7 @@ int main(void) {
 void fibonacci(KlState* state) {
   KlMM* klmm = klstate_getmm(state);
   KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
-  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 0, 1, 100, 1);
+  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 0, 1, 100, 1, false);
   KlRefInfo* refinfo = klkfunc_refinfo(kfunc);
   refinfo[0].index = 0;
   refinfo[0].in_stack = true;
@@ -76,7 +76,7 @@ void coroutine(KlState* state) {
 void concat(KlState* state) {
   KlMM* klmm = klstate_getmm(state);
   KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
-  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 1, 0, 100, 0);
+  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 1, 0, 100, 0, false);
   KlValue* constants = klkfunc_constants(kfunc);
   klapi_pushstring(state, "");
   klvalue_setvalue(&constants[0], klapi_access(state, -1));
@@ -97,15 +97,15 @@ void concat(KlState* state) {
 void arithsum(KlState* state) {
   KlMM* klmm = klstate_getmm(state);
   KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
-  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 1, 0, 100, 0);
+  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 1, 0, 100, 0, false);
   KlValue* constants = klkfunc_constants(kfunc);
-  klapi_pushint(state, 1000000);
+  klapi_pushint(state, 1000000000);
   klvalue_setvalue(&constants[0], klapi_access(state, -1));
   code[0] = klinst_loadi(0, 0); /* sum */
   code[1] = klinst_loadi(1, 0); /* i */
   code[2] = klinst_loadi(2, 1); /* j */
-  code[3] = klinst_ltc(1, 0);
-  code[4] = klinst_condjmp(false, 5);
+  code[3] = klinst_gec(1, 0);
+  code[4] = klinst_condjmp(true, 5);
   code[5] = klinst_mul(3, 1, 2);
   code[6] = klinst_add(0, 0, 3);
   code[7] = klinst_neg(2, 2);

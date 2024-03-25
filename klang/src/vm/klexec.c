@@ -11,12 +11,12 @@
 #include "klang/include/vm/klinst.h"
 #include "klang/include/vm/klstack.h"
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 
 /* extra stack frame size for calling operator method */
-#define KLEXEC_STACKFRAME_EXTRA             (3)
+#define KLEXEC_STACKFRAME_EXTRA             (4)
 
 static KlException klexec_handle_setfield_exception(KlState* state, KlException exception, KlString* key) {
   if (exception == KL_E_OOM)
@@ -81,11 +81,11 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
   KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
   if (kl_unlikely(!newci))
     return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
-  klvalue_setnil(&newci->env_this);
+  newci->status = KLSTATE_CI_STATUS_NORM;
   ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
-  KlException exception = klexec_callprepare(state, newci, callable, narg);
+  KlException exception = klexec_callprepare(state, newci, callable, narg, NULL);
   if (exception) return exception;
-  if (prevci != state->callinfo) {  /* not executed klang call */
+  if (prevci != state->callinfo) {  /* to be executed klang call */
     state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
     exception = klexec_execute(state);
     if (kl_unlikely(exception)) return exception;
@@ -94,10 +94,36 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
   return KL_E_NONE;
 }
 
+static bool klexec_is_method(KlValue* callable) {
+  if (kl_likely(klvalue_checktype(callable, KL_KCLOSURE))) {
+    return klkfunc_ismethod(klvalue_getobj(callable, KlKClosure*)->kfunc);
+  } else if (klvalue_checktype(callable, KL_COROUTINE)) {
+    return klco_ismethod(&klvalue_getobj(callable, KlState*)->coinfo);
+  } else  {
+    /* else take all the C function and C closure as method */
+    return klvalue_checktype(callable, KL_CCLOSURE) ||
+           klvalue_checktype(callable, KL_CCLOSURE);
+  }
+}
+
+/* insert 'thisobj' before all parameters.
+ * stack size is guaranteed by caller.
+ */
+static void klexec_addthis(KlState* state, KlValue* thisobj, size_t narg) {
+  kl_assert(klstack_residual(klstate_stack(state)) >= 1, "");
+  KlValue* stktop = klstate_stktop(state);
+  while (narg--) {
+    klvalue_setvalue(stktop, stktop - 1);
+      --stktop;
+  }
+  klvalue_setvalue(stktop, thisobj);
+  klstack_move_top(klstate_stack(state), 1);
+}
+
 /* Prepare for calling a callable object (C function, C closure, klang closure).
  * Also perform the actual call for C function and C closure.
  */
-KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* callable, size_t narg) {
+KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* callable, size_t narg, KlCallPrepCallBack callback) {
   if (kl_likely(klvalue_checktype(callable, KL_KCLOSURE))) {          /* is a klang closure ? */
     /* get closure in advance, in case of dangling pointer due to stack grow */
     KlKClosure* kclo = klvalue_getobj(callable, KlKClosure*);
@@ -118,7 +144,9 @@ KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* ca
     callinfo->callable.clo = klmm_to_gcobj(kclo);
     callinfo->status = KLSTATE_CI_STATUS_KCLO;
     callinfo->savedpc = klkfunc_entrypoint(kfunc);
-    callinfo->top = klstate_stktop(state) + framesize - narg;
+    KlValue* stktop = klstate_stktop(state);
+    callinfo->top = stktop + framesize - narg;
+    callinfo->base = stktop - narg;
     klexec_push_callinfo(state);
     return KL_E_NONE;
   } else if (kl_likely(klvalue_checktype(callable, KL_COROUTINE))) {  /* is a coroutine ? */
@@ -146,15 +174,37 @@ KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* ca
     klexec_pop_callinfo(state);
     return exception;
   } else {
-    /* try opmethod */
-    KlValue* method = klexec_getfield(state, callable, state->common->string.call);
-    if (kl_unlikely(!method || !klvalue_callable(method))) {
-      return klstate_throw(state, KL_E_INVLD, "try to call a non-callable object");
-    }
-    klvalue_setvalue(&callinfo->env_this, callable);
-    /* redo the preparation */
-    return klexec_callprepare(state, callinfo, method, narg);
+    if (callback)
+      return callback(state, callinfo, callable, narg);
+    return klstate_throw(state, KL_E_TYPE,
+           "try to call a non-callable object(method '%s' can not be called from here)",
+           state->common->string.call);
   }
+}
+
+static KlException klexec_callprep_callback_for_call(KlState* state, KlCallInfo* callinfo, KlValue* callable, size_t narg) {
+  KlValue* method = klexec_getfield(state, callable, state->common->string.call);
+  if (kl_unlikely(!method || !klvalue_callable(method)))
+    return klstate_throw(state, KL_E_TYPE, "try to call a non-callable object");
+  if (klexec_is_method(method)) {
+    ++narg;
+    klvalue_setvalue(klstate_getval(state, -narg), callable);
+    kl_assert(callinfo->retoff == -1, "");
+    callinfo->retoff = 0;
+  }
+  return klexec_callprepare(state, callinfo, method, narg, NULL);
+}
+
+static KlException klexec_callprep_callback_for_method(KlState* state, KlCallInfo* callinfo, KlValue* callable, size_t narg) {
+  KlValue* method = klexec_getfield(state, callable, state->common->string.call);
+  if (kl_unlikely(!method || !klvalue_callable(method)))
+    return klstate_throw(state, KL_E_TYPE, "try to call a non-callable object");
+  if (klexec_is_method(method)) {
+    ++narg;
+    klvalue_setvalue(klstate_getval(state, -narg), callable);
+    callinfo->retoff = 0;
+  }
+  return klexec_callprepare(state, callinfo, method, narg, NULL);
 }
 
 KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field) {
@@ -179,16 +229,15 @@ static KlException klexec_dopreopmethod(KlState* state, KlValue* a, KlValue* b, 
   kl_assert(klstack_residual(klstate_stack(state)) >= 1, "stack size not enough for calling prefix operator");
 
   KlValue* method = klexec_getfield(state, b, op);
-  if (kl_unlikely(!method)) {
+  if (kl_unlikely(!method || !klexec_is_method(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply prefix '%s' to value with type '%s'",
                          klstring_content(op), klvalue_typename(klvalue_gettype(b)));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, a - klstate_stktop(state));
   if (kl_unlikely(!newci))
     return klstate_throw(state, KL_E_OOM, "out of memory when calling a prefix operator method");
-  klvalue_setnil(&newci->env_this);
   klstack_pushvalue(klstate_stack(state), b);
-  return klexec_callprepare(state, newci, method, 1);
+  return klexec_callprepare(state, newci, method, 1, NULL);
 }
 
 KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue* c, KlString* op) {
@@ -199,18 +248,16 @@ KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue
   kl_assert(klstack_residual(klstate_stack(state)) >= 2, "stack size not enough for calling binary operator");
 
   KlValue* method = klexec_getfield(state, b, op);
-  if (!method) method = klexec_getfield(state, c, op);
-  if (kl_unlikely(!method)) {
+  if (kl_unlikely(!method || !klexec_is_method(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply binary '%s' to values with type '%s' and '%s'",
                          klstring_content(op), klvalue_typename(klvalue_gettype(b)), klvalue_typename(klvalue_gettype(c)));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, a - klstate_stktop(state));
   if (kl_unlikely(!newci))
     return klstate_throw(state, KL_E_OOM, "out of memory when calling a binary operator method");
-  klvalue_setnil(&newci->env_this);
   klstack_pushvalue(klstate_stack(state), b);
   klstack_pushvalue(klstate_stack(state), c);
-  return klexec_callprepare(state, newci, method, 2);
+  return klexec_callprepare(state, newci, method, 2, NULL);
 }
 
 static KlException klexec_doindexmethod(KlState* state, KlValue* val, KlValue* indexable, KlValue* key) {
@@ -222,17 +269,16 @@ static KlException klexec_doindexmethod(KlState* state, KlValue* val, KlValue* i
 
   KlString* index = state->common->string.index;
   KlValue* method = klexec_getfield(state, indexable, index);
-  if (!method) method = klexec_getfield(state, indexable, index);
-  if (kl_unlikely(!method)) {
+  if (kl_unlikely(!method || !klexec_is_method(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s' for key with type '%s'",
                          klstring_content(index), klvalue_typename(klvalue_gettype(indexable)), klvalue_typename(klvalue_gettype(key)));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, val - klstate_stktop(state));
   if (kl_unlikely(!newci))
     return klstate_throw(state, KL_E_OOM, "out of memory when calling index operator method");
-  klvalue_setvalue(&newci->env_this, indexable);
+  klstack_pushvalue(klstate_stack(state), indexable);
   klstack_pushvalue(klstate_stack(state), key);
-  return klexec_callprepare(state, newci, method, 1);
+  return klexec_callprepare(state, newci, method, 2, NULL);
 }
 
 static KlException klexec_doindexasmethod(KlState* state, KlValue* indexable, KlValue* key, KlValue* val) {
@@ -243,31 +289,30 @@ static KlException klexec_doindexasmethod(KlState* state, KlValue* indexable, Kl
 
   KlString* indexas = state->common->string.indexas;
   KlValue* method = klexec_getfield(state, indexable, indexas);
-  if (!method) method = klexec_getfield(state, indexable, indexas);
-  if (kl_unlikely(!method)) {
+  if (kl_unlikely(!method || !klexec_is_method(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s' for key with type '%s'",
                          klstring_content(indexas), klvalue_typename(klvalue_gettype(indexable)), klvalue_typename(klvalue_gettype(key)));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 0, 0);
   if (kl_unlikely(!newci))
     return klstate_throw(state, KL_E_OOM, "out of memory when calling indexas operator method");
-  klvalue_setvalue(&newci->env_this, indexable);
+  klstack_pushvalue(klstate_stack(state), indexable);
   klstack_pushvalue(klstate_stack(state), key);
   klstack_pushvalue(klstate_stack(state), val);
-  return klexec_callprepare(state, newci, method, 2);
+  return klexec_callprepare(state, newci, method, 3, NULL);
 }
 
 static KlException klexec_domultiargsmethod(KlState* state, KlValue* obj, KlValue* res, size_t narg, KlString* op) {
   KlValue* method = klexec_getfield(state, obj, op);
-  if (kl_unlikely(!method)) {
+  if (kl_unlikely(!method || !klexec_is_method(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s'",
                          klstring_content(op), klvalue_typename(klvalue_gettype(obj)));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, res - (klstate_stktop(state) - narg));
   if (kl_unlikely(!newci))
     return klstate_throw(state, KL_E_OOM, "out of memory when calling indexas operator method");
-  klvalue_setvalue(&newci->env_this, obj);
-  return klexec_callprepare(state, newci, method, narg);
+  klexec_addthis(state, obj, narg);
+  return klexec_callprepare(state, newci, method, narg, NULL);
 }
 
 static KlException klexec_dolt(KlState* state, KlValue* a, KlValue* b, KlValue* c) {
@@ -385,11 +430,11 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
     KlException exception = klexec_dobinopmethod(state, (a), (b), (c), opname);   \
     if (kl_unlikely(exception)) return exception;                                 \
     if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
-      KlValue* newbase = callinfo->top;                                           \
+      KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {  /* C function or C closure */                                       \
       /* stack may have grown. restore stkbase. */                                \
-      stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);                \
+      stkbase = callinfo->base;                                                   \
     }                                                                             \
   }                                                                               \
 }
@@ -408,11 +453,11 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
     KlException exception = klexec_dobinopmethod(state, (a), (b), (c), opname);   \
     if (kl_unlikely(exception)) return exception;                                 \
     if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
-      KlValue* newbase = callinfo->top;                                           \
+      KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {  /* C function or C closure */                                       \
       /* stack may have grown. restore stkbase. */                                \
-      stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);                \
+      stkbase = callinfo->base;                                                   \
     }                                                                             \
   }                                                                               \
 }
@@ -428,11 +473,11 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
     KlException exception = klexec_dobinopmethod(state, (a), (b), &tmp, opname);  \
     if (kl_unlikely(exception)) return exception;                                 \
     if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
-      KlValue* newbase = callinfo->top;                                           \
+      KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {  /* C function or C closure */                                       \
       /* stack may have grown. restore stkbase. */                                \
-      stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);                \
+      stkbase = callinfo->base;                                                   \
     }                                                                             \
   }                                                                               \
 }
@@ -448,11 +493,11 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
     if (kl_unlikely(exception)) return exception;                                 \
     if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       callinfo->savedpc -= 1; /* redo condition jump later */                     \
-      KlValue* newbase = callinfo->top;                                           \
+      KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {  /* C function or C closure */                                       \
       /* stack may have grown. restore stkbase. */                                \
-      stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);                \
+      stkbase = callinfo->base;                                                   \
       if (klexec_if(callinfo->top) == cond) pc += offset;                         \
     }                                                                             \
   }                                                                               \
@@ -470,12 +515,12 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
     KlException exception = klexec_do##order(state, respos, (a), &tmpval);        \
     if (kl_unlikely(exception)) return exception;                                 \
     if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
-      callinfo->savedpc -= 1;                                                     \
-      KlValue* newbase = callinfo->top;                                           \
+      callinfo->savedpc -= 1; /* redo condition jump later */                     \
+      KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {  /* C function or C closure */                                       \
       /* stack may have grown. restore stkbase. */                                \
-      stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);                \
+      stkbase = callinfo->base;                                                   \
       if (klexec_if(callinfo->top) == cond) pc += offset;                         \
     }                                                                             \
   }                                                                               \
@@ -492,12 +537,12 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
       KlException exception = klexec_dobinopmethod(state, respos, (a), (b), op);  \
       if (kl_unlikely(exception)) return exception;                               \
       if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */       \
-        callinfo->savedpc -= 1;                                                   \
-        KlValue* newbase = callinfo->top;                                         \
+        callinfo->savedpc -= 1; /* redo condition jump later */                   \
+        KlValue* newbase = state->callinfo->base;                                 \
         klexec_updateglobal(newbase);                                             \
       } else {  /* C function or C closure */                                     \
         /* stack may have grown. restore stkbase. */                              \
-        stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);              \
+        stkbase = callinfo->base;                                                 \
         if (klexec_if(callinfo->top) == cond) pc += offset;                       \
       }                                                                           \
     } else {                                                                      \
@@ -521,12 +566,12 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
       KlException exception = klexec_dobinopmethod(state, respos, (a), (b), op);  \
       if (kl_unlikely(exception)) return exception;                               \
       if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */       \
-        callinfo->savedpc -= 1;                                                   \
-        KlValue* newbase = callinfo->top;                                         \
+        callinfo->savedpc -= 1; /* redo condition jump later */                   \
+        KlValue* newbase = state->callinfo->base;                                 \
         klexec_updateglobal(newbase);                                             \
       } else {  /* C function or C closure */                                     \
         /* stack may have grown. restore stkbase. */                              \
-        stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);              \
+        stkbase = callinfo->base;                                                 \
         if (klexec_if(callinfo->top) == cond) pc += offset;                       \
       }                                                                           \
     }                                                                             \
@@ -582,7 +627,6 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
       return klexec_handle_setfield_exception(state, exception, keystr);          \
   }                                                                               \
 }
-
 
 KlException klexec_execute(KlState* state) {
   kl_assert(state->callinfo->status & KLSTATE_CI_STATUS_KCLO, "expected klang closure in klexec_execute()");
@@ -764,15 +808,15 @@ KlException klexec_execute(KlState* state) {
         KlCallInfo* newci = klexec_new_callinfo(state, nret, -1);
         if (kl_unlikely(!newci))
           return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
-        klvalue_setnil(&newci->env_this);   /* just a function call, no 'this' */
-        ptrdiff_t argbase_save = klexec_savestack(state, argbase);
-        KlException exception = klexec_callprepare(state, newci, callable, narg);
+        newci->status = KLSTATE_CI_STATUS_NORM;
+        KlException exception = klexec_callprepare(state, newci, callable, narg, klexec_callprep_callback_for_call);
         if (kl_unlikely(exception)) return exception;
         if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
-          klexec_updateglobal(klexec_restorestack(state, argbase_save));
+          KlValue* newbase = state->callinfo->base;
+          klexec_updateglobal(newbase);
         } else {  /* C function or C closure */
           /* stack may have grown. restore stkbase. */
-          stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+          stkbase = callinfo->base;
         }
         break;
       }
@@ -785,24 +829,25 @@ KlException klexec_execute(KlState* state) {
         kl_assert(KLINST_GET_OPCODE(extra) == KLOPCODE_EXTRA, "something wrong in code generation");
         size_t narg = KLINST_XYZ_GETX(extra);
         size_t nret = KLINST_XYZ_GETY(extra);
-        KlValue* argbase = thisobj + 1;
+        bool ismethod = klexec_is_method(thisobj);
+        KlValue* argbase = ismethod ? thisobj : thisobj + 1;
+        if (ismethod) ++narg;
 
         klexec_savestate(argbase + narg, callinfo);
-        KlCallInfo* newci = klexec_new_callinfo(state, nret, -1);
+        KlCallInfo* newci = klexec_new_callinfo(state, nret, ismethod ? 0 : -1);
         if (kl_unlikely(!newci))
           return klstate_throw(state, KL_E_OOM, "out of memory when call a callable object");
-        klvalue_setvalue(&newci->env_this, thisobj);  /* set 'this' */
         KlValue* callable = klexec_getfield(state, thisobj, field);
         if (kl_unlikely(!callable))
           return klstate_throw(state, KL_E_INVLD, "can not find method named %s", field);
-        ptrdiff_t argbase_save = klexec_savestack(state, argbase);
-        KlException exception = klexec_callprepare(state, newci, callable, narg);
+        KlException exception = klexec_callprepare(state, newci, callable, narg, klexec_callprep_callback_for_method);
         if (kl_unlikely(exception)) return exception;
         if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
-          klexec_updateglobal(klexec_restorestack(state, argbase_save));
+          KlValue* newbase = state->callinfo->base;
+          klexec_updateglobal(newbase);
         } else {  /* C function or C closure */
           /* stack may have grown. restore stkbase. */
-          stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+          stkbase = callinfo->base;
         }
         break;
       }
@@ -819,7 +864,8 @@ KlException klexec_execute(KlState* state) {
         klexec_pop_callinfo(state);
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
-        klexec_updateglobal(state->callinfo->top - klkfunc_framesize(klcast(KlKClosure*, state->callinfo->callable.clo)->kfunc));
+        KlValue* newbase = state->callinfo->base;
+        klexec_updateglobal(newbase);
         break;
       }
       case KLOPCODE_RETURN0: {
@@ -828,7 +874,8 @@ KlException klexec_execute(KlState* state) {
         klexec_pop_callinfo(state);
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
-        klexec_updateglobal(state->callinfo->top - klkfunc_framesize(klcast(KlKClosure*, state->callinfo->callable.clo)->kfunc));
+        KlValue* newbase = state->callinfo->base;
+        klexec_updateglobal(newbase);
         break;
       }
       case KLOPCODE_RETURN1: {
@@ -842,7 +889,8 @@ KlException klexec_execute(KlState* state) {
         klexec_pop_callinfo(state);
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
-        klexec_updateglobal(state->callinfo->top - klkfunc_framesize(klcast(KlKClosure*, state->callinfo->callable.clo)->kfunc));
+        KlValue* newbase = state->callinfo->base;
+        klexec_updateglobal(newbase);
         break;
       }
       case KLOPCODE_LOADBOOL: {
@@ -876,11 +924,6 @@ KlException klexec_execute(KlState* state) {
         klvalue_setvalue(a, ref);
         break;
       }
-      case KLOPCODE_LOADTHIS: {
-        KlValue* a = stkbase + KLINST_A_GETA(inst);
-        klvalue_setvalue(a, &callinfo->env_this);
-        break;
-      }
       case KLOPCODE_LOADGLOBAL: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         kl_assert(klvalue_checktype(constants + KLINST_AX_GETX(inst), KL_STRING), "something wrong in code generation");
@@ -893,11 +936,6 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         KlValue* ref = klref_getval(closure->refs[KLINST_AX_GETX(inst)]);
         klvalue_setvalue(ref, a);
-        break;
-      }
-      case KLOPCODE_STORETHIS: {
-        KlValue* a = stkbase + KLINST_A_GETA(inst);
-        klvalue_setvalue(&callinfo->env_this, a);
         break;
       }
       case KLOPCODE_STOREGLOBAL: {
@@ -954,14 +992,14 @@ KlException klexec_execute(KlState* state) {
         if (kl_likely(klvalue_checktype(a, KL_ARRAY))) {
           klarray_push_back(klvalue_getobj(a, KlArray*), first, nelem);
         } else {
-          ptrdiff_t newbase_save = klexec_savestack(state, first);
           KlException exception = klexec_domultiargsmethod(state, a, a, nelem, state->common->string.arrpush);
           if (kl_unlikely(exception)) return exception;
           if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
-            klexec_updateglobal(klexec_restorestack(state, newbase_save));
+            KlValue* newbase = state->callinfo->base;
+            klexec_updateglobal(newbase);
           } else {  /* C function or C closure */
             /* stack may have grown. restore stkbase. */
-            stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+            stkbase = callinfo->base;
           }
         }
         break;
@@ -1013,11 +1051,11 @@ KlException klexec_execute(KlState* state) {
           KlException exception = klexec_doindexmethod(state, val, indexable, key);
           if (kl_unlikely(exception)) return exception;
           if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
-            KlValue* newbase = callinfo->top;
+            KlValue* newbase = state->callinfo->base;
             klexec_updateglobal(newbase);
           } else {  /* C function or C closure */
             /* stack may have grown. restore stkbase. */
-            stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+            stkbase = callinfo->base;
           }
         }
         break;
@@ -1056,11 +1094,11 @@ KlException klexec_execute(KlState* state) {
           KlException exception = klexec_doindexasmethod(state, val, indexable, key);
           if (kl_unlikely(exception)) return exception;
           if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
-            KlValue* newbase = callinfo->top;
+            KlValue* newbase = state->callinfo->base;
             klexec_updateglobal(newbase);
           } else {  /* C function or C closure */
             /* stack may have grown. restore stkbase. */
-            stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+            stkbase = callinfo->base;
           }
         }
         break;
@@ -1121,20 +1159,6 @@ KlException klexec_execute(KlState* state) {
         klexec_setfieldgeneric(dotable, key, val);
         break;
       }
-      case KLOPCODE_THISSETFIELD: {
-        KlValue* val = stkbase + KLINST_AX_GETA(inst);
-        KlValue* key = constants + KLINST_AX_GETX(inst);
-        KlValue* pthis = &callinfo->env_this;
-        klexec_setfieldgeneric(pthis, key, val);
-        break;
-      }
-      case KLOPCODE_THISGETFIELD: {
-        KlValue* val = stkbase + KLINST_AX_GETA(inst);
-        KlValue* key = constants + KLINST_AX_GETX(inst);
-        KlValue* pthis = &callinfo->env_this;
-        klexec_getfieldgeneric(pthis, key, val);
-        break;
-      }
       case KLOPCODE_NEWLOCAL: {
         KlValue* classval = stkbase + KLINST_AX_GETA(inst);
         KlValue* fieldname = constants + KLINST_AX_GETX(inst);
@@ -1191,8 +1215,8 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_NE: {
-        KlValue* a = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* b = stkbase + KLINST_ABX_GETB(inst);
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction extra = *pc++;
         bool cond = KLINST_XI_GETX(extra);
@@ -1201,8 +1225,8 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_LT: {
-        KlValue* a = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* b = stkbase + KLINST_ABX_GETB(inst);
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         bool cond = KLINST_XI_GETX(condjmp);
@@ -1211,8 +1235,8 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_GT: {
-        KlValue* a = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* b = stkbase + KLINST_ABX_GETB(inst);
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         bool cond = KLINST_XI_GETX(condjmp);
@@ -1221,8 +1245,8 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_LE: {
-        KlValue* a = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* b = stkbase + KLINST_ABX_GETB(inst);
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         bool cond = KLINST_XI_GETX(condjmp);
@@ -1231,8 +1255,8 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_GE: {
-        KlValue* a = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* b = stkbase + KLINST_ABX_GETB(inst);
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         bool cond = KLINST_XI_GETX(condjmp);
@@ -1469,15 +1493,15 @@ KlException klexec_execute(KlState* state) {
         KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
         if (kl_unlikely(!newci))
           return klstate_throw(state, KL_E_OOM, "out of memory when do generic for loop");
-        klvalue_setnil(&newci->env_this);   /* just a function call, no 'this' */
-        ptrdiff_t argbase_save = klexec_savestack(state, argbase);
-        KlException exception = klexec_callprepare(state, newci, a, nret);
+        newci->status = KLSTATE_CI_STATUS_NORM;
+        KlException exception = klexec_callprepare(state, newci, a, nret, NULL);
         if (kl_unlikely(exception)) return exception;
         if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
-          klexec_updateglobal(klexec_restorestack(state, argbase_save));
+          KlValue* newbase = state->callinfo->base;
+          klexec_updateglobal(newbase);
         } else {  /* C function or C closure */
           /* stack may have grown. restore stkbase. */
-          stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+          stkbase = callinfo->base;
         }
         break;
       }

@@ -39,6 +39,7 @@ static inline KlGCObject* klco_propagate(KlCoroutine* co, KlGCObject* gclist);
 
 static inline KlCoStatus klco_status(KlCoroutine* co);
 static inline void klco_setstatus(KlCoroutine* co, KlCoStatus status);
+static inline bool klco_ismethod(KlCoroutine* co);
 static inline bool klco_valid(KlCoroutine* co);
 static inline void klco_yield(KlCoroutine* co, KlValue* yieldvals, size_t nyield, size_t nwanted);
 
@@ -55,11 +56,15 @@ static inline void klco_setstatus(KlCoroutine* co, KlCoStatus status) {
   co->status = status;
 }
 
+static inline bool klco_ismethod(KlCoroutine* co) {
+  return klkfunc_ismethod(co->kclo->kfunc);
+}
+
 static inline bool klco_valid(KlCoroutine* co) {
   return co->kclo != NULL;
 }
 
-static inline void klco_yield(KlCoroutine* co, KlValue* yieldvals, size_t nyield, size_t nwanted) {
+kl_noreturn static inline void klco_yield(KlCoroutine* co, KlValue* yieldvals, size_t nyield, size_t nwanted) {
   kl_assert(klco_status(co) == KLCO_RUNNING, "can only yield running coroutine");
   co->yieldvals = yieldvals;
   co->nyield = nyield;

@@ -83,6 +83,7 @@ static void klstate_correct_callinfo(KlState* state, ptrdiff_t diff) {
   KlCallInfo* callinfo = state->callinfo;
   while (callinfo) {
     callinfo->top += diff;
+    callinfo->base += diff;
     callinfo = callinfo->prev;
   }
 }

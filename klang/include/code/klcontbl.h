@@ -8,6 +8,7 @@ typedef struct tagKlConEntry KlConEntry;
 struct tagKlConEntry {
   KlConstant con;
   size_t hash;
+  size_t index;
   KlConEntry* next;
 };
 
@@ -26,5 +27,6 @@ void klcontbl_delete(KlConTbl* contbl);
 
 KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con);
 KlConEntry* klcontbl_search(KlConTbl* map, KlConstant* con);
+KlConEntry* klcontbl_get(KlConTbl* map, KlConstant* con);
 
 #endif

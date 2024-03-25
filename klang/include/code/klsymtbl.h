@@ -3,19 +3,19 @@
 
 #include "klang/include/misc/klutils.h"
 #include "klang/include/parse/klstrtab.h"
+#include "klang/include/code/klvalpos.h"
 #include <stdlib.h>
 
-typedef enum tagKlSymDuration {
-  KLSYMDUR_STACK,
-  KLSYMDUR_REF,
-} KlSymDuration;
-
-typedef struct tagKlSymbolAttr {
-  size_t pos;
-  KlSymDuration duration;
-} KlSymbolAttr;
+typedef KlValKind KlSymKind;
 
 typedef struct tagKlSymbol KlSymbol;
+
+typedef struct tagKlSymbolAttr {
+  KlSymKind kind;
+  size_t idx;
+  KlSymbol* refto;  /* if reference, this points to the referenced symbol */
+} KlSymbolAttr;
+
 struct tagKlSymbol {
   size_t hash;
   KlStrDesc name;
@@ -46,15 +46,21 @@ void klsymtbl_destroy(KlSymTbl* symtbl);
 KlSymTbl* klsymtbl_create(size_t capacity, KlSymbolPool* pool, KlStrTab* strtab, KlSymTbl* parent);
 void klsymtbl_delete(KlSymTbl* symtbl);
 
+
 KlSymbol* klsymtbl_insert(KlSymTbl* symtbl, KlStrDesc name);
 KlSymbol* klsymtbl_search(KlSymTbl* map, KlStrDesc name);
 static inline KlSymTbl* klsymtbl_parent(KlSymTbl* symtbl);
+static inline size_t klsymtbl_size(KlSymTbl* symtbl);
 
 static inline KlSymbol* klsymbolpool_alloc(KlSymbolPool* pool);
 static inline void klsymbolpool_dealloc(KlSymbolPool* pool, KlSymbol* symbol);
 
 static inline KlSymTbl* klsymtbl_parent(KlSymTbl* symtbl) {
   return symtbl->parent;
+}
+
+static inline size_t klsymtbl_size(KlSymTbl* symtbl) {
+  return symtbl->size;
 }
 
 static inline KlSymbol* klsymbolpool_alloc(KlSymbolPool* pool) {
