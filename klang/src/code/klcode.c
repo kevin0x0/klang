@@ -250,7 +250,7 @@ static inline void klcode_pushinstmethod(KlFuncState* state, size_t obj, size_t 
 
 
 static KlSymbol* klcode_getsymbol(KlFuncState* state, KlStrDesc name) {
-  if (state) return NULL;
+  if (!state) return NULL;
   KlSymbol* symbol;
   KlSymTbl* symtbl = state->symtbl;
   while (symtbl) {
