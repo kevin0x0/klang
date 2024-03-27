@@ -110,6 +110,7 @@ static bool klfuncstate_init(KlFuncState* state, KlSymTblPool* symtblpool, KlStr
     klsymtblpool_dealloc(symtblpool, state->reftbl);
     klcontbl_delete(state->contbl);
     klcodearr_destroy(&state->nestedfunc);
+    return false;
   }
   strncpy(constructor, "constructor", len);
   state->string.constructor.id = klstrtab_pushstring(strtab, len);
