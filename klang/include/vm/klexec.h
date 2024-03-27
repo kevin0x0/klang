@@ -12,16 +12,17 @@
 #define klexec_savestack(state, stkptr)     ((stkptr) - klstack_raw(klstate_stack((state))))
 #define klexec_restorestack(state, diff)    (klstack_raw(klstate_stack((state))) + (diff))
 
-typedef KlException (*KlCallPrepCallBack)(KlState* state, KlCallInfo* callinfo, KlValue* callable, size_t narg);
+typedef KlException (*KlCallPrepCallBack)(KlState* state, KlValue* callable, size_t narg);
 
 KlValue* klexec_getfield(KlState* state, KlValue* callable, KlString* op);
 KlException klexec_callc(KlState* state, KlCFunction* cfunc, size_t narg, size_t nret);
-KlException klexec_callprepare(KlState* state, KlCallInfo* callinfo, KlValue* callable, size_t narg, KlCallPrepCallBack callback);
+KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback);
 KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret);
 KlException klexec_execute(KlState* state);
 static inline void klexec_pop_callinfo(KlState* state);
 static inline void klexec_push_callinfo(KlState* state);
 static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff);
+static inline KlCallInfo* klexec_newed_callinfo(KlState* state);
 KlCallInfo* klexec_alloc_callinfo(KlState* state);
 
 static inline void klexec_setnils(KlValue* vals, size_t ncopy);
@@ -50,6 +51,10 @@ static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int r
   callinfo->nret = nret;
   callinfo->retoff = retoff;
   return callinfo;
+}
+
+static inline KlCallInfo* klexec_newed_callinfo(KlState* state) {
+  return state->callinfo->next;
 }
 
 static inline void klexec_setnils(KlValue* vals, size_t ncopy) {

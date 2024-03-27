@@ -64,6 +64,8 @@ typedef enum tagKlTokenKind {
   KLTK_LOCAL,
   KLTK_SHARED,
   KLTK_NEW,
+  KLTK_INHERIT,
+  KLTK_METHOD,
   KLTK_ASYNC,
   KLTK_YIELD,
 

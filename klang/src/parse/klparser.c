@@ -376,7 +376,7 @@ static KlCst* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc id, K
   klcfd_shrink(&fields);
   karray_shrink(&vals);
   size_t nfield = karray_size(&vals);
-  KlCstClass* klclass = klcst_class_create(klcfd_steal(&fields), (KlCst**)karray_steal(&vals), nfield, ph_filepos, ph_filepos);
+  KlCstClass* klclass = klcst_class_create(klcfd_steal(&fields), (KlCst**)karray_steal(&vals), nfield, NULL, ph_filepos, ph_filepos);
   klparser_oomifnull(klclass);
   return klcst(klclass);
 }
@@ -399,7 +399,7 @@ static KlCst* klparser_generatorclass(KlParser* parser, KlLex* lex) {
                     klcst_kind(exprlist->elems[0]) != KLCST_EXPR_ID)) {
       klparser_error(parser, kllex_inputstream(lex),
                      klcst_begin(exprlist), klcst_end(exprlist),
-                     "should be a single identifier in class defination");
+                     "should be a single identifier in class definition");
       klcst_delete(klcast(KlCst*, exprlist));
       klparser_discarduntil(lex, KLTK_RBRACE);
       return NULL;
@@ -553,14 +553,37 @@ KlCst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       klparser_oomifnull(asyncexpr);
       return klcst(asyncexpr);
     }
-    case KLTK_DOT: {
+    case KLTK_INHERIT: {
+      KlFileOffset begin = lex->tok.begin;
+      kllex_next(lex);
+      KlCst* base = klparser_exprpre(parser, lex);
+      klparser_returnifnull(base);
+      klparser_match(parser, lex, KLTK_COLON);
+      KlCst* cst = klparser_exprunit(parser, lex);
+      if (kl_unlikely(!cst)) {
+        klcst_delete(base);
+        return NULL;
+      }
+      if (kl_unlikely(klcst_kind(cst) != KLCST_EXPR_CLASS)) {
+        klparser_error(parser, kllex_inputstream(lex), cst->begin, cst->end,
+                       "must be a class definition");
+        klcst_delete(base);
+        klcst_delete(cst);
+        return NULL;
+      }
+      KlCstClass* klclass = klcast(KlCstClass*, cst);
+      klclass->baseclass = base;
+      klcst_setposition(klclass, begin, klcst_end(klclass));
+      return klcst(klclass);
+    }
+    case KLTK_METHOD: {
       KlFileOffset begin = lex->tok.begin;
       kllex_next(lex);
       KlCst* expr = klparser_exprpost(parser, lex);
       klparser_returnifnull(expr);
       if (kl_unlikely(klcst_kind(expr) != KLCST_EXPR_FUNC)) {
         klparser_error(parser, kllex_inputstream(lex), expr->begin, expr->end,
-                       "prefix unary operator '.' must be followed by a function construction");
+                       "'method' must be followed by a function construction");
         return expr;
       }
       KlCstFunc* func = klcast(KlCstFunc*, expr);

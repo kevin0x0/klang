@@ -35,7 +35,7 @@ static inline KlValue* klarray_top(KlArray* array);
 
 static inline void klarray_make_empty(KlArray* array);
 static inline KlValue* klarray_access(KlArray* array, size_t index);
-static inline void klarray_index(KlArray* array, size_t index, KlValue* val);
+static inline void klarray_index(KlArray* array, KlInt index, KlValue* val);
 static inline KlException klarray_indexas(KlArray* array, size_t index, KlValue* val);
 static inline KlValue* klarray_access_from_top(KlArray* array, size_t index);
 //static inline KlValue* klarray_set_from_top(KlArray* array, size_t index);
@@ -85,8 +85,8 @@ static inline KlValue* klarray_access(KlArray* array, size_t index) {
   return &array->begin[index];
 }
 
-static inline void klarray_index(KlArray* array, size_t index, KlValue* val) {
-  if (index < klarray_size(array)) {
+static inline void klarray_index(KlArray* array, KlInt index, KlValue* val) {
+  if (0 < index && index < (KlInt)klarray_size(array)) {
     klvalue_setvalue(val, klarray_access(array, index));
     return;
   }

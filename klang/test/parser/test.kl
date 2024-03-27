@@ -12,3 +12,20 @@ let class = { say = method };
 class.say();
 
 let f = .n -> n if n <= 1 else f(n - 1) + f(n - 2);
+
+let Window = inherit {} : {
+  local width;
+  local height;
+  local pos_x;
+  local pos_y;
+  constructor = method(width, height) {
+    this.width = width;
+    this.height = height;
+  };
+  moveto = method(posx, posy) {
+    this.pos_x = posx;
+    this.pos_y = posy;
+  };
+}
+
+let win = new Window(10, 20);

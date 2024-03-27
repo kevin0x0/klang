@@ -40,6 +40,7 @@ typedef struct tagKlCstClass {
   KlCstClassFieldDesc* fields;      /* names of fields */
   KlCst** vals;                     /* values */
   size_t nfield;
+  KlCst* baseclass;
 } KlCstClass;
 
 typedef struct tagKlConstant {
@@ -125,7 +126,7 @@ KlCstIdentifier* klcst_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset 
 KlCstMap* klcst_map_create(KlCst** keys, KlCst** vals, size_t npair, KlFileOffset begin, KlFileOffset end);
 KlCstArray* klcst_array_create(KlCst* vals, KlFileOffset begin, KlFileOffset end);
 KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCst* stmts, KlFileOffset begin, KlFileOffset end);
-KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlFileOffset begin, KlFileOffset end);
+KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlCst* base, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, KlFileOffset end);

@@ -5,9 +5,6 @@
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/misc/klutils.h"
-#include "klang/include/parse/kllex.h"
-#include "klang/include/parse/klstrtab.h"
-#include "klang/include/parse/kltokens.h"
 #include "klang/include/vm/klinst.h"
 #include <setjmp.h>
 #include <stdarg.h>
@@ -53,9 +50,11 @@ static bool klfuncstate_init(KlFuncState* state, KlSymTblPool* symtblpool, KlStr
 static void klfuncstate_destroy(KlFuncState* state);
 
 KlCode* klcode_create(KlCst* cst) {
+  kltodo("implement klcode_create");
 }
 
 void klcode_delete(KlCode* code) {
+  kltodo("implement klcode_delete");
 }
 
 static bool klfuncstate_init(KlFuncState* state, KlSymTblPool* symtblpool, KlStrTab* strtab, KlFuncState* prev, Ko* err, Ki* input) {
@@ -134,26 +133,20 @@ static inline size_t klcode_stacktop(KlFuncState* state) {
   return state->stksize;
 }
 
-static inline size_t klcode_stackalloc1(KlFuncState* state) {
-  return state->stksize++;
-}
-
 static inline size_t klcode_stackalloc(KlFuncState* state, size_t size) {
   size_t base = state->stksize;
   state->stksize += size;
   return base;
 }
 
+static inline size_t klcode_stackalloc1(KlFuncState* state) {
+  return klcode_stackalloc(state, 1);
+}
+
 static inline void klcode_stackfree(KlFuncState* state, size_t stkid) {
   if (state->stksize > state->framesize)
     state->framesize = state->stksize;
   state->stksize = stkid;
-}
-
-static inline void klcode_stackfreeget(KlFuncState* state, size_t stkid) {
-  if (state->stksize > state->framesize)
-    state->framesize = state->stksize;
-  state->stksize = stkid + 1;
 }
 
 static inline size_t klcode_currcodesize(KlFuncState* state) {
@@ -328,10 +321,9 @@ static void klcode_putinstack(KlFuncState* state, KlCodeVal* val, KlFilePosition
 static void klcode_putinstktop(KlFuncState* state, KlCodeVal* val, KlFilePosition position) {
   size_t stkid = klcode_stacktop(state);
   klcode_putinstack(state, val, position);
-  if (val->index != stkid) {
-    klcode_stackalloc1(state);
+  if (val->index != stkid)
     klcode_pushinst(state, klinst_move(stkid, val->index), position);
-  }
+  klcode_stackfree(state, stkid + 1);
 }
 
 static KlCodeVal klcode_expr(KlFuncState* state, KlCst* cst);
@@ -345,6 +337,45 @@ static KlCodeVal klcode_exprpre(KlFuncState* state, KlCstPre* precst);
 static KlCodeVal klcode_exprbin(KlFuncState* state, KlCstBin* bincst);
 static KlCodeVal klcode_constant(KlFuncState* state, KlCstConstant* concst);
 static inline KlCodeVal klcode_identifier(KlFuncState* state, KlCstIdentifier* idcst);
+
+static KlCodeVal klcode_exprarr(KlFuncState* state, KlCstArray* arrcst) {
+  size_t stkid = klcode_stacktop(state);
+  size_t nval = klcode_passargs(state, arrcst->vals);
+  klcode_pushinst(state, klinst_mkarray(stkid, stkid, nval), klcode_cstposition(arrcst));
+  return klcodeval_stack(stkid);
+}
+
+static KlCodeVal klcode_exprarrgen(KlFuncState* state, KlCstArrayGenerator* arrgencst) {
+  kltodo("implement arrgen");
+}
+
+inline static size_t abovelog2(size_t num) {
+  size_t n = 0;
+  while ((1 << n) < num)
+    ++n;
+  return n;
+}
+
+static KlCodeVal klcode_exprmap(KlFuncState* state, KlCstMap* mapcst) {
+  size_t sizefield = abovelog2(mapcst->npair);
+  if (sizefield < 3) sizefield = 3;
+  size_t stkid = klcode_stacktop(state);
+  klcode_pushinst(state, klinst_mkmap(stkid, stkid, sizefield), klcode_cstposition(mapcst));
+  return klcodeval_stack(stkid);
+}
+
+static KlCodeVal klcode_exprclasspost(KlFuncState* state, KlCstClass* classcst) {
+}
+
+static KlCodeVal klcode_exprclass(KlFuncState* state, KlCstClass* classcst) {
+  size_t stkid = klcode_stacktop(state);
+  if (classcst->baseclass) {
+    /* base is specified */
+    KlCodeVal base = klcode_expr(state, classcst->baseclass);
+    klcode_putinstack(state, &base, klcode_cstposition(classcst->baseclass));
+    klcode_pushinst(state, klinst_mkclass(
+  }
+}
 
 static KlCodeVal klcode_constant(KlFuncState* state, KlCstConstant* concst) {
   (void)state;
@@ -394,21 +425,11 @@ static inline KlCodeVal klcode_tuple_as_singleval(KlFuncState* state, KlCstTuple
   return res;
 }
 
-static void klcode_tuple(KlFuncState* state, KlCstTuple* tuplecst, size_t nwanted) {
-  size_t nvalid = nwanted < tuplecst->nelem ? nwanted : tuplecst->nelem;
-  KlCst** exprs = tuplecst->elems;
-  size_t stktop = klcode_stacktop(state);
-  for (size_t i = 0; i < nvalid; ++i) {
-    KlCodeVal res = klcode_expr(state, exprs[i]);
-    klcode_putinstktop(state, &res, klcode_cstposition(exprs[i]));
-  }
-  if (nvalid < nwanted) {
-    klcode_pushinst(state, klinst_loadnil(stktop, nwanted - nvalid), klcode_cstposition(tuplecst));
-    klcode_stackalloc(state, nwanted - nvalid);
-  } else if (tuplecst->nelem > nwanted) {
-    for (size_t i = nwanted; i < tuplecst->nelem; ++i)
-      klcode_expr(state, exprs[i]);
-  }
+static inline void klcode_expryield(KlFuncState* state, KlCstYield* yieldcst, size_t nwanted) {
+  size_t stkid = klcode_stacktop(state);
+  size_t nres = klcode_passargs(state, yieldcst->vals);
+  klcode_pushinst(state, klinst_yield(stkid, nres, nwanted), klcode_cstposition(yieldcst));
+  klcode_stackfree(state, stkid);
 }
 
 static void klcode_method(KlFuncState* state, KlCst* objcst, KlStrDesc method, KlCst* args, KlFilePosition position, size_t nret) {
@@ -434,6 +455,52 @@ static void klcode_call(KlFuncState* state, KlCstPost* callcst, size_t nret) {
   size_t narg = klcode_passargs(state, callcst->post);
   klcode_pushinst(state, klinst_call(callable.index, narg, nret), klcode_cstposition(callcst));
   klcode_stackfree(state, stkid);
+}
+
+static KlCodeVal klcode_multires(KlFuncState* state, KlCst* cst, size_t nres) {
+  kl_assert(nres > 0, "");
+  switch (klcst_kind(cst)) {
+    case KLCST_EXPR_YIELD: {
+      size_t stkid = klcode_stacktop(state);
+      klcode_expryield(state, klcast(KlCstYield*, cst), nres);
+      return klcodeval_stack(stkid);
+    }
+    case KLCST_EXPR_CALL: {
+      size_t stkid = klcode_stacktop(state);
+      klcode_call(state, klcast(KlCstPost*, cst), nres);
+      return klcodeval_stack(stkid);
+    }
+    case KLCST_EXPR_VARARG: {
+      kltodo("implement vararg");
+    }
+    default: {
+      KlCodeVal res = klcode_expr(state, cst);
+      klcode_putinstktop(state, &res, klcode_cstposition(cst));
+      if (nres != 1) {
+        klcode_pushinst(state, klinst_loadnil(res.index + 1, nres - 1), klcode_cstposition(cst));
+        klcode_stackalloc(state, nres - 1);
+      }
+      return res;
+    }
+  }
+}
+
+static void klcode_tuple(KlFuncState* state, KlCstTuple* tuplecst, size_t nwanted) {
+  size_t nvalid = nwanted < tuplecst->nelem ? nwanted : tuplecst->nelem;
+  if (nvalid == 0) {
+    if (nwanted == 0) return;
+    size_t stktop = klcode_stacktop(state);
+    klcode_pushinst(state, klinst_loadnil(stktop, nwanted), klcode_cstposition(tuplecst));
+    klcode_stackalloc(state, nwanted);
+    return;
+  }
+  KlCst** exprs = tuplecst->elems;
+  size_t count = nvalid - 1;
+  for (size_t i = 0; i < count; ++i) {
+    KlCodeVal res = klcode_expr(state, exprs[i]);
+    klcode_putinstktop(state, &res, klcode_cstposition(exprs[i]));
+  }
+  klcode_multires(state, exprs[count], nwanted - count);
 }
 
 static size_t klcode_passargs(KlFuncState* state, KlCst* args) {
@@ -471,7 +538,7 @@ static KlCodeVal klcode_exprpre(KlFuncState* state, KlCstPre* precst) {
       return klcodeval_stack(stkid);
     }
     case KLTK_NOT: {
-      /* TODO: implement boolean expression */
+      kltodo("implement boolean expression");
     }
     default: {
       kl_assert(false, "control flow should not reach here");
@@ -592,10 +659,6 @@ static KlCodeVal klcode_exprbinrightnonstk(KlFuncState* state, KlCstBin* bincst,
         klcode_pushinst(state, klcode_bininst(bincst, stkid, left.index, rightid), klcode_cstposition(bincst));
       } else if (klinst_inrange(right.intval, 8)) {
         klcode_pushinst(state, klcode_bininsti(bincst, stkid, left.index, right.intval), klcode_cstposition(bincst));
-      } else if (klinst_inrange(right.intval, 16)) {
-        size_t stktop = klcode_stacktop(state);
-        klcode_pushinst(state, klinst_loadi(stktop, right.intval), klcode_cstposition(bincst->roperand));
-        klcode_pushinst(state, klcode_bininst(bincst, stkid, left.index, stktop), klcode_cstposition(bincst));
       } else {
         KlConstant con = { .type = KL_INT, .intval = right.intval };
         KlConEntry* conent = klcontbl_get(state->contbl, &con);
@@ -664,9 +727,7 @@ static KlCodeVal klcode_exprbin(KlFuncState* state, KlCstBin* bincst) {
     klcode_pushinst(state, inst, klcode_cstposition(bincst));
     return klcodeval_stack(stkid);
   } else {  /* else is boolean expression */
-    /* TODO: boolean expression */
-    kl_assert(false, "TODO!");
-    return klcodeval_nil();
+    kltodo("implement boolean expression");
   }
 }
 
@@ -678,8 +739,28 @@ static KlCodeVal klcode_exprpost(KlFuncState* state, KlCstPost* postcst) {
       return klcodeval_stack(stkid);
     }
     case KLTK_INDEX: {
+      size_t stkid = klcode_stacktop(state);
+      KlCodeVal indexable = klcode_expr(state, postcst->operand);
+      klcode_putinstack(state, &indexable, klcode_cstposition(postcst->operand));
+      KlCodeVal index = klcode_expr(state, postcst->post);
+      if (index.kind == KLVAL_INTEGER && klinst_inrange(index.intval, 8)) {
+        klcode_pushinst(state, klinst_indexi(stkid, indexable.index, index.intval), klcode_cstposition(postcst));
+      } else {
+        klcode_putinstack(state, &index, klcode_cstposition(postcst->post));
+        klcode_pushinst(state, klinst_index(stkid, indexable.index, index.index), klcode_cstposition(postcst));
+      }
+      klcode_stackfree(state, stkid);
+      return klcodeval_stack(stkid);
     }
     case KLTK_APPEND: {
+      size_t stkid = klcode_stacktop(state);
+      KlCodeVal appendable = klcode_expr(state, postcst->operand);
+      klcode_putinstack(state, &appendable, klcode_cstposition(postcst->operand));
+      size_t base = klcode_stacktop(state);
+      size_t narg = klcode_passargs(state, postcst->post);
+      klcode_pushinst(state, klinst_append(stkid, base, narg), klcode_cstposition(postcst));
+      klcode_stackfree(state, stkid);
+      return klcodeval_stack(appendable.index);
     }
     default: {
       kl_assert(false, "control flow should not reach here");
@@ -705,37 +786,90 @@ static KlCodeVal klcode_exprnew(KlFuncState* state, KlCstNew* newcst) {
   return klcodeval_stack(stkid);
 }
 
-static inline KlCodeVal klcode_expryield(KlFuncState* state, KlCstYield* yieldcst, size_t nwanted) {
+static KlCodeVal klcode_exprdot(KlFuncState* state, KlCstDot* dotcst) {
   size_t stkid = klcode_stacktop(state);
-  size_t nres = klcode_passargs(state, yieldcst->vals);
-  klcode_pushinst(state, klinst_yield(stkid, nres, nwanted), klcode_cstposition(yieldcst));
-  klcode_stackfree(state, stkid);
-  return klcodeval_stack(stkid);
+  KlCodeVal obj = klcode_expr(state, dotcst->operand);
+  KlConstant constant = { .type = KL_STRING, .string = dotcst->field };
+  KlConEntry* conent = klcontbl_get(state->contbl, &constant);
+  klcode_oomifnull(conent);
+  if (obj.kind == KLVAL_REF) {
+    if (klinst_inurange(conent->index, 8)) {
+      klcode_pushinst(state, klinst_refgetfieldc(stkid, obj.index, conent->index), klcode_cstposition(dotcst));
+    } else {
+      klcode_pushinst(state, klinst_loadc(stkid, conent->index), klcode_cstposition(dotcst));
+      klcode_pushinst(state, klinst_refgetfieldr(stkid, obj.index, stkid), klcode_cstposition(dotcst));
+    }
+    klcode_stackfree(state, stkid);
+    return klcodeval_stack(stkid);
+  } else {
+    klcode_putinstack(state, &obj, klcode_cstposition(dotcst->operand));
+    if (klinst_inurange(conent->index, 8)) {
+      klcode_pushinst(state, klinst_getfieldc(stkid, obj.index, conent->index), klcode_cstposition(dotcst));
+    } else {
+      size_t stktop = klcode_stacktop(state);
+      klcode_pushinst(state, klinst_loadc(stktop, conent->index), klcode_cstposition(dotcst));
+      klcode_pushinst(state, klinst_getfieldr(stkid, obj.index, stktop), klcode_cstposition(dotcst));
+    }
+    klcode_stackfree(state, stkid);
+    return klcodeval_stack(stkid);
+  }
 }
 
 static KlCodeVal klcode_expr(KlFuncState* state, KlCst* cst) {
-  KlCstBin* bin = klcast(KlCstBin*, cst);
-  switch (klcst_kind(bin->roperand)) {
+  switch (klcst_kind(cst)) {
+    case KLCST_EXPR_ARR: {
+      return klcode_exprarr(state, klcast(KlCstArray*, cst));
+    }
+    case KLCST_EXPR_ARRGEN: {
+      return klcode_exprarrgen(state, klcast(KlCstArrayGenerator*, cst));
+    }
+    case KLCST_EXPR_MAP: {
+      return klcode_exprmap(state, klcast(KlCstMap*, cst));
+    }
+    case KLCST_EXPR_CLASS: {
+      kltodo("implement class");
+    }
     case KLCST_EXPR_CONSTANT: {
       return klcode_constant(state, klcast(KlCstConstant*, cst));
     }
     case KLCST_EXPR_ID: {
       return klcode_identifier(state, klcast(KlCstIdentifier*, cst));
     }
+    case KLCST_EXPR_VARARG: {
+      kltodo("implement vararg");
+    }
+    case KLCST_EXPR_TUPLE: {
+      return klcode_tuple_as_singleval(state, klcast(KlCstTuple*, cst));
+    }
     case KLCST_EXPR_PRE: {
       return klcode_exprpre(state, klcast(KlCstPre*, cst));
-    }
-    case KLCST_EXPR_BIN: {
-      return klcode_exprbin(state, klcast(KlCstBin*, cst));
     }
     case KLCST_EXPR_NEW: {
       return klcode_exprnew(state, klcast(KlCstNew*, cst));
     }
     case KLCST_EXPR_YIELD: {
-      return klcode_expryield(state, klcast(KlCstYield*, cst), 1);
+      size_t stkid = klcode_stacktop(state);
+      klcode_expryield(state, klcast(KlCstYield*, cst), 1);
+      return klcodeval_stack(stkid);
     }
     case KLCST_EXPR_POST: {
       return klcode_exprpost(state, klcast(KlCstPost*, cst));
+    }
+    case KLCST_EXPR_DOT: {
+      return klcode_exprdot(state, klcast(KlCstDot*, cst));
+    }
+    case KLCST_EXPR_FUNC: {
+      kltodo("implement func");
+    }
+    case KLCST_EXPR_BIN: {
+      return klcode_exprbin(state, klcast(KlCstBin*, cst));
+    }
+    case KLCST_EXPR_SEL: {
+      kltodo("implement sel");
+    }
+    default: {
+      kl_assert(false, "control flow should not reach here");
+      return klcodeval_nil();
     }
   }
 }

@@ -89,7 +89,7 @@ KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCst* block, 
   return cstarraygenerator;
 }
 
-KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlFileOffset begin, KlFileOffset end) {
+KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlCst* base, KlFileOffset begin, KlFileOffset end) {
   KlCstClass* cstclass = klcst_alloc(KlCstClass);
   if (kl_unlikely(!cstclass)) {
     for (size_t i = 0; i < nfield; ++i) {
@@ -102,6 +102,7 @@ KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t
   cstclass->fields = fields;
   cstclass->vals = vals;
   cstclass->nfield = nfield;
+  cstclass->baseclass = base;
   klcst_setposition(cstclass, begin, end);
   klcst_init(cstclass, &klcst_class_vfunc);
   return cstclass;
@@ -317,6 +318,8 @@ static void klcst_class_destroy(KlCstClass* cstclass) {
   for (size_t i = 0; i < nfield; ++i) {
     klcst_delete_raw(vals[i]);
   }
+  if (cstclass->baseclass)
+    klcst_delete_raw(cstclass->baseclass);
   free(vals);
   free(cstclass->fields);
 }
