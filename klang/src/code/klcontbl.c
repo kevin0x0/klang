@@ -3,6 +3,7 @@
 
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/parse/klstrtab.h"
+#include "utils/include/array/karray.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -95,13 +96,16 @@ inline static size_t pow_of_2_above(size_t num) {
 bool klcontbl_init(KlConTbl* contbl, size_t capacity, KlStrTab* strtab) {
   if (!contbl) return false;
 
-  /* TODO: make sure capacity is power of 2 */
   capacity = pow_of_2_above(capacity);
   KlConEntry** array = (KlConEntry**)malloc(sizeof (KlConEntry*) * capacity);
   if (kl_unlikely(!array)) {
     contbl->array = NULL;
     contbl->capacity = 0;
     contbl->size = 0;
+    return false;
+  }
+  if (kl_unlikely(!karray_init(&contbl->entries))) {
+    free(array);
     return false;
   }
 
@@ -124,6 +128,7 @@ void klcontbl_destroy(KlConTbl* contbl) {
   for (size_t i = 0; i < capacity; ++i)
     klcontbl_bucket_free(array[i]);
   free(array);
+  karray_destroy(&contbl->entries);
   contbl->array = NULL;
   contbl->capacity = 0;
   contbl->size = 0;
@@ -148,6 +153,10 @@ KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
 
   KlConEntry* newconentry = (KlConEntry*)malloc(sizeof (*newconentry));
   if (kl_unlikely(!newconentry)) return NULL;
+  if (kl_unlikely(!karray_push_back(&contbl->entries, newconentry))) {
+    free(newconentry);
+    return NULL;
+  }
 
   size_t hash = klcontbl_hashing(contbl->strtab, con);
   size_t index = (contbl->capacity - 1) & hash;
@@ -156,6 +165,7 @@ KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
   newconentry->index = contbl->size++;
   newconentry->next = contbl->array[index];
   contbl->array[index] = newconentry;
+  kl_assert(newconentry->index = karray_size(&contbl->entries) - 1, "");
   return newconentry;
 }
 
@@ -183,12 +193,16 @@ KlConEntry* klcontbl_get(KlConTbl* contbl, KlConstant* constant) {
   if (kl_unlikely(contbl->size >= contbl->capacity && !klcontbl_expand(contbl)))
     return NULL;
   KlConEntry* newconentry = (KlConEntry*)malloc(sizeof (*newconentry));
-  if (kl_unlikely(!newconentry)) return false;
-
+  if (kl_unlikely(!newconentry)) return NULL;
+  if (kl_unlikely(!karray_push_back(&contbl->entries, newconentry))) {
+    free(newconentry);
+    return NULL;
+  }
   newconentry->con = *constant;
   newconentry->hash = hash;
   newconentry->index = contbl->size++;
   newconentry->next = contbl->array[index];
   contbl->array[index] = newconentry;
+  kl_assert(newconentry->index = karray_size(&contbl->entries) - 1, "");
   return newconentry;
 }

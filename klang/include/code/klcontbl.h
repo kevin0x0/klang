@@ -3,6 +3,7 @@
 
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/parse/klstrtab.h"
+#include "utils/include/array/karray.h"
 
 typedef struct tagKlConEntry KlConEntry;
 struct tagKlConEntry {
@@ -13,7 +14,8 @@ struct tagKlConEntry {
 };
 
 typedef struct tagKlConTbl {
-  KlConEntry** array;
+  KlConEntry** array;   /* hash buckets */
+  KArray entries;       /* all entries */
   size_t capacity;
   size_t size;
   KlStrTab* strtab;
@@ -26,7 +28,10 @@ KlConTbl* klcontbl_create(size_t capacity, KlStrTab* strtab);
 void klcontbl_delete(KlConTbl* contbl);
 
 KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con);
-KlConEntry* klcontbl_search(KlConTbl* map, KlConstant* con);
-KlConEntry* klcontbl_get(KlConTbl* map, KlConstant* con);
+KlConEntry* klcontbl_search(KlConTbl* contbl, KlConstant* con);
+KlConEntry* klcontbl_get(KlConTbl* contbl, KlConstant* con);
+static inline KlConEntry* klcontbl_getbyindex(KlConTbl* contbl, size_t index) {
+  return klcast(KlConEntry*, karray_access(&contbl->entries, index));
+}
 
 #endif

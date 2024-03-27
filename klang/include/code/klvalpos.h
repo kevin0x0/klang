@@ -4,7 +4,7 @@
 typedef enum tagKlValKind {
   KLVAL_STACK,
   KLVAL_REF,
-  KLVAL_CONSTANT,
+  KLVAL_STRING,
   KLVAL_BOOL,
   KLVAL_NIL,
   /* Integer can be contsant(stored in constant table) or immediate value

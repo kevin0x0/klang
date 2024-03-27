@@ -25,6 +25,7 @@ static inline size_t klstrtab_residual(KlStrTab* strtab);
 static inline size_t klstrtab_capacity(KlStrTab* strtab);
 static inline size_t klstrtab_size(KlStrTab* strtab);
 
+char* klstrtab_concat(KlStrTab* strtab, KlStrDesc left, KlStrDesc right);
 
 char* klstrtab_grow(KlStrTab* strtab, size_t extra);
 static inline bool klstrtab_checkspace(KlStrTab* strtab, size_t space);

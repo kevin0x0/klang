@@ -496,13 +496,13 @@ static KlCst* klparser_newexpr(KlParser* parser, KlLex* lex) {
 
   kllex_next(lex);
   KlCst* klclass = kllex_check(lex, KLTK_LPAREN) ? klparser_exprunit(parser, lex) : klparser_dotchain(parser, lex);
-  KlCst* params = klparser_exprunit(parser, lex);
-  if (kl_unlikely(!klclass || !params)) {
+  KlCst* args = klparser_exprunit(parser, lex);
+  if (kl_unlikely(!klclass || !args)) {
     if (klclass) klcst_delete(klclass);
-    if (params) klcst_delete(params);
+    if (args) klcst_delete(args);
     return NULL;
   }
-  KlCstNew* newexpr = klcst_new_create(klclass, params, klclass->begin, params->end);
+  KlCstNew* newexpr = klcst_new_create(klclass, args, klclass->begin, args->end);
   klparser_oomifnull(newexpr);
   return klcst(newexpr);
 }
@@ -540,7 +540,7 @@ KlCst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       kllex_next(lex);
       KlCst* expr = klparser_exprpre(parser, lex);
       klparser_returnifnull(expr);
-      KlCstPre* yieldexpr = klcst_pre_create(KLTK_YIELD, expr, begin, expr->end);
+      KlCstYield* yieldexpr = klcst_yield_create(expr, begin, expr->end);
       klparser_oomifnull(yieldexpr);
       return klcst(yieldexpr);
     }
@@ -657,7 +657,7 @@ KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
           klcst_delete(expr);
           break;
         }
-        KlCstPost* index = klcst_post_create(KLTK_LBRACKET, postexpr, expr, postexpr->begin, end);
+        KlCstPost* index = klcst_post_create(KLTK_INDEX, postexpr, expr, postexpr->begin, end);
         klparser_oomifnull(index);
         postexpr = klcst(index);
         break;
@@ -742,7 +742,7 @@ KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
           klcst_delete(params);
           break;
         }
-        KlCstPost* call = klcst_post_create(KLTK_LPAREN, postexpr, params, postexpr->begin, params->end);
+        KlCstPost* call = klcst_post_create(KLTK_CALL, postexpr, params, postexpr->begin, params->end);
         klparser_oomifnull(call);
         postexpr = klcst(call);
         break;

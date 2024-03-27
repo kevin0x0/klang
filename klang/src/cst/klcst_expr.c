@@ -13,6 +13,7 @@ static void klcst_tuple_destroy(KlCstTuple* csttuple);
 static void klcst_bin_destroy(KlCstBin* cstbin);
 static void klcst_pre_destroy(KlCstPre* cstpre);
 static void klcst_new_destroy(KlCstNew* cstnew);
+static void klcst_yield_destroy(KlCstYield* cstyield);
 static void klcst_post_destroy(KlCstPost* cstpost);
 static void klcst_dot_destroy(KlCstDot* cstdot);
 static void klcst_func_destroy(KlCstFunc* cstfunc);
@@ -29,6 +30,7 @@ static KlCstInfo klcst_tuple_vfunc = { .destructor = (KlCstDelete)klcst_tuple_de
 static KlCstInfo klcst_bin_vfunc = { .destructor = (KlCstDelete)klcst_bin_destroy, .kind = KLCST_EXPR_BIN };
 static KlCstInfo klcst_pre_vfunc = { .destructor = (KlCstDelete)klcst_pre_destroy, .kind = KLCST_EXPR_PRE };
 static KlCstInfo klcst_new_vfunc = { .destructor = (KlCstDelete)klcst_new_destroy, .kind = KLCST_EXPR_NEW };
+static KlCstInfo klcst_yield_vfunc = { .destructor = (KlCstDelete)klcst_yield_destroy, .kind = KLCST_EXPR_YIELD };
 static KlCstInfo klcst_post_vfunc = { .destructor = (KlCstDelete)klcst_post_destroy, .kind = KLCST_EXPR_POST };
 static KlCstInfo klcst_dot_vfunc = { .destructor = (KlCstDelete)klcst_dot_destroy, .kind = KLCST_EXPR_DOT };
 static KlCstInfo klcst_func_vfunc = { .destructor = (KlCstDelete)klcst_func_destroy, .kind = KLCST_EXPR_FUNC };
@@ -196,18 +198,30 @@ KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFileOffset begin, K
   return cstpre;
 }
 
-KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFileOffset begin, KlFileOffset end) {
+KlCstNew* klcst_new_create(KlCst* klclass, KlCst* args, KlFileOffset begin, KlFileOffset end) {
   KlCstNew* cstnew = klcst_alloc(KlCstNew);
   if (kl_unlikely(!cstnew)) {
     klcst_delete_raw(klclass);
-    klcst_delete_raw(params);
+    klcst_delete_raw(args);
     return NULL;
   }
   cstnew->klclass = klclass;
-  cstnew->params = params;
+  cstnew->args = args;
   klcst_setposition(cstnew, begin, end);
   klcst_init(cstnew, &klcst_new_vfunc);
   return cstnew;
+}
+
+KlCstYield* klcst_yield_create(KlCst* vals, KlFileOffset begin, KlFileOffset end) {
+  KlCstYield* cstyield = klcst_alloc(KlCstYield);
+  if (kl_unlikely(!cstyield)) {
+    klcst_delete_raw(vals);
+    return NULL;
+  }
+  cstyield->vals = vals;
+  klcst_setposition(cstyield, begin, end);
+  klcst_init(cstyield, &klcst_yield_vfunc);
+  return cstyield;
 }
 
 KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFileOffset begin, KlFileOffset end) {
@@ -334,8 +348,12 @@ static void klcst_pre_destroy(KlCstPre* cstpre) {
 }
 
 static void klcst_new_destroy(KlCstNew* cstnew) {
-  klcst_delete_raw(cstnew->params);
+  klcst_delete_raw(cstnew->args);
   klcst_delete_raw(cstnew->klclass);
+}
+
+static void klcst_yield_destroy(KlCstYield* cstyield) {
+  klcst_delete_raw(cstyield->vals);
 }
 
 static void klcst_post_destroy(KlCstPost* cstpost) {

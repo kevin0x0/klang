@@ -60,10 +60,6 @@ typedef struct tagKlCstVararg {
   KlCst base;
 } KlCstVararg;
 
-typedef struct tagKlCstThis {
-  KlCst base;
-} KlCstThis;
-
 typedef struct tagKlCstTuple {
   KlCst base;
   KlCst** elems;                      /* elements of tuple */
@@ -87,8 +83,13 @@ typedef struct tagKlCstPre {
 typedef struct tagKlCstNew {
   KlCst base;
   KlCst* klclass;
-  KlCst* params;            /* parameters for new operator */
+  KlCst* args;            /* parameters for new operator */
 } KlCstNew;
+
+typedef struct tagKlCstYield {
+  KlCst base;
+  KlCst* vals;
+} KlCstYield;
 
 typedef struct tagKlCstPost {
   KlCst base;
@@ -134,6 +135,7 @@ KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFileOffset begin, 
 KlCstBin* klcst_bin_create(KlTokenKind op, KlCst* loperand, KlCst* roperand, KlFileOffset begin, KlFileOffset end);
 KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFileOffset begin, KlFileOffset end);
 KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFileOffset begin, KlFileOffset end);
+KlCstYield* klcst_yield_create(KlCst* vals, KlFileOffset begin, KlFileOffset end);
 KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFileOffset begin, KlFileOffset end);
 KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
 KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);

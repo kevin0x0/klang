@@ -33,9 +33,9 @@ typedef enum tagKlTokenKind {
 
   KLTK_LPAREN,
   KLTK_RPAREN,
-  KLTK_LBRACKET,
+  KLTK_LBRACKET, KLTK_INDEX = KLTK_LBRACKET,
   KLTK_RBRACKET,
-  KLTK_LBRACE,
+  KLTK_LBRACE, KLTK_CALL = KLTK_LBRACE,
   KLTK_RBRACE,
 
   KLTK_DOT,
@@ -72,6 +72,7 @@ typedef enum tagKlTokenKind {
 } KlTokenKind;
 
 #define kltoken_isbinop(kind)   ((kind) >= KLTK_CONCAT && (kind) <= KLTK_OR)
+#define kltoken_isarith(kind)   ((kind) >= KLTK_ADD && (kind) <= KLTK_MOD)
 
 const char* kltoken_desc(KlTokenKind kind);
 

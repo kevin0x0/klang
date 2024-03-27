@@ -24,6 +24,7 @@ kstatic arrname* prefix##_create(size_t size);                                  
 kstatic void prefix##_delete(arrname* array);                                   \
                                                                                 \
 static inline bool prefix##_push_back(arrname* array, kgarray_##pass(T) val);   \
+static inline void prefix##_pop_back(arrname* array, size_t npop);              \
 kstatic bool prefix##_expand(arrname* array);                                   \
 static inline T* prefix##_access(arrname* array, size_t index);                 \
 static inline size_t prefix##_size(arrname* array);                             \
@@ -58,6 +59,10 @@ static inline bool prefix##_push_back(arrname* array, kgarray_##pass(T) val) {  
   }                                                                             \
   *array->current++ = kgarray_##pass##_get(val);                                \
   return true;                                                                  \
+}                                                                               \
+                                                                                \
+static inline void prefix##_pop_back(arrname* array, size_t npop) {             \
+  array->curr -= npop;                                                          \
 }                                                                               \
                                                                                 \
 static inline T* prefix##_access(arrname* array, size_t index) {                \

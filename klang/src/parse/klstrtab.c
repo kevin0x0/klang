@@ -1,5 +1,6 @@
 #include "klang/include/parse/klstrtab.h"
 #include <stdlib.h>
+#include <string.h>
 
 KlStrTab* klstrtab_create(void) {
   KlStrTab* strtab = (KlStrTab*)malloc(sizeof (KlStrTab));
@@ -32,4 +33,21 @@ char* klstrtab_grow(KlStrTab* strtab, size_t extra) {
   strtab->curr = newstk + curroffset;
   strtab->end = newstk + newcap;
   return strtab->curr;
+}
+
+char* klstrtab_concat(KlStrTab* strtab, KlStrDesc left, KlStrDesc right) {
+  if (left.id + left.length == right.id) {
+    return klstrtab_getstring(strtab, left.id);
+  } else if (klstrtab_getstring(strtab, left.id) + left.length == strtab->curr) {
+    char* res = klstrtab_allocstring(strtab, right.length);
+    if (kl_unlikely(!res)) return NULL;
+    strncpy(res, klstrtab_getstring(strtab, right.id), right.length);
+    return klstrtab_getstring(strtab, left.id);
+  } else {
+    char* res = klstrtab_allocstring(strtab, left.length + right.length);
+    if (kl_unlikely(!res)) return NULL;
+    strncpy(res, klstrtab_getstring(strtab, left.id), left.length);
+    strncpy(res + left.length, klstrtab_getstring(strtab, right.id), right.length);
+    return res;
+  }
 }

@@ -3,6 +3,7 @@
 
 #include "klang/include/code/klcontbl.h"
 #include "klang/include/code/klsymtbl.h"
+#include "klang/include/parse/kllex.h"
 #include "klang/include/value/klref.h"
 #include "klang/include/vm/klinst.h"
 #include "utils/include/array/kgarray.h"
@@ -28,7 +29,13 @@ struct tagKlCode {
 KlCode* klcode_create(KlCst* cst);
 void klcode_delete(KlCode* code);
 
+typedef struct tagKlFilePosition {
+  KlFileOffset begin;
+  KlFileOffset end;
+} KlFilePosition;
+
 kgarray_decl(KlCode, KlCodeArray, klcodearr, pass_ref,)
 kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val,)
+kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val,)
 
 #endif

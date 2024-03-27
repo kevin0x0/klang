@@ -1396,7 +1396,7 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_NEWOBJ: {
         KlValue* klclass = stkbase + KLINST_ABC_GETB(inst);
         if (kl_unlikely(!klvalue_checktype(klclass, KL_CLASS)))
-          return klstate_throw(state, KL_E_TYPE, "expected a class, got %s", klvalue_typename(klvalue_gettype(klclass)));
+          return klstate_throw(state, KL_E_TYPE, "%s is not a class", klvalue_typename(klvalue_gettype(klclass)));
         klexec_savestate(callinfo->top, callinfo);
         KlObject* object = klclass_new_object(klvalue_getobj(klclass, KlClass*));
         if (kl_unlikely(!object))
@@ -1407,7 +1407,7 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_ADJUSTARGS: {
         size_t narg = klstate_stktop(state) - stkbase;
         size_t nparam = klkfunc_nparam(closure->kfunc);
-        kl_assert(narg >= nparam, "something wrong in call(method)prepare");
+        kl_assert(narg >= nparam, "something wrong in callprepare");
         /* a closure having variable arguments needs 'narg'. */
         callinfo->narg = narg;
         if (narg > nparam) {
@@ -1419,6 +1419,7 @@ KlException klexec_execute(KlState* state) {
           while (nparam--)   /* move fixed arguments to top */
             klvalue_setvalue(stktop++, fixed++);
           callinfo->top += narg;
+          callinfo->base += narg;
           callinfo->retoff -= narg;
           stkbase += narg;
           klstack_set_top(klstate_stack(state), stktop);
