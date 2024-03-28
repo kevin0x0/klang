@@ -258,17 +258,16 @@ static KlGCVirtualFunc klobject_gcvfunc = { .destructor = (KlGCDestructor)klobje
 
 
 KlObject* klclass_default_constructor(KlClass* klclass) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(klclass));
-  KlObject* obj = klclass_objalloc(klclass, klmm);
+  KlObject* obj = klclass_objalloc(klclass);
   if (!obj) return NULL;
-  klmm_gcobj_enable(klmm, klmm_to_gcobj(obj), &klobject_gcvfunc);
+  klmm_gcobj_enable(klclass_getmm(klclass), klmm_to_gcobj(obj), &klobject_gcvfunc);
   return obj;
 }
 
-KlObject* klclass_objalloc(KlClass* klclass, KlMM* klmm) {
+KlObject* klclass_objalloc(KlClass* klclass) {
   size_t nlocal = klclass->nlocal;
   size_t allocsize = klclass->attroffset + sizeof (KlValue) * nlocal;
-  KlObject* obj = (KlObject*)klmm_alloc(klmm, allocsize);
+  KlObject* obj = (KlObject*)klmm_alloc(klclass_getmm(klclass), allocsize);
   if (!obj) return NULL;
   KlValue* attrs = klobject_attrs_by_class(obj, klclass);
   for (size_t i = 0; i < nlocal; ++i)
@@ -290,6 +289,5 @@ KlGCObject* klobject_propagate(KlObject* object, KlGCObject* gclist) {
 }
 
 static void klobject_delete(KlObject* object) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(object));
-  klobject_free(object, klmm);
+  klobject_free(object);
 }

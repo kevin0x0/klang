@@ -46,6 +46,8 @@ struct tagKlObject {
 KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* constructor_data, KlObjectConstructor constructor);
 KlClass* klclass_inherit(KlMM* klmm, KlClass* parent);
 
+static inline KlMM* klclass_getmm(KlClass* klclass);
+
 KlClassCeil* klclass_find(KlClass* klclass, KlString* key);
 KlClassCeil* klclass_add(KlClass* klclass, KlString* key);
 KlException klclass_set(KlClass* klclass, KlString* key, KlValue* value);
@@ -53,7 +55,7 @@ KlClassCeil* klclass_findshared(KlClass* klclass, KlString* key);
 
 KlObject* klclass_default_constructor(KlClass* klclass);
 static inline void* klclass_constructor_data(KlClass* klclass);
-KlObject* klclass_objalloc(KlClass* klclass, KlMM* klmm);
+KlObject* klclass_objalloc(KlClass* klclass);
 static inline KlObject* klclass_new_object(KlClass* klclass);
 
 static inline KlException klclass_newlocal(KlClass* klclass, KlString* key);
@@ -69,6 +71,10 @@ static inline void klclass_final(KlClass* klclass) {
 
 static inline bool klclass_isfinal(KlClass* klclass) {
   return klclass->is_final;
+}
+
+static inline KlMM* klclass_getmm(KlClass* klclass) {
+  return klmm_gcobj_getmm(klmm_to_gcobj(klclass));
 }
 
 static inline void* klclass_constructor_data(KlClass* klclass) {
@@ -115,7 +121,7 @@ static inline KlValue* klobject_getfield(KlObject* object, KlString* key);
 static inline KlClass* klobject_class(KlObject* object);
 static inline size_t klobject_size(KlObject* object);
 KlGCObject* klobject_propagate(KlObject* object, KlGCObject* gclist);
-static inline void klobject_free(KlObject* object, KlMM* klmm);
+static inline void klobject_free(KlObject* object);
 
 static inline KlValue* klobject_getfield(KlObject* object, KlString* key) {
   KlClass* klclass = object->klclass;
@@ -136,8 +142,8 @@ static inline size_t klobject_size(KlObject* object) {
   return object->size;
 }
 
-static inline void klobject_free(KlObject* object, KlMM* klmm) {
-  klmm_free(klmm, klmm_to_gcobj(object), klobject_size(object));
+static inline void klobject_free(KlObject* object) {
+  klmm_free(klmm_gcobj_getmm(klmm_to_gcobj(object)), klmm_to_gcobj(object), klobject_size(object));
 }
 
 #endif

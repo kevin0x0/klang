@@ -12,10 +12,10 @@ static KlGCVirtualFunc klarray_gcvfunc = { .destructor = (KlGCDestructor)klarray
 
 KlArray* klarray_create(KlClass* arrayclass, size_t capacity) {
   KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(arrayclass));
-  KlArray* array = (KlArray*)klclass_objalloc(arrayclass, klmm);
+  KlArray* array = (KlArray*)klclass_objalloc(arrayclass);
   if (kl_unlikely(!array)) return NULL;
   if (kl_unlikely(!(array->begin = (KlValue*)klmm_alloc(klmm, sizeof (KlValue) * capacity)))) {
-    klobject_free(klcast(KlObject*, array), klmm);
+    klobject_free(klcast(KlObject*, array));
     return NULL;
   }
   array->end = array->begin + capacity;
@@ -27,11 +27,11 @@ KlArray* klarray_create(KlClass* arrayclass, size_t capacity) {
 static void klarray_delete(KlArray* array) {
   KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(array));
   klmm_free(klmm, array->begin, klarray_capacity(array) * sizeof (KlValue));
-  klobject_free(klcast(KlObject*, array), klmm);
+  klobject_free(klcast(KlObject*, array));
 }
 
 static KlArray* klarray_constructor(KlClass* arrayclass) {
-  return klarray_create(arrayclass, 0);
+  return klarray_create(arrayclass, 1);
 }
 
 KlClass* klarray_class(KlMM* klmm) {

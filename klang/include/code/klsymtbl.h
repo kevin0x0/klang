@@ -1,8 +1,8 @@
 #ifndef KEVCC_KLANG_INCLUDE_CODE_KLSYMTBL_H
 #define KEVCC_KLANG_INCLUDE_CODE_KLSYMTBL_H
 
+#include "klang/include/cst/klstrtab.h"
 #include "klang/include/misc/klutils.h"
-#include "klang/include/parse/klstrtab.h"
 #include "klang/include/code/klvalpos.h"
 #include <stdlib.h>
 

@@ -1,4 +1,4 @@
-#include "klang/include/parse/klstrtab.h"
+#include "klang/include/cst/klstrtab.h"
 #include <stdlib.h>
 #include <string.h>
 

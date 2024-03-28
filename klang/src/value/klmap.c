@@ -88,12 +88,12 @@ KlMap* klmap_create(KlClass* mapclass, size_t capacity, KlMapNodePool* nodepool)
   capacity = ((size_t)1) << capacity;
 
   KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(mapclass));
-  KlMap* map = (KlMap*)klclass_objalloc(mapclass, klmm);
+  KlMap* map = (KlMap*)klclass_objalloc(mapclass);
   if (kl_unlikely(!map)) return NULL;
 
   KlMapNode** array = (KlMapNode**)klmm_alloc(klmm, sizeof (KlMapNode*) * capacity);
   if (kl_unlikely(!array)) {
-    klobject_free(klcast(KlObject*, map), klmm);
+    klobject_free(klcast(KlObject*, map));
     return NULL;
   }
   for (size_t i = 0; i < capacity; ++i)
@@ -115,7 +115,7 @@ static void klmap_delete(KlMap* map) {
   klmapnodepool_unpin(map->nodepool);
   KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(map));
   klmm_free(klmm, map->array, map->capacity * sizeof (KlMapNode*));
-  klobject_free(klcast(KlObject*, map), klmm);
+  klobject_free(klcast(KlObject*, map));
 }
 
 KlMapIter klmap_insert(KlMap* map, KlValue* key, KlValue* value) {

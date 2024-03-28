@@ -4,8 +4,6 @@
 #include "klang/include/code/klvalpos.h"
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_expr.h"
-#include "klang/include/misc/klutils.h"
-#include "klang/include/vm/klinst.h"
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -30,15 +28,11 @@ struct tagKlFuncState {
   size_t stksize;             /* current used stack size */
   size_t framesize;           /* stack frame size of this klang function */
   KlFuncState* prev;
-  Ko* err;
   Ki* input;
-  size_t errcount;
   jmp_buf jmppos;
+  KlError* klerror;
   struct {
     char* inputname;
-    unsigned int tabstop;
-    char curl;
-    char zerocurl;
     bool debug;
   } config;
   struct {
@@ -46,7 +40,7 @@ struct tagKlFuncState {
   } string;
 };
 
-static bool klfuncstate_init(KlFuncState* state, KlSymTblPool* symtblpool, KlStrTab* strtab, KlFuncState* prev, Ko* err, Ki* input);
+static bool klfuncstate_init(KlFuncState* state, KlSymTblPool* symtblpool, KlStrTab* strtab, KlFuncState* prev, Ki* input, KlError* klerror);
 static void klfuncstate_destroy(KlFuncState* state);
 
 KlCode* klcode_create(KlCst* cst) {
@@ -57,7 +51,7 @@ void klcode_delete(KlCode* code) {
   kltodo("implement klcode_delete");
 }
 
-static bool klfuncstate_init(KlFuncState* state, KlSymTblPool* symtblpool, KlStrTab* strtab, KlFuncState* prev, Ko* err, Ki* input) {
+static bool klfuncstate_init(KlFuncState* state, KlSymTblPool* symtblpool, KlStrTab* strtab, KlFuncState* prev, Ki* input, KlError* klerror) {
   if (kl_unlikely(!(state->symtbl = klsymtblpool_alloc(symtblpool, strtab, NULL)))) {
     return false;
   }
@@ -93,14 +87,10 @@ static bool klfuncstate_init(KlFuncState* state, KlSymTblPool* symtblpool, KlStr
   state->stksize = 0;
   state->framesize = 0;
   state->prev = prev;
+  state->klerror = klerror;
 
-  state->err = err;
   state->input = input;
-  state->errcount = 0;
   state->config.inputname = "unnamed";
-  state->config.curl = '~';
-  state->config.tabstop = 8;
-  state->config.zerocurl = '^';
 
   int len = strlen("constructor");
   char* constructor = klstrtab_allocstring(strtab, len);
@@ -328,7 +318,7 @@ static void klcode_putinstktop(KlFuncState* state, KlCodeVal* val, KlFilePositio
 
 static KlCodeVal klcode_expr(KlFuncState* state, KlCst* cst);
 static inline KlCodeVal klcode_tuple_as_singleval(KlFuncState* state, KlCstTuple* tuplecst);
-/* generate code that evaluates expressions in the tuple and put their values in the top of stack.
+/* generate code that evaluates expressions on the tuple and put their values in the top of stack.
  * nwanted is the number of expected values. */
 static void klcode_tuple(KlFuncState* state, KlCstTuple* tuplecst, size_t nwanted);
 static size_t klcode_passargs(KlFuncState* state, KlCst* args);
@@ -356,25 +346,86 @@ inline static size_t abovelog2(size_t num) {
   return n;
 }
 
-static KlCodeVal klcode_exprmap(KlFuncState* state, KlCstMap* mapcst) {
+static KlCodeVal klcode_exprmap(KlFuncState* state, KlCstMap* mapcst, size_t target) {
   size_t sizefield = abovelog2(mapcst->npair);
   if (sizefield < 3) sizefield = 3;
-  size_t stkid = klcode_stacktop(state);
-  klcode_pushinst(state, klinst_mkmap(stkid, stkid, sizefield), klcode_cstposition(mapcst));
-  return klcodeval_stack(stkid);
+  size_t oristktop = klcode_stacktop(state);
+  klcode_pushinst(state, klinst_mkmap(target, oristktop, sizefield), klcode_cstposition(mapcst));
+  size_t stktop;
+  if (oristktop == target) {
+    klcode_stackalloc1(state);
+    stktop = klcode_stacktop(state);
+  } else {
+    stktop = oristktop;
+  }
+  size_t npair = mapcst->npair;
+  for (size_t i = 0; i < npair; ++i) {
+    KlCst* key = mapcst->keys[i];
+    KlCst* val = mapcst->vals[i];
+    KlCodeVal keypos = klcode_expr(state, key);
+    if (keypos.kind == KLVAL_INTEGER && klinst_inrange(keypos.intval, 8)) {
+      KlCodeVal valpos = klcode_expr(state, val);
+      klcode_putinstack(state, &valpos, klcode_cstposition(val));
+      klcode_pushinst(state, klinst_indexasi(valpos.index, target, keypos.intval), klcode_cstposition(mapcst));
+    } else {
+      klcode_putinstack(state, &keypos, klcode_cstposition(key));
+      KlCodeVal valpos = klcode_expr(state, val);
+      klcode_putinstack(state, &valpos, klcode_cstposition(val));
+      klcode_pushinst(state, klinst_indexas(valpos.index, target, keypos.index), klcode_cstposition(mapcst));
+    }
+    klcode_stackfree(state, stktop);
+  }
+  klcode_stackfree(state, oristktop);
+  return klcodeval_stack(target);
 }
 
-static KlCodeVal klcode_exprclasspost(KlFuncState* state, KlCstClass* classcst) {
+static KlCodeVal klcode_exprclasspost(KlFuncState* state, KlCstClass* classcst, size_t target) {
+  size_t nfield = classcst->nfield;
+  size_t oristktop = klcode_stacktop(state);
+  size_t stktop;
+  if (oristktop == target) {
+    klcode_stackalloc1(state);
+    stktop = klcode_stacktop(state);
+  } else {
+    stktop = oristktop;
+  }
+  for (size_t i = 0; i < nfield; ++i) {
+    KlCstClassFieldDesc field = classcst->fields[i];
+    KlConstant constant = { .type = KL_STRING, .string = field.name };
+    KlConEntry* conent = klcontbl_get(state->contbl, &constant);
+    klcode_oomifnull(conent);
+    if (field.shared) {
+      KlCodeVal val = klcode_expr(state, classcst->vals[i]);
+      klcode_putinstack(state, &val, klcode_cstposition(classcst->vals[i]));
+      if (klinst_inurange(conent->index, 8)) {
+        klcode_pushinst(state, klinst_setfieldc(val.index, target, conent->index), klcode_cstposition(classcst));
+      } else {
+        size_t currstktop = klcode_stacktop(state);
+        klcode_pushinst(state, klinst_loadc(currstktop, conent->index), klcode_cstposition(classcst));
+        klcode_pushinst(state, klinst_setfieldr(val.index, target, currstktop), klcode_cstposition(classcst));
+      }
+      klcode_stackfree(state, stktop);
+    } else {
+      klcode_pushinst(state, klinst_newlocal(target, conent->index),   klcode_cstposition(classcst));
+    }
+  }
+  klcode_stackfree(state, oristktop);
+  return klcodeval_stack(target);
 }
 
-static KlCodeVal klcode_exprclass(KlFuncState* state, KlCstClass* classcst) {
-  size_t stkid = klcode_stacktop(state);
+static KlCodeVal klcode_exprclass(KlFuncState* state, KlCstClass* classcst, size_t target) {
+  size_t stktop = klcode_stacktop(state);
+  size_t sizefield = abovelog2(classcst->nfield);
   if (classcst->baseclass) {
     /* base is specified */
     KlCodeVal base = klcode_expr(state, classcst->baseclass);
-    klcode_putinstack(state, &base, klcode_cstposition(classcst->baseclass));
-    klcode_pushinst(state, klinst_mkclass(
+    klcode_putinstktop(state, &base, klcode_cstposition(classcst->baseclass));
+    klcode_pushinst(state, klinst_mkclass(target, stktop, true, sizefield), klcode_cstposition(classcst));
+  } else {
+    klcode_pushinst(state, klinst_mkclass(target, stktop, false, sizefield), klcode_cstposition(classcst));
   }
+  klcode_stackfree(state, stktop);
+  return klcode_exprclasspost(state, classcst, target);
 }
 
 static KlCodeVal klcode_constant(KlFuncState* state, KlCstConstant* concst) {
@@ -753,13 +804,13 @@ static KlCodeVal klcode_exprpost(KlFuncState* state, KlCstPost* postcst) {
       return klcodeval_stack(stkid);
     }
     case KLTK_APPEND: {
-      size_t stkid = klcode_stacktop(state);
+      size_t stktop = klcode_stacktop(state);
       KlCodeVal appendable = klcode_expr(state, postcst->operand);
       klcode_putinstack(state, &appendable, klcode_cstposition(postcst->operand));
       size_t base = klcode_stacktop(state);
       size_t narg = klcode_passargs(state, postcst->post);
-      klcode_pushinst(state, klinst_append(stkid, base, narg), klcode_cstposition(postcst));
-      klcode_stackfree(state, stkid);
+      klcode_pushinst(state, klinst_append(appendable.index, base, narg), klcode_cstposition(postcst));
+      klcode_stackfree(state, stktop);
       return klcodeval_stack(appendable.index);
     }
     default: {
@@ -769,21 +820,27 @@ static KlCodeVal klcode_exprpost(KlFuncState* state, KlCstPost* postcst) {
   }
 }
 
-static KlCodeVal klcode_exprnew(KlFuncState* state, KlCstNew* newcst) {
-  size_t stkid = klcode_stacktop(state);
+static KlCodeVal klcode_exprnew(KlFuncState* state, KlCstNew* newcst, size_t target) {
   KlCodeVal klclass = klcode_expr(state, newcst->klclass);
   klcode_putinstack(state, &klclass, klcode_cstposition(newcst->klclass));
-  klcode_pushinst(state, klinst_newobj(stkid, klclass.index), klcode_cstposition(newcst));
-  klcode_stackfree(state, stkid + 1);
-  klcode_pushinst(state, klinst_move(stkid + 1, stkid), klcode_cstposition(newcst));
-  klcode_stackfree(state, stkid + 2);
+  klcode_pushinst(state, klinst_newobj(target, klclass.index), klcode_cstposition(newcst));
+  size_t oristktop = klcode_stacktop(state);
+  size_t stktop;
+  if (oristktop == target) {
+    klcode_stackalloc1(state);
+    stktop = klcode_stacktop(state);
+  } else {
+    stktop = oristktop;
+  }
+  klcode_pushinst(state, klinst_move(stktop, target), klcode_cstposition(newcst));
+  klcode_stackfree(state, stktop + 1);
   size_t narg = klcode_passargs(state, newcst->args);
   KlConstant con = { .type = KL_STRING, .string = state->string.constructor };
   KlConEntry* conent = klcontbl_get(state->contbl, &con);
   klcode_oomifnull(conent);
-  klcode_pushinstmethod(state, stkid + 1, conent->index, narg, 0, klcode_cstposition(newcst));
-  klcode_stackfree(state, stkid);
-  return klcodeval_stack(stkid);
+  klcode_pushinstmethod(state, stktop, conent->index, narg, 0, klcode_cstposition(newcst));
+  klcode_stackfree(state, oristktop);
+  return klcodeval_stack(target);
 }
 
 static KlCodeVal klcode_exprdot(KlFuncState* state, KlCstDot* dotcst) {
@@ -824,10 +881,12 @@ static KlCodeVal klcode_expr(KlFuncState* state, KlCst* cst) {
       return klcode_exprarrgen(state, klcast(KlCstArrayGenerator*, cst));
     }
     case KLCST_EXPR_MAP: {
-      return klcode_exprmap(state, klcast(KlCstMap*, cst));
+      size_t target = klcode_stacktop(state); /* here we generate the value on top of the stack */
+      return klcode_exprmap(state, klcast(KlCstMap*, cst), target);
     }
     case KLCST_EXPR_CLASS: {
-      kltodo("implement class");
+      size_t target = klcode_stacktop(state); /* here we generate the value on top of the stack */
+      return klcode_exprclass(state, klcast(KlCstClass*, cst), target);
     }
     case KLCST_EXPR_CONSTANT: {
       return klcode_constant(state, klcast(KlCstConstant*, cst));
@@ -845,7 +904,8 @@ static KlCodeVal klcode_expr(KlFuncState* state, KlCst* cst) {
       return klcode_exprpre(state, klcast(KlCstPre*, cst));
     }
     case KLCST_EXPR_NEW: {
-      return klcode_exprnew(state, klcast(KlCstNew*, cst));
+      size_t target = klcode_stacktop(state); /* here we generate the value on top of the stack */
+      return klcode_exprnew(state, klcast(KlCstNew*, cst), target);
     }
     case KLCST_EXPR_YIELD: {
       size_t stkid = klcode_stacktop(state);
@@ -881,79 +941,8 @@ size_t klcode_helper_locateline(Ki* input, size_t offset);
 bool klcode_helper_showline_withcurl(KlFuncState* parser, Ki* input, KlFileOffset begin, KlFileOffset end);
 
 void klcode_error(KlFuncState* state, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
-  ++state->errcount;
-  Ko* err = state->err;
-  Ki* input = state->input;
-  size_t orioffset = ki_tell(input);
-  size_t line = klcode_helper_locateline(input, begin);
-  size_t linebegin = ki_tell(input);
-
-  unsigned int col = begin - linebegin + 1;
-  ko_printf(err, "%s:%4u:%4u: ", state->config.inputname, line, col);
-  va_list vlst;
-  va_start(vlst, format);
-  ko_vprintf(err, format, vlst);
-  va_end(vlst);
-  ko_putc(err, '\n');
-
-  while (klcode_helper_showline_withcurl(state, input, begin, end))
-    continue;
-  ki_seek(input, orioffset);
-  ko_putc(err, '\n');
-  ko_flush(err);
-}
-
-#define kl_isnl(ch)       ((ch) == '\n' || (ch) == '\r')
-
-size_t klcode_helper_locateline(Ki* input, size_t offset) {
-  ki_seek(input, 0);
-  size_t currline = 1;
-  size_t lineoff = 0;
-  while (ki_tell(input) < offset) {
-    int ch = ki_getc(input);
-    if (ch == KOF) break;
-    if (kl_isnl(ch)) {
-      if ((ch = ki_getc(input)) != '\r' && ch != KOF)
-        ki_ungetc(input);
-      ++currline;
-      lineoff = ki_tell(input);
-    }
-  }
-  ki_seek(input, lineoff);
-  return currline;
-}
-
-bool klcode_helper_showline_withcurl(KlFuncState* state, Ki* input, KlFileOffset begin, KlFileOffset end) {
-  Ko* err = state->err;
-  size_t curroffset = ki_tell(input);
-  if (curroffset >= end) return false;
-  int ch = ki_getc(input);
-  while (!kl_isnl(ch) && ch != KOF) {
-    ko_putc(err, ch);
-    ch = ki_getc(input);
-  }
-  ko_putc(err, '\n');
-  ki_seek(input, curroffset);
-  ch = ki_getc(input);
-  while (!kl_isnl(ch)) {
-    if (curroffset == begin && curroffset == end) {
-      ko_putc(err, state->config.zerocurl);
-    } else if (curroffset >= begin && curroffset < end) {
-      if (ch == '\t') {
-        for (size_t i = 0; i < state->config.tabstop; ++i)
-          ko_putc(err, state->config.curl);
-      } else {
-        ko_putc(err, state->config.curl);
-      }
-    } else {
-      ko_putc(err, ch == '\t' ? '\t' : ' ');
-    }
-    if (ch == KOF) break;
-    ch = ki_getc(input);
-    ++curroffset;
-  }
-  ko_putc(err, '\n');
-  if (ch != KOF && (ch = ki_getc(input)) != '\r' && ch != KOF)
-    ki_ungetc(input);
-  return true;
+  va_list args;
+  va_start(args, format);
+  klerror_errorv(state->klerror, state->input, state->config.inputname, begin, end, format, args);
+  va_end(args);
 }

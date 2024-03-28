@@ -8,7 +8,7 @@
 
 typedef struct tagKlRefInfo {
   uint8_t index;
-  bool in_stack;
+  bool on_stack;
 } KlRefInfo;
 
 typedef struct tagKlRef KlRef;
@@ -32,12 +32,12 @@ void klreflist_close(KlRef** reflist, KlValue* bound, KlMM* klmm);
 
 static inline bool klref_closed(KlRef* ref);
 
-KlRef* klref_new(KlMM* klmm, KlRef** reflist, KlValue* stkval);
-static inline KlRef* klref_get(KlMM* klmm, KlRef** reflist, KlValue* stkval);
-static inline void klref_delete(KlMM* klmm, KlRef* ref);
+KlRef* klref_new(KlRef** reflist, KlMM* klmm, KlValue* stkval);
+static inline KlRef* klref_get(KlRef** reflist, KlMM* klmm, KlValue* stkval);
+static inline void klref_delete(KlRef* ref, KlMM* klmm);
 
 static inline void klref_pin(KlRef* ref);
-static inline void klref_unpin(KlMM* klmm, KlRef* ref);
+static inline void klref_unpin(KlRef* ref, KlMM* klmm);
 
 static inline KlGCObject* klref_propagate(KlRef* ref, KlGCObject* gclist);
 
@@ -60,7 +60,7 @@ static inline KlRef* klreflist_create(KlMM* klmm) {
 static inline void klreflist_delete(KlRef* reflist, KlMM* klmm) {
   while (reflist) {
     KlRef* next = reflist->open.next;
-    klref_unpin(klmm, reflist);
+    klref_unpin(reflist, klmm);
     reflist = next;
   }
 }
@@ -69,15 +69,15 @@ static inline bool klref_closed(KlRef* ref) {
   return ref->pval == &ref->closed.val;
 }
 
-static inline KlRef* klref_get(KlMM* klmm, KlRef** reflist, KlValue* stkval) {
+static inline KlRef* klref_get(KlRef** reflist, KlMM* klmm, KlValue* stkval) {
   KlRef* ref = NULL;
   while ((ref = *reflist)->pval > stkval) {
     reflist = &ref->open.next;
   }
-  return ref->pval == stkval ? ref : klref_new(klmm, reflist, stkval);
+  return ref->pval == stkval ? ref : klref_new(reflist, klmm, stkval);
 }
 
-static inline void klref_delete(KlMM* klmm, KlRef* ref) {
+static inline void klref_delete(KlRef* ref, KlMM* klmm) {
   klmm_free(klmm, ref, sizeof (KlRef));
 }
 
@@ -85,9 +85,9 @@ static inline void klref_pin(KlRef* ref) {
   ++ref->pincount;
 }
 
-static inline void klref_unpin(KlMM* klmm, KlRef* ref) {
+static inline void klref_unpin(KlRef* ref, KlMM* klmm) {
   if (--ref->pincount == 0)
-    klref_delete(klmm, ref);
+    klref_delete(ref, klmm);
 }
 
 static inline KlGCObject* klref_propagate(KlRef* ref, KlGCObject* gclist) {

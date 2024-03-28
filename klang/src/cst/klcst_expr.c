@@ -128,6 +128,16 @@ KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, K
   return cstconstant;
 }
 
+KlCstConstant* klcst_constant_create_float(KlFloat floatval, KlFileOffset begin, KlFileOffset end) {
+  KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
+  if (kl_unlikely(!cstconstant)) return NULL;
+  cstconstant->con.floatval = floatval;
+  cstconstant->con.type = KL_FLOAT;
+  klcst_setposition(cstconstant, begin, end);
+  klcst_init(cstconstant, &klcst_constant_vfunc);
+  return cstconstant;
+}
+
 KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;

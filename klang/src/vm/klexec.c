@@ -226,7 +226,7 @@ static KlException klexec_dopreopmethod(KlState* state, KlValue* a, KlValue* b, 
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  kl_assert(klstack_instack(klstate_stack(state), a), "'a' must be in stack");
+  kl_assert(klstack_instack(klstate_stack(state), a), "'a' must be on stack");
   kl_assert(klstack_residual(klstate_stack(state)) >= 1, "stack size not enough for calling prefix operator");
 
   KlValue* method = klexec_getfield(state, b, op);
@@ -245,7 +245,7 @@ KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  kl_assert(klstack_instack(klstate_stack(state), a), "'a' must be in stack");
+  kl_assert(klstack_instack(klstate_stack(state), a), "'a' must be on stack");
   kl_assert(klstack_residual(klstate_stack(state)) >= 2, "stack size not enough for calling binary operator");
 
   KlValue* method = klexec_getfield(state, b, op);
@@ -265,7 +265,7 @@ static KlException klexec_doindexmethod(KlState* state, KlValue* val, KlValue* i
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
-  kl_assert(klstack_instack(klstate_stack(state), val), "'a' must be in stack");
+  kl_assert(klstack_instack(klstate_stack(state), val), "'a' must be on stack");
   kl_assert(klstack_residual(klstate_stack(state)) >= 1, "stack size not enough for calling binary operator");
 
   KlString* index = state->common->string.index;
@@ -1038,7 +1038,7 @@ KlException klexec_execute(KlState* state) {
         if (kl_unlikely(!arr))
           return klstate_throw(state, KL_E_OOM, "out of memory when creating an array");
         KlArrayIter iter = klarray_iter_begin(arr);
-        while(nelem--) {  /* fill this array with values in stack */
+        while(nelem--) {  /* fill this array with values on stack */
           klvalue_setvalue(iter, first++);
           iter = klarray_iter_next(iter);
         }
@@ -1089,8 +1089,8 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_INDEXI: {
-        KlValue* val = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* indexable = stkbase + KLINST_ABX_GETB(inst);
+        KlValue* val = stkbase + KLINST_ABI_GETA(inst);
+        KlValue* indexable = stkbase + KLINST_ABI_GETB(inst);
         KlInt index = KLINST_ABI_GETI(inst);
         if (klvalue_checktype(indexable, KL_ARRAY)) {       /* is array? */
           KlArray* arr = klvalue_getobj(indexable, KlArray*);
@@ -1117,8 +1117,8 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_INDEXASI: {
-        KlValue* val = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* indexable = stkbase + KLINST_ABX_GETB(inst);
+        KlValue* val = stkbase + KLINST_ABI_GETA(inst);
+        KlValue* indexable = stkbase + KLINST_ABI_GETB(inst);
         KlInt index = KLINST_ABI_GETI(inst);
         if (klvalue_checktype(indexable, KL_ARRAY)) {         /* is array? */
           KlArray* arr = klvalue_getobj(indexable, KlArray*);

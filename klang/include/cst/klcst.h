@@ -2,7 +2,8 @@
 #define KEVCC_KLANG_INCLUDE_AST_KLCST_H
 
 
-#include "klang/include/parse/kllex.h"
+#include "klang/include/error/klerror.h"
+#include <stdlib.h>
 
 #define klcst_alloc(Type)                   ((Type*)malloc(sizeof (Type)))
 

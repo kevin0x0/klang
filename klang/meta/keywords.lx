@@ -5,6 +5,9 @@ import "charset/unicode
 def integer(KLTK_INT):
   (KLTK_INT) $[1-9][0-9]* | 0[0-9]* | 0[xX][A-Fa-f0-9]+
 
+def integer(KLTK_FLOAT):
+  (KLTK_FLOAT) $[0-9]+\.[0-9]+
+
 def string(KLTK_STRING):
   (KLTK_STRING) $\" | `
 
@@ -134,9 +137,6 @@ def local (KLTK_LOCAL):
 def shared (KLTK_SHARED):
   (KLTK_SHARED) $shared
 
-def class (KLTK_CLASS):
-  (KLTK_CLASS) $class
-
 def return (KLTK_RETURN):
   (KLTK_RETURN) $return
 
@@ -146,14 +146,17 @@ def break (KLTK_BREAK):
 def continue (KLTK_CONTINUE):
   (KLTK_CONTINUE) $continue
 
-def new (KLTK_THIS):
-  (KLTK_THIS) $this
-
 def new (KLTK_VARARG):
   (KLTK_VARARG) $\.\.\.
 
 def new (KLTK_NEW):
   (KLTK_NEW) $new
+
+def inherit (KLTK_INHERIT):
+  (KLTK_INHERIT) $inherit
+
+def method (KLTK_METHOD):
+  (KLTK_METHOD) $method
 
 def async (KLTK_ASYNC):
   (KLTK_ASYNC) $async

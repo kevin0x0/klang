@@ -2,7 +2,6 @@
 #include "klang/include/parse/klcfdarr.h"
 #include "klang/include/parse/klidarr.h"
 #include "klang/include/parse/kllex.h"
-#include "klang/include/parse/klstrtab.h"
 #include "klang/include/parse/kltokens.h"
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_expr.h"
@@ -20,15 +19,13 @@ static KlFileOffset ph_filepos = ~(size_t)0;
 
 
 
-bool klparser_init(KlParser* parser, KlStrTab* strtab, Ko* err, char* inputname) {
+bool klparser_init(KlParser* parser, KlStrTab* strtab, Ko* err, char* inputname, KlError* klerror) {
   parser->strtab = strtab;
   parser->err = err;
-  parser->errcount = 0;
   parser->inputname = inputname;
   parser->incid = 0;
-  parser->config.curl = '~';
-  parser->config.zerocurl = '^';
-  parser->config.tabstop = 8;
+  parser->klerror = klerror;
+
   int thislen = strlen("this");
   char* this = klstrtab_allocstring(strtab, thislen);
   if (kl_unlikely(!this)) return false;
@@ -160,6 +157,12 @@ KlCst* klparser_exprunit(KlParser* parser, KlLex* lex) {
   switch (kllex_tokkind(lex)) {
     case KLTK_INT: {
       KlCstConstant* cst = klcst_constant_create_integer(lex->tok.intval, lex->tok.begin, lex->tok.end);
+      if (kl_unlikely(!cst)) return klparser_error_oom(parser, lex);
+      kllex_next(lex);
+      return klcst(cst);
+    }
+    case KLTK_FLOAT: {
+      KlCstConstant* cst = klcst_constant_create_float(lex->tok.floatval, lex->tok.begin, lex->tok.end);
       if (kl_unlikely(!cst)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klcst(cst);
@@ -756,7 +759,6 @@ KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
       case KLTK_STRING:
       case KLTK_INT:
       case KLTK_BOOLVAL:
-      case KLTK_THIS:
       case KLTK_VARARG:
       case KLTK_NIL: {  /* call with 'unit' */
         KlCst* params = klparser_exprunit(parser, lex);
@@ -1129,9 +1131,10 @@ KlCst* klparser_stmtlist(KlParser* parser, KlLex* lex) {
       case KLTK_LET: case KLTK_IF: case KLTK_REPEAT: case KLTK_WHILE:
       case KLTK_FOR: case KLTK_RETURN: case KLTK_BREAK: case KLTK_CONTINUE:
       case KLTK_ARROW: case KLTK_MINUS: case KLTK_ADD: case KLTK_NOT:
-      case KLTK_NEW: case KLTK_THIS: case KLTK_INT: case KLTK_STRING:
-      case KLTK_BOOLVAL: case KLTK_NIL: case KLTK_ID: case KLTK_LBRACKET:
-      case KLTK_LBRACE: case KLTK_LPAREN: {
+      case KLTK_NEW: case KLTK_INT: case KLTK_STRING: case KLTK_BOOLVAL:
+      case KLTK_NIL: case KLTK_ID: case KLTK_LBRACKET: case KLTK_LBRACE:
+      case KLTK_YIELD: case KLTK_ASYNC: case KLTK_INHERIT: case KLTK_METHOD:
+      case KLTK_FLOAT: case KLTK_LPAREN: {
         KlCst* stmt = klparser_stmt(parser, lex);
         if (kl_unlikely(!stmt)) continue;
         if (kl_unlikely(!karray_push_back(&stmts, stmt))) {
@@ -1285,9 +1288,10 @@ KlCst* klparser_generator(KlParser* parser, KlLex* lex, KlCst* inner_stmt) {
         break;
       }
       case KLTK_ARROW: case KLTK_MINUS: case KLTK_ADD: case KLTK_NOT:
-      case KLTK_NEW: case KLTK_THIS: case KLTK_INT: case KLTK_STRING:
-      case KLTK_BOOLVAL: case KLTK_NIL: case KLTK_ID: case KLTK_LBRACKET:
-      case KLTK_LBRACE: case KLTK_LPAREN: {
+      case KLTK_NEW: case KLTK_INT: case KLTK_STRING: case KLTK_BOOLVAL:
+      case KLTK_NIL: case KLTK_ID: case KLTK_LBRACKET: case KLTK_LBRACE:
+      case KLTK_YIELD: case KLTK_ASYNC: case KLTK_INHERIT: case KLTK_METHOD:
+      case KLTK_FLOAT: case KLTK_LPAREN: {
         KlCst* tuple = klparser_tuple(parser, lex);
         if (kl_unlikely(!tuple)) {
           kllex_trymatch(lex, KLTK_SEMI);
@@ -1389,83 +1393,10 @@ static void klparser_tupletoidarray(KlParser* parser, KlLex* lex, KlCstTuple* tu
 
 
 /* error handler */
-size_t klparser_helper_locateline(Ki* input, KlFileOffset offset);
-bool klparser_helper_showline_withcurl(KlParser* parser, Ki* input, KlFileOffset begin, KlFileOffset end);
-
 void klparser_error(KlParser* parser, Ki* input, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
   kl_assert(begin != ph_filepos && end != ph_filepos, "position of a syntax tree not set!");
-  ++parser->errcount;
-  Ko* err = parser->err;
-  size_t orioffset = ki_tell(input);
-  size_t line = klparser_helper_locateline(input, begin);
-  size_t linebegin = ki_tell(input);
-
-  unsigned int col = begin - linebegin + 1;
-  ko_printf(err, "%s:%4u:%4u: ", parser->inputname, line, col);
-  va_list vlst;
-  va_start(vlst, format);
-  ko_vprintf(err, format, vlst);
-  va_end(vlst);
-  ko_putc(err, '\n');
-
-  while (klparser_helper_showline_withcurl(parser, input, begin, end))
-    continue;
-  ki_seek(input, orioffset);
-  ko_putc(err, '\n');
-  ko_flush(err);
-}
-
-#define kl_isnl(ch)       ((ch) == '\n' || (ch) == '\r')
-
-size_t klparser_helper_locateline(Ki* input, KlFileOffset offset) {
-  ki_seek(input, 0);
-  size_t currline = 1;
-  size_t lineoff = 0;
-  while (ki_tell(input) < offset) {
-    int ch = ki_getc(input);
-    if (ch == KOF) break;
-    if (kl_isnl(ch)) {
-      if ((ch = ki_getc(input)) != '\r' && ch != KOF)
-        ki_ungetc(input);
-      ++currline;
-      lineoff = ki_tell(input);
-    }
-  }
-  ki_seek(input, lineoff);
-  return currline;
-}
-
-bool klparser_helper_showline_withcurl(KlParser* parser, Ki* input, KlFileOffset begin, KlFileOffset end) {
-  Ko* err = parser->err;
-  size_t curroffset = ki_tell(input);
-  if (curroffset >= end) return false;
-  int ch = ki_getc(input);
-  while (!kl_isnl(ch) && ch != KOF) {
-    ko_putc(err, ch);
-    ch = ki_getc(input);
-  }
-  ko_putc(err, '\n');
-  ki_seek(input, curroffset);
-  ch = ki_getc(input);
-  while (!kl_isnl(ch)) {
-    if (curroffset == begin && curroffset == end) {
-      ko_putc(err, parser->config.zerocurl);
-    } else if (curroffset >= begin && curroffset < end) {
-      if (ch == '\t') {
-        for (size_t i = 0; i < parser->config.tabstop; ++i)
-          ko_putc(err, parser->config.curl);
-      } else {
-        ko_putc(err, parser->config.curl);
-      }
-    } else {
-      ko_putc(err, ch == '\t' ? '\t' : ' ');
-    }
-    if (ch == KOF) break;
-    ch = ki_getc(input);
-    ++curroffset;
-  }
-  ko_putc(err, '\n');
-  if (ch != KOF && (ch = ki_getc(input)) != '\r' && ch != KOF)
-    ki_ungetc(input);
-  return true;
+  va_list args;
+  va_start(args, format);
+  klerror_errorv(parser->klerror, input, parser->inputname, begin, end, format, args);
+  va_end(args);
 }

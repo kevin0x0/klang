@@ -23,12 +23,12 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
   KlRef** ref = kclo->refs;
   KlRefInfo* end = refinfo + nref;
   for (; refinfo != end; ++refinfo, ++ref) {
-    if (!refinfo->in_stack) {       /* not in the stack */
+    if (!refinfo->on_stack) {       /* not in the stack */
       *ref = refs[refinfo->index];  /* in parent closure */
       klref_pin(*ref);
       continue;
     }
-    KlRef* newref = klref_get(klmm, openreflist, stkbase + refinfo->index);
+    KlRef* newref = klref_get(openreflist, klmm, stkbase + refinfo->index);
     if (k_unlikely(!newref)) {
       klmm_newlevel_abort(klmm);
       klmm_free(klmm, kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kfunc->nref);
@@ -47,7 +47,7 @@ static void klkclosure_delete(KlKClosure* kclo) {
   KlRef** refs = kclo->refs;
   size_t nref = kclo->nref;
   for (size_t i = 0; i < nref; ++i)
-    klref_unpin(klmm, refs[i]);
+    klref_unpin(refs[i], klmm);
   klmm_free(klmm_gcobj_getmm(klmm_to_gcobj(kclo)), kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kclo->nref);
 }
 
@@ -69,7 +69,7 @@ KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, 
   KlRef** ref = cclo->refs;
   KlRef** end = ref + nref;
   for (; ref != end; ++ref) {
-    KlRef* newref = klref_get(klmm, openreflist, stkbase++);
+    KlRef* newref = klref_get(openreflist, klmm, stkbase++);
     if (k_unlikely(!newref)) {
       klmm_newlevel_abort(klmm);
       klmm_free(klmm, cclo, sizeof (KlCClosure) + sizeof (KlRef*) * cclo->nref);
@@ -88,7 +88,7 @@ static void klcclosure_delete(KlCClosure* cclo) {
   KlRef** refs = cclo->refs;
   size_t nref = cclo->nref;
   for (size_t i = 0; i < nref; ++i)
-    klref_unpin(klmm, refs[i]);
+    klref_unpin(refs[i], klmm);
   klmm_free(klmm_gcobj_getmm(klmm_to_gcobj(cclo)), cclo, sizeof (KlKClosure) + sizeof (KlRef*) * cclo->nref);
 }
 

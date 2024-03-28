@@ -1,16 +1,15 @@
 #ifndef KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 #define KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 
-#include "klang/include/parse/klstrtab.h"
+#include "klang/include/cst/klstrtab.h"
 #include "klang/include/parse/kltokens.h"
 #include "klang/include/value/klvalue.h"
+#include "klang/include/error/klerror.h"
 #include "utils/include/kio/kio.h"
 
 #include <stdint.h>
 
 #define KLLEX_STRLIMIT  (KLSTRTAB_EXTRA)
-
-typedef size_t KlFileOffset;
 
 typedef struct tagKlLex {
   KlStrTab* strtab;         /* string table */
@@ -19,11 +18,13 @@ typedef struct tagKlLex {
   Ko* err;                  /* error information puts here. */
   size_t nerror;            /* number of lexical error */
   size_t currline;          /* current line number */
+  KlError* klerror;         /* error reporter */
   struct {
     KlFileOffset begin;     /* begin position of this token */
     KlFileOffset end;       /* end position of this token */
     union {
       KlInt intval;
+      KlFloat floatval;
       KlBool boolval;
       KlStrDesc string;
     };

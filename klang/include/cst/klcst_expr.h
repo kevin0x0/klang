@@ -2,7 +2,7 @@
 #define KEVCC_KLANG_INCLUDE_AST_KLCST_EXPR_H
 
 #include "klang/include/cst/klcst.h"
-#include "klang/include/parse/klstrtab.h"
+#include "klang/include/cst/klstrtab.h"
 #include "klang/include/parse/kltokens.h"
 #include "klang/include/value/klvalue.h"
 #include <stddef.h>
@@ -48,6 +48,7 @@ typedef struct tagKlConstant {
   union {
     KlStrDesc string;               /* literal string */
     KlInt intval;
+    KlFloat floatval;
     KlBool boolval;
   };
 } KlConstant;
@@ -129,6 +130,7 @@ KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCst* stmts, 
 KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlCst* base, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, KlFileOffset end);
+KlCstConstant* klcst_constant_create_float(KlFloat floatval, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_nil(KlFileOffset begin, KlFileOffset end);
 KlCstVararg* klcst_vararg_create(KlFileOffset begin, KlFileOffset end);

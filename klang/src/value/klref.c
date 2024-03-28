@@ -1,7 +1,7 @@
 #include "klang/include/value/klref.h"
 
 
-KlRef* klref_new(KlMM* klmm, KlRef** reflist, KlValue* stkval) {
+KlRef* klref_new(KlRef** reflist, KlMM* klmm, KlValue* stkval) {
   KlRef* ref = *reflist;
   KlRef* newref = (KlRef*)klmm_alloc(klmm, sizeof (KlRef));
   if (kl_unlikely(!newref)) return NULL;
@@ -19,7 +19,7 @@ void klreflist_close(KlRef** reflist, KlValue* bound, KlMM* klmm) {
     KlRef* next = ref->open.next;
     klvalue_setvalue(&ref->closed.val, ref->pval);
     ref->pval = &ref->closed.val;
-    klref_unpin(klmm, ref);
+    klref_unpin(ref, klmm);
     ref = next;
   }
   *reflist = ref;

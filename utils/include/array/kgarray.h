@@ -62,7 +62,7 @@ static inline bool prefix##_push_back(arrname* array, kgarray_##pass(T) val) {  
 }                                                                               \
                                                                                 \
 static inline void prefix##_pop_back(arrname* array, size_t npop) {             \
-  array->curr -= npop;                                                          \
+  array->current -= npop;                                                       \
 }                                                                               \
                                                                                 \
 static inline T* prefix##_access(arrname* array, size_t index) {                \

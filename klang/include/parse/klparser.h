@@ -4,26 +4,20 @@
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_stmt.h"
 #include "klang/include/parse/kllex.h"
-#include "klang/include/parse/klstrtab.h"
 
 typedef struct tagKlParser {
   Ko* err;
   char* inputname;
-  size_t errcount;
   KlStrTab* strtab;
   size_t incid;
-  struct {
-    unsigned int tabstop;
-    char curl;
-    char zerocurl;
-  } config;
+  KlError* klerror;
   struct {
     KlStrDesc this;
   } string;
 } KlParser;
 
 
-bool klparser_init(KlParser* parser, KlStrTab* strtab, Ko* err, char* inputname);
+bool klparser_init(KlParser* parser, KlStrTab* strtab, Ko* err, char* inputname, KlError* klerror);
 
 static inline bool klparser_match(KlParser* parser, KlLex* lex, KlTokenKind kind);
 /* check whether current token match 'kind', if not, report an error and try to discover.

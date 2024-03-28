@@ -2,7 +2,6 @@
 
 
 #include "klang/include/cst/klcst_expr.h"
-#include "klang/include/parse/klstrtab.h"
 #include "utils/include/array/karray.h"
 #include <stdlib.h>
 #include <string.h>

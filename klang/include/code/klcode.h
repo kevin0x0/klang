@@ -3,7 +3,6 @@
 
 #include "klang/include/code/klcontbl.h"
 #include "klang/include/code/klsymtbl.h"
-#include "klang/include/parse/kllex.h"
 #include "klang/include/value/klref.h"
 #include "klang/include/vm/klinst.h"
 #include "utils/include/array/kgarray.h"
