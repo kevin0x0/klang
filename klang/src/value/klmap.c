@@ -1,5 +1,6 @@
 #include "klang/include/value/klmap.h"
 #include "klang/include/mm/klmm.h"
+#include "klang/include/value/klvalue.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,16 @@ static inline size_t klmap_gethash(KlValue* key) {
     return klstring_hash(klvalue_getobj(key, KlString*));
   } else if (klvalue_checktype(key, KL_INT) || klvalue_checktype(key, KL_BOOL)) {
     return klvalue_getint(key);
+  } else if (klvalue_checktype(key, KL_FLOAT)) {
+    kl_assert(sizeof (KlFloat) == sizeof (KlInt), "");
+    struct {
+      size_t hash;
+      KlFloat floatval;
+    } num;
+    num.floatval = klvalue_getfloat(key);
+    /* +0.0 and -0.0 is equal but have difference binary representations */
+    if (num.floatval == 0.0) return 0;
+    return num.hash;
   } else {
     return ((size_t)klvalue_getany(key) >> 3) + klvalue_gettype(key);
   }
@@ -67,7 +78,8 @@ static inline bool klmap_expand(KlMap* map) {
   size_t new_capacity = map->capacity << 1;
   KlMapNode** new_array = klmm_alloc(klmm_gcobj_getmm(klmm_to_gcobj(map)), new_capacity * sizeof (KlMapNode*));
   if (kl_unlikely(!new_array)) return false;
-  memset(new_array, 0, new_capacity * sizeof (KlMapNode*));
+  for (size_t i = 0; i < new_capacity; ++i)
+    new_array[i] = NULL;
   klmap_rehash(map, new_array, new_capacity);
   return true;
 }
@@ -84,7 +96,8 @@ KlMap* klmap_create(KlClass* mapclass, size_t capacity, KlMapNodePool* nodepool)
     klobject_free(klcast(KlObject*, map), klmm);
     return NULL;
   }
-  memset(array, 0, sizeof (KlMapNode*) * capacity);
+  for (size_t i = 0; i < capacity; ++i)
+    array[i] = NULL;
   klmap_init_head_tail(&map->head, &map->tail);
   map->array = array;
   map->capacity = capacity;

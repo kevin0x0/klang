@@ -106,7 +106,8 @@ static inline bool klstrpool_expand(KlStrPool* strpool) {
   size_t new_capacity = strpool->capacity << 1;
   KlString** new_array = klmm_alloc(klmm_gcobj_getmm(klmm_to_gcobj(strpool)), new_capacity * sizeof (KlString*));
   if (kl_unlikely(!new_array)) return false;
-  memset(new_array, 0, new_capacity * sizeof (KlString*));
+  for (size_t i = 0; i < new_capacity; ++i)
+    new_array[i] = NULL;
   klstrpool_rehash(strpool, new_array, new_capacity);
   return true;
 }
@@ -120,7 +121,9 @@ KlStrPool* klstrpool_create(KlMM* klmm, size_t capacity) {
     klmm_free(klmm, strpool, sizeof (KlStrPool));
     return NULL;
   }
-  memset(strpool->array, 0, capacity * sizeof (KlString*));
+  KlString** array = strpool->array;
+  for (size_t i = 0; i < capacity; ++i)
+    array[i] = NULL;
   strpool->capacity = capacity;
   strpool->size = 0;
   klstrpool_init_head_tail(&strpool->head, &strpool->tail);
