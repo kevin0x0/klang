@@ -4,6 +4,8 @@
 #include "klang/include/code/klvalpos.h"
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_expr.h"
+#include "klang/include/value/klvalue.h"
+#include "klang/include/vm/klinst.h"
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -164,6 +166,7 @@ typedef struct tagKlCodeVal {
   union {
     size_t index;
     KlInt intval;
+    KlFloat floatval;
     KlBool boolval;
     KlStrDesc string;
   };
@@ -191,6 +194,11 @@ static inline KlCodeVal klcodeval_string(KlStrDesc str) {
 
 static inline KlCodeVal klcodeval_integer(KlInt intval) {
   KlCodeVal val = { .kind = KLVAL_INTEGER, .intval = intval };
+  return val;
+}
+
+static inline KlCodeVal klcodeval_float(KlInt floatval) {
+  KlCodeVal val = { .kind = KLVAL_FLOAT, .intval = floatval };
   return val;
 }
 
@@ -264,16 +272,6 @@ static void klcode_putinstack(KlFuncState* state, KlCodeVal* val, KlFilePosition
       val->index = stkid;
       break;
     }
-    case KLVAL_STRING: {
-      size_t stkid = klcode_stackalloc1(state);
-      KlConstant constant = { .type = KL_STRING, .string = val->string };
-      KlConEntry* conent = klcontbl_get(state->contbl, &constant);
-      klcode_oomifnull(conent);
-      klcode_pushinst(state, klinst_loadc(stkid, conent->index), position);
-      val->kind = KLVAL_STACK;
-      val->index = stkid;
-      break;
-    }
     case KLVAL_NIL:
     case KLVAL_BOOL: {
       size_t stkid = klcode_stackalloc1(state);
@@ -289,6 +287,16 @@ static void klcode_putinstack(KlFuncState* state, KlCodeVal* val, KlFilePosition
       val->index = stkid;
       break;
     }
+    case KLVAL_STRING: {
+      size_t stkid = klcode_stackalloc1(state);
+      KlConstant constant = { .type = KL_STRING, .string = val->string };
+      KlConEntry* conent = klcontbl_get(state->contbl, &constant);
+      klcode_oomifnull(conent);
+      klcode_pushinst(state, klinst_loadc(stkid, conent->index), position);
+      val->kind = KLVAL_STACK;
+      val->index = stkid;
+      break;
+    }
     case KLVAL_INTEGER: {
       size_t stkid = klcode_stackalloc1(state);
       KlInstruction inst;
@@ -300,6 +308,18 @@ static void klcode_putinstack(KlFuncState* state, KlCodeVal* val, KlFilePosition
         klcode_oomifnull(conent);
         inst = klinst_loadc(stkid, conent->index);
       }
+      klcode_pushinst(state, inst, position);
+      val->kind = KLVAL_STACK;
+      val->index = stkid;
+      break;
+    }
+    case KLVAL_FLOAT: {
+      size_t stkid = klcode_stackalloc1(state);
+      KlInstruction inst;
+      KlConstant con = { .type = KL_FLOAT, .floatval = val->floatval };
+      KlConEntry* conent = klcontbl_get(state->contbl, &con);
+      klcode_oomifnull(conent);
+      inst = klinst_loadc(stkid, conent->index);
       klcode_pushinst(state, inst, position);
       val->kind = KLVAL_STACK;
       val->index = stkid;
@@ -571,12 +591,15 @@ static KlCodeVal klcode_exprpre(KlFuncState* state, KlCstPre* precst) {
     case KLTK_MINUS: {
       size_t stkid = klcode_stacktop(state);
       KlCodeVal val = klcode_expr(state, precst->operand);
-      if (val.kind == KLVAL_INTEGER)
+      if (val.kind == KLVAL_INTEGER) {
         return klcodeval_integer(-val.intval);
+      } else if (val.kind == KLVAL_FLOAT) {
+        return klcodeval_float(-val.floatval);
+      }
       KlFilePosition pos = klcode_cstposition(precst);
       klcode_putinstack(state, &val, pos);
-      klcode_stackfree(state, stkid);
       klcode_pushinst(state, klinst_neg(stkid, val.index), pos);
+      klcode_stackfree(state, stkid);
       return klcodeval_stack(stkid);
     }
     case KLTK_ASYNC: {
@@ -584,8 +607,8 @@ static KlCodeVal klcode_exprpre(KlFuncState* state, KlCstPre* precst) {
       KlCodeVal val = klcode_expr(state, precst->operand);
       KlFilePosition pos = klcode_cstposition(precst);
       klcode_putinstack(state, &val, pos);
-      klcode_stackfree(state, stkid);
       klcode_pushinst(state, klinst_async(stkid, val.index), pos);
+      klcode_stackfree(state, stkid);
       return klcodeval_stack(stkid);
     }
     case KLTK_NOT: {
@@ -657,8 +680,90 @@ static KlInstruction klcode_bininstc(KlCstBin* bincst, size_t stkid, size_t left
   }
 }
 
+static inline KlCodeVal klcode_arithcomptime(KlFuncState* state, KlCstBin* bincst, KlCodeVal left, KlCodeVal right) {
+  if (left.kind == KLVAL_INTEGER && right.kind == KLVAL_INTEGER) {
+    switch (bincst->op) {
+      case KLTK_ADD: {
+        return klcodeval_integer(left.intval + right.intval);
+      }
+      case KLTK_MINUS: {
+        return klcodeval_integer(left.intval - right.intval);
+      }
+      case KLTK_MUL: {
+        return klcodeval_integer(left.intval * right.intval);
+      }
+      case KLTK_DIV: {
+        if (right.intval == 0) {
+          klcode_error(state, klcst_begin(bincst), klcst_end(bincst), "divided by zero");
+          return klcodeval_stack(0);
+        }
+        return klcodeval_integer(left.intval / right.intval);
+      }
+      case KLTK_MOD: {
+        if (right.intval == 0) {
+          klcode_error(state, klcst_begin(bincst), klcst_end(bincst), "divided by zero");
+          return klcodeval_stack(0);
+        }
+        return klcodeval_integer(left.intval % right.intval);
+      }
+      default: {
+        kl_assert(false, "control flow should not reach here");
+        return klcodeval_nil();
+      }
+    }
+  } else {
+    KlFloat l = left.floatval;
+    KlFloat r = right.floatval;
+    switch (bincst->op) {
+      case KLTK_ADD: {
+        return klcodeval_integer(l + r);
+      }
+      case KLTK_MINUS: {
+        return klcodeval_integer(l - r);
+      }
+      case KLTK_MUL: {
+        return klcodeval_integer(l * r);
+      }
+      case KLTK_DIV: {
+        size_t stkid = klcode_stacktop(state);
+        klcode_putinstack(state, &left, klcode_cstposition(bincst->loperand));
+        KlConstant constant = { .type = KL_FLOAT, .floatval = right.floatval };
+        KlConEntry* conent = klcontbl_get(state->contbl, &constant);
+        klcode_oomifnull(conent);
+        if (klinst_inurange(conent->index, 8)) {
+          klcode_pushinst(state, klinst_divc(stkid, left.index, conent->index), klcode_cstposition(bincst));
+        } else {
+          klcode_pushinst(state, klinst_loadc(stkid + 1, conent->index), klcode_cstposition(bincst->roperand));
+          klcode_pushinst(state, klinst_div(stkid, left.index, stkid + 1), klcode_cstposition(bincst));
+        }
+        klcode_stackfree(state, stkid);
+        return klcodeval_stack(stkid);
+      }
+      case KLTK_MOD: {
+        size_t stkid = klcode_stacktop(state);
+        klcode_putinstack(state, &left, klcode_cstposition(bincst->loperand));
+        KlConstant constant = { .type = KL_FLOAT, .floatval = right.floatval };
+        KlConEntry* conent = klcontbl_get(state->contbl, &constant);
+        klcode_oomifnull(conent);
+        if (klinst_inurange(conent->index, 8)) {
+          klcode_pushinst(state, klinst_modc(stkid, left.index, conent->index), klcode_cstposition(bincst));
+        } else {
+          klcode_pushinst(state, klinst_loadc(stkid + 1, conent->index), klcode_cstposition(bincst->roperand));
+          klcode_pushinst(state, klinst_mod(stkid, left.index, stkid + 1), klcode_cstposition(bincst));
+        }
+        klcode_stackfree(state, stkid);
+        return klcodeval_stack(stkid);
+      }
+      default: {
+        kl_assert(false, "control flow should not reach here");
+        return klcodeval_nil();
+      }
+    }
+  }
+}
+
 static KlCodeVal klcode_exprbinleftliteral(KlFuncState* state, KlCstBin* bincst, KlCodeVal left) {
-  kl_assert(left.kind == KLVAL_INTEGER || left.kind == KLVAL_STRING, "");
+  kl_assert(klvalkind_isnumber(left) || left.kind == KLVAL_STRING, "");
   /* left is not on the stack, so the stack top is not changed */
   size_t stkid = klcode_stacktop(state);
   size_t currcodesize = klcode_currcodesize(state);
@@ -666,7 +771,7 @@ static KlCodeVal klcode_exprbinleftliteral(KlFuncState* state, KlCstBin* bincst,
   KlCodeVal leftonstack = left;
   klcode_putinstack(state, &leftonstack, klcode_cstposition(bincst->loperand));
   KlCodeVal right = klcode_expr(state, bincst->roperand);
-  if (right.kind != left.kind)
+  if (right.kind != left.kind && (!klvalkind_isnumber(right) || !klvalkind_isnumber(left)))
     klcode_putinstack(state, &right, klcode_cstposition(bincst->roperand));
   if (right.kind == KLVAL_STACK) {
     /* now we are sure that left should indeed be put on the stack */
@@ -685,10 +790,10 @@ static KlCodeVal klcode_exprbinleftliteral(KlFuncState* state, KlCstBin* bincst,
     return klcodeval_string(str);
   } else {
     /* right is integer and now we know that left should not be put on the stack */
-    kl_assert(left.kind == KLVAL_INTEGER && right.kind == KLVAL_INTEGER, "");
+    kl_assert(klvalkind_isnumber(right) && klvalkind_isnumber(left), "");
     kl_assert(klcode_currcodesize(state) - 1 == currcodesize, "");
     klcode_popinstto(state, currcodesize);  /* pop the instruction that put left on stack */
-    return klcodeval_integer(left.intval + right.intval);
+    return klcode_arithcomptime(state, bincst, left, right);
   }
 }
 
@@ -712,6 +817,25 @@ static KlCodeVal klcode_exprbinrightnonstk(KlFuncState* state, KlCstBin* bincst,
         klcode_pushinst(state, klcode_bininsti(bincst, stkid, left.index, right.intval), klcode_cstposition(bincst));
       } else {
         KlConstant con = { .type = KL_INT, .intval = right.intval };
+        KlConEntry* conent = klcontbl_get(state->contbl, &con);
+        klcode_oomifnull(conent);
+        if (klinst_inurange(conent->index, 8)) {
+          klcode_pushinst(state, klcode_bininstc(bincst, stkid, left.index, conent->index), klcode_cstposition(bincst));
+        } else {
+          size_t stktop = klcode_stacktop(state);
+          klcode_pushinst(state, klinst_loadc(stktop, conent->index), klcode_cstposition(bincst->roperand));
+          klcode_pushinst(state, klcode_bininst(bincst, stkid, left.index, stktop), klcode_cstposition(bincst));
+        }
+      }
+      klcode_stackfree(state, stkid);
+      return klcodeval_stack(stkid);
+    }
+    case KLVAL_FLOAT: {
+      if (bincst->op == KLTK_CONCAT) {
+        klcode_putinstack(state, &right, klcode_cstposition(bincst->roperand));
+        klcode_pushinst(state, klcode_bininst(bincst, stkid, left.index, right.index), klcode_cstposition(bincst));
+      } else {
+        KlConstant con = { .type = KL_FLOAT, .intval = right.floatval };
         KlConEntry* conent = klcontbl_get(state->contbl, &con);
         klcode_oomifnull(conent);
         if (klinst_inurange(conent->index, 8)) {
@@ -758,7 +882,7 @@ static KlCodeVal klcode_exprbin(KlFuncState* state, KlCstBin* bincst) {
   if (kltoken_isarith(bincst->op) || bincst->op == KLTK_CONCAT) {
     size_t stkid = klcode_stacktop(state);
     KlCodeVal left = klcode_expr(state, bincst->loperand);
-    if (left.kind == KLVAL_INTEGER || left.kind == KLVAL_STRING) {
+    if (klvalkind_isnumber(left) || left.kind == KLVAL_STRING) {
       return klcode_exprbinleftliteral(state, bincst, left);
     } else if (left.kind != KLVAL_STACK) {  /* reference, constant, nil or bool */
       klcode_putinstack(state, &left, klcode_cstposition(bincst->loperand));

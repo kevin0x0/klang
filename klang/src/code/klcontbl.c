@@ -19,6 +19,17 @@ static inline size_t klcontbl_hashing(KlStrTab* strtab, KlConstant* con) {
         hash = (*str++) + (hash << 6) + (hash << 16) - hash;
       return hash;
     }
+    case KL_FLOAT: {
+      kl_assert(sizeof (KlFloat) == sizeof (KlInt), "");
+      struct {
+        size_t hash;
+        KlFloat floatval;
+      } num;
+      num.floatval = con->floatval;
+      /* +0.0 and -0.0 is equal but have difference binary representations */
+      if (num.floatval == 0.0) return 0;
+      return num.hash;
+    }
     default: {
       kl_assert(false, "this type can not be inserted into constant table.");
       return 0;

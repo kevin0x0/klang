@@ -795,7 +795,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_ABI_GETA(inst);
         KlValue* b = stkbase + KLINST_ABI_GETB(inst);
         KlInt c = KLINST_ABI_GETI(inst);
-        if (kl_unlikely(c == 0))
+        if (kl_unlikely(c == 0 && klvalue_checktype(b, KL_INT)))
           return klstate_throw(state, KL_E_ZERO, "divided by zero");
         klexec_binop_i(div, a, b, c);
         break;
@@ -804,7 +804,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_ABI_GETA(inst);
         KlValue* b = stkbase + KLINST_ABI_GETB(inst);
         KlInt c = KLINST_ABI_GETI(inst);
-        if (kl_unlikely(c == 0))
+        if (kl_unlikely(c == 0 && klvalue_checktype(b, KL_INT)))
           return klstate_throw(state, KL_E_ZERO, "divided by zero");
         klexec_binmod_i(mod, a, b, c);
         break;

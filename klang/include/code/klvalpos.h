@@ -1,17 +1,17 @@
-#ifndef KEVCC_KLANG_INCLUDE_CODE_KLVALPOS_H
-#define KEVCC_KLANG_INCLUDE_CODE_KLVALPOS_H
+#ifndef KEVCC_KLANG_INCLUDE_CODE_KLVALKIND_H
+#define KEVCC_KLANG_INCLUDE_CODE_KLVALKIND_H
 
 typedef enum tagKlValKind {
   KLVAL_STACK,
   KLVAL_REF,
-  KLVAL_STRING,
   KLVAL_BOOL,
   KLVAL_NIL,
-  /* Integer can be contsant(stored in constant table) or immediate value
-   * (stored in instruction). This is decided by whether it fits specific
-   * range(varies from instruction to instruction). */
+  KLVAL_STRING,
   KLVAL_INTEGER,  
+  KLVAL_FLOAT,  
 } KlValKind;
+
+#define klvalkind_isnumber(v)   ((v).kind == KLVAL_FLOAT || (v).kind == KLVAL_INTEGER)
 
 #endif
 
