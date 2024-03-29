@@ -1,7 +1,7 @@
 #include "klang/include/code/klcode.h"
 #include "klang/include/code/klcontbl.h"
 #include "klang/include/code/klsymtbl.h"
-#include "klang/include/code/klvalpos.h"
+#include "klang/include/code/klcodeval.h"
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/value/klvalue.h"
@@ -160,58 +160,6 @@ static inline KlFilePosition klcode_position(KlFileOffset begin, KlFileOffset en
 
 #define klcode_cstposition(cst) klcode_position(klcst_begin(cst), klcst_end(cst))
 
-/* here begins the code generation */
-typedef struct tagKlCodeVal {
-  KlValKind kind;
-  union {
-    size_t index;
-    KlInt intval;
-    KlFloat floatval;
-    KlBool boolval;
-    KlStrDesc string;
-  };
-} KlCodeVal;
-
-static inline KlCodeVal klcodeval_index(KlValKind kind, size_t index) {
-  KlCodeVal val = { .kind = kind, .index = index };
-  return val;
-}
-
-static inline KlCodeVal klcodeval_stack(size_t index) {
-  KlCodeVal val = { .kind = KLVAL_STACK, .index = index };
-  return val;
-}
-
-static inline KlCodeVal klcodeval_ref(size_t index) {
-  KlCodeVal val = { .kind = KLVAL_REF, .index = index };
-  return val;
-}
-
-static inline KlCodeVal klcodeval_string(KlStrDesc str) {
-  KlCodeVal val = { .kind = KLVAL_STRING, .string = str };
-  return val;
-}
-
-static inline KlCodeVal klcodeval_integer(KlInt intval) {
-  KlCodeVal val = { .kind = KLVAL_INTEGER, .intval = intval };
-  return val;
-}
-
-static inline KlCodeVal klcodeval_float(KlInt floatval) {
-  KlCodeVal val = { .kind = KLVAL_FLOAT, .intval = floatval };
-  return val;
-}
-
-static inline KlCodeVal klcodeval_bool(KlBool intval) {
-  KlCodeVal val = { .kind = KLVAL_BOOL, .intval = intval };
-  return val;
-}
-
-static inline KlCodeVal klcodeval_nil(void) {
-  KlCodeVal val = { .kind = KLVAL_NIL };
-  return val;
-}
-
 
 
 void klcode_error(KlFuncState* state, KlFileOffset begin, KlFileOffset end, const char* format, ...);
@@ -226,11 +174,13 @@ kl_noreturn static void klcode_error_fatal(KlFuncState* state, const char* messa
     klcode_error_fatal(state, "out of memory");                                 \
 }
 
-static inline void klcode_pushinst(KlFuncState* state, KlInstruction inst, KlFilePosition position) {
+static inline size_t klcode_pushinst(KlFuncState* state, KlInstruction inst, KlFilePosition position) {
+  size_t pc = klinstarr_size(&state->code);
   if (kl_unlikely(!klinstarr_push_back(&state->code, inst)))
     klcode_error_fatal(state, "out of memory");
   if (state->config.debug)
     klfparr_push_back(&state->position, position);
+  return pc;
 }
 
 static inline void klcode_pushinstmethod(KlFuncState* state, size_t obj, size_t method, size_t narg, size_t nret, KlFilePosition position) {
@@ -487,18 +437,6 @@ static inline KlCodeVal klcode_identifier(KlFuncState* state, KlCstIdentifier* i
   }
 }
 
-static inline KlCodeVal klcode_tuple_as_singleval(KlFuncState* state, KlCstTuple* tuplecst) {
-  if (tuplecst->nelem == 0)
-    return klcodeval_nil();
-
-  KlCst** expr = tuplecst->elems;
-  KlCst** end = expr + tuplecst->nelem;
-  KlCodeVal res;
-  while (expr != end)
-    res = klcode_expr(state, *expr++);
-  return res;
-}
-
 static inline void klcode_expryield(KlFuncState* state, KlCstYield* yieldcst, size_t nwanted) {
   size_t stkid = klcode_stacktop(state);
   size_t nres = klcode_passargs(state, yieldcst->vals);
@@ -575,6 +513,26 @@ static void klcode_tuple(KlFuncState* state, KlCstTuple* tuplecst, size_t nwante
     klcode_putinstktop(state, &res, klcode_cstposition(exprs[i]));
   }
   klcode_multires(state, exprs[count], nwanted - count);
+}
+
+static inline KlCodeVal klcode_tuple_as_singleval(KlFuncState* state, KlCstTuple* tuplecst) {
+  if (tuplecst->nelem == 0)
+    return klcodeval_nil();
+
+  KlCst** expr = tuplecst->elems;
+  KlCst** end = expr + tuplecst->nelem;
+  KlCodeVal res;
+  while (expr != end)
+    res = klcode_expr(state, *expr++);
+  return res;
+}
+
+static inline void klcode_tuple_evaluate(KlFuncState* state, KlCstTuple* tuplecst, size_t ndiscard) {
+  kl_assert(ndiscard <= tuplecst->nelem, "");
+  KlCst** expr = tuplecst->elems;
+  KlCst** end = expr + ndiscard;
+  while (expr != end)
+    klcode_expr(state, *expr++);
 }
 
 static size_t klcode_passargs(KlFuncState* state, KlCst* args) {
@@ -766,7 +724,7 @@ static inline KlCodeVal klcode_arithcomptime(KlFuncState* state, KlCstBin* bincs
 }
 
 static KlCodeVal klcode_exprbinleftliteral(KlFuncState* state, KlCstBin* bincst, KlCodeVal left) {
-  kl_assert(klvalkind_isnumber(left) || left.kind == KLVAL_STRING, "");
+  kl_assert(klcodeval_isnumber(left) || left.kind == KLVAL_STRING, "");
   /* left is not on the stack, so the stack top is not changed */
   size_t stkid = klcode_stacktop(state);
   size_t currcodesize = klcode_currcodesize(state);
@@ -774,7 +732,7 @@ static KlCodeVal klcode_exprbinleftliteral(KlFuncState* state, KlCstBin* bincst,
   KlCodeVal leftonstack = left;
   klcode_putinstack(state, &leftonstack, klcode_cstposition(bincst->loperand));
   KlCodeVal right = klcode_expr(state, bincst->roperand);
-  if (right.kind != left.kind && (!klvalkind_isnumber(right) || !klvalkind_isnumber(left)))
+  if (right.kind != left.kind && (!klcodeval_isnumber(right) || !klcodeval_isnumber(left)))
     klcode_putinstack(state, &right, klcode_cstposition(bincst->roperand));
   if (right.kind == KLVAL_STACK) {
     /* now we are sure that left should indeed be put on the stack */
@@ -793,7 +751,7 @@ static KlCodeVal klcode_exprbinleftliteral(KlFuncState* state, KlCstBin* bincst,
     return klcodeval_string(str);
   } else {
     /* right is integer and now we know that left should not be put on the stack */
-    kl_assert(klvalkind_isnumber(right) && klvalkind_isnumber(left), "");
+    kl_assert(klcodeval_isnumber(right) && klcodeval_isnumber(left), "");
     kl_assert(klcode_currcodesize(state) - 1 == currcodesize, "");
     klcode_popinstto(state, currcodesize);  /* pop the instruction that put left on stack */
     return klcode_arithcomptime(state, bincst, left, right);
@@ -885,7 +843,7 @@ static KlCodeVal klcode_exprbin(KlFuncState* state, KlCstBin* bincst) {
   if (kltoken_isarith(bincst->op) || bincst->op == KLTK_CONCAT) {
     size_t stkid = klcode_stacktop(state);
     KlCodeVal left = klcode_expr(state, bincst->loperand);
-    if (klvalkind_isnumber(left) || left.kind == KLVAL_STRING) {
+    if (klcodeval_isnumber(left) || left.kind == KLVAL_STRING) {
       return klcode_exprbinleftliteral(state, bincst, left);
     } else if (left.kind != KLVAL_STACK) {  /* reference, constant, nil or bool */
       klcode_putinstack(state, &left, klcode_cstposition(bincst->loperand));
@@ -999,7 +957,7 @@ static KlCodeVal klcode_exprdot(KlFuncState* state, KlCstDot* dotcst) {
   }
 }
 
-static inline KlCst* klcode_exprpromotion(KlFuncState* state, KlCst* cst) {
+static inline KlCst* klcode_exprpromotion(KlCst* cst) {
   while (klcst_kind(cst) == KLCST_EXPR_TUPLE && klcast(KlCstTuple*, cst)->nelem == 1) {
     cst = klcast(KlCstTuple*, cst)->elems[0];
   }
@@ -1011,65 +969,181 @@ typedef struct tagKlCodeBoolInfo {
   bool jumpcond;
 } KlCodeBoolInfo;
 
-static int klcode_exprbool(KlFuncState* state, KlCst* boolcst, bool jumpcond);
+static KlCodeVal klcode_exprbool(KlFuncState* state, KlCst* boolcst, bool jumpcond);
 
-static int klcode_exprnot(KlFuncState* state, KlCstPre* notcst, bool jumpcond) {
+static KlCodeVal klcode_exprnot(KlFuncState* state, KlCstPre* notcst, bool jumpcond) {
 }
 
-static int klcode_expror(KlFuncState* state, KlCstBin* orcst, bool jumpcond) {
+static KlCodeVal klcode_expror(KlFuncState* state, KlCstBin* orcst, bool jumpcond) {
 }
 
-static int klcode_exprand(KlFuncState* state, KlCstBin* andcst, bool jumpcond) {
-  KlCst* leftexpr = klcode_exprpromotion(state, andcst->roperand);
-  if (klcst_kind(leftexpr) == KLCST_EXPR_BIN) {
-    KlCstBin* leftbin = klcast(KlCstBin*, leftexpr);
-    if (leftbin->op == KLTK_AND) {
-      int jumplist = klcode_exprand(state, leftbin, false);
-    } else if (leftbin->op == KLTK_OR) {
-      int jumplist = klcode_expror(state, leftbin, false);
-    } else if (kltoken_isrelation(leftbin->op)) {
-    } else {
-      size_t stkid = klcode_stacktop(state);
-      KlCodeVal val = klcode_exprbin(state, leftbin);
+static KlCodeVal klcode_exprand(KlFuncState* state, KlCstBin* andcst, bool jumpcond) {
+  KlCodeVal left = klcode_exprbool(state, andcst->loperand, false);
+  kltodo("finish klcode_exprand()");
+}
+
+static KlCodeVal klcode_pushrelinst(KlFuncState* state, KlCstBin* relcst, size_t leftid, size_t rightid, bool jumpcond) {
+  switch (relcst->op) {
+    case KLTK_LT: {
+      klcode_pushinst(state, klinst_lt(leftid, rightid), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_LE: {
+      klcode_pushinst(state, klinst_le(leftid, rightid), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_GT: {
+      klcode_pushinst(state, klinst_gt(leftid, rightid), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_GE: {
+      klcode_pushinst(state, klinst_ge(leftid, rightid), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_EQ: {
+      klcode_pushinst(state, klinst_eq(leftid, rightid), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_NE: {
+      klcode_pushinst(state, klinst_ne(leftid, rightid), klcode_cstposition(relcst));
+      break;
+    }
+    default: {
+      kl_assert(false, "control flow should not reach here");
+      break;
     }
   }
+  size_t pc = klcode_pushinst(state, klinst_condjmp(jumpcond, 0), klcode_cstposition(relcst));
+  return klcodeval_jmp(pc);
 }
 
-static int klcode_exprbool(KlFuncState* state, KlCst* cst, bool jumpcond) {
+static KlCodeVal klcode_pushrelinsti(KlFuncState* state, KlCstBin* relcst, size_t leftid, KlInt imm, bool jumpcond) {
+  switch (relcst->op) {
+    case KLTK_LT: {
+      klcode_pushinst(state, klinst_lti(leftid, imm), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_LE: {
+      klcode_pushinst(state, klinst_lei(leftid, imm), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_GT: {
+      klcode_pushinst(state, klinst_gti(leftid, imm), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_GE: {
+      klcode_pushinst(state, klinst_gei(leftid, imm), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_EQ: {
+      if (jumpcond) {
+        klcode_pushinst(state, klinst_eqi(leftid, imm), klcode_cstposition(relcst));
+      } else {
+        klcode_pushinst(state, klinst_nei(leftid, imm), klcode_cstposition(relcst));
+      }
+      size_t pc = klcode_pushinst(state, klinst_condjmp(true, 0), klcode_cstposition(relcst));
+      return klcodeval_jmp(pc);
+    }
+    case KLTK_NE: {
+      if (jumpcond) {
+        klcode_pushinst(state, klinst_nei(leftid, imm), klcode_cstposition(relcst));
+      } else {
+        klcode_pushinst(state, klinst_eqi(leftid, imm), klcode_cstposition(relcst));
+      }
+      size_t pc = klcode_pushinst(state, klinst_condjmp(true, 0), klcode_cstposition(relcst));
+      return klcodeval_jmp(pc);
+    }
+    default: {
+      kl_assert(false, "control flow should not reach here");
+      break;
+    }
+  }
+  size_t pc = klcode_pushinst(state, klinst_condjmp(jumpcond, 0), klcode_cstposition(relcst));
+  return klcodeval_jmp(pc);
+}
+
+static KlCodeVal klcode_pushrelinstc(KlFuncState* state, KlCstBin* relcst, size_t leftid, size_t conidx, bool jumpcond) {
+  switch (relcst->op) {
+    case KLTK_LT: {
+      klcode_pushinst(state, klinst_ltc(leftid, conidx), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_LE: {
+      klcode_pushinst(state, klinst_lec(leftid, conidx), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_GT: {
+      klcode_pushinst(state, klinst_gtc(leftid, conidx), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_GE: {
+      klcode_pushinst(state, klinst_gec(leftid, conidx), klcode_cstposition(relcst));
+      break;
+    }
+    case KLTK_EQ: {
+      if (jumpcond) {
+        klcode_pushinst(state, klinst_eqc(leftid, conidx), klcode_cstposition(relcst));
+      } else {
+        klcode_pushinst(state, klinst_nec(leftid, conidx), klcode_cstposition(relcst));
+      }
+      size_t pc = klcode_pushinst(state, klinst_condjmp(true, 0), klcode_cstposition(relcst));
+      return klcodeval_jmp(pc);
+    }
+    case KLTK_NE: {
+      if (jumpcond) {
+        klcode_pushinst(state, klinst_nec(leftid, conidx), klcode_cstposition(relcst));
+      } else {
+        klcode_pushinst(state, klinst_eqc(leftid, conidx), klcode_cstposition(relcst));
+      }
+      size_t pc = klcode_pushinst(state, klinst_condjmp(true, 0), klcode_cstposition(relcst));
+      return klcodeval_jmp(pc);
+    }
+    default: {
+      kl_assert(false, "control flow should not reach here");
+      break;
+    }
+  }
+  size_t pc = klcode_pushinst(state, klinst_condjmp(jumpcond, 0), klcode_cstposition(relcst));
+  return klcodeval_jmp(pc);
+}
+
+static KlCodeVal klcode_exprrelation(KlFuncState* state, KlCstBin* relcst, bool jumpcond) {
+  
+}
+
+static KlCodeVal klcode_exprbool(KlFuncState* state, KlCst* cst, bool jumpcond) {
   if (klcst_kind(cst) == KLCST_EXPR_PRE && klcast(KlCstPre*, cst)->op == KLTK_NOT) {
     return klcode_exprnot(state, klcast(KlCstPre*, cst), jumpcond);
-  } else if (klcst_kind(cst) == KLCST_EXPR_BIN && klcast(KlCstBin*, cst)->op == KLTK_AND) {
-    return klcode_exprand(state, klcast(KlCstBin*, cst), jumpcond);
-  } else if (klcst_kind(cst) == KLCST_EXPR_BIN && klcast(KlCstBin*, cst)->op == KLTK_OR) {
-    return klcode_expror(state, klcast(KlCstBin*, cst), jumpcond);
+  } else if (klcst_kind(cst) == KLCST_EXPR_BIN) {
+    KlCstBin* bincst = klcast(KlCstBin*, cst);
+    if (bincst->op == KLTK_AND)
+      return klcode_exprand(state, klcast(KlCstBin*, cst), jumpcond);
+    if (bincst->op == KLTK_OR)
+      return klcode_expror(state, klcast(KlCstBin*, cst), jumpcond);
+    if (kltoken_isrelation(bincst->op))
+      return klcode_exprrelation(state, bincst, jumpcond);
+    /* else is other binary expression, fallthrough */
+  } else if (klcst_kind(cst) == KLCST_EXPR_TUPLE) {
+    KlCstTuple* tuple = klcast(KlCstTuple*, cst);
+    KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
+    if (lastelem && klcst_isboolexpr(lastelem = klcode_exprpromotion(lastelem))) {
+      klcode_tuple_evaluate(state, tuple, tuple->nelem - 1);
+      return klcode_exprbool(state, lastelem, jumpcond);
+    }
+    /* else the tuple should be evaluated by klcode_expr, fallthrough */
+  }
+  KlCodeVal res = klcode_expr(state, cst);
+  if (klcodeval_isconstant(res)) return res;
+  size_t stktop = klcode_stacktop(state);
+  klcode_putinstack(state, &res, klcode_cstposition(cst));
+  size_t pc;
+  if (jumpcond) {
+    pc = klcode_pushinst(state, klinst_truejmp(res.index, 0), klcode_cstposition(cst));
   } else {
-    if (klcst_kind(cst) == KLCST_EXPR_TUPLE) {
-      KlCstTuple* tuple = klcast(KlCstTuple*, cst);
-      KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
-      if (!lastelem || !klcst_isboolexpr(lastelem = klcode_exprpromotion(state, lastelem))) {
-        kltodo("implement non boolexpr to boolexpr");
-      }
-    }
+    pc = klcode_pushinst(state, klinst_falsejmp(res.index, 0), klcode_cstposition(cst));
   }
-}
-
-static int klcode_expror(KlFuncState* state, KlCstBin* orcst, bool jumpcond) {
-}
-
-static int klcode_exprand(KlFuncState* state, KlCstBin* andcst, bool jumpcond) {
-  KlCst* leftexpr = klcode_exprpromotion(state, andcst->roperand);
-  if (klcst_kind(leftexpr) == KLCST_EXPR_BIN) {
-    KlCstBin* leftbin = klcast(KlCstBin*, leftexpr);
-    if (leftbin->op == KLTK_AND) {
-      int jumplist = klcode_exprand(state, leftbin, false);
-    } else if (leftbin->op == KLTK_OR) {
-      int jumplist = klcode_expror(state, leftbin, false);
-    } else if (kltoken_isrelation(leftbin->op)) {
-    } else {
-      size_t stkid = klcode_stacktop(state);
-      KlCodeVal val = klcode_exprbin(state, leftbin);
-    }
-  }
+  klcode_stackfree(state, stktop);
+  return klcodeval_jmp(pc);
 }
 
 static void klcode_exprorval(KlFuncState* state, KlCstBin* orcst, size_t target, bool fallthrough) {

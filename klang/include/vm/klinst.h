@@ -94,9 +94,9 @@ typedef uint32_t KlInstruction;
 #define KLINST_AI_GETA(inst)            KLINST_ABC_GETA(inst)
 #define KLINST_AI_GETI(inst)            klinst_utos((inst) >> 16, 16)
 
-#define klinst_XI(opcode, x, i)         klinst_AI(opcode, x, i);
-#define KLINST_XI_GETX(inst)            KLINST_AI_GETA(inst);
-#define KLINST_XI_GETI(inst)            KLINST_AI_GETI(inst);
+#define klinst_XI(opcode, x, i)         klinst_AI(opcode, x, i)
+#define KLINST_XI_GETX(inst)            KLINST_AI_GETA(inst)
+#define KLINST_XI_GETI(inst)            KLINST_AI_GETI(inst)
 
 
 
@@ -236,6 +236,8 @@ typedef uint32_t KlInstruction;
 #define klinst_refsetfieldr(val, obj, field)              klinst_ABX(KLOPCODE_REFSETFIELDR, (val), (field), (obj))
 #define klinst_refsetfieldc(val, obj, field)              klinst_AXY(KLOPCODE_REFSETFIELDC, (val), (field), (obj))
 #define klinst_newlocal(a, x)                             klinst_AX(KLOPCODE_NEWLOCAL, (a), (x))
+#define klinst_truejmp(a, offset)                         klinst_AI(KLOPCODE_TRUEJMP, (a), (offset))
+#define klinst_falsejmp(a, offset)                        klinst_AI(KLOPCODE_FALSEJMP, (a), (offset))
 #define klinst_jmp(offset)                                klinst_I(KLOPCODE_JMP, (offset))
 #define klinst_condjmp(cond, offset)                      klinst_XI(KLOPCODE_CONDJMP, (cond), (offset))
 #define klinst_eq(a, b)                                   klinst_ABC(KLOPCODE_EQ, (a), (b), (0))

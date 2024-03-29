@@ -3,7 +3,7 @@
 
 #include "klang/include/cst/klstrtab.h"
 #include "klang/include/misc/klutils.h"
-#include "klang/include/code/klvalpos.h"
+#include "klang/include/code/klcodeval.h"
 #include <stdlib.h>
 
 typedef KlValKind KlSymKind;

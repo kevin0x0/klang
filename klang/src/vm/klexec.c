@@ -1462,7 +1462,6 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_AI_GETA(inst);
         int imm = KLINST_AI_GETI(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
-        kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         int offset = KLINST_XI_GETI(condjmp);
         if (klvalue_checktype(a, KL_INT) && klvalue_getint(a) == imm)
@@ -1472,7 +1471,6 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_NEI: {
         KlValue* a = stkbase + KLINST_AI_GETA(inst);
         KlInt imm = KLINST_AI_GETI(inst);
-        kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         int offset = KLINST_XI_GETI(condjmp);
