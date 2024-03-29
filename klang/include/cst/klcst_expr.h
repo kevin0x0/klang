@@ -144,6 +144,18 @@ KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bo
 KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
 KlCstSel* klcst_sel_create(KlCst* cond, KlCst* texpr, KlCst* fexpr, KlFileOffset begin, KlFileOffset end);
 
+static inline bool klcst_isboolexpr(KlCst* cst) {
+  if (klcst_kind(cst) == KLCST_EXPR_PRE) {
+    return klcast(KlCstPre*, cst)->op == KLTK_NOT;
+  } else if (klcst_kind(cst) == KLCST_EXPR_BIN) {
+    return klcast(KlCstBin*, cst)->op == KLTK_AND ||
+           klcast(KlCstBin*, cst)->op == KLTK_OR  ||
+           kltoken_isrelation(klcast(KlCstBin*, cst)->op);
+  } else {
+    return false;
+  }
+}
+
 
 static inline void klcst_tuple_shallow_replace(KlCstTuple* tuple, KlCst** elems, size_t nelem) {
   free(tuple->elems);

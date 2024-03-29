@@ -91,6 +91,8 @@ static inline void klcst_destroy_raw(KlCst* cst);
 static inline KlCstKind klcst_kind_raw(KlCst* cst);
 static inline void klcst_setposition_raw(KlCst* cst, KlFileOffset begin, KlFileOffset end);
 
+
+
 static inline void klcst_init_raw(KlCst* cst, KlCstInfo* vfunc) {
   cst->info = vfunc;
 }

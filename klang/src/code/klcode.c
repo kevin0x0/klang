@@ -246,10 +246,9 @@ static KlSymbol* klcode_getsymbol(KlFuncState* state, KlStrDesc name) {
   KlSymTbl* symtbl = state->symtbl;
   while (symtbl) {
     symbol = klsymtbl_search(symtbl, name);
-    if (symbol) break;
+    if (symbol) return symbol;
     symtbl = klsymtbl_parent(symtbl);
   }
-  if (symbol) return symbol;
   KlSymbol* refsymbol = klcode_getsymbol(state->prev, name);
   if (!refsymbol) return NULL;  /* is global variable */
   symbol = klsymtbl_insert(state->reftbl, name);
@@ -272,16 +271,17 @@ static void klcode_putinstack(KlFuncState* state, KlCodeVal* val, KlFilePosition
       val->index = stkid;
       break;
     }
-    case KLVAL_NIL:
+    case KLVAL_NIL: {
+      size_t stkid = klcode_stackalloc1(state);
+      KlInstruction inst = klinst_loadnil(stkid, 1);
+      klcode_pushinst(state, inst, position);
+      val->kind = KLVAL_STACK;
+      val->index = stkid;
+      break;
+    }
     case KLVAL_BOOL: {
       size_t stkid = klcode_stackalloc1(state);
-      KlInstruction inst;
-      if (val->kind == KL_BOOL) {
-        inst = klinst_loadbool(stkid, val->boolval);
-      } else {
-        kl_assert(val->kind == KL_NIL, "");
-        inst = klinst_loadnil(stkid, 1);
-      }
+      KlInstruction inst = klinst_loadbool(stkid, val->boolval);
       klcode_pushinst(state, inst, position);
       val->kind = KLVAL_STACK;
       val->index = stkid;
@@ -453,6 +453,9 @@ static KlCodeVal klcode_constant(KlFuncState* state, KlCstConstant* concst) {
   switch (concst->con.type) {
     case KL_INT: {
       return klcodeval_integer(concst->con.intval);
+    }
+    case KL_FLOAT: {
+      return klcodeval_float(concst->con.floatval);
     }
     case KL_BOOL: {
       return klcodeval_bool(concst->con.boolval);
@@ -712,8 +715,8 @@ static inline KlCodeVal klcode_arithcomptime(KlFuncState* state, KlCstBin* bincs
       }
     }
   } else {
-    KlFloat l = left.floatval;
-    KlFloat r = right.floatval;
+    KlFloat l = left.kind == KLVAL_INTEGER ? (KlFloat)left.intval : left.floatval;
+    KlFloat r = right.kind == KLVAL_INTEGER ? (KlFloat)right.intval : right.floatval;
     switch (bincst->op) {
       case KLTK_ADD: {
         return klcodeval_integer(l + r);
@@ -996,6 +999,99 @@ static KlCodeVal klcode_exprdot(KlFuncState* state, KlCstDot* dotcst) {
   }
 }
 
+static inline KlCst* klcode_exprpromotion(KlFuncState* state, KlCst* cst) {
+  while (klcst_kind(cst) == KLCST_EXPR_TUPLE && klcast(KlCstTuple*, cst)->nelem == 1) {
+    cst = klcast(KlCstTuple*, cst)->elems[0];
+  }
+  return cst;
+}
+
+typedef struct tagKlCodeBoolInfo {
+  int jumplist;
+  bool jumpcond;
+} KlCodeBoolInfo;
+
+static int klcode_exprbool(KlFuncState* state, KlCst* boolcst, bool jumpcond);
+
+static int klcode_exprnot(KlFuncState* state, KlCstPre* notcst, bool jumpcond) {
+}
+
+static int klcode_expror(KlFuncState* state, KlCstBin* orcst, bool jumpcond) {
+}
+
+static int klcode_exprand(KlFuncState* state, KlCstBin* andcst, bool jumpcond) {
+  KlCst* leftexpr = klcode_exprpromotion(state, andcst->roperand);
+  if (klcst_kind(leftexpr) == KLCST_EXPR_BIN) {
+    KlCstBin* leftbin = klcast(KlCstBin*, leftexpr);
+    if (leftbin->op == KLTK_AND) {
+      int jumplist = klcode_exprand(state, leftbin, false);
+    } else if (leftbin->op == KLTK_OR) {
+      int jumplist = klcode_expror(state, leftbin, false);
+    } else if (kltoken_isrelation(leftbin->op)) {
+    } else {
+      size_t stkid = klcode_stacktop(state);
+      KlCodeVal val = klcode_exprbin(state, leftbin);
+    }
+  }
+}
+
+static int klcode_exprbool(KlFuncState* state, KlCst* cst, bool jumpcond) {
+  if (klcst_kind(cst) == KLCST_EXPR_PRE && klcast(KlCstPre*, cst)->op == KLTK_NOT) {
+    return klcode_exprnot(state, klcast(KlCstPre*, cst), jumpcond);
+  } else if (klcst_kind(cst) == KLCST_EXPR_BIN && klcast(KlCstBin*, cst)->op == KLTK_AND) {
+    return klcode_exprand(state, klcast(KlCstBin*, cst), jumpcond);
+  } else if (klcst_kind(cst) == KLCST_EXPR_BIN && klcast(KlCstBin*, cst)->op == KLTK_OR) {
+    return klcode_expror(state, klcast(KlCstBin*, cst), jumpcond);
+  } else {
+    if (klcst_kind(cst) == KLCST_EXPR_TUPLE) {
+      KlCstTuple* tuple = klcast(KlCstTuple*, cst);
+      KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
+      if (!lastelem || !klcst_isboolexpr(lastelem = klcode_exprpromotion(state, lastelem))) {
+        kltodo("implement non boolexpr to boolexpr");
+      }
+    }
+  }
+}
+
+static int klcode_expror(KlFuncState* state, KlCstBin* orcst, bool jumpcond) {
+}
+
+static int klcode_exprand(KlFuncState* state, KlCstBin* andcst, bool jumpcond) {
+  KlCst* leftexpr = klcode_exprpromotion(state, andcst->roperand);
+  if (klcst_kind(leftexpr) == KLCST_EXPR_BIN) {
+    KlCstBin* leftbin = klcast(KlCstBin*, leftexpr);
+    if (leftbin->op == KLTK_AND) {
+      int jumplist = klcode_exprand(state, leftbin, false);
+    } else if (leftbin->op == KLTK_OR) {
+      int jumplist = klcode_expror(state, leftbin, false);
+    } else if (kltoken_isrelation(leftbin->op)) {
+    } else {
+      size_t stkid = klcode_stacktop(state);
+      KlCodeVal val = klcode_exprbin(state, leftbin);
+    }
+  }
+}
+
+static void klcode_exprorval(KlFuncState* state, KlCstBin* orcst, size_t target, bool fallthrough) {
+}
+
+static int klcode_exprandval(KlFuncState* state, KlCstBin* andcst, size_t target, bool fallthrough) {
+  kl_assert(andcst->op == KLTK_AND, "");
+  KlCst* leftexpr = klcode_exprpromotion(state, andcst->roperand);
+  if (klcst_kind(leftexpr) == KLCST_EXPR_BIN) {
+    KlCstBin* leftbin = klcast(KlCstBin*, leftexpr);
+    if (leftbin->op == KLTK_AND) {
+      klcode_exprandval(state, leftbin, target, true);
+    } else if (leftbin->op == KLTK_OR) {
+      klcode_exprorval(state, leftbin, target, true);
+    } else if (kltoken_isrelation(leftbin->op)) {
+    } else {
+      size_t stkid = klcode_stacktop(state);
+      KlCodeVal val = klcode_exprbin(state, leftbin);
+    }
+  }
+}
+
 static KlCodeVal klcode_expr(KlFuncState* state, KlCst* cst) {
   switch (klcst_kind(cst)) {
     case KLCST_EXPR_ARR: {
@@ -1005,11 +1101,11 @@ static KlCodeVal klcode_expr(KlFuncState* state, KlCst* cst) {
       return klcode_exprarrgen(state, klcast(KlCstArrayGenerator*, cst));
     }
     case KLCST_EXPR_MAP: {
-      size_t target = klcode_stacktop(state); /* here we generate the value on top of the stack */
+      size_t target = klcode_stacktop(state);   /* here we generate the value on top of the stack */
       return klcode_exprmap(state, klcast(KlCstMap*, cst), target);
     }
     case KLCST_EXPR_CLASS: {
-      size_t target = klcode_stacktop(state); /* here we generate the value on top of the stack */
+      size_t target = klcode_stacktop(state);   /* here we generate the value on top of the stack */
       return klcode_exprclass(state, klcast(KlCstClass*, cst), target);
     }
     case KLCST_EXPR_CONSTANT: {
@@ -1028,7 +1124,7 @@ static KlCodeVal klcode_expr(KlFuncState* state, KlCst* cst) {
       return klcode_exprpre(state, klcast(KlCstPre*, cst));
     }
     case KLCST_EXPR_NEW: {
-      size_t target = klcode_stacktop(state); /* here we generate the value on top of the stack */
+      size_t target = klcode_stacktop(state);   /* here we generate the value on top of the stack */
       return klcode_exprnew(state, klcast(KlCstNew*, cst), target);
     }
     case KLCST_EXPR_YIELD: {
