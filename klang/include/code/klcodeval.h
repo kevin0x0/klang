@@ -21,7 +21,10 @@ typedef struct tagKlCodeVal {
   KlValKind kind;
   union {
     size_t index;
-    size_t pc;
+    struct {
+      size_t tail;
+      size_t head;
+    } jmplist;
     KlInt intval;
     KlFloat floatval;
     KlBool boolval;
@@ -31,6 +34,16 @@ typedef struct tagKlCodeVal {
 
 #define klcodeval_isnumber(v)   ((v).kind == KLVAL_FLOAT || (v).kind == KLVAL_INTEGER)
 #define klcodeval_isconstant(v) ((v).kind <= KLVAL_FLOAT)
+
+static inline KlCodeVal klcodeval_index(KlValKind kind, size_t index);
+static inline KlCodeVal klcodeval_stack(size_t index);
+static inline KlCodeVal klcodeval_ref(size_t index);
+static inline KlCodeVal klcodeval_string(KlStrDesc str);
+static inline KlCodeVal klcodeval_integer(KlInt intval);
+static inline KlCodeVal klcodeval_float(KlInt floatval);
+static inline KlCodeVal klcodeval_bool(KlBool boolval);
+static inline KlCodeVal klcodeval_nil(void);
+static inline KlCodeVal klcodeval_jmp(size_t pc);
 
 static inline KlCodeVal klcodeval_index(KlValKind kind, size_t index) {
   KlCodeVal val = { .kind = kind, .index = index };
@@ -62,8 +75,8 @@ static inline KlCodeVal klcodeval_float(KlInt floatval) {
   return val;
 }
 
-static inline KlCodeVal klcodeval_bool(KlBool intval) {
-  KlCodeVal val = { .kind = KLVAL_BOOL, .intval = intval };
+static inline KlCodeVal klcodeval_bool(KlBool boolval) {
+  KlCodeVal val = { .kind = KLVAL_BOOL, .boolval = boolval };
   return val;
 }
 
@@ -73,7 +86,7 @@ static inline KlCodeVal klcodeval_nil(void) {
 }
 
 static inline KlCodeVal klcodeval_jmp(size_t pc) {
-  KlCodeVal val = { .kind = KLVAL_JMP, .pc = pc };
+  KlCodeVal val = { .kind = KLVAL_JMP, .jmplist = { .head = pc, .tail = pc } };
   return val;
 }
 

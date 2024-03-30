@@ -1,0 +1,509 @@
+#include "klang/include/code/klgen_exprbool.h"
+#include "klang/include/code/klcodeval.h"
+#include "klang/include/code/klcontbl.h"
+#include "klang/include/code/klgen.h"
+#include "klang/include/code/klgen_expr.h"
+#include "klang/include/value/klvalue.h"
+#include "klang/include/vm/klinst.h"
+#include <string.h>
+
+
+static inline int klgen_getoffset(KlInstruction jmpinst) {
+  if (KLINST_GET_OPCODE(jmpinst) == KLOPCODE_JMP) {
+    return KLINST_I_GETI(jmpinst);
+  } else {
+    return KLINST_AI_GETI(jmpinst);
+  }
+}
+
+static inline void klgen_setoffset(KlGenUnit* gen, KlInstruction* jmpinst, int offset) {
+  if (KLINST_GET_OPCODE(*jmpinst) == KLOPCODE_JMP) {
+    if (!klinst_inrange(offset, 24))
+      klgen_error_fatal(gen, "jump too far, can not generate code");
+    *jmpinst = klinst_jmp(offset);
+  } else {
+    if (!klinst_inrange(offset, 16))
+      klgen_error_fatal(gen, "jump too far, can not generate code");
+    uint8_t opcode = KLINST_GET_OPCODE(*jmpinst);
+    uint8_t AorX = KLINST_AI_GETA(*jmpinst);
+    *jmpinst = klinst_AI(opcode, AorX, offset);
+  }
+}
+
+static void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, size_t jmppos) {
+  KlInstruction* pc = klinstarr_access(&gen->code, jmplist.jmplist.head);
+  KlInstruction* end = klinstarr_access(&gen->code, jmplist.jmplist.tail);
+  KlInstruction* pjmppos = klinstarr_access(&gen->code, jmppos);
+  while (pc != end) {
+    int nextoffset = klgen_getoffset(*pc);
+    klgen_setoffset(gen, pc, pjmppos - pc - 1);
+    pc += nextoffset;
+  }
+  klgen_setoffset(gen, pc, pjmppos - pc - 1);
+}
+
+KlCodeVal klgen_mergejmp(KlGenUnit* gen, KlCodeVal jmplst1, KlCodeVal jmplst2) {
+  KlInstruction* jlst2tail = klinstarr_access(&gen->code, jmplst2.jmplist.tail);
+  klgen_setoffset(gen, jlst2tail, jmplst1.jmplist.head - jmplst2.jmplist.tail);
+  jmplst2.jmplist.tail = jmplst1.jmplist.tail;
+  return jmplst2;
+}
+
+static KlCodeVal klgen_pushrelinst(KlGenUnit* gen, KlCstBin* relcst, size_t leftid, size_t rightid, bool jumpcond) {
+  switch (relcst->op) {
+    case KLTK_LT: {
+      klgen_pushinst(gen, klinst_lt(leftid, rightid), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_LE: {
+      klgen_pushinst(gen, klinst_le(leftid, rightid), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_GT: {
+      klgen_pushinst(gen, klinst_gt(leftid, rightid), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_GE: {
+      klgen_pushinst(gen, klinst_ge(leftid, rightid), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_EQ: {
+      klgen_pushinst(gen, klinst_eq(leftid, rightid), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_NE: {
+      klgen_pushinst(gen, klinst_ne(leftid, rightid), klgen_cstposition(relcst));
+      break;
+    }
+    default: {
+      kl_assert(false, "control flow should not reach here");
+      break;
+    }
+  }
+  size_t pc = klgen_pushinst(gen, klinst_condjmp(jumpcond, 0), klgen_cstposition(relcst));
+  return klcodeval_jmp(pc);
+}
+
+static KlCodeVal klgen_pushrelinsti(KlGenUnit* gen, KlCstBin* relcst, size_t leftid, KlInt imm, bool jumpcond) {
+  switch (relcst->op) {
+    case KLTK_LT: {
+      klgen_pushinst(gen, klinst_lti(leftid, imm), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_LE: {
+      klgen_pushinst(gen, klinst_lei(leftid, imm), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_GT: {
+      klgen_pushinst(gen, klinst_gti(leftid, imm), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_GE: {
+      klgen_pushinst(gen, klinst_gei(leftid, imm), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_EQ: {
+      if (jumpcond) {
+        klgen_pushinst(gen, klinst_eqi(leftid, imm), klgen_cstposition(relcst));
+      } else {
+        klgen_pushinst(gen, klinst_nei(leftid, imm), klgen_cstposition(relcst));
+      }
+      size_t pc = klgen_pushinst(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
+      return klcodeval_jmp(pc);
+    }
+    case KLTK_NE: {
+      if (jumpcond) {
+        klgen_pushinst(gen, klinst_nei(leftid, imm), klgen_cstposition(relcst));
+      } else {
+        klgen_pushinst(gen, klinst_eqi(leftid, imm), klgen_cstposition(relcst));
+      }
+      size_t pc = klgen_pushinst(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
+      return klcodeval_jmp(pc);
+    }
+    default: {
+      kl_assert(false, "control flow should not reach here");
+      break;
+    }
+  }
+  size_t pc = klgen_pushinst(gen, klinst_condjmp(jumpcond, 0), klgen_cstposition(relcst));
+  return klcodeval_jmp(pc);
+}
+
+static KlCodeVal klgen_pushrelinstc(KlGenUnit* gen, KlCstBin* relcst, size_t leftid, size_t conidx, bool jumpcond) {
+  switch (relcst->op) {
+    case KLTK_LT: {
+      klgen_pushinst(gen, klinst_ltc(leftid, conidx), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_LE: {
+      klgen_pushinst(gen, klinst_lec(leftid, conidx), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_GT: {
+      klgen_pushinst(gen, klinst_gtc(leftid, conidx), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_GE: {
+      klgen_pushinst(gen, klinst_gec(leftid, conidx), klgen_cstposition(relcst));
+      break;
+    }
+    case KLTK_EQ: {
+      if (jumpcond) {
+        klgen_pushinst(gen, klinst_eqc(leftid, conidx), klgen_cstposition(relcst));
+      } else {
+        klgen_pushinst(gen, klinst_nec(leftid, conidx), klgen_cstposition(relcst));
+      }
+      size_t pc = klgen_pushinst(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
+      return klcodeval_jmp(pc);
+    }
+    case KLTK_NE: {
+      if (jumpcond) {
+        klgen_pushinst(gen, klinst_nec(leftid, conidx), klgen_cstposition(relcst));
+      } else {
+        klgen_pushinst(gen, klinst_eqc(leftid, conidx), klgen_cstposition(relcst));
+      }
+      size_t pc = klgen_pushinst(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
+      return klcodeval_jmp(pc);
+    }
+    default: {
+      kl_assert(false, "control flow should not reach here");
+      break;
+    }
+  }
+  size_t pc = klgen_pushinst(gen, klinst_condjmp(jumpcond, 0), klgen_cstposition(relcst));
+  return klcodeval_jmp(pc);
+}
+
+static KlCodeVal klgen_relcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, KlCodeVal right) {
+  if (left.kind == KLVAL_INTEGER && right.kind == KLVAL_INTEGER) {
+    KlBool cond;
+    switch (bincst->op) {
+      case KLTK_LT: cond = left.intval < right.intval; break;
+      case KLTK_LE: cond = left.intval <= right.intval; break;
+      case KLTK_GT: cond = left.intval > right.intval; break;
+      case KLTK_GE: cond = left.intval >= right.intval; break;
+      case KLTK_EQ: cond = left.intval == right.intval; break;
+      case KLTK_NE: cond = left.intval != right.intval; break;
+      default: {
+        kl_assert(false, "control flow should not reach here");
+        return klcodeval_nil();
+      }
+    }
+    return klcodeval_bool(cond);
+  } else if (left.kind == KLVAL_STRING && right.kind == KLVAL_STRING) {
+    int cmpres;
+    if (left.string.length == right.string.length) {
+      cmpres = strncmp(klstrtab_getstring(gen->strtab, left.string.id),
+                       klstrtab_getstring(gen->strtab, right.string.id),
+                       left.string.length);
+    } else {
+      cmpres = left.string.length > right.string.length ? 1 : -1;
+    }
+    KlBool cond;
+    switch (bincst->op) {
+      case KLTK_LT: cond = cmpres < 0; break;
+      case KLTK_LE: cond = cmpres <= 0; break;
+      case KLTK_GT: cond = cmpres > 0; break;
+      case KLTK_GE: cond = cmpres >= 0; break;
+      case KLTK_EQ: cond = cmpres == 0; break;
+      case KLTK_NE: cond = cmpres != 0; break;
+      default: {
+        kl_assert(false, "control flow should not reach here");
+        return klcodeval_nil();
+      }
+    }
+    return klcodeval_bool(cond);
+  } else {
+    KlFloat l = left.kind == KLVAL_INTEGER ? (KlFloat)left.intval : left.floatval;
+    KlFloat r = right.kind == KLVAL_INTEGER ? (KlFloat)right.intval : right.floatval;
+    KlBool cond;
+    switch (bincst->op) {
+      case KLTK_LT: cond = l < r; break;
+      case KLTK_LE: cond = l <= r; break;
+      case KLTK_GT: cond = l > r; break;
+      case KLTK_GE: cond = l >= r; break;
+      case KLTK_EQ: cond = left.kind == right.kind && l == r; break;
+      case KLTK_NE: cond = left.kind != right.kind || l != r; break;
+      default: {
+        kl_assert(false, "control flow should not reach here");
+        return klcodeval_nil();
+      }
+    }
+    return klcodeval_bool(cond);
+  }
+}
+
+static KlCodeVal klgen_equalitycomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, KlCodeVal right) {
+  kl_assert(klcodeval_isconstant(left) && klcodeval_isconstant(right), "");
+  if (left.kind != right.kind) {
+    return klcodeval_bool(bincst->op == KLTK_NE);
+  } else {
+    switch (left.kind) {
+      case KLVAL_STRING:
+      case KLVAL_FLOAT:
+      case KLVAL_INTEGER: return klgen_relcomptime(gen, bincst, left, right);
+      case KLVAL_NIL: return klcodeval_bool(bincst->op == KLTK_EQ);
+      case KLVAL_BOOL: return klcodeval_bool(bincst->op == KLTK_EQ ? left.boolval == right.boolval : left.boolval != right.boolval);
+      default: {
+        kl_assert(false, "control flow should not reach here");
+        return klcodeval_nil();
+      }
+    }
+  }
+}
+
+static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size_t oristktop, KlCodeVal left, KlCodeVal right, bool jumpcond);
+
+static KlCodeVal klgen_exprrelleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, bool jumpcond) {
+  /* left is not on the stack, so the stack top is not changed */
+  size_t stktop = klgen_stacktop(gen);
+  size_t currcodesize = klgen_currcodesize(gen);
+  /* we put left on the stack first */
+  KlCodeVal leftonstack = left;
+  klgen_putinstack(gen, &leftonstack, klgen_cstposition(bincst->loperand));
+  KlCodeVal right = klgen_expr(gen, bincst->roperand);
+  if ((klcodeval_isnumber(right) && klcodeval_isnumber(left)) ||
+      (right.kind == KLVAL_STRING && right.kind == KLVAL_STRING)) {
+    /* do compile time comparison */
+    klgen_stackfree(gen, stktop);
+    klgen_popinstto(gen, currcodesize);  /* pop the instruction that put left on stack */
+    return klgen_relcomptime(gen, bincst, left, right);
+  } else if (bincst->op == KLTK_NE || bincst->op == KLTK_EQ) {
+    if (klcodeval_isconstant(right)) {
+      klgen_stackfree(gen, stktop);
+      klgen_popinstto(gen, currcodesize);  /* pop the instruction that put left on stack */
+      return klgen_equalitycomptime(gen, bincst, left, right);
+    }
+  } /* else can not apply compile time comparison */
+  if (right.kind == KLVAL_STACK) {
+    /* now we are sure that left should indeed be put on the stack */
+    klgen_stackfree(gen, stktop);
+    return klgen_pushrelinst(gen, bincst, leftonstack.index, right.index, jumpcond);
+  } else {
+    return klgen_exprrelrightnonstk(gen, bincst, stktop, leftonstack, right, jumpcond);
+  }
+}
+
+static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size_t oristktop, KlCodeVal left, KlCodeVal right, bool jumpcond) {
+  /* left must be on stack */
+  kl_assert(left.kind == KLVAL_STACK, "");
+  switch (right.kind) {
+    case KLVAL_INTEGER: {
+      KlCodeVal res;
+      if (klinst_inrange(right.intval, 8)) {
+        res = klgen_pushrelinsti(gen, bincst, left.index, right.intval, jumpcond);
+      } else {
+        KlConstant con = { .type = KL_INT, .intval = right.intval };
+        KlConEntry* conent = klcontbl_search(gen->contbl, &con);
+        if (!conent) {
+          size_t nextconidx = klcontbl_nextindex(gen->contbl);
+          if (!klinst_inurange(nextconidx, 8) && klinst_inrange(right.intval, 16)) {
+            size_t stktop = klgen_stacktop(gen);
+            klgen_stackfree(gen, oristktop);
+            klgen_pushinst(gen, klinst_loadi(stktop, right.intval), klgen_cstposition(bincst->roperand));
+            return klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
+          }
+          conent = klcontbl_insert(gen->contbl, &con);
+          klgen_oomifnull(conent);
+        }
+        if (klinst_inurange(conent->index, 8)) {
+          res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
+        } else {
+          size_t stktop = klgen_stacktop(gen);
+          klgen_pushinst(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
+          res = klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
+        }
+      }
+      klgen_stackfree(gen, oristktop);
+      return res;
+    }
+    case KLVAL_FLOAT: {
+      KlConstant con = { .type = KL_FLOAT, .intval = right.floatval };
+      KlConEntry* conent = klcontbl_get(gen->contbl, &con);
+      klgen_oomifnull(conent);
+      KlCodeVal res;
+      if (klinst_inurange(conent->index, 8)) {
+        res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
+      } else {
+        size_t stktop = klgen_stacktop(gen);
+        klgen_pushinst(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
+        res = klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
+      }
+      klgen_stackfree(gen, oristktop);
+      return res;
+    }
+    case KLVAL_STRING: {
+      KlConstant con = { .type = KL_STRING, .string = right.string };
+      KlConEntry* conent = klcontbl_get(gen->contbl, &con);
+      klgen_oomifnull(conent);
+      KlCodeVal res;
+      if (klinst_inurange(conent->index, 8)) {
+        res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
+      } else {
+        size_t stktop = klgen_stacktop(gen);
+        klgen_pushinst(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
+        res = klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
+      }
+      klgen_stackfree(gen, oristktop);
+      return res;
+    }
+    case KLVAL_REF:
+    case KLVAL_BOOL:
+    case KLVAL_NIL: {
+      klgen_putinstack(gen, &right, klgen_cstposition(bincst->roperand));
+      klgen_stackfree(gen, oristktop);
+      return klgen_pushrelinst(gen, bincst, left.index, right.index, jumpcond);
+    }
+    default: {
+      kl_assert(false, "control flow should not reach here");
+      return klcodeval_nil();
+    }
+  }
+}
+
+KlCodeVal klgen_exprrelation(KlGenUnit* gen, KlCstBin* relcst, bool jumpcond) {
+  size_t oristktop = klgen_stacktop(gen);
+  KlCodeVal left = klgen_expr(gen, relcst->loperand);
+  if (klcodeval_isconstant(left)) {
+    return klgen_exprrelleftliteral(gen, relcst, left, jumpcond);
+  } else if (left.kind != KLVAL_STACK) {
+    klgen_putinstack(gen, &left, klgen_cstposition(relcst->loperand));
+  } else if (left.index == klgen_stacktop(gen)) {
+    klgen_stackalloc1(gen);
+  }
+  /* now left is on stack */
+  KlCodeVal right = klgen_expr(gen, relcst->roperand);
+  if (left.kind != KLVAL_STACK)
+    return klgen_exprrelrightnonstk(gen, relcst, oristktop, left, right, jumpcond);
+  /* now both are on stack */
+  klgen_stackfree(gen, oristktop);
+  return klgen_pushrelinst(gen, relcst, left.index, right.index, jumpcond);
+}
+
+KlCodeVal klgen_exprbool(KlGenUnit* gen, KlCst* cst, bool jumpcond) {
+  if (klcst_kind(cst) == KLCST_EXPR_PRE && klcast(KlCstPre*, cst)->op == KLTK_NOT) {
+    return klgen_exprnot(gen, klcast(KlCstPre*, cst), jumpcond);
+  } else if (klcst_kind(cst) == KLCST_EXPR_BIN) {
+    KlCstBin* bincst = klcast(KlCstBin*, cst);
+    if (bincst->op == KLTK_AND)
+      return klgen_exprand(gen, klcast(KlCstBin*, cst), jumpcond);
+    if (bincst->op == KLTK_OR)
+      return klgen_expror(gen, klcast(KlCstBin*, cst), jumpcond);
+    if (kltoken_isrelation(bincst->op))
+      return klgen_exprrelation(gen, bincst, jumpcond);
+    /* else is other binary expression, fallthrough */
+  } else if (klcst_kind(cst) == KLCST_EXPR_TUPLE) {
+    KlCstTuple* tuple = klcast(KlCstTuple*, cst);
+    KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
+    if (lastelem && klcst_isboolexpr(lastelem = klgen_exprpromotion(lastelem))) {
+      klgen_tuple_evaluate(gen, tuple, tuple->nelem - 1);
+      return klgen_exprbool(gen, lastelem, jumpcond);
+    }
+    /* else the tuple should be evaluated by klgen_expr, fallthrough */
+  }
+  KlCodeVal res = klgen_expr(gen, cst);
+  if (klcodeval_isconstant(res)) {
+    return klcodeval_bool(res.kind != KLVAL_NIL && (res.kind != KLVAL_BOOL || res.boolval != KL_FALSE));
+  }
+  size_t stktop = klgen_stacktop(gen);
+  klgen_putinstack(gen, &res, klgen_cstposition(cst));
+  size_t pc;
+  if (jumpcond) {
+    pc = klgen_pushinst(gen, klinst_truejmp(res.index, 0), klgen_cstposition(cst));
+  } else {
+    pc = klgen_pushinst(gen, klinst_falsejmp(res.index, 0), klgen_cstposition(cst));
+  }
+  klgen_stackfree(gen, stktop);
+  return klcodeval_jmp(pc);
+}
+
+KlCodeVal klgen_exprnot(KlGenUnit* gen, KlCstPre* notcst, bool jumpcond) {
+  KlCodeVal jmp = klgen_exprbool(gen, notcst->operand, !jumpcond);
+  if (klcodeval_isconstant(jmp)) {
+    kl_assert(jmp.kind == KLVAL_BOOL, "");
+    return klcodeval_bool(!jmp.boolval);
+  }
+  return jmp;
+}
+
+KlCodeVal klgen_expror(KlGenUnit* gen, KlCstBin* orcst, bool jumpcond) {
+  KlCodeVal ljmp = klgen_exprbool(gen, orcst->loperand, true);
+  if (klcodeval_isconstant(ljmp)) {
+    kl_assert(ljmp.kind == KLVAL_BOOL, "");
+    if (ljmp.boolval == KL_TRUE) return ljmp;
+    return klgen_exprbool(gen, orcst->roperand, jumpcond);
+  }
+  KlCodeVal rjmp = klgen_exprbool(gen, orcst->roperand, jumpcond);
+  if (klcodeval_isconstant(rjmp)) {
+    kl_assert(ljmp.kind == KLVAL_BOOL, "");
+    if (rjmp.boolval == KL_TRUE) {
+      if (jumpcond) {
+        KlCodeVal rjmp = klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(orcst)));
+        return klgen_mergejmp(gen, ljmp, rjmp);
+      } else {
+        klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+        return klcodeval_bool(KL_TRUE);
+      }
+    } else {
+      if (jumpcond) {
+        return ljmp;
+      } else {
+        size_t jmp = klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(orcst));
+        klgen_setinstjmppos(gen, ljmp, jmp + 1);
+        return klcodeval_jmp(jmp);
+      }
+    }
+  }
+  if (jumpcond) {
+    return klgen_mergejmp(gen, ljmp, rjmp);
+  } else {
+    klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+    return rjmp;
+  }
+}
+
+KlCodeVal klgen_exprand(KlGenUnit* gen, KlCstBin* andcst, bool jumpcond) {
+  KlCodeVal ljmp = klgen_exprbool(gen, andcst->loperand, false);
+  if (klcodeval_isconstant(ljmp)) {
+    kl_assert(ljmp.kind == KLVAL_BOOL, "");
+    if (ljmp.boolval == KL_FALSE) return ljmp;
+    return klgen_exprbool(gen, andcst->roperand, jumpcond);
+  }
+  KlCodeVal rjmp = klgen_exprbool(gen, andcst->roperand, jumpcond);
+  if (klcodeval_isconstant(rjmp)) {
+    kl_assert(ljmp.kind == KLVAL_BOOL, "");
+    if (rjmp.boolval == KL_TRUE) {
+      if (jumpcond) {
+        size_t jmp = klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(andcst));
+        klgen_setinstjmppos(gen, ljmp, jmp + 1);
+        return klcodeval_jmp(jmp);
+      } else {
+        return ljmp;
+      }
+    } else {
+      if (jumpcond) {
+        klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+        return klcodeval_bool(KL_FALSE);
+      } else {
+        KlCodeVal rjmp = klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(andcst)));
+        return klgen_mergejmp(gen, ljmp, rjmp);
+      }
+    }
+  }
+  if (jumpcond) {
+    klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+    return rjmp;
+  } else {
+    return klgen_mergejmp(gen, ljmp, rjmp);
+  }
+}
+
+
+static void klgen_exprorval(KlGenUnit* gen, KlCstBin* orcst, size_t target, bool setcond) {
+}
+
+static int klgen_exprandval(KlGenUnit* gen, KlCstBin* andcst, size_t target, bool setcond) {
+  if (setcond) {
+
+  }
+}

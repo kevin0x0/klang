@@ -33,8 +33,4 @@ typedef struct tagKlFilePosition {
   KlFileOffset end;
 } KlFilePosition;
 
-kgarray_decl(KlCode, KlCodeArray, klcodearr, pass_ref,)
-kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val,)
-kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val,)
-
 #endif

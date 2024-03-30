@@ -26,11 +26,17 @@ void klcontbl_destroy(KlConTbl* contbl);
 KlConTbl* klcontbl_create(size_t capacity, KlStrTab* strtab);
 void klcontbl_delete(KlConTbl* contbl);
 
+static inline size_t klcontbl_nextindex(KlConTbl* contbl);
+
 KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con);
 KlConEntry* klcontbl_search(KlConTbl* contbl, KlConstant* con);
 KlConEntry* klcontbl_get(KlConTbl* contbl, KlConstant* con);
 static inline KlConEntry* klcontbl_getbyindex(KlConTbl* contbl, size_t index) {
   return klcast(KlConEntry*, karray_access(&contbl->entries, index));
+}
+
+static inline size_t klcontbl_nextindex(KlConTbl* contbl) {
+  return contbl->size;
 }
 
 #endif
