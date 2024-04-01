@@ -49,6 +49,7 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
   gen->strtab = strtab;
   gen->stksize = 0;
   gen->framesize = 0;
+  gen->jumpinfo = NULL;
   gen->prev = prev;
   gen->klerror = klerror;
 
@@ -99,5 +100,62 @@ KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name) {
   symbol->attr.idx = klsymtbl_size(gen->reftbl) - 1;
   symbol->attr.refto = refsymbol;
   return symbol;
+}
+
+void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position) {
+  switch (val.kind) {
+    case KLVAL_STACK: {
+      if (target != val.index)
+        klgen_pushinst(gen, klinst_move(target, val.index), position);
+      break;
+    }
+    case KLVAL_REF: {
+      klgen_pushinst(gen, klinst_loadref(target, val.index), position);
+      break;
+    }
+    case KLVAL_NIL: {
+      KlInstruction inst = klinst_loadnil(target, 1);
+      klgen_pushinst(gen, inst, position);
+      break;
+    }
+    case KLVAL_BOOL: {
+      KlInstruction inst = klinst_loadbool(target, val.boolval);
+      klgen_pushinst(gen, inst, position);
+      break;
+    }
+    case KLVAL_STRING: {
+      KlConstant constant = { .type = KL_STRING, .string = val.string };
+      KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
+      klgen_oomifnull(conent);
+      klgen_pushinst(gen, klinst_loadc(target, conent->index), position);
+      break;
+    }
+    case KLVAL_INTEGER: {
+      KlInstruction inst;
+      if (klinst_inrange(val.intval, 16)) {
+        inst = klinst_loadi(target, val.intval);
+      } else {
+        KlConstant con = { .type = KL_INT, .intval = val.intval };
+        KlConEntry* conent = klcontbl_get(gen->contbl, &con);
+        klgen_oomifnull(conent);
+        inst = klinst_loadc(target, conent->index);
+      }
+      klgen_pushinst(gen, inst, position);
+      break;
+    }
+    case KLVAL_FLOAT: {
+      KlInstruction inst;
+      KlConstant con = { .type = KL_FLOAT, .floatval = val.floatval };
+      KlConEntry* conent = klcontbl_get(gen->contbl, &con);
+      klgen_oomifnull(conent);
+      inst = klinst_loadc(target, conent->index);
+      klgen_pushinst(gen, inst, position);
+      break;
+    }
+    default: {
+      kl_assert(false, "control flow should not reach here");
+      break;
+    }
+  }
 }
 

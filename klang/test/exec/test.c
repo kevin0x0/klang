@@ -49,8 +49,8 @@ void fibonacci(KlState* state) {
   // klvalue_setvalue(&constants[0], klapi_access(state, -1));
   code[0] = klinst_lei(0, 1);
   code[1] = klinst_condjmp(false, 2);
-  code[2] = klinst_move(1, 0);
-  code[3] = klinst_jmp(7);
+  code[2] = klinst_testset(1, 0);
+  code[3] = klinst_condjmp(true, 7);
   code[4] = klinst_loadref(1, 0);
   code[5] = klinst_subi(2, 0, 1);
   code[6] = klinst_call(1, 1, 1);

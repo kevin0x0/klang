@@ -11,8 +11,26 @@ kgarray_decl(KlCode, KlCodeArray, klcodearr, pass_ref,)
 kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val,)
 kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val,)
 
-typedef struct tagKlGenUnit KlGenUnit;
 
+typedef struct tagKlGenJumpInfo KlGenJumpInfo;
+struct tagKlGenJumpInfo {
+  KlCodeVal terminatelist;
+  KlCodeVal truelist;
+  KlCodeVal falselist;
+  KlGenJumpInfo* prev;
+};
+
+typedef struct tagKlGenBlockInfo KlGenBlockInfo;
+struct tagKlGenBlockInfo {
+  KlCstKind kind;
+  union {
+    struct {
+    } ifblock;
+  };
+  KlGenBlockInfo* prev;
+};
+
+typedef struct tagKlGenUnit KlGenUnit;
 struct tagKlGenUnit {
   KlSymTbl* symtbl;           /* current symbol table */
   KlSymTbl* reftbl;           /* table that records references to upper klang function */
@@ -24,6 +42,7 @@ struct tagKlGenUnit {
   KlStrTab* strtab;
   size_t stksize;             /* current used stack size */
   size_t framesize;           /* stack frame size of this klang function */
+  KlGenJumpInfo* jumpinfo;    /* information needed by code generator that evaluates boolean expression as a single value */
   KlGenUnit* prev;
   Ki* input;
   jmp_buf jmppos;
@@ -42,6 +61,10 @@ void klgen_destroy(KlGenUnit* gen);
 
 void klgen_error(KlGenUnit* gen, KlFileOffset begin, KlFileOffset end, const char* format, ...);
 KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name);
+
+void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position);
+static inline void klgen_putinstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
+static inline void klgen_putinstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
 
 static inline size_t klgen_stacktop(KlGenUnit* gen) {
   return gen->stksize;
@@ -113,6 +136,22 @@ static inline KlCst* klgen_exprpromotion(KlCst* cst) {
     cst = klcast(KlCstTuple*, cst)->elems[0];
   }
   return cst;
+}
+
+static inline void klgen_putinstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position) {
+  if (val->kind == KLVAL_STACK) return;
+  size_t stkid = klgen_stackalloc1(gen);
+  klgen_loadval(gen, stkid, *val, position);
+  val->kind = KLVAL_STACK;
+  val->index = stkid;
+}
+
+static inline void klgen_putinstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position) {
+  size_t stkid = klgen_stacktop(gen);
+  klgen_putinstack(gen, val, position);
+  if (val->index != stkid)
+    klgen_pushinst(gen, klinst_move(stkid, val->index), position);
+  klgen_stackfree(gen, stkid + 1);
 }
 
 #endif

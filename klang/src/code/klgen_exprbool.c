@@ -8,6 +8,9 @@
 #include <string.h>
 
 
+static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size_t oristktop, KlCodeVal left, KlCodeVal right, bool jumpcond);
+static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlCst* boolcst, size_t target, bool setcond);
+
 static inline int klgen_getoffset(KlInstruction jmpinst) {
   if (KLINST_GET_OPCODE(jmpinst) == KLOPCODE_JMP) {
     return KLINST_I_GETI(jmpinst);
@@ -42,11 +45,16 @@ static void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, size_t jmppos
   klgen_setoffset(gen, pc, pjmppos - pc - 1);
 }
 
-KlCodeVal klgen_mergejmp(KlGenUnit* gen, KlCodeVal jmplst1, KlCodeVal jmplst2) {
+static inline KlCodeVal klgen_mergejmp(KlGenUnit* gen, KlCodeVal jmplst1, KlCodeVal jmplst2) {
+  kl_assert(jmplst1.kind == KLVAL_JMP && jmplst2.kind == KLVAL_JMP, "");
   KlInstruction* jlst2tail = klinstarr_access(&gen->code, jmplst2.jmplist.tail);
   klgen_setoffset(gen, jlst2tail, jmplst1.jmplist.head - jmplst2.jmplist.tail);
   jmplst2.jmplist.tail = jmplst1.jmplist.tail;
   return jmplst2;
+}
+
+static inline void klgen_mergejmp_maynone(KlGenUnit* gen, KlCodeVal* jmplst1, KlCodeVal jmplst2) {
+  *jmplst1 = jmplst1->kind == KLVAL_NONE ? jmplst2 : klgen_mergejmp(gen, *jmplst1, jmplst2);
 }
 
 static KlCodeVal klgen_pushrelinst(KlGenUnit* gen, KlCstBin* relcst, size_t leftid, size_t rightid, bool jumpcond) {
@@ -252,8 +260,6 @@ static KlCodeVal klgen_equalitycomptime(KlGenUnit* gen, KlCstBin* bincst, KlCode
   }
 }
 
-static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size_t oristktop, KlCodeVal left, KlCodeVal right, bool jumpcond);
-
 static KlCodeVal klgen_exprrelleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, bool jumpcond) {
   /* left is not on the stack, so the stack top is not changed */
   size_t stktop = klgen_stacktop(gen);
@@ -386,9 +392,9 @@ KlCodeVal klgen_exprbool(KlGenUnit* gen, KlCst* cst, bool jumpcond) {
   } else if (klcst_kind(cst) == KLCST_EXPR_BIN) {
     KlCstBin* bincst = klcast(KlCstBin*, cst);
     if (bincst->op == KLTK_AND)
-      return klgen_exprand(gen, klcast(KlCstBin*, cst), jumpcond);
+      return klgen_exprand(gen, bincst, jumpcond);
     if (bincst->op == KLTK_OR)
-      return klgen_expror(gen, klcast(KlCstBin*, cst), jumpcond);
+      return klgen_expror(gen, bincst, jumpcond);
     if (kltoken_isrelation(bincst->op))
       return klgen_exprrelation(gen, bincst, jumpcond);
     /* else is other binary expression, fallthrough */
@@ -402,57 +408,36 @@ KlCodeVal klgen_exprbool(KlGenUnit* gen, KlCst* cst, bool jumpcond) {
     /* else the tuple should be evaluated by klgen_expr, fallthrough */
   }
   KlCodeVal res = klgen_expr(gen, cst);
-  if (klcodeval_isconstant(res)) {
-    return klcodeval_bool(res.kind != KLVAL_NIL && (res.kind != KLVAL_BOOL || res.boolval != KL_FALSE));
-  }
+  if (klcodeval_isconstant(res)) return res;
   size_t stktop = klgen_stacktop(gen);
   klgen_putinstack(gen, &res, klgen_cstposition(cst));
-  size_t pc;
-  if (jumpcond) {
-    pc = klgen_pushinst(gen, klinst_truejmp(res.index, 0), klgen_cstposition(cst));
-  } else {
-    pc = klgen_pushinst(gen, klinst_falsejmp(res.index, 0), klgen_cstposition(cst));
-  }
+  size_t pc = klgen_pushinst(gen, jumpcond ? klinst_truejmp(res.index, 0) : klinst_falsejmp(res.index, 0), klgen_cstposition(cst));
   klgen_stackfree(gen, stktop);
   return klcodeval_jmp(pc);
 }
 
 KlCodeVal klgen_exprnot(KlGenUnit* gen, KlCstPre* notcst, bool jumpcond) {
   KlCodeVal jmp = klgen_exprbool(gen, notcst->operand, !jumpcond);
-  if (klcodeval_isconstant(jmp)) {
-    kl_assert(jmp.kind == KLVAL_BOOL, "");
-    return klcodeval_bool(!jmp.boolval);
-  }
+  if (klcodeval_isconstant(jmp))
+    return klcodeval_bool(klcodeval_isfalse(jmp));
   return jmp;
 }
 
 KlCodeVal klgen_expror(KlGenUnit* gen, KlCstBin* orcst, bool jumpcond) {
   KlCodeVal ljmp = klgen_exprbool(gen, orcst->loperand, true);
   if (klcodeval_isconstant(ljmp)) {
-    kl_assert(ljmp.kind == KLVAL_BOOL, "");
-    if (ljmp.boolval == KL_TRUE) return ljmp;
+    if (klcodeval_istrue(ljmp)) return ljmp;
     return klgen_exprbool(gen, orcst->roperand, jumpcond);
   }
   KlCodeVal rjmp = klgen_exprbool(gen, orcst->roperand, jumpcond);
   if (klcodeval_isconstant(rjmp)) {
-    kl_assert(ljmp.kind == KLVAL_BOOL, "");
-    if (rjmp.boolval == KL_TRUE) {
-      if (jumpcond) {
-        KlCodeVal rjmp = klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(orcst)));
-        return klgen_mergejmp(gen, ljmp, rjmp);
-      } else {
-        klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
-        return klcodeval_bool(KL_TRUE);
-      }
-    } else {
-      if (jumpcond) {
-        return ljmp;
-      } else {
-        size_t jmp = klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(orcst));
-        klgen_setinstjmppos(gen, ljmp, jmp + 1);
-        return klcodeval_jmp(jmp);
-      }
-    }
+    size_t stktop = klgen_stacktop(gen);
+    klgen_putinstack(gen, &rjmp, klgen_cstposition(orcst->roperand));
+    rjmp = klcodeval_jmp(klgen_pushinst(gen,
+                                        jumpcond ? klinst_truejmp(rjmp.index, 0)
+                                                 : klinst_falsejmp(rjmp.index, 0),
+                                        klgen_cstposition(orcst->roperand)));
+    klgen_stackfree(gen, stktop);
   }
   if (jumpcond) {
     return klgen_mergejmp(gen, ljmp, rjmp);
@@ -465,30 +450,18 @@ KlCodeVal klgen_expror(KlGenUnit* gen, KlCstBin* orcst, bool jumpcond) {
 KlCodeVal klgen_exprand(KlGenUnit* gen, KlCstBin* andcst, bool jumpcond) {
   KlCodeVal ljmp = klgen_exprbool(gen, andcst->loperand, false);
   if (klcodeval_isconstant(ljmp)) {
-    kl_assert(ljmp.kind == KLVAL_BOOL, "");
-    if (ljmp.boolval == KL_FALSE) return ljmp;
+    if (klcodeval_isfalse(ljmp)) return ljmp;
     return klgen_exprbool(gen, andcst->roperand, jumpcond);
   }
   KlCodeVal rjmp = klgen_exprbool(gen, andcst->roperand, jumpcond);
   if (klcodeval_isconstant(rjmp)) {
-    kl_assert(ljmp.kind == KLVAL_BOOL, "");
-    if (rjmp.boolval == KL_TRUE) {
-      if (jumpcond) {
-        size_t jmp = klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(andcst));
-        klgen_setinstjmppos(gen, ljmp, jmp + 1);
-        return klcodeval_jmp(jmp);
-      } else {
-        return ljmp;
-      }
-    } else {
-      if (jumpcond) {
-        klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
-        return klcodeval_bool(KL_FALSE);
-      } else {
-        KlCodeVal rjmp = klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(andcst)));
-        return klgen_mergejmp(gen, ljmp, rjmp);
-      }
-    }
+    size_t stktop = klgen_stacktop(gen);
+    klgen_putinstack(gen, &rjmp, klgen_cstposition(andcst->roperand));
+    rjmp = klcodeval_jmp(klgen_pushinst(gen,
+                                        jumpcond ? klinst_truejmp(rjmp.index, 0)
+                                                 : klinst_falsejmp(rjmp.index, 0),
+                                        klgen_cstposition(andcst->roperand)));
+    klgen_stackfree(gen, stktop);
   }
   if (jumpcond) {
     klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
@@ -498,12 +471,178 @@ KlCodeVal klgen_exprand(KlGenUnit* gen, KlCstBin* andcst, bool jumpcond) {
   }
 }
 
-
-static void klgen_exprorval(KlGenUnit* gen, KlCstBin* orcst, size_t target, bool setcond) {
+static KlCodeVal klgen_exprorset(KlGenUnit* gen, KlCstBin* orcst, size_t target, bool setcond) {
+  if (setcond) {
+    KlCodeVal lval = klgen_exprboolset(gen, orcst->loperand, target, true);
+    if (klcodeval_isconstant(lval)) {
+      if (klcodeval_istrue(lval)) return lval;
+      return klgen_exprboolset(gen, orcst->roperand, target, setcond);
+    }
+    KlCodeVal rval = klgen_exprboolset(gen, orcst->roperand, target, setcond);
+    if (klcodeval_isconstant(rval)) {
+      size_t stktop = klgen_stacktop(gen);
+      klgen_pushinst(gen, klinst_testset(target, stktop), klgen_cstposition(orcst->roperand));
+      klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(orcst->roperand));
+    }
+    return klcodeval_none();
+  } else {
+    KlCodeVal ljmp = klgen_exprbool(gen, orcst->loperand, true);
+    if (klcodeval_isconstant(ljmp)) {
+      if (klcodeval_istrue(ljmp)) return ljmp;
+      return klgen_exprboolset(gen, orcst->roperand, target, setcond);
+    }
+    KlCodeVal rval = klgen_exprboolset(gen, orcst->roperand, target, setcond);
+    if (klcodeval_isconstant(rval)) {
+      size_t stktop = klgen_stacktop(gen);
+      klgen_pushinst(gen, klinst_testset(target, stktop), klgen_cstposition(orcst->roperand));
+      klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(orcst->roperand));
+    }
+    klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+    return klcodeval_none();
+  }
 }
 
-static int klgen_exprandval(KlGenUnit* gen, KlCstBin* andcst, size_t target, bool setcond) {
+static KlCodeVal klgen_exprandset(KlGenUnit* gen, KlCstBin* andcst, size_t target, bool setcond) {
   if (setcond) {
-
+    KlCodeVal ljmp = klgen_exprbool(gen, andcst->loperand, false);
+    if (klcodeval_isconstant(ljmp)) {
+      if (klcodeval_isfalse(ljmp)) return ljmp;
+      return klgen_exprboolset(gen, andcst->roperand, target, setcond);
+    }
+    KlCodeVal rval = klgen_exprboolset(gen, andcst->roperand, target, setcond);
+    if (klcodeval_isconstant(rval)) {
+      size_t stktop = klgen_stacktop(gen);
+      klgen_pushinst(gen, klinst_testset(target, stktop), klgen_cstposition(andcst->roperand));
+      klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(andcst->roperand));
+    }
+    klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+    return klcodeval_none();
+  } else {
+    KlCodeVal lval = klgen_exprboolset(gen, andcst->loperand, target, false);
+    if (klcodeval_isconstant(lval)) {
+      if (klcodeval_isfalse(lval)) return lval;
+      return klgen_exprboolset(gen, andcst->roperand, target, setcond);
+    }
+    KlCodeVal rval = klgen_exprboolset(gen, andcst->roperand, target, setcond);
+    if (klcodeval_isconstant(rval)) {
+      size_t stktop = klgen_stacktop(gen);
+      klgen_pushinst(gen, klinst_testset(target, stktop), klgen_cstposition(andcst->roperand));
+      klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(andcst->roperand));
+    }
+    return klcodeval_none();
   }
+}
+
+static KlCodeVal klgen_exprboolset_handleresult(KlGenUnit* gen, KlCodeVal res, bool setcond) {
+  if (klcodeval_isconstant(res)) return res;
+  KlCodeVal* jmplist = setcond ? &gen->jumpinfo->truelist : &gen->jumpinfo->falselist;
+  klgen_mergejmp_maynone(gen, jmplist, res);
+  return klcodeval_none();
+}
+
+static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlCst* cst, size_t target, bool setcond) {
+  if (klcst_kind(cst) == KLCST_EXPR_PRE && klcast(KlCstPre*, cst)->op == KLTK_NOT) {
+    KlCodeVal res = klgen_exprnot(gen, klcast(KlCstPre*, cst), setcond);
+    return klgen_exprboolset_handleresult(gen, res, setcond);
+  } else if (klcst_kind(cst) == KLCST_EXPR_BIN) {
+    KlCstBin* bincst = klcast(KlCstBin*, cst);
+    if (bincst->op == KLTK_AND)
+      return klgen_exprandset(gen, bincst, target, setcond);
+    if (bincst->op == KLTK_OR)
+      return klgen_exprorset(gen, bincst, target, setcond);
+    if (kltoken_isrelation(bincst->op)) {
+      KlCodeVal res = klgen_exprrelation(gen, bincst, setcond);
+      return klgen_exprboolset_handleresult(gen, res, setcond);
+    }
+    /* else is other binary expression, fallthrough */
+  } else if (klcst_kind(cst) == KLCST_EXPR_TUPLE) {
+    KlCstTuple* tuple = klcast(KlCstTuple*, cst);
+    KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
+    if (lastelem && klcst_isboolexpr(lastelem = klgen_exprpromotion(lastelem))) {
+      klgen_tuple_evaluate(gen, tuple, tuple->nelem - 1);
+      return klgen_exprboolset(gen, lastelem, target, setcond);
+    }
+    /* else the tuple should be evaluated by klgen_expr, fallthrough */
+  }
+  KlCodeVal res = klgen_expr(gen, cst);
+  if (klcodeval_isconstant(res)) return res;
+  size_t stktop = klgen_stacktop(gen);
+  klgen_putinstack(gen, &res, klgen_cstposition(cst));
+  klgen_pushinst(gen, klinst_testset(target, stktop), klgen_cstposition(cst));
+  klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(cst));
+  klgen_mergejmp_maynone(gen, &gen->jumpinfo->terminatelist, klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(cst))));
+  klgen_stackfree(gen, stktop);
+  return klcodeval_none();
+}
+
+static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlCst* cst, size_t target) {
+  if (klcst_kind(cst) == KLCST_EXPR_PRE && klcast(KlCstPre*, cst)->op == KLTK_NOT) {
+    KlCodeVal res = klgen_exprnot(gen, klcast(KlCstPre*, cst), true);
+    if (klcodeval_isconstant(res)) return res;
+    klgen_mergejmp_maynone(gen, &gen->jumpinfo->truelist, res);
+    return klcodeval_none();
+  } else if (klcst_kind(cst) == KLCST_EXPR_BIN) {
+    KlCstBin* bincst = klcast(KlCstBin*, cst);
+    if (bincst->op == KLTK_AND) {
+      KlCodeVal ljmp = klgen_exprboolset(gen, bincst->loperand, target, false);
+      if (klcodeval_isconstant(ljmp)) {
+        if (klcodeval_isfalse(ljmp)) return ljmp;
+        return klgen_exprboolvalraw(gen, bincst->roperand, target);
+      }
+      klgen_exprboolvalraw(gen, bincst->roperand, target);
+      return klcodeval_none();
+    }
+    if (bincst->op == KLTK_OR) {
+      KlCodeVal ljmp = klgen_exprboolset(gen, bincst->loperand, target, true);
+      if (klcodeval_isconstant(ljmp)) {
+        if (klcodeval_istrue(ljmp)) return ljmp;
+        return klgen_exprboolvalraw(gen, bincst->roperand, target);
+      }
+      klgen_exprboolvalraw(gen, bincst->roperand, target);
+      return klcodeval_none();
+    }
+    if (kltoken_isrelation(bincst->op)) {
+      KlCodeVal res = klgen_exprrelation(gen, bincst, true);
+      if (klcodeval_isconstant(res)) return res;
+      klgen_mergejmp_maynone(gen, &gen->jumpinfo->truelist, res);
+      return klcodeval_none();
+    }
+    /* else is other binary expression, fallthrough */
+  } else if (klcst_kind(cst) == KLCST_EXPR_TUPLE) {
+    KlCstTuple* tuple = klcast(KlCstTuple*, cst);
+    KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
+    if (lastelem && klcst_isboolexpr(lastelem = klgen_exprpromotion(lastelem))) {
+      klgen_tuple_evaluate(gen, tuple, tuple->nelem - 1);
+      return klgen_exprboolvalraw(gen, lastelem, target);
+    }
+    /* else the tuple should be evaluated by klgen_expr, fallthrough */
+  }
+  KlCodeVal res = klgen_exprtarget(gen, cst, target);
+  if (klcodeval_isconstant(res)) return res;
+  return klcodeval_none();
+}
+
+KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlCst* cst, size_t target) {
+  KlGenJumpInfo jumpinfo;
+  jumpinfo.truelist = klcodeval_none();
+  jumpinfo.falselist = klcodeval_none();
+  jumpinfo.terminatelist = klcodeval_none();
+  /* push new jumpinfo structure */
+  jumpinfo.prev = gen->jumpinfo;
+  gen->jumpinfo = &jumpinfo;
+  KlCodeVal res = klgen_exprboolvalraw(gen, cst, target);
+  /* pop jumpinfo structure */
+  gen->jumpinfo = jumpinfo.prev;
+  if (klcodeval_isconstant(res)) return res;
+  if (jumpinfo.truelist.kind != KLVAL_NONE || jumpinfo.falselist.kind != KLVAL_NONE) {
+    size_t falsepos = klgen_pushinst(gen, klinst_loadfalseskip(target), klgen_cstposition(cst));
+    size_t truepos = klgen_pushinst(gen, klinst_loadbool(target, true), klgen_cstposition(cst));
+    if (jumpinfo.falselist.kind != KLVAL_NONE)
+      klgen_setinstjmppos(gen, jumpinfo.falselist, falsepos);
+    if (jumpinfo.truelist.kind != KLVAL_NONE)
+      klgen_setinstjmppos(gen, jumpinfo.truelist, truepos);
+    if (jumpinfo.terminatelist.kind != KLVAL_NONE)
+      klgen_setinstjmppos(gen, jumpinfo.terminatelist, klgen_currcodesize(gen));
+  }
+  return klcodeval_none();
 }

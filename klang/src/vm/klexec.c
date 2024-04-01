@@ -1306,6 +1306,24 @@ KlException klexec_execute(KlState* state) {
           return klexec_handle_newlocal_exception(state, exception, keystr);
         break;
       }
+      case KLOPCODE_LOADFALSESKIP: {
+        KlValue* a = stkbase + KLINST_A_GETA(inst);
+        klvalue_setbool(a, KL_FALSE);
+        ++pc;
+        break;
+      }
+      case KLOPCODE_TESTSET: {
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
+        kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
+        KlInstruction extra = *pc++;
+        bool cond = KLINST_XI_GETX(extra);
+        if (klexec_if(b) == cond) {
+          klvalue_setvalue(a, b);
+          pc += KLINST_XI_GETI(extra);
+        }
+        break;
+      }
       case KLOPCODE_TRUEJMP: {
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);
         int offset = KLINST_XI_GETI(inst);
