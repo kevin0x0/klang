@@ -372,10 +372,8 @@ KlCodeVal klgen_exprrelation(KlGenUnit* gen, KlCstBin* relcst, bool jumpcond) {
   KlCodeVal left = klgen_expr(gen, relcst->loperand);
   if (klcodeval_isconstant(left)) {
     return klgen_exprrelleftliteral(gen, relcst, left, jumpcond);
-  } else if (left.kind != KLVAL_STACK) {
+  } else {
     klgen_putinstack(gen, &left, klgen_cstposition(relcst->loperand));
-  } else if (left.index == klgen_stacktop(gen)) {
-    klgen_stackalloc1(gen);
   }
   /* now left is on stack */
   KlCodeVal right = klgen_expr(gen, relcst->roperand);

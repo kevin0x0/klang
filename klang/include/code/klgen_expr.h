@@ -1,6 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_CODE_KLGEN_EXPR_H
 #define KEVCC_KLANG_INCLUDE_CODE_KLGEN_EXPR_H
 
+#include "klang/include/code/klcodeval.h"
 #include "klang/include/code/klgen.h"
 
 
@@ -15,8 +16,8 @@ static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t 
 void klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst, size_t nwanted);
 void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval);
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args);
-KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst);
-KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst);
+void klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target);
+KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst, size_t target);
 KlCodeVal klgen_exprbin(KlGenUnit* gen, KlCstBin* bincst, size_t target);
 void klgen_exprarr(KlGenUnit* gen, KlCstArray* arrcst, size_t target);
 void klgen_exprarrgen(KlGenUnit* gen, KlCstArrayGenerator* arrgencst, size_t target);
