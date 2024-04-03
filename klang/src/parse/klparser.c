@@ -36,13 +36,14 @@ bool klparser_init(KlParser* parser, KlStrTab* strtab, Ko* err, char* inputname,
 }
 
 static KlStrDesc klparser_newtmpid(KlParser* parser, KlLex* lex) {
-  char* newid = klstrtab_allocstring(parser->strtab, 100);  /* 100 should be enough */
+  char* newid = klstrtab_allocstring(parser->strtab, sizeof (size_t) * 8);
   if (kl_unlikely(!newid)) {
     klparser_error_oom(parser, lex);
     KlStrDesc str = { .id = 0, .length = 0 };
     return str;
   }
-  int len = sprintf(newid, "$%zu", parser->incid++);    /* all temporary identifiers begin with '$' */
+  newid[0] = '\0';  /* all temporary identifiers begin with '\0' */
+  int len = sprintf(newid + 1, "%zu", parser->incid++) + 1;
   size_t strid = klstrtab_pushstring(parser->strtab, len);
   KlStrDesc str = { .id = strid, .length = len };
   return str;
@@ -114,7 +115,7 @@ static void klparser_sharedlist(KlParser* parser, KlLex* lex, KlCfdArray* fields
 static KlCst* klparser_array(KlParser* parser, KlLex* lex);
 static KlCst* klparser_finishtuple(KlParser* parser, KlLex* lex, KlCst* expr);
 static KlCst* klparser_dotchain(KlParser* parser, KlLex* lex);
-static KlCst* klparser_newexpr(KlParser* parser, KlLex* lex);
+static KlCst* klparser_exprnew(KlParser* parser, KlLex* lex);
 
 
 
@@ -494,7 +495,7 @@ static KlCst* klparser_dotchain(KlParser* parser, KlLex* lex) {
   return dotexpr;
 }
 
-static KlCst* klparser_newexpr(KlParser* parser, KlLex* lex) {
+static KlCst* klparser_exprnew(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_NEW), "");
 
   kllex_next(lex);
@@ -608,7 +609,7 @@ KlCst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       return klparser_exprpre(parser, lex);
     }
     case KLTK_NEW: {
-      return klparser_newexpr(parser, lex);
+      return klparser_exprnew(parser, lex);
     }
     default: {  /* no prefix */
       return klparser_exprpost(parser, lex);

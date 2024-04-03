@@ -22,7 +22,7 @@ KlState* klapi_new_state(KlMM* klmm) {
     return NULL;
   }
 
-  KlCommon* common = klcommon_create(strpool, mapnodepool);
+  KlCommon* common = klcommon_create(klmm, strpool, mapnodepool);
   if (!common) {
     klmm_register_root(klmm, original_root);
     klmapnodepool_unpin(mapnodepool);

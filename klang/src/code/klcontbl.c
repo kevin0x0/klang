@@ -21,7 +21,7 @@ static inline size_t klcontbl_hashing(KlStrTab* strtab, KlConstant* con) {
     }
     case KL_FLOAT: {
       kl_assert(sizeof (KlFloat) == sizeof (KlInt), "");
-      struct {
+      union {
         size_t hash;
         KlFloat floatval;
       } num;

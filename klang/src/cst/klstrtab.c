@@ -26,7 +26,7 @@ char* klstrtab_grow(KlStrTab* strtab, size_t extra) {
   size_t expectedcap = klstrtab_size(strtab) + extra;
   size_t newcap = 2 * klstrtab_capacity(strtab);
   if (newcap < expectedcap) newcap = expectedcap;
-  char* newstk = (char*)realloc(strtab->stack, newcap);
+  char* newstk = (char*)realloc(strtab->stack, sizeof (char) * newcap);
   if (kl_unlikely(!newstk)) return NULL;
   size_t curroffset = klstrtab_size(strtab);
   strtab->stack = newstk;

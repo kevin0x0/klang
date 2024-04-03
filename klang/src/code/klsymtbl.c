@@ -1,5 +1,5 @@
 #include "klang/include/code/klsymtbl.h"
-#include "klang/include/parse/klstrtab.h"
+#include "klang/include/cst/klstrtab.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -78,6 +78,7 @@ bool klsymtbl_init(KlSymTbl* symtbl, KlSymbolPool* pool, size_t capacity, KlStrT
   symtbl->parent = parent;
   symtbl->strtab = strtab;
   symtbl->symbolpool = pool;
+  symtbl->info.referenced = false;
   return true;
 }
 

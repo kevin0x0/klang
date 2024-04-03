@@ -26,7 +26,7 @@ typedef enum tagKlGCStat { KL_GC_INACCESSIBLE, KL_GC_ACCESSIBLE } KlGCStat;
 typedef struct tagKlGCObject KlGCObject;
 typedef struct tagKlMM KlMM;
 
-typedef void (*KlGCDestructor)(KlGCObject* gcobj);
+typedef void (*KlGCDestructor)(KlGCObject* gcobj, KlMM* klmm);
 typedef struct tagKlGCObject* (*KlGCProp)(KlGCObject* gcobj, KlGCObject* gclist);
 
 typedef struct tagKlGCVirtualFunc {
@@ -40,7 +40,6 @@ struct tagKlGCObject {
   union {
     struct {
       KlGCObject* next_reachable;           /* link all accessible object in the same level */
-      KlMM* klmm;
       KlGCVirtualFunc* virtualfunc;
       KlGCStat gc_state;
     } created;
@@ -78,11 +77,10 @@ static inline void klmm_newlevel(KlMM* klmm, KlGCObject* gcobj);
 static inline void klmm_newlevel_abort(KlMM* klmm);
 static inline void klmm_newlevel_done(KlMM* klmm, KlGCVirtualFunc* vfunc);
 
-void klmm_gc_clean_all(KlGCObject* list);
+void klmm_gc_clean_all(KlMM* klmm, KlGCObject* allgc);
 void klmm_do_gc(KlMM* klmm);
 static inline void klmm_try_gc(KlMM* klmm);
 
-static inline KlMM* klmm_gcobj_getmm(KlGCObject* gcobj);
 
 
 static inline void klmm_init(KlMM* klmm, size_t limit) {
@@ -149,7 +147,6 @@ static inline void klmm_free(KlMM* klmm, void* blk, size_t size) {
 static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, KlGCVirtualFunc* vfunc) {
   gcobj->created.virtualfunc = vfunc;
   gcobj->created.gc_state = KL_GC_INACCESSIBLE;
-  gcobj->created.klmm = klmm;
   KlGCObject* delegate = klmm->currlevel;
   delegate->creating.tail->next = gcobj;
   delegate->creating.tail = gcobj;
@@ -166,7 +163,7 @@ static inline void klmm_newlevel(KlMM* klmm, KlGCObject* gcobj) {
 }
 
 static inline void klmm_newlevel_abort(KlMM* klmm) {
-  klmm_gc_clean_all(klmm->currlevel->next);
+  klmm_gc_clean_all(klmm, klmm->currlevel->next);
   klmm->currlevel = klmm->currlevel->creating.next_level;
 }
 
@@ -178,13 +175,8 @@ static inline void klmm_newlevel_done(KlMM* klmm, KlGCVirtualFunc* vfunc) {
 
   gcobj->created.virtualfunc = vfunc;
   gcobj->created.gc_state = KL_GC_INACCESSIBLE;
-  gcobj->created.klmm = klmm;
   next_level->creating.tail->next = gcobj;
   next_level->creating.tail = tail;
-}
-
-static inline KlMM* klmm_gcobj_getmm(KlGCObject* gcobj) {
-  return gcobj->created.klmm;
 }
 
 #endif

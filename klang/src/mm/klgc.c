@@ -8,7 +8,7 @@
 
 static KlGCObject* klmm_gc_start(KlGCObject* root, KlGCObject* list);
 static void klmm_gc_mark_accessible(KlGCObject* gclist);
-static void klmm_gc_clean(KlGCObject* list);
+void klmm_gc_clean(KlMM* klmm, KlGCObject* allgc);
 
 
 static inline KlGCObject* klmm_gc_nextobj(KlGCObject* obj) {
@@ -31,8 +31,8 @@ static inline bool klmm_gc_cleanable(KlGCObject* gcobj) {
   return gcobj->created.gc_state == KL_GC_INACCESSIBLE;
 }
 
-static inline void klmm_gc_clean_one(KlGCObject* gcobj) {
-  gcobj->created.virtualfunc->destructor(gcobj);
+static inline void klmm_gc_clean_one(KlMM* klmm, KlGCObject* gcobj) {
+  gcobj->created.virtualfunc->destructor(gcobj, klmm);
   //size_t freesize = gcobj->destructor(gcobj);
   //klmm_free(klmm, gcobj, freesize);
 }
@@ -42,7 +42,7 @@ void klmm_do_gc(KlMM* klmm) {
   if (!klmm->root) return;
   KlGCObject* gclist = klmm_gc_start(klmm->root, klmm->allgc.next);
   klmm_gc_mark_accessible(gclist);
-  klmm_gc_clean(&klmm->allgc);
+  klmm_gc_clean(klmm, &klmm->allgc);
   klmm->limit = klmm->mem_used * 2;
 }
 
@@ -63,13 +63,13 @@ void klmm_gc_mark_accessible(KlGCObject* gclist) {
   }
 }
 
-void klmm_gc_clean(KlGCObject* allgc) {
+void klmm_gc_clean(KlMM* klmm, KlGCObject* allgc) {
   allgc->creating.tail->next = NULL;
   KlGCObject* tail = allgc;
   for (KlGCObject* gcobj = allgc->next; gcobj;) {
     KlGCObject* tmp = klmm_gc_nextobj(gcobj);
     if (klmm_gc_cleanable(gcobj)) {
-      klmm_gc_clean_one(gcobj);
+      klmm_gc_clean_one(klmm, gcobj);
     } else {
       tail->next = gcobj;
       tail = gcobj;
@@ -81,11 +81,11 @@ void klmm_gc_clean(KlGCObject* allgc) {
   allgc->creating.tail = tail;
 }
 
-void klmm_gc_clean_all(KlGCObject* allgc) {
+void klmm_gc_clean_all(KlMM* klmm, KlGCObject* allgc) {
   allgc->creating.tail->next = NULL;
   for (KlGCObject* gcobj = allgc->next; gcobj;) {
     KlGCObject* tmp = klmm_gc_nextobj(gcobj);
-    klmm_gc_clean_one(gcobj);
+    klmm_gc_clean_one(klmm, gcobj);
     gcobj = tmp;
   }
 }

@@ -5,8 +5,8 @@
 
 static KlGCObject* klkclosure_propagate(KlKClosure* kclo, KlGCObject* gclist);
 static KlGCObject* klcclosure_propagate(KlCClosure* cclo, KlGCObject* gclist);
-static void klkclosure_delete(KlKClosure* kclo);
-static void klcclosure_delete(KlCClosure* cclo);
+static void klkclosure_delete(KlKClosure* kclo, KlMM* klmm);
+static void klcclosure_delete(KlCClosure* cclo, KlMM* klmm);
 
 static KlGCVirtualFunc klkclo_gcvfunc = { .destructor = (KlGCDestructor)klkclosure_delete, .propagate = (KlGCProp)klkclosure_propagate };
 static KlGCVirtualFunc klcclo_gcvfunc = { .destructor = (KlGCDestructor)klcclosure_delete, .propagate = (KlGCProp)klcclosure_propagate };
@@ -42,13 +42,12 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
   return kclo;
 }
 
-static void klkclosure_delete(KlKClosure* kclo) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(kclo));
+static void klkclosure_delete(KlKClosure* kclo, KlMM* klmm) {
   KlRef** refs = kclo->refs;
   size_t nref = kclo->nref;
   for (size_t i = 0; i < nref; ++i)
     klref_unpin(refs[i], klmm);
-  klmm_free(klmm_gcobj_getmm(klmm_to_gcobj(kclo)), kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kclo->nref);
+  klmm_free(klmm, kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kclo->nref);
 }
 
 static KlGCObject* klkclosure_propagate(KlKClosure* kclo, KlGCObject* gclist) {
@@ -83,13 +82,12 @@ KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, 
   return cclo;
 }
 
-static void klcclosure_delete(KlCClosure* cclo) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(cclo));
+static void klcclosure_delete(KlCClosure* cclo, KlMM* klmm) {
   KlRef** refs = cclo->refs;
   size_t nref = cclo->nref;
   for (size_t i = 0; i < nref; ++i)
     klref_unpin(refs[i], klmm);
-  klmm_free(klmm_gcobj_getmm(klmm_to_gcobj(cclo)), cclo, sizeof (KlKClosure) + sizeof (KlRef*) * cclo->nref);
+  klmm_free(klmm, cclo, sizeof (KlKClosure) + sizeof (KlRef*) * cclo->nref);
 }
 
 static KlGCObject* klcclosure_propagate(KlCClosure* cclo, KlGCObject* gclist) {

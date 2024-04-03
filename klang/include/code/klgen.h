@@ -22,11 +22,6 @@ struct tagKlGenJumpInfo {
 
 typedef struct tagKlGenBlockInfo KlGenBlockInfo;
 struct tagKlGenBlockInfo {
-  KlCstKind kind;
-  union {
-    struct {
-    } ifblock;
-  };
   KlGenBlockInfo* prev;
 };
 
@@ -42,7 +37,11 @@ struct tagKlGenUnit {
   KlStrTab* strtab;
   size_t stksize;             /* current used stack size */
   size_t framesize;           /* stack frame size of this klang function */
-  KlGenJumpInfo* jumpinfo;    /* information needed by code generator that evaluates boolean expression as a single value */
+  struct {
+    KlGenJumpInfo* jumpinfo;  /* information needed by code generator that evaluates boolean expression as a single value */
+    KlCodeVal* continuejmp;
+    KlCodeVal* breakjmp;
+  } info;
   KlGenUnit* prev;
   Ki* input;
   jmp_buf jmppos;
@@ -60,6 +59,7 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
 void klgen_destroy(KlGenUnit* gen);
 
 void klgen_error(KlGenUnit* gen, KlFileOffset begin, KlFileOffset end, const char* format, ...);
+KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFileOffset symbolpos);
 KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name);
 
 void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position);
@@ -84,6 +84,11 @@ static inline void klgen_stackfree(KlGenUnit* gen, size_t stkid) {
   if (gen->stksize > gen->framesize)
     gen->framesize = gen->stksize;
   gen->stksize = stkid;
+}
+
+static inline void klgen_stackpreserve(KlGenUnit* gen, size_t stkid) {
+  if (gen->stksize <= stkid)
+    gen->stksize = stkid + 1;
 }
 
 static inline size_t klgen_currcodesize(KlGenUnit* gen) {

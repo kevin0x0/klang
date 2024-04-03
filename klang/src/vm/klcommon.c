@@ -5,22 +5,22 @@
 #include <string.h>
 
 static KlClass* klcommon_phonyclass(KlMM* klmm);
-static KlObject* klcommon_null_contructor(KlClass* klclass);
+static KlObject* klcommon_null_contructor(KlClass* klclass, KlMM* klmm);
 
-static KlObject* klcommon_null_contructor(KlClass* klclass) {
+static KlObject* klcommon_null_contructor(KlClass* klclass, KlMM* klmm) {
   (void)klclass;
+  (void)klmm;
   return NULL;
 }
 static KlClass* klcommon_phonyclass(KlMM* klmm) {
-  KlClass* klclass = klclass_create(klmm, 32, KLOBJECT_DEFAULT_ATTROFF, NULL, klcommon_null_contructor);
+  KlClass* klclass = klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klcommon_null_contructor);
   if (kl_unlikely(!klclass)) return NULL;
   klclass_final(klclass);
   return klclass;
 }
 
 
-KlCommon* klcommon_create(KlStrPool* strpool, KlMapNodePool* mapnodepool) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(strpool));
+KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnodepool) {
   KlCommon* common = (KlCommon*)klmm_alloc(klmm, sizeof (KlCommon));
   if (kl_unlikely(!common)) return NULL;
   common->ref_count = 0;

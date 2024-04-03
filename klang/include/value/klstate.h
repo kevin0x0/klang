@@ -52,6 +52,7 @@ struct tagKlCallInfo {
 
 typedef struct tagKlState {
   KlGCObject gcbase;
+  KlMM* klmm;                   /* mamemory manager */
   KlStack stack;                /* stack */
   KlThrowInfo throwinfo;        /* store the throwed but not handled exception */
   KlCommon* common;             /* store some gcobjects that are often used */
@@ -67,7 +68,6 @@ typedef struct tagKlState {
 
 
 KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlMapNodePool* mapnodepool, KlKClosure* kclo);
-void klstate_delete(KlState* state);
 
 static inline KlMM* klstate_getmm(KlState* state);
 static inline KlCallInfo* klstate_currci(KlState* state);
@@ -99,7 +99,7 @@ static inline KlException klstate_checkframe(KlState* state, size_t framesize);
 KlException klstate_growstack(KlState* state, size_t capacity);
 
 static inline KlMM* klstate_getmm(KlState* state) {
-  return klmm_gcobj_getmm(klmm_to_gcobj(state));
+  return state->klmm;
 }
 
 static inline KlCallInfo* klstate_currci(KlState* state) {

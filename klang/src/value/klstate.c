@@ -5,6 +5,7 @@
 
 
 static KlGCObject* klstate_propagate(KlState* state, KlGCObject* gclist);
+static void klstate_delete(KlState* state, KlMM* klmm);
 
 static KlGCVirtualFunc klstate_gcvfunc = { .propagate = (KlGCProp)klstate_propagate, .destructor = (KlGCDestructor)klstate_delete };
 
@@ -26,6 +27,7 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
   }
   klthrow_init(&state->throwinfo, klmm, 128);
   klco_init(&state->coinfo, kclo);
+  state->klmm = klmm;
   state->strpool = strpool;
   state->global = global;
   state->mapnodepool = mapnodepool;
@@ -44,8 +46,7 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
   return state;
 }
 
-void klstate_delete(KlState* state) {
-  KlMM* klmm = klstate_getmm(state);
+static void klstate_delete(KlState* state, KlMM* klmm) {
   klstack_destroy(klstate_stack(state), klmm);
   klreflist_delete(state->reflist, klmm);
   klthrow_destroy(&state->throwinfo, klmm);

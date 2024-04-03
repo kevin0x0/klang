@@ -1,18 +1,11 @@
 #include "klang/include/code/klgen.h"
+#include "klang/include/code/klsymtbl.h"
 #include <string.h>
 
 kgarray_impl(KlCode, KlCodeArray, klcodearr, pass_ref,)
 kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
 kgarray_impl(KlFilePosition, KlFPArray, klfparr, pass_val,)
 
-
-KlCode* klgen_create(KlCst* cst) {
-  kltodo("implement klgen_create");
-}
-
-void klgen_delete(KlCode* code) {
-  kltodo("implement klgen_delete");
-}
 
 bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGenUnit* prev, Ki* input, KlError* klerror) {
   if (kl_unlikely(!(gen->symtbl = klsymtblpool_alloc(symtblpool, strtab, NULL)))) {
@@ -49,7 +42,9 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
   gen->strtab = strtab;
   gen->stksize = 0;
   gen->framesize = 0;
-  gen->jumpinfo = NULL;
+  gen->info.jumpinfo = NULL;
+  gen->info.breakjmp = NULL;
+  gen->info.continuejmp = NULL;
   gen->prev = prev;
   gen->klerror = klerror;
 
@@ -83,6 +78,47 @@ void klgen_destroy(KlGenUnit* gen) {
   klinstarr_destroy(&gen->code);
 }
 
+KlSymbol* klgen_getsymbolref(KlGenUnit* gen, KlStrDesc name) {
+  if (!gen) return NULL;
+  KlSymbol* symbol;
+  KlSymTbl* symtbl = gen->symtbl;
+  while (symtbl) {
+    symbol = klsymtbl_search(symtbl, name);
+    if (symbol) {
+      symtbl->info.referenced = true;
+      return symbol;
+    }
+    symtbl = klsymtbl_parent(symtbl);
+  }
+  KlSymbol* refsymbol = klgen_getsymbolref(gen->prev, name);
+  if (!refsymbol) return NULL;  /* is global variable */
+  symbol = klsymtbl_insert(gen->reftbl, name);
+  klgen_oomifnull(symbol);
+  symbol->attr.kind = KLVAL_REF;
+  symbol->attr.idx = klsymtbl_size(gen->reftbl) - 1;
+  symbol->attr.refto = refsymbol;
+  return symbol;
+}
+
+KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFileOffset symbolpos) {
+  KlSymTbl* symtbl = gen->symtbl;
+  KlSymbol* symbol = klsymtbl_search(symtbl, name);
+  if (kl_unlikely(symbol)) {
+    klgen_error(gen, symbolpos, symbolpos,
+                "redefinition of symbol: %*.s",
+                symbol->name.length,
+                klstrtab_getstring(gen->strtab, symbol->name.id));
+    symbol->attr.idx = idx;
+    return symbol;
+  }
+  symbol = klsymtbl_insert(symtbl, name);
+  if (kl_unlikely(symbol))
+    klgen_error_fatal(gen, "out of memory");
+  symbol->attr.kind = KLVAL_STACK;
+  symbol->attr.idx = idx;
+  return symbol;
+}
+
 KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name) {
   if (!gen) return NULL;
   KlSymbol* symbol;
@@ -92,7 +128,7 @@ KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name) {
     if (symbol) return symbol;
     symtbl = klsymtbl_parent(symtbl);
   }
-  KlSymbol* refsymbol = klgen_getsymbol(gen->prev, name);
+  KlSymbol* refsymbol = klgen_getsymbolref(gen->prev, name);
   if (!refsymbol) return NULL;  /* is global variable */
   symbol = klsymtbl_insert(gen->reftbl, name);
   klgen_oomifnull(symbol);

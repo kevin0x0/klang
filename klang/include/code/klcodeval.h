@@ -17,7 +17,6 @@ typedef enum tagKlValKind {
   KLVAL_NONE,   /* currently only used for boolean expression */
 } KlValKind;
 
-/* here begins the code generation */
 typedef struct tagKlCodeVal {
   KlValKind kind;
   union {

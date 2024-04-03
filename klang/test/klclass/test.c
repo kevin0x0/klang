@@ -14,7 +14,7 @@ int main(void) {
 
   klapi_pushnil(K, 100);
   klapi_pop(K, 100);
-  KlClass* Person = klclass_create(&klmm, sizeof (KlObject), NULL, NULL);
+  KlClass* Person = klclass_create(&klmm, 1, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
   klapi_pushobj(K, Person, KL_CLASS);
   char key[100];
   char value[100];
@@ -28,20 +28,24 @@ int main(void) {
       break;
     }
     if (strcmp(modi, "shared") == 0) {
-      KlValue val;
-      klvalue_setobj(&val, klstrpool_new_string(K->strpool, value), KL_STRING);
-      klclass_newshared(Person, klstrpool_new_string(K->strpool, key), &val);
+      klapi_pushstring(K, key);
+      klapi_pushstring(K, value);
+      klclass_newshared(Person, &klmm, klapi_getstring(K, -2), klapi_access(K, -1));
+      klapi_pop(K, 2);
     } else {
-      klclass_newlocal(Person, klstrpool_new_string(K->strpool, key));
+      klapi_pushstring(K, key);
+      klclass_newlocal(Person, &klmm, klapi_getstring(K, -1));
+      klapi_pop(K, 1);
     }
   }
-  KlObject* person = klclass_objalloc(Person, &klmm);
+  KlObject* person = klclass_new_object(Person, &klmm);
+  klapi_pushobj(K, person, KL_OBJECT);
   while (true) {
     char cmd[100];
     char buf[100];
     fscanf(fin, "%s %s", cmd, buf);
     if (strcmp(cmd, "show") == 0) {
-      KlValue* val = klobject_getattr(person, klstrpool_new_string(K->strpool, buf));
+      KlValue* val = klobject_getfield(person, klstrpool_new_string(K->strpool, buf));
       if (!val) {
         fprintf(stderr, "no this attribute\n");
         continue;
@@ -52,7 +56,7 @@ int main(void) {
         fprintf(stdout, "%s\n", klstring_content(klvalue_getobj(val, KlString*)));
       }
     } else {
-      KlValue* val = klobject_getattr(person, klstrpool_new_string(K->strpool, buf));
+      KlValue* val = klobject_getfield(person, klstrpool_new_string(K->strpool, buf));
       if (!val) {
         fprintf(stderr, "no this attribute\n");
         continue;

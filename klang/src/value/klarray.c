@@ -5,17 +5,16 @@
 #define KLARRAY_DEFAULT_SIZE      (8)
 
 static KlGCObject* klarray_propagate(KlArray* array, KlGCObject* gclist);
-static void klarray_delete(KlArray* array);
+static void klarray_delete(KlArray* array, KlMM* klmm);
 
 static KlGCVirtualFunc klarray_gcvfunc = { .destructor = (KlGCDestructor)klarray_delete, .propagate = (KlGCProp)klarray_propagate };
 
 
-KlArray* klarray_create(KlClass* arrayclass, size_t capacity) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(arrayclass));
-  KlArray* array = (KlArray*)klclass_objalloc(arrayclass);
+KlArray* klarray_create(KlClass* arrayclass, KlMM* klmm, size_t capacity) {
+  KlArray* array = (KlArray*)klclass_objalloc(arrayclass, klmm);
   if (kl_unlikely(!array)) return NULL;
   if (kl_unlikely(!(array->begin = (KlValue*)klmm_alloc(klmm, sizeof (KlValue) * capacity)))) {
-    klobject_free(klcast(KlObject*, array));
+    klobject_free(klcast(KlObject*, array), klmm);
     return NULL;
   }
   array->end = array->begin + capacity;
@@ -24,26 +23,24 @@ KlArray* klarray_create(KlClass* arrayclass, size_t capacity) {
   return array;
 }
 
-static void klarray_delete(KlArray* array) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(array));
+static void klarray_delete(KlArray* array, KlMM* klmm) {
   klmm_free(klmm, array->begin, klarray_capacity(array) * sizeof (KlValue));
-  klobject_free(klcast(KlObject*, array));
+  klobject_free(klcast(KlObject*, array), klmm);
 }
 
-static KlArray* klarray_constructor(KlClass* arrayclass) {
-  return klarray_create(arrayclass, 1);
+static KlArray* klarray_constructor(KlClass* arrayclass, KlMM* klmm) {
+  return klarray_create(arrayclass, klmm, 1);
 }
 
 KlClass* klarray_class(KlMM* klmm) {
-  return klclass_create(klmm, 32, klobject_attrarrayoffset(KlArray), NULL, (KlObjectConstructor)klarray_constructor);
+  return klclass_create(klmm, 5, klobject_attrarrayoffset(KlArray), NULL, (KlObjectConstructor)klarray_constructor);
 }
 
-bool klarray_check_capacity(KlArray* array, size_t new_capacity) {
+bool klarray_check_capacity(KlArray* array, KlMM* klmm, size_t new_capacity) {
   new_capacity = new_capacity == 0 ? 4 : new_capacity;
   if (klarray_capacity(array) >= new_capacity)
     return true;
   new_capacity = klarray_capacity(array) * 2 > new_capacity ? klarray_capacity(array) * 2 : new_capacity;
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(array));
   KlValue* new_array = (KlValue*)klmm_realloc(klmm, array->begin, sizeof (KlValue) * new_capacity, sizeof (KlValue) * klarray_capacity(array));
   if (!new_array) return false;
   array->current = new_array + (array->current - array->begin);

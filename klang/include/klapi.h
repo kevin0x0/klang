@@ -137,7 +137,7 @@ static inline KlException klapi_pushmap(KlState* state, size_t capacity) {
 static inline KlException klapi_pusharray(KlState* state, size_t capacity) {
   if (!klstack_expand_if_full(&state->stack, klstate_getmm(state)))
     return KL_E_OOM;
-  KlArray* array = klarray_create(state->common->klclass.array, capacity);
+  KlArray* array = klarray_create(state->common->klclass.array, klstate_getmm(state), capacity);
   if (!array) return KL_E_OOM;
   klstack_pushgcobj(&state->stack, (KlGCObject*)array, KL_ARRAY);
   return KL_E_NONE;

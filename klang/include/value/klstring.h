@@ -21,6 +21,7 @@ struct tagKlString {
 
 struct tagKlStrPool {
   KlGCObject gcbase;
+  KlMM* klmm;
   KlString head;
   KlString tail;
   KlString** array;
@@ -36,6 +37,10 @@ KlString* klstrpool_new_string(KlStrPool* strpool, const char* str);
 
 KlString* klstrpool_string_concat(KlStrPool* strpool, KlString* str1, KlString* str2);
 
+
+static inline KlMM* klstrpool_getmm(KlStrPool* strpool) {
+  return strpool->klmm;
+}
 
 static inline KlString* klstrpool_iter_begin(KlStrPool* strpool);
 static inline KlString* klstrpool_iter_end(KlStrPool* strpool);

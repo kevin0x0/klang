@@ -676,7 +676,8 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
       klvalue_setvalue(field, val);                                               \
     } else {                                                                      \
       KlClass* klclass = klobject_class(object);                                  \
-      KlException exception = klclass_newshared(klclass, keystr, val);            \
+      KlMM* klmm = klstate_getmm(state);                                          \
+      KlException exception = klclass_newshared(klclass, klmm, keystr, val);      \
       if (kl_unlikely(exception))                                                 \
         return klexec_handle_setfield_exception(state, exception, keystr);        \
     }                                                                             \
@@ -685,7 +686,8 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
       ? klvalue_getobj(dotable, KlClass*)                                         \
       : state->common->klclass.phony[klvalue_gettype(dotable)];                   \
     klexec_savestate(callinfo->top, callinfo);  /* may add new field */           \
-    KlException exception = klclass_newshared(phony, keystr, val);                \
+    KlMM* klmm = klstate_getmm(state);                                            \
+    KlException exception = klclass_newshared(phony, klmm, keystr, val);          \
     if (kl_unlikely(exception))                                                   \
       return klexec_handle_setfield_exception(state, exception, keystr);          \
   }                                                                               \
@@ -1034,7 +1036,7 @@ KlException klexec_execute(KlState* state) {
         size_t nelem = KLINST_ABX_GETX(inst);
         /* now stack top is first + nelem */
         klexec_savestate(first + nelem, callinfo);  /* creating array may trigger gc */
-        KlArray* arr = klarray_create(state->common->klclass.array, nelem);
+        KlArray* arr = klarray_create(state->common->klclass.array, klstate_getmm(state), nelem);
         if (kl_unlikely(!arr))
           return klstate_throw(state, KL_E_OOM, "out of memory when creating an array");
         KlArrayIter iter = klarray_iter_begin(arr);
@@ -1053,7 +1055,7 @@ KlException klexec_execute(KlState* state) {
         /* now stack top is first + nelem */
         klexec_savestate(first + nelem, callinfo);  /* creating array may trigger gc */
         if (kl_likely(klvalue_checktype(a, KL_ARRAY))) {
-          klarray_push_back(klvalue_getobj(a, KlArray*), first, nelem);
+          klarray_push_back(klvalue_getobj(a, KlArray*), klstate_getmm(state), first, nelem);
         } else {
           KlException exception = klexec_domultiargsmethod(state, a, a, nelem, state->common->string.append);
           if (kl_unlikely(exception)) return exception;
@@ -1301,7 +1303,7 @@ KlException klexec_execute(KlState* state) {
         KlString* keystr = klvalue_getobj(fieldname, KlString*);
         KlClass* klclass = klvalue_getobj(classval, KlClass*);
         klexec_savestate(callinfo->top, callinfo);  /* add new field */
-        KlException exception = klclass_newlocal(klclass, keystr);
+        KlException exception = klclass_newlocal(klclass, klstate_getmm(state), keystr);
         if (kl_unlikely(exception))
           return klexec_handle_newlocal_exception(state, exception, keystr);
         break;
@@ -1546,7 +1548,7 @@ KlException klexec_execute(KlState* state) {
         if (kl_unlikely(!klvalue_checktype(klclass, KL_CLASS)))
           return klstate_throw(state, KL_E_TYPE, "%s is not a class", klvalue_typename(klvalue_gettype(klclass)));
         klexec_savestate(callinfo->top, callinfo);
-        KlObject* object = klclass_new_object(klvalue_getobj(klclass, KlClass*));
+        KlObject* object = klclass_new_object(klvalue_getobj(klclass, KlClass*), klstate_getmm(state));
         if (kl_unlikely(!object))
           return klstate_throw(state, KL_E_OOM, "out of memory when constructing object");
         klvalue_setobj(stkbase + KLINST_ABC_GETA(inst), object, KL_OBJECT);

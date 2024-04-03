@@ -5,18 +5,18 @@
 #include <string.h>
 
 static KlGCObject* klclass_propagate(KlClass* klclass, KlGCObject* gclist);
-static void klclass_delete(KlClass* klclass);
+static void klclass_delete(KlClass* klclass, KlMM* klmm);
 
 static KlGCVirtualFunc klclass_gcvfunc = { .destructor = (KlGCDestructor)klclass_delete, .propagate = (KlGCProp)klclass_propagate };
 
 static KlClassCeil* klclass_getfreeceil(KlClass* klclass);
-static bool klclass_rehash(KlClass* klclass);
+static bool klclass_rehash(KlClass* klclass, KlMM* klmm);
 
 
 KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* constructor_data, KlObjectConstructor constructor) {
   KlClass* klclass = (KlClass*)klmm_alloc(klmm, sizeof (KlClass));
   if (kl_unlikely(!klclass)) return NULL;
-  klclass->capacity = 1 << capacity;
+  klclass->capacity = (size_t)1 << capacity;
   klclass->lastfree = klclass->capacity;
   klclass->constructor = constructor ? constructor : klclass_default_constructor;
   klclass->constructor_data = constructor_data;
@@ -62,8 +62,7 @@ KlClass* klclass_inherit(KlMM* klmm, KlClass* parent) {
   return klclass;
 }
 
-static bool klclass_rehash(KlClass* klclass) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(klclass));
+static bool klclass_rehash(KlClass* klclass, KlMM* klmm) {
   KlClassCeil* oldceils = klclass->ceils;
   KlClassCeil* endceils = oldceils + klclass->capacity;
   size_t new_capacity = klclass->capacity * 2;
@@ -82,7 +81,7 @@ static bool klclass_rehash(KlClass* klclass) {
   klclass->capacity = new_capacity;
   klclass->lastfree = new_capacity; /* reset lastfree */
   for (KlClassCeil* ceil = oldceils; ceil != endceils; ++ceil) {
-    KlClassCeil* inserted = klclass_add(klclass, ceil->key);
+    KlClassCeil* inserted = klclass_add(klclass, klmm, ceil->key);
     klvalue_setvalue(&inserted->value, &ceil->value);
   }
   klmm_free(klmm, oldceils, (endceils - oldceils) * sizeof (KlClassCeil));
@@ -101,7 +100,7 @@ static KlClassCeil* klclass_getfreeceil(KlClass* klclass) {
   return NULL;
 }
 
-KlException klclass_set(KlClass* klclass, struct tagKlString* key, KlValue* value) {
+KlException klclass_set(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value) {
   size_t mask = klclass->capacity - 1;
   size_t keyindex = klstring_hash(key) & mask;
   KlClassCeil* ceils = klclass->ceils;
@@ -122,9 +121,9 @@ KlException klclass_set(KlClass* klclass, struct tagKlString* key, KlValue* valu
     /* not found, insert new one */
     KlClassCeil* newceil = klclass_getfreeceil(klclass);
     if (!newceil) { /* no ceil */
-      if (kl_unlikely(!klclass_rehash(klclass)))
+      if (kl_unlikely(!klclass_rehash(klclass, klmm)))
         return KL_E_OOM;
-      KlClassCeil* ceil = klclass_add(klclass, key);
+      KlClassCeil* ceil = klclass_add(klclass, klmm, key);
       if (kl_unlikely(!ceil)) return KL_E_OOM;
       klvalue_setvalue(&ceil->value, value);
       return KL_E_NONE;
@@ -159,16 +158,16 @@ KlException klclass_set(KlClass* klclass, struct tagKlString* key, KlValue* valu
   }
 }
 
-KlClassCeil* klclass_add(KlClass* klclass, KlString* key) {
+KlClassCeil* klclass_add(KlClass* klclass, KlMM* klmm, KlString* key) {
   size_t mask = klclass->capacity - 1;
   size_t keyindex = klstring_hash(key) & mask;
   KlClassCeil* ceils = klclass->ceils;
   if (ceils[keyindex].key) {
     KlClassCeil* newceil = klclass_getfreeceil(klclass);
     if (!newceil) { /* no ceil */
-      if (kl_unlikely(!klclass_rehash(klclass)))
+      if (kl_unlikely(!klclass_rehash(klclass, klmm)))
         return NULL;
-      return klclass_add(klclass, key);
+      return klclass_add(klclass, klmm, key);
     }
 
     size_t ceilindex = klstring_hash(ceils[keyindex].key) & mask;
@@ -237,8 +236,7 @@ static KlGCObject* klclass_propagate(KlClass* klclass, KlGCObject* gclist) {
   return gclist;
 }
 
-static void klclass_delete(KlClass* klclass) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(klclass));
+static void klclass_delete(KlClass* klclass, KlMM* klmm) {
   klmm_free(klmm, klclass->ceils, klclass->capacity * sizeof (KlClassCeil));
   klmm_free(klmm, klclass, sizeof (KlClass));
 }
@@ -252,27 +250,28 @@ static void klclass_delete(KlClass* klclass) {
 
 
 
-static void klobject_delete(KlObject* klobject);
+static void klobject_delete(KlObject* object, KlMM* klmm);
 
 static KlGCVirtualFunc klobject_gcvfunc = { .destructor = (KlGCDestructor)klobject_delete, .propagate = (KlGCProp)klobject_propagate };
 
 
-KlObject* klclass_default_constructor(KlClass* klclass) {
-  KlObject* obj = klclass_objalloc(klclass);
+KlObject* klclass_default_constructor(KlClass* klclass, KlMM* klmm) {
+  KlObject* obj = klclass_objalloc(klclass, klmm);
   if (!obj) return NULL;
-  klmm_gcobj_enable(klclass_getmm(klclass), klmm_to_gcobj(obj), &klobject_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(obj), &klobject_gcvfunc);
   return obj;
 }
 
-KlObject* klclass_objalloc(KlClass* klclass) {
+KlObject* klclass_objalloc(KlClass* klclass, KlMM* klmm) {
   size_t nlocal = klclass->nlocal;
   size_t allocsize = klclass->attroffset + sizeof (KlValue) * nlocal;
-  KlObject* obj = (KlObject*)klmm_alloc(klclass_getmm(klclass), allocsize);
+  KlObject* obj = (KlObject*)klmm_alloc(klmm, allocsize);
   if (!obj) return NULL;
   KlValue* attrs = klobject_attrs_by_class(obj, klclass);
   for (size_t i = 0; i < nlocal; ++i)
     klvalue_setnil(&attrs[i]);
   obj->klclass = klclass;
+  obj->attrs = attrs;
   obj->size = allocsize;
   return obj;
 }
@@ -288,6 +287,6 @@ KlGCObject* klobject_propagate(KlObject* object, KlGCObject* gclist) {
   return gclist;
 }
 
-static void klobject_delete(KlObject* object) {
-  klobject_free(object);
+static void klobject_delete(KlObject* object, KlMM* klmm) {
+  klobject_free(object, klmm);
 }

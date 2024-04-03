@@ -38,6 +38,9 @@ struct tagKlSymTbl {
   };
   KlSymbolPool* symbolpool;
   KlStrTab* strtab;
+  struct {
+    bool referenced;
+  } info;
 };
 
 

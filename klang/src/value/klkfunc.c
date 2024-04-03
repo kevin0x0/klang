@@ -2,7 +2,7 @@
 #include "klang/include/value/klvalue.h"
 
 static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlGCObject* gclist);
-static void klkfunc_delete(KlKFunction* kfunc);
+static void klkfunc_delete(KlKFunction* kfunc, KlMM* klmm);
 
 static KlGCVirtualFunc klkfunc_gcvfunc = { .destructor = (KlGCDestructor)klkfunc_delete, .propagate = (KlGCProp)klkfunc_propagate };
 
@@ -43,8 +43,7 @@ static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlGCObject* gclist) {
   return gclist;
 }
 
-static void klkfunc_delete(KlKFunction* kfunc) {
-  KlMM* klmm = klmm_gcobj_getmm(klmm_to_gcobj(kfunc));
+static void klkfunc_delete(KlKFunction* kfunc, KlMM* klmm) {
   klmm_free(klmm, kfunc->constants, kfunc->nconst * sizeof (KlValue));
   klmm_free(klmm, kfunc->refinfo, kfunc->nref * sizeof (KlRefInfo));
   klmm_free(klmm, kfunc->code, kfunc->codelen * sizeof (KlInstruction));

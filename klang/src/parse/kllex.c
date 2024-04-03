@@ -314,7 +314,7 @@ void kllex_next(KlLex* lex) {
     }
     case KLTK_FLOAT: {
       kllex_handlefloat(lex, buf, strlength);
-      kllex_return(KLTK_INT);
+      kllex_return(KLTK_FLOAT);
     }
     case KLTK_ID: {
       size_t len = buf[0] == '\'' ? kllex_escapeid(lex, buf) : strlength;

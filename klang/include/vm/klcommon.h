@@ -34,7 +34,7 @@ typedef struct tagKlCommon {
   size_t ref_count;
 } KlCommon;
 
-KlCommon* klcommon_create(KlStrPool* strpool, KlMapNodePool* mapnodepool);
+KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnodepool);
 static inline void klcommon_delete(KlCommon* common, KlMM* klmm);
 static inline void klcommon_pin(KlCommon* common);
 static inline void klcommon_unpin(KlCommon* common, KlMM* klmm);

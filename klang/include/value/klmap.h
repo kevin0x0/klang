@@ -120,6 +120,9 @@ KlMapNodePool* klmapnodepool_create(KlMM* klmm);
 static inline void klmapnodepool_pin(KlMapNodePool* nodepool);
 static inline void klmapnodepool_unpin(KlMapNodePool* nodepool);
 void klmapnodepool_delete(KlMapNodePool* nodepool);
+
+static inline KlMM* klmapnodepool_getmm(KlMapNodePool* nodepool);
+
 static inline KlMapNode* klmapnodepool_alloc(KlMapNodePool* nodepool);
 static inline void klmapnodepool_free(KlMapNodePool* nodepool, KlMapNode* node);
 static inline void klmapnodepool_freelist(KlMapNodePool* nodepool, KlMapNode* head, KlMapNode* tail, size_t count);
@@ -133,6 +136,10 @@ static inline void klmapnodepool_unpin(KlMapNodePool* nodepool) {
 
 static inline void klmapnodepool_pin(KlMapNodePool* nodepool) {
   ++nodepool->ref_count;
+}
+
+static inline KlMM* klmapnodepool_getmm(KlMapNodePool* nodepool) {
+  return nodepool->klmm;
 }
 
 static inline KlMapNode* klmapnodepool_alloc(KlMapNodePool* nodepool) {

@@ -19,16 +19,16 @@ typedef struct tagKlArray {
 typedef KlValue* KlArrayIter;
 
 KlClass* klarray_class(KlMM* klmm);
-KlArray* klarray_create(KlClass* arrayclass, size_t capacity);
+KlArray* klarray_create(KlClass* arrayclass, KlMM* klmm, size_t capacity);
 
-bool klarray_check_capacity(KlArray* array, size_t capacity);
+bool klarray_check_capacity(KlArray* array, KlMM* klmm, size_t capacity);
 
 static inline size_t klarray_size(KlArray* array);
 static inline size_t klarray_capacity(KlArray* array);
 
-static inline bool klarray_expand(KlArray* array);
+static inline bool klarray_expand(KlArray* array, KlMM* klmm);
 
-static inline bool klarray_push_back(KlArray* array, KlValue* vals, size_t nval);
+static inline bool klarray_push_back(KlArray* array, KlMM* klmm, KlValue* vals, size_t nval);
 static inline void klarray_pop_back(KlArray* array);
 static inline void klarray_multipop(KlArray* array, size_t count);
 static inline KlValue* klarray_top(KlArray* array);
@@ -55,12 +55,12 @@ static inline size_t klarray_capacity(KlArray* array) {
 }
 
 
-static inline bool klarray_expand(KlArray* array) {
-  return klarray_check_capacity(array, klarray_size(array) * 2);
+static inline bool klarray_expand(KlArray* array, KlMM* klmm) {
+  return klarray_check_capacity(array, klmm, klarray_size(array) * 2);
 }
 
-static inline bool klarray_push_back(KlArray* array, KlValue* vals, size_t nval) {
-  if (kl_unlikely(!klarray_check_capacity(array, klarray_size(array) + nval))) {
+static inline bool klarray_push_back(KlArray* array, KlMM* klmm, KlValue* vals, size_t nval) {
+  if (kl_unlikely(!klarray_check_capacity(array, klmm, klarray_size(array) + nval))) {
     return false;
   }
   while (nval--)
