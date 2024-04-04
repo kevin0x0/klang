@@ -35,6 +35,9 @@ def div(KLTK_DIV):
 def mod(KLTK_MOD):
   (KLTK_MOD) $%
 
+def idiv(KLTK_IDIV):
+  (KLTK_IDIV) $//
+
 def append(KLTK_APPEND):
   (KLTK_APPEND) $\+\+
 
@@ -59,14 +62,20 @@ def eq(KLTK_EQ):
 def ne(KLTK_NE):
   (KLTK_NE) $!=
 
+def is(KLTK_IS):
+  (KLTK_IS) $is | ===
+
+def is(KLTK_ISNOT):
+  (KLTK_ISNOT) $isnot | !==
+
 def not(KLTK_NOT):
   (KLTK_NOT) $not | !
 
 def and(KLTK_AND):
-  (KLTK_AND) $&&
+  (KLTK_AND) $&& | and
 
 def or(KLTK_OR):
-  (KLTK_OR) $\|\|
+  (KLTK_OR) $\|\| | or
 
 def lp(KLTK_LPAREN):
   (KLTK_LPAREN) $\(

@@ -97,6 +97,8 @@ static inline size_t klgen_currcodesize(KlGenUnit* gen) {
 
 static inline void klgen_popinst(KlGenUnit* gen, size_t npop) {
   klinstarr_pop_back(&gen->code, npop);
+  if (gen->config.debug)
+    klfparr_pop_back(&gen->position, npop);
 }
 
 static inline void klgen_popinstto(KlGenUnit* gen, size_t to) {

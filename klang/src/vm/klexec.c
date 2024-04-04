@@ -443,15 +443,30 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
 }
 
 #define klexec_bindiv(op, a, b, c) {                                              \
-  if (kl_likely(klvalue_bothinteger((b), (c)))) {                                 \
-    KlInt cval = klvalue_getint((c));                                             \
-    if (kl_unlikely(cval == 0)) {                                                 \
-      return klstate_throw(state, KL_E_ZERO, "divided by zero");                  \
-    }                                                                             \
-    klvalue_setint((a), klop_##op(klvalue_getint((b)), cval));                    \
-  } else if (kl_likely(klvalue_bothnumber((b), (c)))) {                           \
+  if (kl_likely(klvalue_bothnumber((b), (c)))) {                                  \
     klvalue_setfloat((a), klop_##op(klvalue_getnumber((b)),                       \
                                     klvalue_getnumber((c))));                     \
+  } else {                                                                        \
+    klexec_savestate(callinfo->top, callinfo); /* in case of error and gc */      \
+    KlString* opname = state->common->string.op;                                  \
+    KlException exception = klexec_dobinopmethod(state, (a), (b), (c), opname);   \
+    if (kl_unlikely(exception)) return exception;                                 \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
+      KlValue* newbase = state->callinfo->base;                                   \
+      klexec_updateglobal(newbase);                                               \
+    } else {  /* C function or C closure */                                       \
+      /* stack may have grown. restore stkbase. */                                \
+      stkbase = callinfo->base;                                                   \
+    }                                                                             \
+  }                                                                               \
+}
+
+#define klexec_binidiv(op, a, b, c) {                                             \
+  if (kl_likely(klvalue_bothinteger((b), (c)))) {                                 \
+    KlInt cval = klvalue_getint((c));                                             \
+    if (kl_unlikely(cval == 0))                                                   \
+      return klstate_throw(state, KL_E_ZERO, "divided by zero");                  \
+    klvalue_setint((a), klop_##op(klvalue_getint((b)), cval));                    \
   } else {                                                                        \
     klexec_savestate(callinfo->top, callinfo); /* in case of error and gc */      \
     KlString* opname = state->common->string.op;                                  \
@@ -511,14 +526,38 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
   }                                                                               \
 }
 
+#define klexec_binidiv_i(op, a, b, imm) {                                         \
+  if (kl_likely(klvalue_checktype((b), KL_INT))) {                                \
+    if (kl_unlikely((imm) == 0))                                                  \
+      return klstate_throw(state, KL_E_ZERO, "divided by zero");                  \
+    klvalue_setint((a), klop_##op(klvalue_getint((b)), imm));                     \
+  } else {                                                                        \
+    klexec_savestate(callinfo->top, callinfo); /* in case of error and gc */      \
+    KlString* opname = state->common->string.op;                                  \
+    KlValue tmp;                                                                  \
+    klvalue_setint(&tmp, (imm));                                                  \
+    KlException exception = klexec_dobinopmethod(state, (a), (b), &tmp, opname);  \
+    if (kl_unlikely(exception)) return exception;                                 \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
+      KlValue* newbase = state->callinfo->base;                                   \
+      klexec_updateglobal(newbase);                                               \
+    } else {  /* C function or C closure */                                       \
+      /* stack may have grown. restore stkbase. */                                \
+      stkbase = callinfo->base;                                                   \
+    }                                                                             \
+  }                                                                               \
+}
+
 #define klexec_binmod_i(op, a, b, imm) {                                          \
   if (kl_likely(klvalue_checktype((b), KL_INT))) {                                \
+    if (kl_unlikely((imm) == 0))                                                  \
+      return klstate_throw(state, KL_E_ZERO, "divided by zero");                  \
     klvalue_setint((a), klop_##op(klvalue_getint((b)), (imm)));                   \
   } else {                                                                        \
     klexec_savestate(callinfo->top, callinfo); /* in case of error and gc */      \
     KlString* opname = state->common->string.op;                                  \
     KlValue tmp;                                                                  \
-    klvalue_setint(&tmp, imm);                                                    \
+    klvalue_setint(&tmp, (imm));                                                  \
     KlException exception = klexec_dobinopmethod(state, (a), (b), &tmp, opname);  \
     if (kl_unlikely(exception)) return exception;                                 \
     if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
@@ -748,6 +787,13 @@ KlException klexec_execute(KlState* state) {
         klexec_binmod(mod, a, b, c);
         break;
       }
+      case KLOPCODE_IDIV: {
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
+        KlValue* c = stkbase + KLINST_ABC_GETC(inst);
+        klexec_binidiv(div, a, b, c);
+        break;
+      }
       case KLOPCODE_CONCAT: {
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);
         KlValue* b = stkbase + KLINST_ABC_GETB(inst);
@@ -793,22 +839,18 @@ KlException klexec_execute(KlState* state) {
         klexec_binop_i(mul, a, b, c);
         break;
       }
-      case KLOPCODE_DIVI: {
-        KlValue* a = stkbase + KLINST_ABI_GETA(inst);
-        KlValue* b = stkbase + KLINST_ABI_GETB(inst);
-        KlInt c = KLINST_ABI_GETI(inst);
-        if (kl_unlikely(c == 0 && klvalue_checktype(b, KL_INT)))
-          return klstate_throw(state, KL_E_ZERO, "divided by zero");
-        klexec_binop_i(div, a, b, c);
-        break;
-      }
       case KLOPCODE_MODI: {
         KlValue* a = stkbase + KLINST_ABI_GETA(inst);
         KlValue* b = stkbase + KLINST_ABI_GETB(inst);
         KlInt c = KLINST_ABI_GETI(inst);
-        if (kl_unlikely(c == 0 && klvalue_checktype(b, KL_INT)))
-          return klstate_throw(state, KL_E_ZERO, "divided by zero");
         klexec_binmod_i(mod, a, b, c);
+        break;
+      }
+      case KLOPCODE_IDIVI: {
+        KlValue* a = stkbase + KLINST_ABI_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABI_GETB(inst);
+        KlInt imm = KLINST_ABI_GETI(inst);
+        klexec_binidiv_i(div, a, b, imm);
         break;
       }
       case KLOPCODE_ADDC: {
@@ -844,6 +886,13 @@ KlException klexec_execute(KlState* state) {
         KlValue* b = stkbase + KLINST_ABX_GETB(inst);
         KlValue* c = constants + KLINST_ABX_GETX(inst);
         klexec_binmod(mod, a, b, c);
+        break;
+      }
+      case KLOPCODE_IDIVC: {
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
+        KlValue* c = constants + KLINST_ABC_GETC(inst);
+        klexec_binidiv(div, a, b, c);
         break;
       }
       case KLOPCODE_NEG: {
@@ -1354,6 +1403,20 @@ KlException klexec_execute(KlState* state) {
         int offset = KLINST_XI_GETI(inst);
         if (klexec_if(callinfo->top) == cond)
           pc += offset;
+        break;
+      }
+      case KLOPCODE_IS: {
+        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
+        kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
+        KlInstruction extra = *pc++;
+        bool cond = KLINST_XI_GETX(extra);
+        int offset = KLINST_XI_GETI(extra);
+        if (klvalue_sametype(a, b) && klvalue_sameinstance(a, b)) {
+          if (cond) pc += offset;
+        } else {
+          if (cond) pc += offset;
+        }
         break;
       }
       case KLOPCODE_EQ: {

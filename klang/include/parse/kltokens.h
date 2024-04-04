@@ -17,6 +17,7 @@ typedef enum tagKlTokenKind {
   KLTK_MUL,
   KLTK_DIV,
   KLTK_MOD,
+  KLTK_IDIV,
   KLTK_APPEND,
   /* compare */
   KLTK_LT,
@@ -25,6 +26,8 @@ typedef enum tagKlTokenKind {
   KLTK_GE,
   KLTK_EQ,
   KLTK_NE,
+  KLTK_IS,
+  KLTK_ISNOT,
   /* boolean */
   KLTK_AND,
   KLTK_OR,
@@ -74,7 +77,7 @@ typedef enum tagKlTokenKind {
 
 #define kltoken_isbinop(kind)     ((kind) >= KLTK_CONCAT && (kind) <= KLTK_OR)
 #define kltoken_isarith(kind)     ((kind) >= KLTK_ADD && (kind) <= KLTK_MOD)
-#define kltoken_isrelation(kind)  ((kind) >= KLTK_LT && (kind) <= KLTK_NE)
+#define kltoken_isrelation(kind)  ((kind) >= KLTK_LT && (kind) <= KLTK_ISNOT)
 
 const char* kltoken_desc(KlTokenKind kind);
 

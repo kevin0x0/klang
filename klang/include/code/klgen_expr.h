@@ -16,7 +16,7 @@ static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t 
 void klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst, size_t nwanted);
 void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval);
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args);
-void klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target);
+KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target);
 KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst, size_t target);
 KlCodeVal klgen_exprbin(KlGenUnit* gen, KlCstBin* bincst, size_t target);
 void klgen_exprarr(KlGenUnit* gen, KlCstArray* arrcst, size_t target);

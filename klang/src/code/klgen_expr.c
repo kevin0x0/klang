@@ -4,6 +4,7 @@
 #include "klang/include/code/klgen_exprbool.h"
 #include "klang/include/code/klgen_stmt.h"
 #include "klang/include/cst/klcst_expr.h"
+#include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klinst.h"
 
 static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, size_t target);
@@ -24,7 +25,7 @@ void klgen_exprarrgen(KlGenUnit* gen, KlCstArrayGenerator* arrgencst, size_t tar
   KlCodeVal* prevbjmp = gen->info.breakjmp;
   gen->info.continuejmp = NULL;
   gen->info.breakjmp = NULL;
-  klgen_stmtblock(gen, arrgencst->block);
+  klgen_stmtblock(gen, klcast(KlCstStmtList*, arrgencst->block));
   gen->info.continuejmp = prevcjmp;
   gen->info.breakjmp = prevbjmp;
 }
@@ -43,7 +44,7 @@ void klgen_exprmap(KlGenUnit* gen, KlCstMap* mapcst, size_t target) {
   klgen_pushinst(gen, klinst_mkmap(target, oristktop, sizefield), klgen_cstposition(mapcst));
   size_t stktop;
   if (oristktop == target) {
-    klgen_stackfree(gen, target + 1);
+    klgen_stackalloc1(gen);
     stktop = klgen_stacktop(gen);
   } else {
     stktop = oristktop;
@@ -285,6 +286,8 @@ static KlInstruction klgen_bininst(KlCstBin* bincst, size_t stkid, size_t leftid
       return klinst_div(stkid, leftid, rightid);
     case KLTK_MOD:
       return klinst_mod(stkid, leftid, rightid);
+    case KLTK_IDIV:
+      return klinst_idiv(stkid, leftid, rightid);
     case KLTK_CONCAT:
       return klinst_concat(stkid, leftid, rightid);
     default: {
@@ -302,10 +305,10 @@ static KlInstruction klgen_bininsti(KlCstBin* bincst, size_t stkid, size_t lefti
       return klinst_subi(stkid, leftid, imm);
     case KLTK_MUL:
       return klinst_muli(stkid, leftid, imm);
-    case KLTK_DIV:
-      return klinst_divi(stkid, leftid, imm);
     case KLTK_MOD:
       return klinst_modi(stkid, leftid, imm);
+    case KLTK_IDIV:
+      return klinst_idivi(stkid, leftid, imm);
     default: {
       kl_assert(false, "control flow should not reach here");
       return 0;
@@ -325,6 +328,8 @@ static KlInstruction klgen_bininstc(KlCstBin* bincst, size_t stkid, size_t lefti
       return klinst_divc(stkid, leftid, conidx);
     case KLTK_MOD:
       return klinst_modc(stkid, leftid, conidx);
+    case KLTK_IDIV:
+      return klinst_idivc(stkid, leftid, conidx);
     default: {
       kl_assert(false, "control flow should not reach here");
       return 0;
@@ -332,7 +337,7 @@ static KlInstruction klgen_bininstc(KlCstBin* bincst, size_t stkid, size_t lefti
   }
 }
 
-static KlCodeVal klgen_arithcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, KlCodeVal right, size_t target) {
+static KlCodeVal klgen_tryarithcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, KlCodeVal right, size_t target) {
   if (left.kind == KLVAL_INTEGER && right.kind == KLVAL_INTEGER) {
     switch (bincst->op) {
       case KLTK_ADD: {
@@ -345,11 +350,9 @@ static KlCodeVal klgen_arithcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal
         return klcodeval_integer(left.intval * right.intval);
       }
       case KLTK_DIV: {
-        if (right.intval == 0) {
-          klgen_error(gen, klcst_begin(bincst), klcst_end(bincst), "divided by zero");
-          return klcodeval_float(1.0);
-        }
-        return klcodeval_integer(left.intval / right.intval);
+        KlFloat f1 = (KlFloat)left.intval;
+        KlFloat f2 = (KlFloat)right.intval;
+        return klcodeval_float(f1 / f2);
       }
       case KLTK_MOD: {
         if (right.intval == 0) {
@@ -357,6 +360,13 @@ static KlCodeVal klgen_arithcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal
           return klcodeval_float(1.0);
         }
         return klcodeval_integer(left.intval % right.intval);
+      }
+      case KLTK_IDIV: {
+        if (right.intval == 0) {
+          klgen_error(gen, klcst_begin(bincst), klcst_end(bincst), "divided by zero");
+          return klcodeval_float(1.0);
+        }
+        return klcodeval_integer(left.intval / right.intval);
       }
       default: {
         kl_assert(false, "control flow should not reach here");
@@ -377,21 +387,7 @@ static KlCodeVal klgen_arithcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal
         return klcodeval_float(l * r);
       }
       case KLTK_DIV: {
-        /* why not compute this in compile time ? */
-        size_t finstktop = klgen_stacktop(gen) == target ? target + 1 : klgen_stacktop(gen);
-        klgen_putinstack(gen, &left, klgen_cstposition(bincst->loperand));
-        KlConstant constant = { .type = KL_FLOAT, .floatval = right.floatval };
-        KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
-        klgen_oomifnull(conent);
-        if (klinst_inurange(conent->index, 8)) {
-          klgen_pushinst(gen, klinst_divc(target, left.index, conent->index), klgen_cstposition(bincst));
-        } else {
-          size_t tmp = klgen_stackalloc1(gen);
-          klgen_pushinst(gen, klinst_loadc(tmp, conent->index), klgen_cstposition(bincst->roperand));
-          klgen_pushinst(gen, klinst_div(target, left.index, tmp), klgen_cstposition(bincst));
-        }
-        klgen_stackfree(gen, finstktop);
-        return klcodeval_stack(target);
+        return klcodeval_float(l / r);
       }
       case KLTK_MOD: {
         size_t finstktop = klgen_stacktop(gen) == target ? target + 1 : klgen_stacktop(gen);
@@ -405,6 +401,22 @@ static KlCodeVal klgen_arithcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal
           size_t tmp = klgen_stackalloc1(gen);
           klgen_pushinst(gen, klinst_loadc(tmp, conent->index), klgen_cstposition(bincst->roperand));
           klgen_pushinst(gen, klinst_mod(target, left.index, tmp), klgen_cstposition(bincst));
+        }
+        klgen_stackfree(gen, finstktop);
+        return klcodeval_stack(target);
+      }
+      case KLTK_IDIV: {
+        size_t finstktop = klgen_stacktop(gen) == target ? target + 1 : klgen_stacktop(gen);
+        klgen_putinstack(gen, &left, klgen_cstposition(bincst->loperand));
+        KlConstant constant = { .type = KL_FLOAT, .floatval = right.floatval };
+        KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
+        klgen_oomifnull(conent);
+        if (klinst_inurange(conent->index, 8)) {
+          klgen_pushinst(gen, klinst_idivc(target, left.index, conent->index), klgen_cstposition(bincst));
+        } else {
+          size_t tmp = klgen_stackalloc1(gen);
+          klgen_pushinst(gen, klinst_loadc(tmp, conent->index), klgen_cstposition(bincst->roperand));
+          klgen_pushinst(gen, klinst_idiv(target, left.index, tmp), klgen_cstposition(bincst));
         }
         klgen_stackfree(gen, finstktop);
         return klcodeval_stack(target);
@@ -434,7 +446,7 @@ static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCo
       if (stksize_before_evaluete_right == klgen_currcodesize(gen))
         klgen_popinstto(gen, currcodesize);   /* pop the instruction that put left on stack */
       klgen_stackfree(gen, oristktop);
-      return klgen_arithcomptime(gen, bincst, left, right, target);
+      return klgen_tryarithcomptime(gen, bincst, left, right, target);
     }
     if (left.kind == KLVAL_STRING && bincst->op == KLTK_CONCAT) {
       if (stksize_before_evaluete_right == klgen_currcodesize(gen))
@@ -468,7 +480,7 @@ static KlCodeVal klgen_exprbinrightnonstk(KlGenUnit* gen, KlCstBin* bincst, KlCo
       if (bincst->op == KLTK_CONCAT) {
         klgen_putinstack(gen, &right, klgen_cstposition(bincst->roperand));
         klgen_pushinst(gen, klgen_bininst(bincst, target, left.index, right.index), klgen_cstposition(bincst));
-      } else if (klinst_inrange(right.intval, 8)) {
+      } else if (klinst_inrange(right.intval, 8) && bincst->op != KLTK_DIV) {
         klgen_pushinst(gen, klgen_bininsti(bincst, target, left.index, right.intval), klgen_cstposition(bincst));
       } else {
         KlConstant con = { .type = KL_INT, .intval = right.intval };
@@ -559,7 +571,7 @@ KlCodeVal klgen_exprbin(KlGenUnit* gen, KlCstBin* bincst, size_t target) {
   }
 }
 
-void klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target) {
+KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target) {
   switch (postcst->op) {
     case KLTK_CALL: {
       size_t stktop = klgen_stacktop(gen);
@@ -568,6 +580,7 @@ void klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target) {
         klgen_pushinst(gen, klinst_move(target, stktop), klgen_cstposition(postcst));
         klgen_stackfree(gen, stktop);
       }
+      return klcodeval_stack(target);
     }
     case KLTK_INDEX: {
       size_t stktop = klgen_stacktop(gen);
@@ -581,6 +594,7 @@ void klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target) {
         klgen_pushinst(gen, klinst_index(target, indexable.index, index.index), klgen_cstposition(postcst));
       }
       klgen_stackfree(gen, stktop == target ? target + 1 : stktop);
+      return klcodeval_stack(target);
     }
     case KLTK_APPEND: {
       size_t stktop = klgen_stacktop(gen);
@@ -589,14 +603,15 @@ void klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target) {
       size_t base = klgen_stacktop(gen);
       size_t narg = klgen_passargs(gen, postcst->post);
       klgen_pushinst(gen, klinst_append(appendable.index, base, narg), klgen_cstposition(postcst));
-      if (target != appendable.index) {
+      if (append_target && target != appendable.index) {
         klgen_pushinst(gen, klinst_move(target, appendable.index), klgen_cstposition(postcst));
       }
       klgen_stackfree(gen, target == stktop ? target + 1 : stktop);
+      return klcodeval_stack(append_target ? target : appendable.index);
     }
     default: {
       kl_assert(false, "control flow should not reach here");
-      return;
+      return klcodeval_nil();
     }
   }
 }
@@ -696,8 +711,7 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlCst* cst) {
     }
     case KLCST_EXPR_POST: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
-      klgen_exprpost(gen, klcast(KlCstPost*, cst), target);
-      return klcodeval_stack(target);
+      return klgen_exprpost(gen, klcast(KlCstPost*, cst), target, false);
     }
     case KLCST_EXPR_DOT: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
@@ -776,8 +790,7 @@ KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlCst* cst, size_t target) {
       return klcodeval_stack(target);
     }
     case KLCST_EXPR_POST: {
-      klgen_exprpost(gen, klcast(KlCstPost*, cst), target);
-      return klcodeval_stack(target);
+      return klgen_exprpost(gen, klcast(KlCstPost*, cst), target, true);
     }
     case KLCST_EXPR_DOT: {
       klgen_exprdot(gen, klcast(KlCstDot*, cst), target);

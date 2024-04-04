@@ -655,7 +655,7 @@ static KlCst* klparser_arrowfuncbody(KlParser* parser, KlLex* lex) {
   kllex_next(lex);
   KlCst* expr = klparser_expr(parser, lex);
   klparser_returnifnull(expr);
-  KlCst* retval = klparser_singletontuple(parser, lex, expr);
+  KlCst* retval = klcst_kind(expr) == KLCST_EXPR_TUPLE ? expr : klparser_singletontuple(parser, lex, expr);
   klparser_returnifnull(retval);
   KlCstStmtReturn* stmtreturn = klcst_stmtreturn_create(retval, expr->begin, expr->end);
   klparser_oomifnull(stmtreturn);
@@ -790,12 +790,15 @@ KlCst* klparser_exprbin(KlParser* parser, KlLex* lex, int prio) {
     [KLTK_GT]     = 3,
     [KLTK_EQ]     = 3,
     [KLTK_NE]     = 3,
+    [KLTK_IS]     = 3,
+    [KLTK_ISNOT]  = 3,
     [KLTK_CONCAT] = 4,
     [KLTK_ADD]    = 5,
     [KLTK_MINUS]  = 5,
     [KLTK_MUL]    = 6,
     [KLTK_DIV]    = 6,
     [KLTK_MOD]    = 6,
+    [KLTK_IDIV]   = 6,
   };
   KlCst* left = klparser_exprpre(parser, lex);
   KlTokenKind op = kllex_tokkind(lex);
