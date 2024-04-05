@@ -46,6 +46,7 @@ typedef enum tagKlTokenKind {
   KLTK_SEMI,
   KLTK_COLON,
   KLTK_QUESTION,
+  KLTK_DARROW,
   KLTK_ARROW,
 
   KLTK_ASSIGN,

@@ -1,5 +1,5 @@
-let sum = 0;
-for (let i = 0; i < 1000000000; ++i)
-  sum += i;
+function f(n) {
+  return n <= 1 && n || f(n - 1) + f(n - 2);
+}
 
-console.log(sum)
+console.log(f(36))

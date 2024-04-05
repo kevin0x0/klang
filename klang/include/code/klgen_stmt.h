@@ -6,7 +6,7 @@
 #include "klang/include/cst/klcst_stmt.h"
 
 
-void klgen_stmtblock(KlGenUnit* gen, KlCstStmtList* stmtlist);
+bool klgen_stmtblock(KlGenUnit* gen, KlCstStmtList* stmtlist);
 
 
 #endif

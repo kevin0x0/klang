@@ -22,13 +22,14 @@ typedef struct tagKlLex {
   struct {
     KlFileOffset begin;     /* begin position of this token */
     KlFileOffset end;       /* end position of this token */
+    KlTokenKind kind;
     union {
       KlInt intval;
       KlFloat floatval;
       KlBool boolval;
       KlStrDesc string;
     };
-    KlTokenKind kind;
+    bool hasleadingblank;   /* whether there is blank before this token */
   } tok;                    /* token information */
 } KlLex;
 
@@ -38,6 +39,7 @@ KlLex* kllex_create(Ki* ki, Ko* err, const char* inputname, KlStrTab* strtab);
 void kllex_delete(KlLex* lex);
 
 void kllex_next(KlLex* lex);
+static inline bool kllex_hasleadingblank(KlLex* lex);
 static inline bool kllex_trymatch(KlLex* lex, KlTokenKind kind);
 static inline bool kllex_check(KlLex* lex, KlTokenKind kind);
 static inline KlTokenKind kllex_tokkind(KlLex* lex);
@@ -46,6 +48,10 @@ static inline Ki* kllex_inputstream(KlLex* lex);
 
 void kllex_error(KlLex* lex, const char* format, ...);
 void kllex_show_info(KlLex* lex, const char* format, va_list vlst);
+
+static inline bool kllex_hasleadingblank(KlLex* lex) {
+  return lex->tok.hasleadingblank;
+}
 
 static inline bool kllex_trymatch(KlLex* lex, KlTokenKind kind) {
   if (lex->tok.kind == kind) {

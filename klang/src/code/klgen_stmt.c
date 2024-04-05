@@ -3,6 +3,7 @@
 #include "klang/include/code/klcontbl.h"
 #include "klang/include/code/klgen.h"
 #include "klang/include/code/klgen_expr.h"
+#include "klang/include/code/klgen_exprbool.h"
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/cst/klcst_stmt.h"
@@ -189,10 +190,44 @@ static void klgen_stmtassign(KlGenUnit* gen, KlCstStmtAssign* assigncst) {
   }
 }
 
-void klgen_stmtblock(KlGenUnit* gen, KlCstStmtList* stmtlist) {
+static void klgen_stmtif(KlGenUnit* gen, KlCstStmtIf* ifcst) {
+  KlCodeVal cond = klgen_exprbool(gen, ifcst->cond, false);
+  if (klcodeval_isconstant(cond)) {
+    if (klcodeval_istrue(cond)) {
+      size_t stktop = klgen_stacktop(gen);
+      bool ifneedclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, ifcst->if_block));
+      if (!ifcst->else_block) {
+        if (ifneedclose)
+          klgen_pushinst(gen, klinst_closejmp(stktop, 0), klgen_cstposition(ifcst->if_block));
+        klgen_setinstjmppos(gen, cond, klgen_currcodesize(gen));
+        return;
+      }
+    }
+  } else {
+    size_t stktop = klgen_stacktop(gen);
+    bool ifneedclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, ifcst->if_block));
+    if (!ifcst->else_block) {
+      if (ifneedclose)
+        klgen_pushinst(gen, klinst_closejmp(stktop, 0), klgen_cstposition(ifcst->if_block));
+      klgen_setinstjmppos(gen, cond, klgen_currcodesize(gen));
+      return;
+    }
+    KlCodeVal ifout = klcodeval_jmp(klgen_pushinst(gen,
+                                                   ifneedclose ? klinst_closejmp(stktop, 0)
+                                                             : klinst_jmp(0),
+                                                   klgen_cstposition(ifcst->if_block)));
+    klgen_setinstjmppos(gen, cond, klgen_currcodesize(gen));
+    bool elseneedclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, ifcst->else_block));
+    if (elseneedclose)
+      klgen_pushinst(gen, klinst_closejmp(stktop, 0), klgen_cstposition(ifcst->if_block));
+    klgen_setinstjmppos(gen, ifout, klgen_currcodesize(gen));
+  }
+}
+
+void klgen_stmtlist(KlGenUnit* gen, KlCstStmtList* cst) {
   kltodo("push new block info");
-  KlCst** endstmt = stmtlist->stmts + stmtlist->nstmt;
-  for (KlCst** pstmt = stmtlist->stmts; pstmt != endstmt; ++pstmt) {
+  KlCst** endstmt = cst->stmts + cst->nstmt;
+  for (KlCst** pstmt = cst->stmts; pstmt != endstmt; ++pstmt) {
     KlCst* stmt = *pstmt;
     switch (klcst_kind(stmt)) {
       case KLCST_STMT_LET: {

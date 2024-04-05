@@ -1,4 +1,5 @@
 #include "klang/include/parse/klparser.h"
+#include "klang/include/error/klerror.h"
 #include "klang/include/parse/klcfdarr.h"
 #include "klang/include/parse/klidarr.h"
 #include "klang/include/parse/kllex.h"
@@ -117,8 +118,31 @@ static KlCst* klparser_finishtuple(KlParser* parser, KlLex* lex, KlCst* expr);
 static KlCst* klparser_dotchain(KlParser* parser, KlLex* lex);
 static KlCst* klparser_exprnew(KlParser* parser, KlLex* lex);
 
+static bool klparser_exprbegin(KlLex* lex);
 
-
+static bool klparser_exprbegin(KlLex* lex) {
+  static bool isexprbegin[KLTK_NTOKEN] = {
+    [KLTK_ARROW] = true,
+    [KLTK_MINUS] = true,
+    [KLTK_ADD] = true,
+    [KLTK_NOT] = true,
+    [KLTK_NEW] = true,
+    [KLTK_INT] = true,
+    [KLTK_STRING] = true,
+    [KLTK_BOOLVAL] = true,
+    [KLTK_NIL] = true,
+    [KLTK_ID] = true,
+    [KLTK_LBRACKET] = true,
+    [KLTK_LBRACE] = true,
+    [KLTK_YIELD] = true,
+    [KLTK_ASYNC] = true,
+    [KLTK_INHERIT] = true,
+    [KLTK_METHOD] = true,
+    [KLTK_FLOAT] = true,
+    [KLTK_LPAREN] = true,
+  };
+  return isexprbegin[kllex_tokkind(lex)];
+}
 
 static inline KlCst* klparser_tuple(KlParser* parser, KlLex* lex) {
   KlCst* headexpr = klparser_expr(parser, lex);
@@ -129,6 +153,10 @@ static KlCst* klparser_emptytuple(KlParser* parser, KlLex* lex, KlFileOffset beg
   KlCstTuple* tuple = klcst_tuple_create(NULL, 0, begin, end);
   if (kl_unlikely(!tuple)) return klparser_error_oom(parser, lex);
   return klcst(tuple);
+}
+
+static inline KlCst* klparser_tuple_mayempty(KlParser* parser, KlLex* lex) {
+  return klparser_exprbegin(lex) ? klparser_tuple(parser, lex) : klparser_emptytuple(parser, lex, lex->tok.begin, lex->tok.begin);
 }
 
 static KlCst* klparser_singletontuple(KlParser* parser, KlLex* lex, KlCst* expr) {
@@ -542,9 +570,9 @@ KlCst* klparser_exprpre(KlParser* parser, KlLex* lex) {
     case KLTK_YIELD: {
       KlFileOffset begin = lex->tok.begin;
       kllex_next(lex);
-      KlCst* expr = klparser_exprpre(parser, lex);
-      klparser_returnifnull(expr);
-      KlCstYield* yieldexpr = klcst_yield_create(expr, begin, expr->end);
+      KlCst* exprlist = klparser_tuple_mayempty(parser, lex);
+      klparser_returnifnull(exprlist);
+      KlCstYield* yieldexpr = klcst_yield_create(exprlist, begin, exprlist->end);
       klparser_oomifnull(yieldexpr);
       return klcst(yieldexpr);
     }
@@ -670,11 +698,55 @@ static KlCst* klparser_arrowfuncbody(KlParser* parser, KlLex* lex) {
   return klcst(block);
 }
 
+static KlCst* klparser_exprcall(KlParser* parser, KlLex* lex, KlCst* callable) {
+  bool is_singleton = kllex_hasleadingblank(lex);
+  if (is_singleton) {
+    KlCst* params = klparser_exprunit(parser, lex);
+    if (kl_unlikely(!params)) {
+      if (callable) klcst_delete(callable);
+      return NULL;
+    }
+    if (kl_unlikely(!(params = klparser_singletontuple(parser, lex, params)))) {
+      if (callable) klcst_delete(callable);
+      return NULL;
+    }
+    if (kl_unlikely(!callable)) {
+      klcst_delete(params);
+      return NULL;
+    }
+    KlCstPost* call = klcst_post_create(KLTK_CALL, callable, params, callable->begin, params->end);
+    klparser_oomifnull(call);
+    return klcst(call);
+  } else {
+    KlFileOffset begin = lex->tok.begin;
+    klparser_match(parser, lex, KLTK_LPAREN);
+    KlCst* params = klparser_tuple_mayempty(parser, lex);
+    KlFileOffset end = lex->tok.end;
+    klparser_match(parser, lex, KLTK_RPAREN);
+    if (kl_unlikely(!params)) {
+      if (callable) klcst_delete(callable);
+      return NULL;
+    }
+    if (kl_unlikely(!callable)) {
+      klcst_delete(params);
+      return NULL;
+    }
+    klcst_setposition(params, begin, end);
+    KlCstPost* call = klcst_post_create(KLTK_CALL, callable, params, callable->begin, params->end);
+    klparser_oomifnull(call);
+    return klcst(call);
+  }
+}
+
 KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
   KlCst* postexpr = klparser_exprunit(parser, lex);
   while (true) {
     switch (kllex_tokkind(lex)) {
       case KLTK_LBRACKET: { /* index */
+        if (kllex_hasleadingblank(lex)) {
+          postexpr = klparser_exprcall(parser, lex, postexpr);
+          break;
+        }
         kllex_next(lex);
         KlCst* expr = klparser_expr(parser, lex);
         KlFileOffset end = lex->tok.end;
@@ -689,7 +761,8 @@ KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
         postexpr = klcst(index);
         break;
       }
-      case KLTK_LBRACE: {
+      case KLTK_DARROW: {
+        kllex_next(lex);
         KlCst* block = klparser_stmtblock(parser, lex);
         if (kl_unlikely(!block)) break;
         if (kl_unlikely(!postexpr)) {
@@ -762,15 +835,7 @@ KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
       case KLTK_BOOLVAL:
       case KLTK_VARARG:
       case KLTK_NIL: {  /* call with 'unit' */
-        KlCst* params = klparser_exprunit(parser, lex);
-        if (kl_unlikely(!params)) break;
-        if (kl_unlikely(!postexpr)) {
-          klcst_delete(params);
-          break;
-        }
-        KlCstPost* call = klcst_post_create(KLTK_CALL, postexpr, params, postexpr->begin, params->end);
-        klparser_oomifnull(call);
-        postexpr = klcst(call);
+        postexpr = klparser_exprcall(parser, lex, postexpr);
         break;
       }
       default: {  /* no more postfix, just return */
@@ -920,7 +985,7 @@ static KlCst* klparser_discoveryforblock(KlParser* parser, KlLex* lex) {
 }
 
 static inline KlCst* klparser_finishstmtfor(KlParser* parser, KlLex* lex) {
-  klparser_match(parser, lex, KLTK_COLON);
+  kllex_trymatch(lex, KLTK_COLON);
   return klparser_stmtblock(parser, lex);
 }
 
@@ -1044,7 +1109,7 @@ KlCst* klparser_stmtif(KlParser* parser, KlLex* lex) {
   KlFileOffset begin = lex->tok.begin;
   kllex_next(lex);
   KlCst* cond = klparser_expr(parser, lex);
-  klparser_match(parser, lex, KLTK_COLON);
+  kllex_trymatch(lex, KLTK_COLON);
   KlCst* if_block = NULL;
   if_block = klparser_stmtblock(parser, lex);
   KlCst* else_block = NULL;
@@ -1132,13 +1197,11 @@ KlCst* klparser_stmtlist(KlParser* parser, KlLex* lex) {
     return klparser_error_oom(parser, lex);
   while (true) {
     switch (kllex_tokkind(lex)) {
+      default: {
+        if(!klparser_exprbegin(lex)) break;
+      }
       case KLTK_LET: case KLTK_IF: case KLTK_REPEAT: case KLTK_WHILE:
-      case KLTK_FOR: case KLTK_RETURN: case KLTK_BREAK: case KLTK_CONTINUE:
-      case KLTK_ARROW: case KLTK_MINUS: case KLTK_ADD: case KLTK_NOT:
-      case KLTK_NEW: case KLTK_INT: case KLTK_STRING: case KLTK_BOOLVAL:
-      case KLTK_NIL: case KLTK_ID: case KLTK_LBRACKET: case KLTK_LBRACE:
-      case KLTK_YIELD: case KLTK_ASYNC: case KLTK_INHERIT: case KLTK_METHOD:
-      case KLTK_FLOAT: case KLTK_LPAREN: {
+      case KLTK_FOR: case KLTK_RETURN: case KLTK_BREAK: case KLTK_CONTINUE: {
         KlCst* stmt = klparser_stmt(parser, lex);
         if (kl_unlikely(!stmt)) continue;
         if (kl_unlikely(!karray_push_back(&stmts, stmt))) {
@@ -1147,7 +1210,6 @@ KlCst* klparser_stmtlist(KlParser* parser, KlLex* lex) {
         }
         continue;
       }
-      default: break;
     }
     break;
   }
@@ -1280,82 +1342,73 @@ KlCst* klparser_generator(KlParser* parser, KlLex* lex, KlCst* inner_stmt) {
   if (kl_unlikely(!karray_init(&stmtarr)))
     return klparser_error_oom(parser, lex);
   while (true) {
-    switch (kllex_tokkind(lex)) {
-      case KLTK_LET: {
-        KlCst* stmtlet = klparser_stmtlet(parser, lex);
-        if (kl_unlikely(!stmtlet)) break;
-        if (kl_unlikely(!karray_push_back(&stmtarr, stmtlet))) {
-          klcst_delete(stmtlet);
-          klparser_error_oom(parser, lex);
-        }
+    if (klparser_exprbegin(lex)) {
+      KlCst* tuple = klparser_tuple(parser, lex);
+      if (kl_unlikely(!tuple)) {
         kllex_trymatch(lex, KLTK_SEMI);
-        break;
+        continue;
       }
-      case KLTK_ARROW: case KLTK_MINUS: case KLTK_ADD: case KLTK_NOT:
-      case KLTK_NEW: case KLTK_INT: case KLTK_STRING: case KLTK_BOOLVAL:
-      case KLTK_NIL: case KLTK_ID: case KLTK_LBRACKET: case KLTK_LBRACE:
-      case KLTK_YIELD: case KLTK_ASYNC: case KLTK_INHERIT: case KLTK_METHOD:
-      case KLTK_FLOAT: case KLTK_LPAREN: {
-        KlCst* tuple = klparser_tuple(parser, lex);
-        if (kl_unlikely(!tuple)) {
-          kllex_trymatch(lex, KLTK_SEMI);
-          break;
-        }
-        if (kllex_check(lex, KLTK_IN) || kllex_check(lex, KLTK_ASSIGN)) {
-          KlCst* stmt = klparser_generatorfor(parser, lex, tuple, inner_stmt);
-          /* 'tuple' is deleted in klparser_generatorfor() */
-          if (kl_unlikely(!stmt)) {
-            klparser_destroy_cstarray(&stmtarr);
-            return NULL;
-          }
-          if (kl_unlikely(!karray_push_back(&stmtarr, stmt))) {
-            klparser_error_oom(parser, lex);
-            klcst_delete(klcst(stmt));
-            klparser_destroy_cstarray(&stmtarr);
-            return NULL;
-          }
-        } else {
-          kllex_trymatch(lex, KLTK_SEMI);
-          KlCst* block = klparser_generator(parser, lex, inner_stmt);
-          if (kl_unlikely(!block)) {
-            klcst_delete(tuple);
-            klparser_destroy_cstarray(&stmtarr);
-            return NULL;
-          }
-          KlCstStmtIf* stmtif = klcst_stmtif_create(tuple, block, NULL, tuple->begin, block->end);
-          if (kl_unlikely(!stmtif)) {
-            klparser_destroy_cstarray(&stmtarr);
-            return NULL;
-          }
-          if (kl_unlikely(!karray_push_back(&stmtarr, stmtif))) {
-            klcst_delete(klcst(stmtif));
-            klparser_destroy_cstarray(&stmtarr);
-            return klparser_error_oom(parser, lex);
-          }
-        }
-        kl_assert(karray_size(&stmtarr) != 0, "");
-        karray_shrink(&stmtarr);
-        size_t nstmt = karray_size(&stmtarr);
-        KlCst** stmts = (KlCst**)karray_steal(&stmtarr);
-        KlCstStmtList* stmtlist = klcst_stmtlist_create(stmts, nstmt, stmts[0]->begin, stmts[nstmt - 1]->end);
-        klparser_oomifnull(stmtlist);
-        return klcst(stmtlist);
-      }
-      default: {
-        KlFileOffset begin = karray_size(&stmtarr) == 0 ? inner_stmt->begin : klcst_begin(karray_access(&stmtarr, 0));
-        KlFileOffset end = karray_size(&stmtarr) == 0 ? inner_stmt->end : klcst_end(karray_access(&stmtarr, karray_size(&stmtarr) - 1));
-        if (kl_unlikely(!karray_push_back(&stmtarr, inner_stmt))) {
+      if (kllex_check(lex, KLTK_IN) || kllex_check(lex, KLTK_ASSIGN)) {
+        KlCst* stmt = klparser_generatorfor(parser, lex, tuple, inner_stmt);
+        /* 'tuple' is deleted in klparser_generatorfor() */
+        if (kl_unlikely(!stmt)) {
           klparser_destroy_cstarray(&stmtarr);
-          klcst_delete(inner_stmt);
+          return NULL;
+        }
+        if (kl_unlikely(!karray_push_back(&stmtarr, stmt))) {
+          klparser_error_oom(parser, lex);
+          klcst_delete(klcst(stmt));
+          klparser_destroy_cstarray(&stmtarr);
+          return NULL;
+        }
+      } else {
+        kllex_trymatch(lex, KLTK_SEMI);
+        KlCst* block = klparser_generator(parser, lex, inner_stmt);
+        if (kl_unlikely(!block)) {
+          klcst_delete(tuple);
+          klparser_destroy_cstarray(&stmtarr);
+          return NULL;
+        }
+        KlCstStmtIf* stmtif = klcst_stmtif_create(tuple, block, NULL, tuple->begin, block->end);
+        if (kl_unlikely(!stmtif)) {
+          klparser_destroy_cstarray(&stmtarr);
+          return NULL;
+        }
+        if (kl_unlikely(!karray_push_back(&stmtarr, stmtif))) {
+          klcst_delete(klcst(stmtif));
+          klparser_destroy_cstarray(&stmtarr);
           return klparser_error_oom(parser, lex);
         }
-        karray_shrink(&stmtarr);
-        size_t nstmt = karray_size(&stmtarr);
-        KlCst** stmts = (KlCst**)karray_steal(&stmtarr);
-        KlCstStmtList* stmtlist = klcst_stmtlist_create(stmts, nstmt, begin, end);
-        klparser_oomifnull(stmtlist);
-        return klcst(stmtlist);
       }
+      kl_assert(karray_size(&stmtarr) != 0, "");
+      karray_shrink(&stmtarr);
+      size_t nstmt = karray_size(&stmtarr);
+      KlCst** stmts = (KlCst**)karray_steal(&stmtarr);
+      KlCstStmtList* stmtlist = klcst_stmtlist_create(stmts, nstmt, stmts[0]->begin, stmts[nstmt - 1]->end);
+      klparser_oomifnull(stmtlist);
+      return klcst(stmtlist);
+    } else if (kllex_check(lex, KLTK_LET)) {
+      KlCst* stmtlet = klparser_stmtlet(parser, lex);
+      if (kl_unlikely(!stmtlet)) continue;
+      if (kl_unlikely(!karray_push_back(&stmtarr, stmtlet))) {
+        klcst_delete(stmtlet);
+        klparser_error_oom(parser, lex);
+      }
+      kllex_trymatch(lex, KLTK_SEMI);
+    } else {
+      KlFileOffset begin = karray_size(&stmtarr) == 0 ? inner_stmt->begin : klcst_begin(karray_access(&stmtarr, 0));
+      KlFileOffset end = karray_size(&stmtarr) == 0 ? inner_stmt->end : klcst_end(karray_access(&stmtarr, karray_size(&stmtarr) - 1));
+      if (kl_unlikely(!karray_push_back(&stmtarr, inner_stmt))) {
+        klparser_destroy_cstarray(&stmtarr);
+        klcst_delete(inner_stmt);
+        return klparser_error_oom(parser, lex);
+      }
+      karray_shrink(&stmtarr);
+      size_t nstmt = karray_size(&stmtarr);
+      KlCst** stmts = (KlCst**)karray_steal(&stmtarr);
+      KlCstStmtList* stmtlist = klcst_stmtlist_create(stmts, nstmt, begin, end);
+      klparser_oomifnull(stmtlist);
+      return klcst(stmtlist);
     }
   }
 }

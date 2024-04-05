@@ -37,6 +37,7 @@ static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_SEMI] = ";",
   [KLTK_COLON] = ":",
   [KLTK_QUESTION] = "?",
+  [KLTK_DARROW] = "=>",
   [KLTK_ARROW] = "->",
   [KLTK_ASSIGN] = "=",
   [KLTK_BAR] = "|",

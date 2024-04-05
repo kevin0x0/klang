@@ -813,7 +813,7 @@ KlException klexec_execute(KlState* state) {
             klexec_updateglobal(newbase);
           } else {  /* C function or C closure */
             /* stack may have grown. restore stkbase. */
-            stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+            stkbase = callinfo->base;
           }
         }
         break;
@@ -908,7 +908,7 @@ KlException klexec_execute(KlState* state) {
             klexec_updateglobal(newbase);
           } else {  /* C function or C closure */
             /* stack may have grown. restore stkbase. */
-            stkbase = callinfo->top - klkfunc_framesize(closure->kfunc);
+            stkbase = callinfo->base;
           }
         }
         break;
@@ -1400,9 +1400,14 @@ KlException klexec_execute(KlState* state) {
          * comparison result is stored at 'callinfo->top'.
          */
         bool cond = KLINST_XI_GETX(inst);
-        int offset = KLINST_XI_GETI(inst);
         if (klexec_if(callinfo->top) == cond)
-          pc += offset;
+          pc += KLINST_XI_GETI(inst);
+        break;
+      }
+      case KLOPCODE_CLOSEJMP: {
+        KlValue* bound = stkbase + KLINST_XI_GETX(inst);
+        klreflist_close(&state->reflist, bound, klstate_getmm(state));
+        pc += KLINST_XI_GETI(inst);
         break;
       }
       case KLOPCODE_IS: {
@@ -1599,11 +1604,6 @@ KlException klexec_execute(KlState* state) {
         bool cond = KLINST_XI_GETX(condjmp);
         int offset = KLINST_XI_GETI(condjmp);
         klexec_orderi(ge, a, imm, offset, cond);
-        break;
-      }
-      case KLOPCODE_CLOSE: {
-        KlValue* bound = stkbase + KLINST_X_GETX(inst);
-        klreflist_close(&state->reflist, bound, klstate_getmm(state));
         break;
       }
       case KLOPCODE_NEWOBJ: {

@@ -280,13 +280,15 @@ void kllex_error(KlLex* lex, const char* format, ...) {
 
 void kllex_next(KlLex* lex) {
   Ki* input = lex->input;
-
+  size_t orioff = ki_tell(input);
   int ch = kllex_nextvalid(lex);
+  size_t curroff = ki_tell(input);
+  lex->tok.hasleadingblank = orioff + 1 != curroff;
   if (ch == KOF) {
-    lex->tok.begin = ki_tell(input);
+    lex->tok.begin = curroff;
     kllex_return(KLTK_END);
   }
-  lex->tok.begin = ki_tell(input) - 1;
+  lex->tok.begin = curroff - 1;
   uint8_t state = start;
   uint8_t nextstate;
   char* buf = klstrtab_allocstring(lex->strtab, KLLEX_STRLIMIT);

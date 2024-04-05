@@ -13,5 +13,6 @@ KlCodeVal klgen_expror(KlGenUnit* gen, KlCstBin* orcst, bool jumpcond);
 KlCodeVal klgen_exprand(KlGenUnit* gen, KlCstBin* andcst, bool jumpcond);
 
 KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlCst* cst, size_t target);
+void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, size_t jmppos);
 
 #endif

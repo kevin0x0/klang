@@ -8,6 +8,7 @@
 -- end
 -- print(sum)
 
+-- jit.off()
 local function f(n)
   return n <= 1 and n or f(n - 1) + f(n - 2)
 end

@@ -34,7 +34,7 @@ static inline void klgen_setoffset(KlGenUnit* gen, KlInstruction* jmpinst, int o
   }
 }
 
-static void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, size_t jmppos) {
+void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, size_t jmppos) {
   KlInstruction* pc = klinstarr_access(&gen->code, jmplist.jmplist.head);
   KlInstruction* end = klinstarr_access(&gen->code, jmplist.jmplist.tail);
   KlInstruction* pjmppos = klinstarr_access(&gen->code, jmppos);

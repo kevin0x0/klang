@@ -3,52 +3,54 @@ Flat profile:
 Each sample counts as 0.01 seconds.
   %   cumulative   self              self     total           
  time   seconds   seconds    calls  ms/call  ms/call  name    
- 81.20      0.69     0.69        1   690.17   830.20  klexec_execute
- 16.47      0.83     0.14 48315632     0.00     0.00  klexec_callprepare
-  2.35      0.85     0.02                             klexec_callprep_callback_for_call
-  0.00      0.85     0.00      450     0.00     0.00  klclass_propagate
-  0.00      0.85     0.00       93     0.00     0.00  klmm_do_gc
-  0.00      0.85     0.00       45     0.00     0.00  klcommon_propagate
-  0.00      0.85     0.00       45     0.00     0.00  klmap_propagate
-  0.00      0.85     0.00       45     0.00     0.00  klmapnodepool_shrink
-  0.00      0.85     0.00       45     0.00     0.00  klobject_propagate
-  0.00      0.85     0.00       45     0.00     0.00  klstate_propagate
-  0.00      0.85     0.00       39     0.00     0.00  klkclosure_propagate
-  0.00      0.85     0.00       39     0.00     0.00  klkfunc_propagate
-  0.00      0.85     0.00       18     0.00     0.00  klstrpool_insert
-  0.00      0.85     0.00       18     0.00     0.00  klstrpool_new_string
-  0.00      0.85     0.00       18     0.00     0.00  klstrpool_string_on_delete
-  0.00      0.85     0.00       10     0.00     0.00  klclass_create
-  0.00      0.85     0.00       10     0.00     0.00  klclass_delete
-  0.00      0.85     0.00        3     0.00     0.00  klstack_expand
-  0.00      0.85     0.00        2     0.00     0.00  klstate_growstack
-  0.00      0.85     0.00        1     0.00     0.00  fibonacci
-  0.00      0.85     0.00        1     0.00     0.00  klapi_new_state
-  0.00      0.85     0.00        1     0.00     0.00  klarray_class
-  0.00      0.85     0.00        1     0.00     0.00  klclass_objalloc
-  0.00      0.85     0.00        1     0.00     0.00  klco_init
-  0.00      0.85     0.00        1     0.00     0.00  klcommon_create
-  0.00      0.85     0.00        1     0.00   830.20  klexec_call
-  0.00      0.85     0.00        1     0.00     0.00  klkclosure_create
-  0.00      0.85     0.00        1     0.00     0.00  klkclosure_delete
-  0.00      0.85     0.00        1     0.00     0.00  klkfunc_alloc
-  0.00      0.85     0.00        1     0.00     0.00  klkfunc_delete
-  0.00      0.85     0.00        1     0.00     0.00  klkfunc_initdone
-  0.00      0.85     0.00        1     0.00     0.00  klmap_class
-  0.00      0.85     0.00        1     0.00     0.00  klmap_create
-  0.00      0.85     0.00        1     0.00     0.00  klmap_delete
-  0.00      0.85     0.00        1     0.00     0.00  klmapnodepool_create
-  0.00      0.85     0.00        1     0.00     0.00  klmapnodepool_delete
-  0.00      0.85     0.00        1     0.00     0.00  klmm_destroy
-  0.00      0.85     0.00        1     0.00     0.00  klmm_gc_clean_all
-  0.00      0.85     0.00        1     0.00     0.00  klref_new
-  0.00      0.85     0.00        1     0.00     0.00  klreflist_close
-  0.00      0.85     0.00        1     0.00     0.00  klstack_init
-  0.00      0.85     0.00        1     0.00     0.00  klstate_create
-  0.00      0.85     0.00        1     0.00     0.00  klstate_delete
-  0.00      0.85     0.00        1     0.00     0.00  klstrpool_create
-  0.00      0.85     0.00        1     0.00     0.00  klstrpool_delete
-  0.00      0.85     0.00        1     0.00     0.00  klthrow_init
+ 82.52      0.66     0.66        1   660.17   800.21  klexec_execute
+ 17.50      0.80     0.14 48315633     0.00     0.00  klexec_callprepare
+  0.00      0.80     0.00      450     0.00     0.00  klclass_propagate
+  0.00      0.80     0.00       93     0.00     0.00  klmm_do_gc
+  0.00      0.80     0.00       45     0.00     0.00  klcommon_propagate
+  0.00      0.80     0.00       45     0.00     0.00  klmap_propagate
+  0.00      0.80     0.00       45     0.00     0.00  klmapnodepool_shrink
+  0.00      0.80     0.00       45     0.00     0.00  klmm_gc_clean
+  0.00      0.80     0.00       45     0.00     0.00  klobject_propagate
+  0.00      0.80     0.00       45     0.00     0.00  klstate_propagate
+  0.00      0.80     0.00       39     0.00     0.00  klkclosure_propagate
+  0.00      0.80     0.00       39     0.00     0.00  klkfunc_propagate
+  0.00      0.80     0.00       36     0.00     0.00  klexec_alloc_callinfo
+  0.00      0.80     0.00       18     0.00     0.00  klstrpool_insert
+  0.00      0.80     0.00       18     0.00     0.00  klstrpool_new_string
+  0.00      0.80     0.00       18     0.00     0.00  klstrpool_search
+  0.00      0.80     0.00       18     0.00     0.00  klstrpool_string_on_delete
+  0.00      0.80     0.00       10     0.00     0.00  klclass_create
+  0.00      0.80     0.00       10     0.00     0.00  klclass_delete
+  0.00      0.80     0.00        3     0.00     0.00  klstack_expand
+  0.00      0.80     0.00        2     0.00     0.00  klstate_growstack
+  0.00      0.80     0.00        1     0.00     0.00  fibonacci
+  0.00      0.80     0.00        1     0.00     0.00  klapi_new_state
+  0.00      0.80     0.00        1     0.00     0.00  klarray_class
+  0.00      0.80     0.00        1     0.00     0.00  klclass_objalloc
+  0.00      0.80     0.00        1     0.00     0.00  klco_init
+  0.00      0.80     0.00        1     0.00     0.00  klcommon_create
+  0.00      0.80     0.00        1     0.00   800.21  klexec_call
+  0.00      0.80     0.00        1     0.00     0.00  klkclosure_create
+  0.00      0.80     0.00        1     0.00     0.00  klkclosure_delete
+  0.00      0.80     0.00        1     0.00     0.00  klkfunc_alloc
+  0.00      0.80     0.00        1     0.00     0.00  klkfunc_delete
+  0.00      0.80     0.00        1     0.00     0.00  klkfunc_initdone
+  0.00      0.80     0.00        1     0.00     0.00  klmap_class
+  0.00      0.80     0.00        1     0.00     0.00  klmap_create
+  0.00      0.80     0.00        1     0.00     0.00  klmap_delete
+  0.00      0.80     0.00        1     0.00     0.00  klmapnodepool_create
+  0.00      0.80     0.00        1     0.00     0.00  klmapnodepool_delete
+  0.00      0.80     0.00        1     0.00     0.00  klmm_destroy
+  0.00      0.80     0.00        1     0.00     0.00  klmm_gc_clean_all
+  0.00      0.80     0.00        1     0.00     0.00  klref_new
+  0.00      0.80     0.00        1     0.00     0.00  klreflist_close
+  0.00      0.80     0.00        1     0.00     0.00  klstack_init
+  0.00      0.80     0.00        1     0.00     0.00  klstate_create
+  0.00      0.80     0.00        1     0.00     0.00  klstate_delete
+  0.00      0.80     0.00        1     0.00     0.00  klstrpool_create
+  0.00      0.80     0.00        1     0.00     0.00  klstrpool_delete
+  0.00      0.80     0.00        1     0.00     0.00  klthrow_init
 
  %         the percentage of the total running time of the
 time       program used by this function.
@@ -86,228 +88,237 @@ notice and this notice are preserved.
 		     Call graph (explanation follows)
 
 
-granularity: each sample hit covers 2 byte(s) for 1.18% of 0.85 seconds
+granularity: each sample hit covers 2 byte(s) for 1.25% of 0.80 seconds
 
 index % time    self  children    called     name
-                0.00    0.83       1/1           main [3]
-[1]     97.6    0.00    0.83       1         klexec_call [1]
-                0.69    0.14       1/1           klexec_execute [2]
-                0.00    0.00       1/93          klmm_do_gc [7]
-                0.00    0.00       1/2           klstate_growstack [21]
------------------------------------------------
-                0.69    0.14       1/1           klexec_call [1]
-[2]     97.6    0.69    0.14       1         klexec_execute [2]
-                0.14    0.00 48315632/48315632     klexec_callprepare [4]
-                0.00    0.00      35/93          klmm_do_gc [7]
+                0.00    0.80       1/1           main [2]
+[1]    100.0    0.00    0.80       1         klexec_call [1]
+                0.66    0.14       1/1           klexec_execute [3]
+                0.00    0.00       1/48315633     klexec_callprepare [4]
+                0.00    0.00       1/36          klexec_alloc_callinfo [15]
 -----------------------------------------------
                                                  <spontaneous>
-[3]     97.6    0.00    0.83                 main [3]
-                0.00    0.83       1/1           klexec_call [1]
-                0.00    0.00       1/1           klreflist_close [41]
-                0.00    0.00       1/1           fibonacci [22]
-                0.00    0.00       1/1           klapi_new_state [23]
-                0.00    0.00       1/1           klmm_destroy [38]
+[2]    100.0    0.00    0.80                 main [2]
+                0.00    0.80       1/1           klexec_call [1]
+                0.00    0.00       1/1           klreflist_close [43]
+                0.00    0.00       1/1           fibonacci [24]
+                0.00    0.00       1/1           klapi_new_state [25]
+                0.00    0.00       1/1           klmm_destroy [40]
 -----------------------------------------------
-                0.14    0.00 48315632/48315632     klexec_execute [2]
-[4]     16.5    0.14    0.00 48315632         klexec_callprepare [4]
-                0.00    0.00       1/2           klstate_growstack [21]
+                0.66    0.14       1/1           klexec_call [1]
+[3]    100.0    0.66    0.14       1         klexec_execute [3]
+                0.14    0.00 48315632/48315633     klexec_callprepare [4]
+                0.00    0.00      35/36          klexec_alloc_callinfo [15]
 -----------------------------------------------
-                                                 <spontaneous>
-[5]      2.4    0.02    0.00                 klexec_callprep_callback_for_call [5]
+                0.00    0.00       1/48315633     klexec_call [1]
+                0.14    0.00 48315632/48315633     klexec_execute [3]
+[4]     17.5    0.14    0.00 48315633         klexec_callprepare [4]
+                0.00    0.00       2/2           klstate_growstack [23]
 -----------------------------------------------
-                0.00    0.00     450/450         klmm_do_gc [7]
-[6]      0.0    0.00    0.00     450         klclass_propagate [6]
+                0.00    0.00     450/450         klmm_do_gc [6]
+[5]      0.0    0.00    0.00     450         klclass_propagate [5]
 -----------------------------------------------
-                0.00    0.00       1/93          fibonacci [22]
-                0.00    0.00       1/93          klclass_objalloc [25]
-                0.00    0.00       1/93          klkclosure_create [28]
-                0.00    0.00       1/93          klmap_create [34]
-                0.00    0.00       1/93          klmapnodepool_create [36]
-                0.00    0.00       1/93          klref_new [40]
-                0.00    0.00       1/93          klcommon_create [27]
-                0.00    0.00       1/93          klexec_call [1]
-                0.00    0.00       1/93          klstack_init [42]
-                0.00    0.00       1/93          klthrow_init [47]
-                0.00    0.00       2/93          klstate_create [43]
-                0.00    0.00       2/93          klstrpool_create [45]
-                0.00    0.00       3/93          klkfunc_alloc [30]
-                0.00    0.00       3/93          klstack_expand [20]
-                0.00    0.00      18/93          klstrpool_new_string [16]
-                0.00    0.00      20/93          klclass_create [18]
-                0.00    0.00      35/93          klexec_execute [2]
-[7]      0.0    0.00    0.00      93         klmm_do_gc [7]
-                0.00    0.00     450/450         klclass_propagate [6]
+                0.00    0.00       1/93          fibonacci [24]
+                0.00    0.00       1/93          klclass_objalloc [27]
+                0.00    0.00       1/93          klkclosure_create [30]
+                0.00    0.00       1/93          klmap_create [36]
+                0.00    0.00       1/93          klmapnodepool_create [38]
+                0.00    0.00       1/93          klref_new [42]
+                0.00    0.00       1/93          klcommon_create [29]
+                0.00    0.00       1/93          klstack_init [44]
+                0.00    0.00       1/93          klthrow_init [49]
+                0.00    0.00       2/93          klstate_create [45]
+                0.00    0.00       2/93          klstrpool_create [47]
+                0.00    0.00       3/93          klkfunc_alloc [32]
+                0.00    0.00       3/93          klstack_expand [22]
+                0.00    0.00      18/93          klstrpool_new_string [17]
+                0.00    0.00      20/93          klclass_create [20]
+                0.00    0.00      36/93          klexec_alloc_callinfo [15]
+[6]      0.0    0.00    0.00      93         klmm_do_gc [6]
+                0.00    0.00     450/450         klclass_propagate [5]
+                0.00    0.00      45/45          klmm_gc_clean [10]
                 0.00    0.00      45/45          klobject_propagate [11]
-                0.00    0.00      45/45          klmap_propagate [9]
+                0.00    0.00      45/45          klmap_propagate [8]
                 0.00    0.00      45/45          klstate_propagate [12]
                 0.00    0.00      39/39          klkfunc_propagate [14]
                 0.00    0.00      39/39          klkclosure_propagate [13]
 -----------------------------------------------
                 0.00    0.00      45/45          klstate_propagate [12]
-[8]      0.0    0.00    0.00      45         klcommon_propagate [8]
+[7]      0.0    0.00    0.00      45         klcommon_propagate [7]
 -----------------------------------------------
-                0.00    0.00      45/45          klmm_do_gc [7]
-[9]      0.0    0.00    0.00      45         klmap_propagate [9]
+                0.00    0.00      45/45          klmm_do_gc [6]
+[8]      0.0    0.00    0.00      45         klmap_propagate [8]
 -----------------------------------------------
                 0.00    0.00      45/45          klstate_propagate [12]
-[10]     0.0    0.00    0.00      45         klmapnodepool_shrink [10]
+[9]      0.0    0.00    0.00      45         klmapnodepool_shrink [9]
 -----------------------------------------------
-                0.00    0.00      45/45          klmm_do_gc [7]
+                0.00    0.00      45/45          klmm_do_gc [6]
+[10]     0.0    0.00    0.00      45         klmm_gc_clean [10]
+-----------------------------------------------
+                0.00    0.00      45/45          klmm_do_gc [6]
 [11]     0.0    0.00    0.00      45         klobject_propagate [11]
 -----------------------------------------------
-                0.00    0.00      45/45          klmm_do_gc [7]
+                0.00    0.00      45/45          klmm_do_gc [6]
 [12]     0.0    0.00    0.00      45         klstate_propagate [12]
-                0.00    0.00      45/45          klcommon_propagate [8]
-                0.00    0.00      45/45          klmapnodepool_shrink [10]
+                0.00    0.00      45/45          klcommon_propagate [7]
+                0.00    0.00      45/45          klmapnodepool_shrink [9]
 -----------------------------------------------
-                0.00    0.00      39/39          klmm_do_gc [7]
+                0.00    0.00      39/39          klmm_do_gc [6]
 [13]     0.0    0.00    0.00      39         klkclosure_propagate [13]
 -----------------------------------------------
-                0.00    0.00      39/39          klmm_do_gc [7]
+                0.00    0.00      39/39          klmm_do_gc [6]
 [14]     0.0    0.00    0.00      39         klkfunc_propagate [14]
 -----------------------------------------------
-                0.00    0.00      18/18          klcommon_create [27]
-[15]     0.0    0.00    0.00      18         klstrpool_insert [15]
+                0.00    0.00       1/36          klexec_call [1]
+                0.00    0.00      35/36          klexec_execute [3]
+[15]     0.0    0.00    0.00      36         klexec_alloc_callinfo [15]
+                0.00    0.00      36/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00      18/18          klcommon_create [27]
-[16]     0.0    0.00    0.00      18         klstrpool_new_string [16]
-                0.00    0.00      18/93          klmm_do_gc [7]
+                0.00    0.00      18/18          klcommon_create [29]
+[16]     0.0    0.00    0.00      18         klstrpool_insert [16]
 -----------------------------------------------
-                0.00    0.00      18/18          klmm_gc_clean_all [39]
-[17]     0.0    0.00    0.00      18         klstrpool_string_on_delete [17]
+                0.00    0.00      18/18          klcommon_create [29]
+[17]     0.0    0.00    0.00      18         klstrpool_new_string [17]
+                0.00    0.00      18/18          klstrpool_search [18]
+                0.00    0.00      18/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00      10/10          klcommon_create [27]
-[18]     0.0    0.00    0.00      10         klclass_create [18]
-                0.00    0.00      20/93          klmm_do_gc [7]
+                0.00    0.00      18/18          klstrpool_new_string [17]
+[18]     0.0    0.00    0.00      18         klstrpool_search [18]
 -----------------------------------------------
-                0.00    0.00      10/10          klmm_gc_clean_all [39]
-[19]     0.0    0.00    0.00      10         klclass_delete [19]
+                0.00    0.00      18/18          klmm_gc_clean_all [41]
+[19]     0.0    0.00    0.00      18         klstrpool_string_on_delete [19]
 -----------------------------------------------
-                0.00    0.00       3/3           klstate_growstack [21]
-[20]     0.0    0.00    0.00       3         klstack_expand [20]
-                0.00    0.00       3/93          klmm_do_gc [7]
+                0.00    0.00      10/10          klcommon_create [29]
+[20]     0.0    0.00    0.00      10         klclass_create [20]
+                0.00    0.00      20/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00       1/2           klexec_callprepare [4]
-                0.00    0.00       1/2           klexec_call [1]
-[21]     0.0    0.00    0.00       2         klstate_growstack [21]
-                0.00    0.00       3/3           klstack_expand [20]
+                0.00    0.00      10/10          klmm_gc_clean_all [41]
+[21]     0.0    0.00    0.00      10         klclass_delete [21]
 -----------------------------------------------
-                0.00    0.00       1/1           main [3]
-[22]     0.0    0.00    0.00       1         fibonacci [22]
-                0.00    0.00       1/93          klmm_do_gc [7]
-                0.00    0.00       1/1           klkfunc_alloc [30]
-                0.00    0.00       1/1           klkclosure_create [28]
-                0.00    0.00       1/1           klkfunc_initdone [32]
+                0.00    0.00       3/3           klstate_growstack [23]
+[22]     0.0    0.00    0.00       3         klstack_expand [22]
+                0.00    0.00       3/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00       1/1           main [3]
-[23]     0.0    0.00    0.00       1         klapi_new_state [23]
-                0.00    0.00       1/1           klmapnodepool_create [36]
-                0.00    0.00       1/1           klstrpool_create [45]
-                0.00    0.00       1/1           klcommon_create [27]
-                0.00    0.00       1/1           klmap_create [34]
-                0.00    0.00       1/1           klstate_create [43]
+                0.00    0.00       2/2           klexec_callprepare [4]
+[23]     0.0    0.00    0.00       2         klstate_growstack [23]
+                0.00    0.00       3/3           klstack_expand [22]
 -----------------------------------------------
-                0.00    0.00       1/1           klcommon_create [27]
-[24]     0.0    0.00    0.00       1         klarray_class [24]
+                0.00    0.00       1/1           main [2]
+[24]     0.0    0.00    0.00       1         fibonacci [24]
+                0.00    0.00       1/93          klmm_do_gc [6]
+                0.00    0.00       1/1           klkfunc_alloc [32]
+                0.00    0.00       1/1           klkclosure_create [30]
+                0.00    0.00       1/1           klkfunc_initdone [34]
 -----------------------------------------------
-                0.00    0.00       1/1           klmap_create [34]
-[25]     0.0    0.00    0.00       1         klclass_objalloc [25]
-                0.00    0.00       1/93          klmm_do_gc [7]
+                0.00    0.00       1/1           main [2]
+[25]     0.0    0.00    0.00       1         klapi_new_state [25]
+                0.00    0.00       1/1           klmapnodepool_create [38]
+                0.00    0.00       1/1           klstrpool_create [47]
+                0.00    0.00       1/1           klcommon_create [29]
+                0.00    0.00       1/1           klmap_create [36]
+                0.00    0.00       1/1           klstate_create [45]
 -----------------------------------------------
-                0.00    0.00       1/1           klstate_create [43]
-[26]     0.0    0.00    0.00       1         klco_init [26]
+                0.00    0.00       1/1           klcommon_create [29]
+[26]     0.0    0.00    0.00       1         klarray_class [26]
 -----------------------------------------------
-                0.00    0.00       1/1           klapi_new_state [23]
-[27]     0.0    0.00    0.00       1         klcommon_create [27]
-                0.00    0.00      18/18          klstrpool_insert [15]
-                0.00    0.00      18/18          klstrpool_new_string [16]
-                0.00    0.00      10/10          klclass_create [18]
-                0.00    0.00       1/93          klmm_do_gc [7]
-                0.00    0.00       1/1           klmap_class [33]
-                0.00    0.00       1/1           klarray_class [24]
+                0.00    0.00       1/1           klmap_create [36]
+[27]     0.0    0.00    0.00       1         klclass_objalloc [27]
+                0.00    0.00       1/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00       1/1           fibonacci [22]
-[28]     0.0    0.00    0.00       1         klkclosure_create [28]
-                0.00    0.00       1/93          klmm_do_gc [7]
-                0.00    0.00       1/1           klref_new [40]
+                0.00    0.00       1/1           klstate_create [45]
+[28]     0.0    0.00    0.00       1         klco_init [28]
 -----------------------------------------------
-                0.00    0.00       1/1           klmm_gc_clean_all [39]
-[29]     0.0    0.00    0.00       1         klkclosure_delete [29]
+                0.00    0.00       1/1           klapi_new_state [25]
+[29]     0.0    0.00    0.00       1         klcommon_create [29]
+                0.00    0.00      18/18          klstrpool_insert [16]
+                0.00    0.00      18/18          klstrpool_new_string [17]
+                0.00    0.00      10/10          klclass_create [20]
+                0.00    0.00       1/93          klmm_do_gc [6]
+                0.00    0.00       1/1           klmap_class [35]
+                0.00    0.00       1/1           klarray_class [26]
 -----------------------------------------------
-                0.00    0.00       1/1           fibonacci [22]
-[30]     0.0    0.00    0.00       1         klkfunc_alloc [30]
-                0.00    0.00       3/93          klmm_do_gc [7]
+                0.00    0.00       1/1           fibonacci [24]
+[30]     0.0    0.00    0.00       1         klkclosure_create [30]
+                0.00    0.00       1/93          klmm_do_gc [6]
+                0.00    0.00       1/1           klref_new [42]
 -----------------------------------------------
-                0.00    0.00       1/1           klmm_gc_clean_all [39]
-[31]     0.0    0.00    0.00       1         klkfunc_delete [31]
+                0.00    0.00       1/1           klmm_gc_clean_all [41]
+[31]     0.0    0.00    0.00       1         klkclosure_delete [31]
 -----------------------------------------------
-                0.00    0.00       1/1           fibonacci [22]
-[32]     0.0    0.00    0.00       1         klkfunc_initdone [32]
+                0.00    0.00       1/1           fibonacci [24]
+[32]     0.0    0.00    0.00       1         klkfunc_alloc [32]
+                0.00    0.00       3/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00       1/1           klcommon_create [27]
-[33]     0.0    0.00    0.00       1         klmap_class [33]
+                0.00    0.00       1/1           klmm_gc_clean_all [41]
+[33]     0.0    0.00    0.00       1         klkfunc_delete [33]
 -----------------------------------------------
-                0.00    0.00       1/1           klapi_new_state [23]
-[34]     0.0    0.00    0.00       1         klmap_create [34]
-                0.00    0.00       1/1           klclass_objalloc [25]
-                0.00    0.00       1/93          klmm_do_gc [7]
+                0.00    0.00       1/1           fibonacci [24]
+[34]     0.0    0.00    0.00       1         klkfunc_initdone [34]
 -----------------------------------------------
-                0.00    0.00       1/1           klmm_gc_clean_all [39]
-[35]     0.0    0.00    0.00       1         klmap_delete [35]
+                0.00    0.00       1/1           klcommon_create [29]
+[35]     0.0    0.00    0.00       1         klmap_class [35]
 -----------------------------------------------
-                0.00    0.00       1/1           klapi_new_state [23]
-[36]     0.0    0.00    0.00       1         klmapnodepool_create [36]
-                0.00    0.00       1/93          klmm_do_gc [7]
+                0.00    0.00       1/1           klapi_new_state [25]
+[36]     0.0    0.00    0.00       1         klmap_create [36]
+                0.00    0.00       1/1           klclass_objalloc [27]
+                0.00    0.00       1/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00       1/1           klstate_delete [44]
-[37]     0.0    0.00    0.00       1         klmapnodepool_delete [37]
+                0.00    0.00       1/1           klmm_gc_clean_all [41]
+[37]     0.0    0.00    0.00       1         klmap_delete [37]
 -----------------------------------------------
-                0.00    0.00       1/1           main [3]
-[38]     0.0    0.00    0.00       1         klmm_destroy [38]
-                0.00    0.00       1/1           klmm_gc_clean_all [39]
+                0.00    0.00       1/1           klapi_new_state [25]
+[38]     0.0    0.00    0.00       1         klmapnodepool_create [38]
+                0.00    0.00       1/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00       1/1           klmm_destroy [38]
-[39]     0.0    0.00    0.00       1         klmm_gc_clean_all [39]
-                0.00    0.00      18/18          klstrpool_string_on_delete [17]
-                0.00    0.00      10/10          klclass_delete [19]
-                0.00    0.00       1/1           klkfunc_delete [31]
-                0.00    0.00       1/1           klkclosure_delete [29]
-                0.00    0.00       1/1           klstate_delete [44]
-                0.00    0.00       1/1           klmap_delete [35]
-                0.00    0.00       1/1           klstrpool_delete [46]
+                0.00    0.00       1/1           klstate_delete [46]
+[39]     0.0    0.00    0.00       1         klmapnodepool_delete [39]
 -----------------------------------------------
-                0.00    0.00       1/1           klkclosure_create [28]
-[40]     0.0    0.00    0.00       1         klref_new [40]
-                0.00    0.00       1/93          klmm_do_gc [7]
+                0.00    0.00       1/1           main [2]
+[40]     0.0    0.00    0.00       1         klmm_destroy [40]
+                0.00    0.00       1/1           klmm_gc_clean_all [41]
 -----------------------------------------------
-                0.00    0.00       1/1           main [3]
-[41]     0.0    0.00    0.00       1         klreflist_close [41]
+                0.00    0.00       1/1           klmm_destroy [40]
+[41]     0.0    0.00    0.00       1         klmm_gc_clean_all [41]
+                0.00    0.00      18/18          klstrpool_string_on_delete [19]
+                0.00    0.00      10/10          klclass_delete [21]
+                0.00    0.00       1/1           klkfunc_delete [33]
+                0.00    0.00       1/1           klkclosure_delete [31]
+                0.00    0.00       1/1           klstate_delete [46]
+                0.00    0.00       1/1           klmap_delete [37]
+                0.00    0.00       1/1           klstrpool_delete [48]
 -----------------------------------------------
-                0.00    0.00       1/1           klstate_create [43]
-[42]     0.0    0.00    0.00       1         klstack_init [42]
-                0.00    0.00       1/93          klmm_do_gc [7]
+                0.00    0.00       1/1           klkclosure_create [30]
+[42]     0.0    0.00    0.00       1         klref_new [42]
+                0.00    0.00       1/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00       1/1           klapi_new_state [23]
-[43]     0.0    0.00    0.00       1         klstate_create [43]
-                0.00    0.00       2/93          klmm_do_gc [7]
-                0.00    0.00       1/1           klstack_init [42]
-                0.00    0.00       1/1           klthrow_init [47]
-                0.00    0.00       1/1           klco_init [26]
+                0.00    0.00       1/1           main [2]
+[43]     0.0    0.00    0.00       1         klreflist_close [43]
 -----------------------------------------------
-                0.00    0.00       1/1           klmm_gc_clean_all [39]
-[44]     0.0    0.00    0.00       1         klstate_delete [44]
-                0.00    0.00       1/1           klmapnodepool_delete [37]
+                0.00    0.00       1/1           klstate_create [45]
+[44]     0.0    0.00    0.00       1         klstack_init [44]
+                0.00    0.00       1/93          klmm_do_gc [6]
 -----------------------------------------------
-                0.00    0.00       1/1           klapi_new_state [23]
-[45]     0.0    0.00    0.00       1         klstrpool_create [45]
-                0.00    0.00       2/93          klmm_do_gc [7]
+                0.00    0.00       1/1           klapi_new_state [25]
+[45]     0.0    0.00    0.00       1         klstate_create [45]
+                0.00    0.00       2/93          klmm_do_gc [6]
+                0.00    0.00       1/1           klstack_init [44]
+                0.00    0.00       1/1           klthrow_init [49]
+                0.00    0.00       1/1           klco_init [28]
 -----------------------------------------------
-                0.00    0.00       1/1           klmm_gc_clean_all [39]
-[46]     0.0    0.00    0.00       1         klstrpool_delete [46]
+                0.00    0.00       1/1           klmm_gc_clean_all [41]
+[46]     0.0    0.00    0.00       1         klstate_delete [46]
+                0.00    0.00       1/1           klmapnodepool_delete [39]
 -----------------------------------------------
-                0.00    0.00       1/1           klstate_create [43]
-[47]     0.0    0.00    0.00       1         klthrow_init [47]
-                0.00    0.00       1/93          klmm_do_gc [7]
+                0.00    0.00       1/1           klapi_new_state [25]
+[47]     0.0    0.00    0.00       1         klstrpool_create [47]
+                0.00    0.00       2/93          klmm_do_gc [6]
+-----------------------------------------------
+                0.00    0.00       1/1           klmm_gc_clean_all [41]
+[48]     0.0    0.00    0.00       1         klstrpool_delete [48]
+-----------------------------------------------
+                0.00    0.00       1/1           klstate_create [45]
+[49]     0.0    0.00    0.00       1         klthrow_init [49]
+                0.00    0.00       1/93          klmm_do_gc [6]
 -----------------------------------------------
 
  This table describes the call tree of the program, and was sorted by
@@ -400,19 +411,19 @@ notice and this notice are preserved.
 
 Index by function name
 
-  [22] fibonacci              [13] klkclosure_propagate (klclosure.c) [40] klref_new
-  [23] klapi_new_state        [30] klkfunc_alloc          [41] klreflist_close
-  [24] klarray_class          [31] klkfunc_delete (klkfunc.c) [20] klstack_expand
-  [18] klclass_create         [32] klkfunc_initdone       [42] klstack_init
-  [19] klclass_delete (klclass.c) [14] klkfunc_propagate (klkfunc.c) [43] klstate_create
-  [25] klclass_objalloc       [33] klmap_class            [44] klstate_delete
-   [6] klclass_propagate (klclass.c) [34] klmap_create    [21] klstate_growstack
-  [26] klco_init              [35] klmap_delete (klmap.c) [12] klstate_propagate (klstate.c)
-  [27] klcommon_create         [9] klmap_propagate (klmap.c) [45] klstrpool_create
-   [8] klcommon_propagate     [36] klmapnodepool_create   [46] klstrpool_delete (klstring.c)
-   [1] klexec_call            [37] klmapnodepool_delete   [15] klstrpool_insert (klstring.c)
-   [5] klexec_callprep_callback_for_call (klexec.c) [10] klmapnodepool_shrink [16] klstrpool_new_string
-   [4] klexec_callprepare     [38] klmm_destroy           [17] klstrpool_string_on_delete
-   [2] klexec_execute          [7] klmm_do_gc             [47] klthrow_init
-  [28] klkclosure_create      [39] klmm_gc_clean_all
-  [29] klkclosure_delete (klclosure.c) [11] klobject_propagate
+  [24] fibonacci              [13] klkclosure_propagate (klclosure.c) [11] klobject_propagate
+  [25] klapi_new_state        [32] klkfunc_alloc          [42] klref_new
+  [26] klarray_class          [33] klkfunc_delete (klkfunc.c) [43] klreflist_close
+  [20] klclass_create         [34] klkfunc_initdone       [22] klstack_expand
+  [21] klclass_delete (klclass.c) [14] klkfunc_propagate (klkfunc.c) [44] klstack_init
+  [27] klclass_objalloc       [35] klmap_class            [45] klstate_create
+   [5] klclass_propagate (klclass.c) [36] klmap_create    [46] klstate_delete (klstate.c)
+  [28] klco_init              [37] klmap_delete (klmap.c) [23] klstate_growstack
+  [29] klcommon_create         [8] klmap_propagate (klmap.c) [12] klstate_propagate (klstate.c)
+   [7] klcommon_propagate     [38] klmapnodepool_create   [47] klstrpool_create
+  [15] klexec_alloc_callinfo  [39] klmapnodepool_delete   [48] klstrpool_delete (klstring.c)
+   [1] klexec_call             [9] klmapnodepool_shrink   [16] klstrpool_insert (klstring.c)
+   [4] klexec_callprepare     [40] klmm_destroy           [17] klstrpool_new_string
+   [3] klexec_execute          [6] klmm_do_gc             [18] klstrpool_search (klstring.c)
+  [30] klkclosure_create      [10] klmm_gc_clean          [19] klstrpool_string_on_delete (klstring.c)
+  [31] klkclosure_delete (klclosure.c) [41] klmm_gc_clean_all [49] klthrow_init
