@@ -7,25 +7,25 @@ let mycfg = makecfg({ curl = "~", zerocurl = "^", tabstop = 8 });
 let abs = a if a >= 0 else -a;
 mycfg.abs = abs;
 
-let method = .self -> print "AAA";
-let class = { say = method };
+let m = method -> print "AAA";
+let class = { say = m };
 class.say();
 
-let f = .n -> n if n <= 1 else f(n - 1) + f(n - 2);
+let f = n -> n if n <= 1 else f(n - 1) + f(n - 2);
 
 let Window = inherit {} : {
   local width;
   local height;
   local pos_x;
   local pos_y;
-  constructor = method(width, height) {
+  constructor = method(width, height) => {
     this.width = width;
     this.height = height;
   };
-  moveto = method(posx, posy) {
+  moveto = method(posx, posy) => {
     this.pos_x = posx;
     this.pos_y = posy;
   };
-}
+};
 
 let win = new Window(10, 20);

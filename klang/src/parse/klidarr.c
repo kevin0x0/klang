@@ -1,3 +1,3 @@
 #include "klang/include/parse/klidarr.h"
 
-kgarray_impl(KlStrDesc, KlIdArray, klidarr,)
+kgarray_impl(KlStrDesc, KlIdArray, klidarr, pass_ref,)

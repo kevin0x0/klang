@@ -6,7 +6,6 @@
 #include "klang/include/parse/kllex.h"
 
 typedef struct tagKlParser {
-  Ko* err;
   char* inputname;
   KlStrTab* strtab;
   size_t incid;
@@ -17,7 +16,7 @@ typedef struct tagKlParser {
 } KlParser;
 
 
-bool klparser_init(KlParser* parser, KlStrTab* strtab, Ko* err, char* inputname, KlError* klerror);
+bool klparser_init(KlParser* parser, KlStrTab* strtab, char* inputname, KlError* klerror);
 
 static inline bool klparser_match(KlParser* parser, KlLex* lex, KlTokenKind kind);
 /* check whether current token match 'kind', if not, report an error and try to discover.
@@ -33,7 +32,6 @@ KlCst* klparser_exprunit(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprpost(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprpre(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprbin(KlParser* parser, KlLex* lex, int prio);
-KlCst* klparser_exprsel(KlParser* parser, KlLex* lex);
 
 KlCst* klparser_stmt(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtlet(KlParser* parser, KlLex* lex);
@@ -73,7 +71,7 @@ static inline bool klparser_check(KlParser* parser, KlLex* lex, KlTokenKind kind
 }
 
 static inline KlCst* klparser_expr(KlParser* parser, KlLex* lex) {
-  return klparser_exprsel(parser, lex);
+  return klparser_exprbin(parser, lex, 0);
 }
 
 static inline KlCst* klparser_stmtbreak(KlParser* parser, KlLex* lex) {

@@ -4,9 +4,11 @@
 #include "klang/include/code/klgen.h"
 #include "klang/include/code/klgen_expr.h"
 #include "klang/include/code/klgen_exprbool.h"
+#include "klang/include/code/klsymtbl.h"
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/cst/klcst_stmt.h"
+#include <unistd.h>
 
 static void klgen_stmtlet(KlGenUnit* gen, KlCstStmtLet* letcst) {
   size_t stkid = klgen_stacktop(gen);
@@ -195,20 +197,24 @@ static void klgen_stmtif(KlGenUnit* gen, KlCstStmtIf* ifcst) {
   if (klcodeval_isconstant(cond)) {
     if (klcodeval_istrue(cond)) {
       size_t stktop = klgen_stacktop(gen);
-      bool ifneedclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, ifcst->if_block));
-      if (!ifcst->else_block) {
-        if (ifneedclose)
-          klgen_pushinst(gen, klinst_closejmp(stktop, 0), klgen_cstposition(ifcst->if_block));
-        klgen_setinstjmppos(gen, cond, klgen_currcodesize(gen));
-        return;
-      }
+      bool needclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, ifcst->if_block));
+      if (needclose)
+        klgen_pushinst(gen, klinst_close(stktop), klgen_cstposition(ifcst->if_block));
+      return;
+    } else {
+      if (!ifcst->else_block) return;
+      size_t stktop = klgen_stacktop(gen);
+      bool needclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, ifcst->else_block));
+      if (needclose)
+        klgen_pushinst(gen, klinst_close(stktop), klgen_cstposition(ifcst->else_block));
+      return;
     }
   } else {
     size_t stktop = klgen_stacktop(gen);
     bool ifneedclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, ifcst->if_block));
     if (!ifcst->else_block) {
       if (ifneedclose)
-        klgen_pushinst(gen, klinst_closejmp(stktop, 0), klgen_cstposition(ifcst->if_block));
+        klgen_pushinst(gen, klinst_close(stktop), klgen_cstposition(ifcst->if_block));
       klgen_setinstjmppos(gen, cond, klgen_currcodesize(gen));
       return;
     }
@@ -219,13 +225,166 @@ static void klgen_stmtif(KlGenUnit* gen, KlCstStmtIf* ifcst) {
     klgen_setinstjmppos(gen, cond, klgen_currcodesize(gen));
     bool elseneedclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, ifcst->else_block));
     if (elseneedclose)
-      klgen_pushinst(gen, klinst_closejmp(stktop, 0), klgen_cstposition(ifcst->if_block));
+      klgen_pushinst(gen, klinst_close(stktop), klgen_cstposition(ifcst->if_block));
     klgen_setinstjmppos(gen, ifout, klgen_currcodesize(gen));
   }
 }
 
+static void klgen_stmtwhile(KlGenUnit* gen, KlCstStmtWhile* whilecst) {
+  KlCodeVal bjmplist = klcodeval_none();
+  KlCodeVal cjmplist = klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(whilecst)));
+  KlCodeVal* prev_bjmp = gen->info.breakjmp;
+  KlCodeVal* prev_cjmp = gen->info.continuejmp;
+  KlSymTbl* prev_bscope = gen->info.break_scope;
+  KlSymTbl* prev_cscope = gen->info.continue_scope;
+  gen->info.breakjmp = &bjmplist;
+  gen->info.continuejmp = &cjmplist;
+  gen->info.break_scope = gen->symtbl;
+  gen->info.continue_scope = gen->symtbl;
+
+  size_t stktop = klgen_stacktop(gen);
+  size_t loopbeginpos = klgen_currcodesize(gen);
+  bool needclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, whilecst->block));
+  if (needclose)
+      klgen_pushinst(gen, klinst_close(stktop), klgen_cstposition(whilecst));
+  size_t continuepos = klgen_currcodesize(gen);
+  KlCodeVal cond = klgen_exprbool(gen, whilecst->cond, true);
+  if (klcodeval_isconstant(cond)) {
+    if (klcodeval_istrue(cond)) {
+      bool cond_has_side_effect = klgen_currcodesize(gen) != continuepos;
+      int offset = (int)loopbeginpos - (int)klgen_currcodesize(gen) - 1;
+      if (!klinst_inrange(offset, 24))
+        klgen_error_fatal(gen, "jump too far, can not generate code");
+      klgen_pushinst(gen, klinst_jmp(offset), klgen_cstposition(whilecst->cond));
+      klgen_setinstjmppos(gen, cjmplist, cond_has_side_effect ? continuepos : loopbeginpos);
+      klgen_setinstjmppos(gen, bjmplist, klgen_currcodesize(gen));
+    } else {
+      klgen_setinstjmppos(gen, cjmplist, continuepos);
+      klgen_setinstjmppos(gen, bjmplist, klgen_currcodesize(gen));
+    }
+  } else {
+    klgen_setinstjmppos(gen, cond, loopbeginpos);
+    klgen_setinstjmppos(gen, cjmplist, continuepos);
+    klgen_setinstjmppos(gen, bjmplist, klgen_currcodesize(gen));
+  }
+  gen->info.breakjmp = prev_bjmp;
+  gen->info.continuejmp = prev_cjmp;
+  gen->info.break_scope = prev_bscope;
+  gen->info.continue_scope = prev_cscope;
+}
+
+static void klgen_stmtrepeat(KlGenUnit* gen, KlCstStmtRepeat* repeatcst) {
+  KlCodeVal bjmplist = klcodeval_none();
+  KlCodeVal cjmplist = klcodeval_none();
+  KlCodeVal* prev_bjmp = gen->info.breakjmp;
+  KlCodeVal* prev_cjmp = gen->info.continuejmp;
+  KlSymTbl* prev_bscope = gen->info.break_scope;
+  KlSymTbl* prev_cscope = gen->info.continue_scope;
+  gen->info.breakjmp = &bjmplist;
+  gen->info.continuejmp = &cjmplist;
+  gen->info.break_scope = gen->symtbl;
+  gen->info.continue_scope = gen->symtbl;
+
+  size_t stktop = klgen_stacktop(gen);
+  size_t loopbeginpos = klgen_currcodesize(gen);
+  bool needclose = klgen_stmtblock(gen, klcast(KlCstStmtList*, repeatcst->block));
+  if (needclose)
+      klgen_pushinst(gen, klinst_close(stktop), klgen_cstposition(repeatcst));
+  size_t continuepos = klgen_currcodesize(gen);
+  KlCodeVal cond = klgen_exprbool(gen, repeatcst->cond, true);
+  if (klcodeval_isconstant(cond)) {
+    if (klcodeval_istrue(cond)) {
+      klgen_setinstjmppos(gen, cjmplist, continuepos);
+      klgen_setinstjmppos(gen, bjmplist, klgen_currcodesize(gen));
+    } else {
+      bool cond_has_side_effect = klgen_currcodesize(gen) != continuepos;
+      int offset = (int)loopbeginpos - (int)klgen_currcodesize(gen) - 1;
+      if (!klinst_inrange(offset, 24))
+        klgen_error_fatal(gen, "jump too far, can not generate code");
+      klgen_pushinst(gen, klinst_jmp(offset), klgen_cstposition(repeatcst->cond));
+      klgen_setinstjmppos(gen, cjmplist, cond_has_side_effect ? continuepos : loopbeginpos);
+      klgen_setinstjmppos(gen, bjmplist, klgen_currcodesize(gen));
+    }
+  } else {
+    klgen_setinstjmppos(gen, cond, loopbeginpos);
+    klgen_setinstjmppos(gen, cjmplist, continuepos);
+    klgen_setinstjmppos(gen, bjmplist, klgen_currcodesize(gen));
+  }
+  gen->info.breakjmp = prev_bjmp;
+  gen->info.continuejmp = prev_cjmp;
+  gen->info.break_scope = prev_bscope;
+  gen->info.continue_scope = prev_cscope;
+}
+
+static bool klgen_needclose(KlGenUnit* gen, KlSymTbl* endtbl, size_t* closebase) {
+  KlSymTbl* symtbl = gen->symtbl;
+  bool needclose = false;
+  while (symtbl != endtbl) {
+    if (symtbl->info.referenced) {
+      needclose = true;
+      if (closebase) *closebase = symtbl->info.stkbase;
+    }
+    symtbl = klsymtbl_parent(symtbl);
+  }
+  return needclose;
+}
+
+static void klgen_stmtbreak(KlGenUnit* gen, KlCstStmtBreak* breakcst) {
+  if (kl_unlikely(!gen->info.breakjmp)) {
+    klgen_error(gen, klcst_begin(breakcst), klcst_end(breakcst), "break statement is not allowed here");
+    return;
+  }
+  size_t closebase;
+  KlInstruction breakinst;
+  if (klgen_needclose(gen, gen->info.break_scope, &closebase)) {
+    breakinst = klinst_closejmp(closebase, 0);
+  } else {
+    breakinst = klinst_jmp(0);
+  }
+  klgen_mergejmp_maynone(gen, gen->info.breakjmp,
+                         klcodeval_jmp(klgen_pushinst(gen, breakinst, klgen_cstposition(breakcst))));
+}
+
+static void klgen_stmtcontinue(KlGenUnit* gen, KlCstStmtContinue* continuecst) {
+  if (kl_unlikely(!gen->info.continuejmp)) {
+    klgen_error(gen, klcst_begin(continuecst), klcst_end(continuecst), "continue statement is not allowed here");
+    return;
+  }
+  size_t closebase;
+  KlInstruction continueinst;
+  if (klgen_needclose(gen, gen->info.continue_scope, &closebase)) {
+    continueinst = klinst_closejmp(closebase, 0);
+  } else {
+    continueinst = klinst_jmp(0);
+  }
+  klgen_mergejmp_maynone(gen, gen->info.continuejmp,
+                         klcodeval_jmp(klgen_pushinst(gen, continueinst, klgen_cstposition(continuecst))));
+}
+
+static void klgen_stmtreturn(KlGenUnit* gen, KlCstStmtReturn* returncst) {
+  KlCstTuple* res = klcast(KlCstTuple*, returncst->retval);
+  bool needclose = klgen_needclose(gen, gen->reftbl, NULL);
+  if (res->nelem == 0) {
+    klgen_expr(gen, klcst(res));
+    if (needclose)
+      klgen_pushinst(gen, klinst_close(0), klgen_cstposition(returncst));
+    klgen_pushinst(gen, klinst_return0(), klgen_cstposition(returncst));
+  } else if (res->nelem == 1) {
+    KlCodeVal retval = klgen_expr(gen, klcst(res));
+    klgen_putinstack(gen, &retval, klgen_cstposition(res));
+    if (needclose)
+      klgen_pushinst(gen, klinst_close(0), klgen_cstposition(returncst));
+    klgen_pushinst(gen, klinst_return1(retval.index), klgen_cstposition(returncst));
+  } else {
+    size_t argbase = klgen_stacktop(gen);
+    size_t nres = klgen_passargs(gen, klcst(res));
+    if (needclose)
+      klgen_pushinst(gen, klinst_close(0), klgen_cstposition(returncst));
+    klgen_pushinst(gen, klinst_return(argbase, nres), klgen_cstposition(returncst));
+  }
+}
+
 void klgen_stmtlist(KlGenUnit* gen, KlCstStmtList* cst) {
-  kltodo("push new block info");
   KlCst** endstmt = cst->stmts + cst->nstmt;
   for (KlCst** pstmt = cst->stmts; pstmt != endstmt; ++pstmt) {
     KlCst* stmt = *pstmt;
@@ -249,7 +408,8 @@ void klgen_stmtlist(KlGenUnit* gen, KlCstStmtList* cst) {
         break;
       }
       case KLCST_STMT_IF: {
-        kltodo("implement if");
+        klgen_stmtif(gen, klcast(KlCstStmtIf*, stmt));
+        break;
       }
       case KLCST_STMT_IFOR: {
         kltodo("implement ifor");
@@ -260,26 +420,23 @@ void klgen_stmtlist(KlGenUnit* gen, KlCstStmtList* cst) {
       case KLCST_STMT_GFOR: {
         kltodo("implement gfor");
       }
-      case KLCST_STMT_CFOR: {
-        kltodo("implement cfor");
-      }
-      case KLCST_STMT_BREAK: {
-        kltodo("implement break");
-      }
       case KLCST_STMT_WHILE: {
-        kltodo("implement while");
+        klgen_stmtwhile(gen, klcast(KlCstStmtWhile*, stmt));
+        break;
       }
       case KLCST_STMT_REPEAT: {
-        kltodo("implement repeat");
+        klgen_stmtrepeat(gen, klcast(KlCstStmtRepeat*, stmt));
+        break;
+      }
+      case KLCST_STMT_BREAK: {
+        klgen_stmtbreak(gen, klcast(KlCstStmtBreak*, stmt));
       }
       case KLCST_STMT_CONTINUE: {
-        kltodo("implement continue");
+        klgen_stmtcontinue(gen, klcast(KlCstStmtContinue*, stmt));
       }
       case KLCST_STMT_RETURN: {
-        kltodo("implement return");
+        klgen_stmtreturn(gen, klcast(KlCstStmtReturn*, stmt));
       }
     }
   }
-  kltodo("check reference and generate close instruction");
-  kltodo("pop block info");
 }

@@ -5,9 +5,9 @@ void loop(void);
 
 
 int main(void) {
-  while (true) {
+  //while (true) {
     loop();
-  }
+  //}
   return 0;
 }
 
@@ -18,12 +18,12 @@ void loop(void) {
   Ko* err = kofile_attach(stderr);
   KlLex* lex = kllex_create(input, err, filename, strtab);
   KlParser parser;
-  klparser_init(&parser, lex->strtab, err, (char*)filename);
-
+  KlError klerr = { .err = err, .errcount = 0, .config = { .curl = '~', .tabstop = 8, .zerocurl = '^' } };
+  klparser_init(&parser, lex->strtab, (char*)filename, &klerr);
   kllex_next(lex);
   KlCst* expr = klparser_stmtlist(&parser, lex);
 
-  if (parser.errcount == 0) {
+  if (klerr.errcount == 0) {
     printf("root kind : %d\n", klcst_kind(expr));
   }
 

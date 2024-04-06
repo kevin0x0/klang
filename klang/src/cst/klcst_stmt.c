@@ -10,7 +10,6 @@ static void klcst_stmtif_destroy(KlCstStmtIf* stmtif);
 static void klcst_stmtvfor_destroy(KlCstStmtVFor* stmtvfor);
 static void klcst_stmtifor_destroy(KlCstStmtIFor* stmtifor);
 static void klcst_stmtgfor_destroy(KlCstStmtGFor* stmtgfor);
-static void klcst_stmtcfor_destroy(KlCstStmtCFor* stmtcfor);
 static void klcst_stmtwhile_destroy(KlCstStmtWhile* stmtwhile);
 static void klcst_stmtlist_destroy(KlCstStmtList* stmtblock);
 static void klcst_stmtrepeat_destroy(KlCstStmtRepeat* stmtrepeat);
@@ -25,7 +24,6 @@ static KlCstInfo klcst_stmtif_vfunc = { .destructor = (KlCstDelete)klcst_stmtif_
 static KlCstInfo klcst_stmtvfor_vfunc = { .destructor = (KlCstDelete)klcst_stmtvfor_destroy, .kind = KLCST_STMT_VFOR };
 static KlCstInfo klcst_stmtifor_vfunc = { .destructor = (KlCstDelete)klcst_stmtifor_destroy, .kind = KLCST_STMT_IFOR };
 static KlCstInfo klcst_stmtgfor_vfunc = { .destructor = (KlCstDelete)klcst_stmtgfor_destroy, .kind = KLCST_STMT_GFOR };
-static KlCstInfo klcst_stmtcfor_vfunc = { .destructor = (KlCstDelete)klcst_stmtcfor_destroy, .kind = KLCST_STMT_CFOR };
 static KlCstInfo klcst_stmtwhile_vfunc = { .destructor = (KlCstDelete)klcst_stmtwhile_destroy, .kind = KLCST_STMT_WHILE };
 static KlCstInfo klcst_stmtlist_vfunc = { .destructor = (KlCstDelete)klcst_stmtlist_destroy, .kind = KLCST_STMT_BLOCK };
 static KlCstInfo klcst_stmtrepeat_vfunc = { .destructor = (KlCstDelete)klcst_stmtrepeat_destroy, .kind = KLCST_STMT_REPEAT };
@@ -142,24 +140,6 @@ KlCstStmtGFor* klcst_stmtgfor_create(KlStrDesc* ids, size_t nid, KlCst* expr, Kl
   return stmtgfor;
 }
 
-KlCstStmtCFor* klcst_stmtcfor_create(KlCst* init, KlCst* cond, KlCst* post, KlCst* block, KlFileOffset begin, KlFileOffset end) {
-  KlCstStmtCFor* stmtcfor = klcst_alloc(KlCstStmtCFor);
-  if (kl_unlikely(!stmtcfor)) {
-    klcst_delete_raw(block);
-    if (init) klcst_delete_raw(init);
-    if (cond) klcst_delete_raw(cond);
-    if (post) klcst_delete_raw(post);
-    return NULL;
-  }
-  stmtcfor->init = init;
-  stmtcfor->cond = cond;
-  stmtcfor->post = post;
-  stmtcfor->block = block;
-  klcst_setposition(stmtcfor, begin, end);
-  klcst_init(stmtcfor, &klcst_stmtcfor_vfunc);
-  return stmtcfor;
-}
-
 KlCstStmtWhile* klcst_stmtwhile_create(KlCst* cond, KlCst* block, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtWhile* stmtwhile = klcst_alloc(KlCstStmtWhile);
   if (kl_unlikely(!stmtwhile)) {
@@ -271,13 +251,6 @@ static void klcst_stmtgfor_destroy(KlCstStmtGFor* stmtgfor) {
   klcst_delete_raw(stmtgfor->block);
   klcst_delete_raw(stmtgfor->expr);
   free(stmtgfor->ids);
-}
-
-static void klcst_stmtcfor_destroy(KlCstStmtCFor* stmtcfor) {
-  if (stmtcfor->init) klcst_delete_raw(stmtcfor->init);
-  if (stmtcfor->cond) klcst_delete_raw(stmtcfor->cond);
-  if (stmtcfor->post) klcst_delete_raw(stmtcfor->post);
-  klcst_delete_raw(stmtcfor->block);
 }
 
 static void klcst_stmtwhile_destroy(KlCstStmtWhile* stmtwhile) {

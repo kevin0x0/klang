@@ -107,6 +107,9 @@ def colon(KLTK_COLON):
 def ques(KLTK_QUESTION):
   (KLTK_QUESTION) $\?
 
+def arraw(KLTK_DARROW):
+  (KLTK_DARROW) $=>
+
 def arraw(KLTK_ARROW):
   (KLTK_ARROW) $->
 

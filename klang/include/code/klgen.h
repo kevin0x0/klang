@@ -40,7 +40,9 @@ struct tagKlGenUnit {
   struct {
     KlGenJumpInfo* jumpinfo;  /* information needed by code generator that evaluates boolean expression as a single value */
     KlCodeVal* continuejmp;
+    KlSymTbl* continue_scope;
     KlCodeVal* breakjmp;
+    KlSymTbl* break_scope;
   } info;
   KlGenUnit* prev;
   Ki* input;

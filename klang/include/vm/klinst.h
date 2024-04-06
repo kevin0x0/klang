@@ -250,6 +250,7 @@ typedef uint32_t KlInstruction;
 #define klinst_jmp(offset)                                klinst_I(KLOPCODE_JMP, (offset))
 #define klinst_condjmp(cond, offset)                      klinst_XI(KLOPCODE_CONDJMP, (cond), (offset))
 #define klinst_closejmp(bound, offset)                    klinst_XI(KLOPCODE_CLOSEJMP, (bound), (offset))
+#define klinst_close(bound)                               klinst_closejmp((bound), 0)
 #define klinst_is(a, b)                                   klinst_ABC(KLOPCODE_IS, (a), (b), (0))
 #define klinst_eq(a, b)                                   klinst_ABC(KLOPCODE_EQ, (a), (b), (0))
 #define klinst_ne(a, b)                                   klinst_ABC(KLOPCODE_NE, (a), (b), (0))

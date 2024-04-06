@@ -39,6 +39,7 @@ struct tagKlSymTbl {
   KlSymbolPool* symbolpool;
   KlStrTab* strtab;
   struct {
+    size_t stkbase;
     bool referenced;
   } info;
 };

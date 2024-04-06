@@ -22,8 +22,8 @@ typedef struct tagKlCodeVal {
   union {
     size_t index;
     struct {
-      size_t tail;
-      size_t head;
+      ptrdiff_t tail;
+      ptrdiff_t head;
     } jmplist;
     KlInt intval;
     KlFloat floatval;

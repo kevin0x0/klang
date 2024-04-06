@@ -104,7 +104,6 @@ KlCstStmtIf* klcst_stmtif_create(KlCst* cond, KlCst* if_block, KlCst* else_block
 KlCstStmtVFor* klcst_stmtvfor_create(KlStrDesc* ids, size_t nid, KlCst* block, KlFileOffset begin, KlFileOffset end);
 KlCstStmtIFor* klcst_stmtifor_create(KlStrDesc id, KlCst* ibegin, KlCst* iend, KlCst* istep, KlCst* block, KlFileOffset begin, KlFileOffset end);
 KlCstStmtGFor* klcst_stmtgfor_create(KlStrDesc* ids, size_t nid, KlCst* expr, KlCst* block, KlFileOffset begin, KlFileOffset end);
-KlCstStmtCFor* klcst_stmtcfor_create(KlCst* init, KlCst* cond, KlCst* post, KlCst* block, KlFileOffset begin, KlFileOffset end);
 KlCstStmtWhile* klcst_stmtwhile_create(KlCst* cond, KlCst* block, KlFileOffset begin, KlFileOffset end);
 KlCstStmtList* klcst_stmtlist_create(KlCst** stmts, size_t nstmt, KlFileOffset begin, KlFileOffset end);
 KlCstStmtRepeat* klcst_stmtrepeat_create(KlCst* block, KlCst* cond, KlFileOffset begin, KlFileOffset end);

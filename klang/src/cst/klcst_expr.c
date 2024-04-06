@@ -326,7 +326,7 @@ static void klcst_class_destroy(KlCstClass* cstclass) {
   KlCst** vals = cstclass->vals;
   size_t nfield = cstclass->nfield;
   for (size_t i = 0; i < nfield; ++i) {
-    klcst_delete_raw(vals[i]);
+    if (vals[i]) klcst_delete_raw(vals[i]);
   }
   if (cstclass->baseclass)
     klcst_delete_raw(cstclass->baseclass);

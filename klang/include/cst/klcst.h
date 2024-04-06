@@ -47,7 +47,6 @@ typedef enum tagKlCstKind {
   KLCST_STMT_VFOR,
   KLCST_STMT_IFOR,
   KLCST_STMT_GFOR,
-  KLCST_STMT_CFOR,  /* c-style for */
   KLCST_STMT_WHILE,
   KLCST_STMT_BLOCK,
   KLCST_STMT_REPEAT,
