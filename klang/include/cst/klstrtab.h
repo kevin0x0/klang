@@ -4,6 +4,7 @@
 #include "klang/include/misc/klutils.h"
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 #define KLSTRTAB_EXTRA    (4096)
 
@@ -32,6 +33,7 @@ static inline bool klstrtab_checkspace(KlStrTab* strtab, size_t space);
 /* get a pointer to the top of the stack. */
 static inline char* klstrtab_allocstring(KlStrTab* strtab, size_t size);
 static inline size_t klstrtab_pushstring(KlStrTab* strtab, size_t length);
+static inline char* klstrtab_newstring(KlStrTab* strtab, const char* str);
 /* get offset(id) of a string in the string table. */
 static inline size_t klstrtab_stringid(KlStrTab* strtab, char* str);
 /* get string by offset(id). */
@@ -64,6 +66,15 @@ static inline size_t klstrtab_pushstring(KlStrTab* strtab, size_t length) {
   size_t id = strtab->curr - strtab->stack;
   strtab->curr += length;
   return id;
+}
+
+static inline char* klstrtab_newstring(KlStrTab* strtab, const char* str) {
+  int len = strlen(str);
+  char* mystr = klstrtab_allocstring(strtab, len);
+  if (kl_unlikely(!mystr)) return mystr;
+  memcpy(mystr, str, len * sizeof (char));
+  klstrtab_pushstring(strtab, len);
+  return mystr;
 }
 
 static inline size_t klstrtab_stringid(KlStrTab* strtab, char* str) {

@@ -6,7 +6,13 @@
 #include "klang/include/cst/klcst_stmt.h"
 
 
+
+void klgen_stmtlist(KlGenUnit* gen, KlCstStmtList* cst);
 bool klgen_stmtblock(KlGenUnit* gen, KlCstStmtList* stmtlist);
+/* do not allow continue or break out of this scope */
+bool klgen_stmtblockpure(KlGenUnit* gen, KlCstStmtList* stmtlist);
+/* do not allow continue or break out of this scope */
+void klgen_stmtlistpure(KlGenUnit* gen, KlCstStmtList* stmtlist);
 
 
 #endif

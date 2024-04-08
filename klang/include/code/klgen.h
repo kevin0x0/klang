@@ -4,10 +4,11 @@
 #include "klang/include/code/klcode.h"
 #include "klang/include/code/klcontbl.h"
 #include "klang/include/code/klsymtbl.h"
+#include "klang/include/cst/klstrtab.h"
 #include <setjmp.h>
 
 
-kgarray_decl(KlCode, KlCodeArray, klcodearr, pass_ref,)
+kgarray_decl(KlCode*, KlCodeArray, klcodearr, pass_val,)
 kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val,)
 kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val,)
 
@@ -54,15 +55,21 @@ struct tagKlGenUnit {
   } config;
   struct {
     KlStrDesc constructor;
+    KlStrDesc itermethod;
   } string;
 };
 
 bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGenUnit* prev, Ki* input, KlError* klerror);
 void klgen_destroy(KlGenUnit* gen);
 
+/* convert to KlCode and destroy self.
+ * if failed, return NULL, and destroy self. */
+KlCode* klgen_tocode_and_destroy(KlGenUnit* gen);
 void klgen_error(KlGenUnit* gen, KlFileOffset begin, KlFileOffset end, const char* format, ...);
 KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFileOffset symbolpos);
 KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name);
+void klgen_pushsymtbl(KlGenUnit* gen);
+void klgen_popsymtbl(KlGenUnit* gen);
 
 void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position);
 static inline void klgen_putinstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
@@ -121,7 +128,7 @@ kl_noreturn static inline void klgen_error_fatal(KlGenUnit* gen, const char* mes
   longjmp(gen->jmppos, 1);
 }
 
-#define klgen_oomifnull(expr)  {                                                \
+#define klgen_oomifnull(gen, expr)  {                                           \
   if (kl_unlikely(!expr))                                                       \
     klgen_error_fatal(gen, "out of memory");                                    \
 }
@@ -135,9 +142,9 @@ static inline size_t klgen_pushinst(KlGenUnit* gen, KlInstruction inst, KlFilePo
   return pc;
 }
 
-static inline void klgen_pushinstmethod(KlGenUnit* gen, size_t obj, size_t method, size_t narg, size_t nret, KlFilePosition position) {
+static inline void klgen_pushinstmethod(KlGenUnit* gen, size_t obj, size_t method, size_t narg, size_t nret, size_t retpos, KlFilePosition position) {
   klgen_pushinst(gen, klinst_method(obj, method), position);
-  klgen_pushinst(gen, klinst_methodextra(narg, nret), position);
+  klgen_pushinst(gen, klinst_methodextra(narg, nret, retpos), position);
 }
 
 static inline KlCst* klgen_exprpromotion(KlCst* cst) {

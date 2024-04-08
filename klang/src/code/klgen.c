@@ -2,7 +2,7 @@
 #include "klang/include/code/klsymtbl.h"
 #include <string.h>
 
-kgarray_impl(KlCode, KlCodeArray, klcodearr, pass_ref,)
+kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
 kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
 kgarray_impl(KlFilePosition, KlFPArray, klfparr, pass_val,)
 
@@ -45,24 +45,35 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
   gen->info.jumpinfo = NULL;
   gen->info.breakjmp = NULL;
   gen->info.continuejmp = NULL;
+  gen->info.break_scope = NULL;
+  gen->info.continue_scope = NULL;
   gen->prev = prev;
   gen->klerror = klerror;
 
   gen->input = input;
-  gen->config.inputname = "unnamed";
+  if (prev) {
+    gen->config = prev->config;
+  } else {
+    gen->config.inputname = "unnamed";
+    gen->config.debug = false;
+  }
 
-  int len = strlen("constructor");
-  char* constructor = klstrtab_allocstring(strtab, len);
-  if (kl_unlikely(!constructor)) {
+
+  char* constructor = klstrtab_newstring(strtab, "constructor");
+  char* itermethod = klstrtab_newstring(strtab, "<-");
+  if (kl_unlikely(!constructor || !itermethod)) {
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
     klsymtblpool_dealloc(symtblpool, gen->reftbl);
     klcontbl_delete(gen->contbl);
     klcodearr_destroy(&gen->nestedfunc);
+    klinstarr_destroy(&gen->code);
+    klfparr_destroy(&gen->position);
     return false;
   }
-  strncpy(constructor, "constructor", len);
-  gen->string.constructor.id = klstrtab_pushstring(strtab, len);
-  gen->string.constructor.length = len;
+  gen->string.constructor.id = klstrtab_stringid(gen->strtab, constructor);
+  gen->string.constructor.length = strlen("constructor");
+  gen->string.itermethod.id = klstrtab_stringid(gen->strtab, itermethod);
+  gen->string.itermethod.length = strlen("<-");
   return true;
 }
 
@@ -93,7 +104,7 @@ KlSymbol* klgen_getsymbolref(KlGenUnit* gen, KlStrDesc name) {
   KlSymbol* refsymbol = klgen_getsymbolref(gen->prev, name);
   if (!refsymbol) return NULL;  /* is global variable */
   symbol = klsymtbl_insert(gen->reftbl, name);
-  klgen_oomifnull(symbol);
+  klgen_oomifnull(gen, symbol);
   symbol->attr.kind = KLVAL_REF;
   symbol->attr.idx = klsymtbl_size(gen->reftbl) - 1;
   symbol->attr.refto = refsymbol;
@@ -131,11 +142,24 @@ KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name) {
   KlSymbol* refsymbol = klgen_getsymbolref(gen->prev, name);
   if (!refsymbol) return NULL;  /* is global variable */
   symbol = klsymtbl_insert(gen->reftbl, name);
-  klgen_oomifnull(symbol);
+  klgen_oomifnull(gen, symbol);
   symbol->attr.kind = KLVAL_REF;
   symbol->attr.idx = klsymtbl_size(gen->reftbl) - 1;
   symbol->attr.refto = refsymbol;
   return symbol;
+}
+
+void klgen_pushsymtbl(KlGenUnit* gen) {
+  KlSymTbl* symtbl = klsymtblpool_alloc(gen->symtblpool, gen->strtab, gen->symtbl);
+  klgen_oomifnull(gen, symtbl);
+  gen->symtbl = symtbl;
+  symtbl->info.stkbase = klgen_stacktop(gen);
+}
+
+void klgen_popsymtbl(KlGenUnit* gen) {
+  KlSymTbl* symtbl = gen->symtbl;
+  gen->symtbl = klsymtbl_parent(symtbl);
+  klsymtblpool_dealloc(gen->symtblpool, symtbl);
 }
 
 void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position) {
@@ -162,7 +186,7 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
     case KLVAL_STRING: {
       KlConstant constant = { .type = KL_STRING, .string = val.string };
       KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
-      klgen_oomifnull(conent);
+      klgen_oomifnull(gen, conent);
       klgen_pushinst(gen, klinst_loadc(target, conent->index), position);
       break;
     }
@@ -173,7 +197,7 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
       } else {
         KlConstant con = { .type = KL_INT, .intval = val.intval };
         KlConEntry* conent = klcontbl_get(gen->contbl, &con);
-        klgen_oomifnull(conent);
+        klgen_oomifnull(gen, conent);
         inst = klinst_loadc(target, conent->index);
       }
       klgen_pushinst(gen, inst, position);
@@ -183,7 +207,7 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
       KlInstruction inst;
       KlConstant con = { .type = KL_FLOAT, .floatval = val.floatval };
       KlConEntry* conent = klcontbl_get(gen->contbl, &con);
-      klgen_oomifnull(conent);
+      klgen_oomifnull(gen, conent);
       inst = klinst_loadc(target, conent->index);
       klgen_pushinst(gen, inst, position);
       break;

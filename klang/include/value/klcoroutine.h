@@ -57,7 +57,7 @@ static inline void klco_setstatus(KlCoroutine* co, KlCoStatus status) {
 }
 
 static inline bool klco_ismethod(KlCoroutine* co) {
-  return klkfunc_ismethod(co->kclo->kfunc);
+  return klclosure_ismethod(co->kclo);
 }
 
 static inline bool klco_valid(KlCoroutine* co) {

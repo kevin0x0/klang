@@ -5,14 +5,24 @@
 #include "klang/include/value/klkfunc.h"
 #include "klang/include/value/klref.h"
 
+#define KLCLO_STATUS_NORM   (0)
+/* is a method */
+#define KLCLO_STATUS_METH   (klbit(0))
 
 #define klclosure_checkrange(clo, refidx)   ((refidx) < (clo)->nref)
+
+#define klclosure_set(clo, val)             ((clo)->status |= (val))
+#define klclosure_clr(clo, val)             ((clo)->status &= ~(val))
+#define klclosure_test(clo, val)            ((clo)->status & (val))
+
+#define klclosure_ismethod(clo)             klclosure_test((clo), KLCLO_STATUS_METH)
 
 
 typedef struct tagKlClosure {
   KlGCObject gcbase;
   void* func;
   size_t nref;
+  int status;
   KlRef* refs[];
 } KlClosure;
 
@@ -21,6 +31,7 @@ typedef struct tagKlKClosure {
   KlGCObject gcbase;
   KlKFunction* kfunc;
   size_t nref;
+  int status;
   KlRef* refs[];
 } KlKClosure;
 
@@ -28,6 +39,7 @@ typedef struct tagKlCClosure {
   KlGCObject gcbase;
   KlCFunction* cfunc;
   size_t nref;
+  int status;
   KlRef* refs[];
 } KlCClosure;
 

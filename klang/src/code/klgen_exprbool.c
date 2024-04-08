@@ -310,7 +310,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
             return klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
           }
           conent = klcontbl_insert(gen->contbl, &con);
-          klgen_oomifnull(conent);
+          klgen_oomifnull(gen, conent);
         }
         if (klinst_inurange(conent->index, 8)) {
           res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
@@ -326,7 +326,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
     case KLVAL_FLOAT: {
       KlConstant con = { .type = KL_FLOAT, .intval = right.floatval };
       KlConEntry* conent = klcontbl_get(gen->contbl, &con);
-      klgen_oomifnull(conent);
+      klgen_oomifnull(gen, conent);
       KlCodeVal res;
       if (klinst_inurange(conent->index, 8)) {
         res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
@@ -341,7 +341,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
     case KLVAL_STRING: {
       KlConstant con = { .type = KL_STRING, .string = right.string };
       KlConEntry* conent = klcontbl_get(gen->contbl, &con);
-      klgen_oomifnull(conent);
+      klgen_oomifnull(gen, conent);
       KlCodeVal res;
       if (klinst_inurange(conent->index, 8)) {
         res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);

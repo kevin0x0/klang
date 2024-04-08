@@ -79,7 +79,6 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
   KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
   if (kl_unlikely(!newci))
     return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
-  newci->status = KLSTATE_CI_STATUS_NORM;
   ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
   KlException exception = klexec_callprepare(state, callable, narg, NULL);
   if (exception) return exception;
@@ -94,13 +93,14 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
 
 static bool klexec_is_method(KlValue* callable) {
   if (kl_likely(klvalue_checktype(callable, KL_KCLOSURE))) {
-    return klkfunc_ismethod(klvalue_getobj(callable, KlKClosure*)->kfunc);
+    return klclosure_ismethod(klvalue_getobj(callable, KlKClosure*));
+  } else if (kl_likely(klvalue_checktype(callable, KL_CCLOSURE))) {
+    return klclosure_ismethod(klvalue_getobj(callable, KlCClosure*));
   } else if (klvalue_checktype(callable, KL_COROUTINE)) {
     return klco_ismethod(&klvalue_getobj(callable, KlState*)->coinfo);
   } else  {
-    /* else take all the C function and C closure as method */
-    return klvalue_checktype(callable, KL_CCLOSURE) ||
-           klvalue_checktype(callable, KL_CCLOSURE);
+    /* else take all the C function as method */
+    return klvalue_checktype(callable, KL_CFUNCTION);
   }
 }
 
@@ -752,6 +752,21 @@ KlException klexec_execute(KlState* state) {
         klvalue_setvalue(a, b);
         break;
       }
+      case KLOPCODE_MULTIMOVE: {
+        KlValue* a = stkbase + KLINST_ABX_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABX_GETB(inst);
+        size_t nmove = KLINST_ABX_GETX(inst);
+        if (a <= b) {
+          while (nmove--)
+            klvalue_setvalue(a++, b++);
+        } else {
+          a += nmove;
+          b += nmove;
+          while (nmove--)
+            klvalue_setvalue(--a, --b);
+        }
+        break;
+      }
       case KLOPCODE_ADD: {
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);
         KlValue* b = stkbase + KLINST_ABC_GETB(inst);
@@ -922,7 +937,6 @@ KlException klexec_execute(KlState* state) {
         KlCallInfo* newci = klexec_new_callinfo(state, nret, -1);
         if (kl_unlikely(!newci))
           return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
-        newci->status = KLSTATE_CI_STATUS_NORM;
         KlException exception = klexec_callprepare(state, callable, narg, klexec_callprep_callback_for_call);
         if (kl_unlikely(exception)) return exception;
         if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
@@ -948,9 +962,9 @@ KlException klexec_execute(KlState* state) {
         if (ismethod) ++narg;
 
         klexec_savestate(argbase + narg, callinfo);
-        KlCallInfo* newci = klexec_new_callinfo(state, nret, ismethod ? 0 : -1);
+        KlCallInfo* newci = klexec_new_callinfo(state, nret, (stkbase + KLINST_XYZ_GETZ(extra)) - argbase);
         if (kl_unlikely(!newci))
-          return klstate_throw(state, KL_E_OOM, "out of memory when call a callable object");
+          return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
         KlValue* callable = klexec_getfield(state, thisobj, field);
         if (kl_unlikely(!callable))
           return klstate_throw(state, KL_E_INVLD, "can not find method named %s", field);
@@ -1094,6 +1108,20 @@ KlException klexec_execute(KlState* state) {
           iter = klarray_iter_next(iter);
         }
         klvalue_setobj(a, arr, KL_ARRAY);
+        break;
+      }
+      case KLOPCODE_MKMETHOD:
+      case KLOPCODE_MKCLOSURE: {
+        kl_assert(KLINST_AX_GETX(inst) < closure->kfunc->nsubfunc, "");
+        KlKFunction* kfunc = klkfunc_subfunc(closure->kfunc)[KLINST_AX_GETX(inst)];
+        klexec_savestate(callinfo->top, callinfo);
+        KlKClosure* kclo = klkclosure_create(klstate_getmm(state), kfunc, stkbase, &state->reflist, closure->refs);
+        if (kl_unlikely(!kclo))
+          return klstate_throw(state, KL_E_OOM, "out of memory when creating a closure");
+        if (opcode == KLOPCODE_MKMETHOD)
+          klclosure_set(kclo, KLCLO_STATUS_METH);
+        KlValue* a = stkbase + KLINST_AX_GETA(inst);
+        klvalue_setobj(a, kclo, KL_KCLOSURE);
         break;
       }
       case KLOPCODE_APPEND: {
@@ -1707,7 +1735,6 @@ KlException klexec_execute(KlState* state) {
         KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
         if (kl_unlikely(!newci))
           return klstate_throw(state, KL_E_OOM, "out of memory when do generic for loop");
-        newci->status = KLSTATE_CI_STATUS_NORM;
         KlException exception = klexec_callprepare(state, a, nret, NULL);
         if (kl_unlikely(exception)) return exception;
         if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
@@ -1716,6 +1743,11 @@ KlException klexec_execute(KlState* state) {
         } else {  /* C function or C closure */
           /* stack may have grown. restore stkbase. */
           stkbase = callinfo->base;
+          uint8_t argbase = KLINST_AX_GETA(inst) + 1;
+          KlInstruction jmp = *pc++;
+          kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_TRUEJMP && KLINST_AI_GETA(jmp) == argbase, "");
+          if (kl_likely(klexec_if(stkbase + argbase)))
+            pc += KLINST_AI_GETI(jmp);
         }
         break;
       }

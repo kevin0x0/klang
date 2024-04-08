@@ -40,7 +40,7 @@ int main(void) {
 void fibonacci(KlState* state) {
   KlMM* klmm = klstate_getmm(state);
   KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
-  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 0, 1, 100, 1, false);
+  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 0, 1, 0, 100, 1);
   KlRefInfo* refinfo = klkfunc_refinfo(kfunc);
   refinfo[0].index = 0;
   refinfo[0].on_stack = true;
@@ -76,7 +76,7 @@ void coroutine(KlState* state) {
 void concat(KlState* state) {
   KlMM* klmm = klstate_getmm(state);
   KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
-  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 1, 0, 100, 0, false);
+  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 1, 0, 0, 100, 0);
   KlValue* constants = klkfunc_constants(kfunc);
   klapi_pushstring(state, "");
   klvalue_setvalue(&constants[0], klapi_access(state, -1));
@@ -97,7 +97,7 @@ void concat(KlState* state) {
 void arithsum(KlState* state) {
   KlMM* klmm = klstate_getmm(state);
   KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
-  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 1, 0, 100, 0, false);
+  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 1, 0, 0, 100, 0);
   KlValue* constants = klkfunc_constants(kfunc);
   klapi_pushint(state, 1000000000);
   klvalue_setvalue(&constants[0], klapi_access(state, -1));
