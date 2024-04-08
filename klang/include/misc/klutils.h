@@ -25,5 +25,11 @@ kl_noreturn void kl_abort(const char* expr, const char* head, int line_no, const
 #define kltodo(message)         kl_abort(message, "TODO", __LINE__, __FILE__, "")
 #endif
 
+#if defined (__GNUC__) || defined (__clang__)
+#define kl_fallthrough  __attribute__ ((fallthrough))
+#else
+#define kl_fallthrough  (void)0;
+#endif
+
 
 #endif

@@ -15,7 +15,6 @@ typedef struct tagKlLex {
   KlStrTab* strtab;         /* string table */
   Ki* input;                /* input stream */
   char* inputname;          /* name of input stream */
-  Ko* err;                  /* error information puts here. */
   size_t nerror;            /* number of lexical error */
   size_t currline;          /* current line number */
   KlError* klerror;         /* error reporter */
@@ -33,9 +32,9 @@ typedef struct tagKlLex {
   } tok;                    /* token information */
 } KlLex;
 
-bool kllex_init(KlLex* lex, Ki* ki, Ko* err, const char* inputname, KlStrTab* strtab);
+bool kllex_init(KlLex* lex, Ki* ki, KlError* klerr, const char* inputname, KlStrTab* strtab);
 void kllex_destroy(KlLex* lex);
-KlLex* kllex_create(Ki* ki, Ko* err, const char* inputname, KlStrTab* strtab);
+KlLex* kllex_create(Ki* ki, KlError* klerr, const char* inputname, KlStrTab* strtab);
 void kllex_delete(KlLex* lex);
 
 void kllex_next(KlLex* lex);

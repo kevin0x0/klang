@@ -53,6 +53,7 @@ typedef enum tagKlTokenKind {
   KLTK_BAR,
 
   /* keywords */
+  KLTK_WHERE,
   KLTK_IF,
   KLTK_ELSE,
   KLTK_WHILE,

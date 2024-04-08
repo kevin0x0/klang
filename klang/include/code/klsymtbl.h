@@ -4,6 +4,7 @@
 #include "klang/include/cst/klstrtab.h"
 #include "klang/include/misc/klutils.h"
 #include "klang/include/code/klcodeval.h"
+#include "klang/include/value/klref.h"
 #include <stdlib.h>
 
 typedef KlValKind KlSymKind;
@@ -50,6 +51,10 @@ void klsymtbl_destroy(KlSymTbl* symtbl);
 KlSymTbl* klsymtbl_create(size_t capacity, KlSymbolPool* pool, KlStrTab* strtab, KlSymTbl* parent);
 void klsymtbl_delete(KlSymTbl* symtbl);
 
+void klreftbl_setrefinfo(KlSymTbl* reftbl, KlRefInfo* refinfo);
+
+static inline KlSymbol* klsymtbl_iter_begin(KlSymTbl* symtbl);
+static inline KlSymbol* klsymtbl_iter_next(KlSymTbl* symtbl, KlSymbol* symbol);
 
 KlSymbol* klsymtbl_insert(KlSymTbl* symtbl, KlStrDesc name);
 KlSymbol* klsymtbl_search(KlSymTbl* map, KlStrDesc name);
@@ -58,6 +63,24 @@ static inline size_t klsymtbl_size(KlSymTbl* symtbl);
 
 static inline KlSymbol* klsymbolpool_alloc(KlSymbolPool* pool);
 static inline void klsymbolpool_dealloc(KlSymbolPool* pool, KlSymbol* symbol);
+
+static inline KlSymbol* klsymtbl_iter_begin(KlSymTbl* symtbl) {
+  for (size_t i = 0; i < symtbl->capacity; ++i) {
+    if (symtbl->array[i])
+      return symtbl->array[i];
+  }
+  return NULL;
+}
+
+static inline KlSymbol* klsymtbl_iter_next(KlSymTbl* symtbl, KlSymbol* symbol) {
+  if (symbol->next) return symbol->next;
+  size_t index = symbol->hash & (symtbl->capacity - 1);
+  for (size_t i = index + 1; i < symtbl->capacity; ++i) {
+    if (symtbl->array[i])
+      return symtbl->array[i];
+  }
+  return NULL;
+}
 
 static inline KlSymTbl* klsymtbl_parent(KlSymTbl* symtbl) {
   return symtbl->parent;

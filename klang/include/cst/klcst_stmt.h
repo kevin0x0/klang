@@ -111,4 +111,6 @@ KlCstStmtReturn* klcst_stmtreturn_create(KlCst* retval, KlFileOffset begin, KlFi
 KlCstStmtBreak* klcst_stmtbreak_create(KlFileOffset begin, KlFileOffset end);
 KlCstStmtContinue* klcst_stmtcontinue_create(KlFileOffset begin, KlFileOffset end);
 
+bool klcst_mustreturn(KlCstStmtList* stmtlist);
+
 #endif

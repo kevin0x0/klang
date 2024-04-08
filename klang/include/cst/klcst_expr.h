@@ -115,12 +115,12 @@ typedef struct tagKlCstDot {
   KlStrDesc field;
 } KlCstDot;
 
-typedef struct tagKlCstSel {
+typedef struct tagKlCstWhere {
   KlCst base;
-  KlCst* cond;
-  KlCst* texpr;     /* true */
-  KlCst* fexpr;     /* false */
-} KlCstSel;
+  KlCst* expr;
+  KlCst* block;
+  KlStrDesc tmpid;
+} KlCstWhere;
 
 
 KlCstIdentifier* klcst_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset end);
@@ -142,7 +142,7 @@ KlCstYield* klcst_yield_create(KlCst* vals, KlFileOffset begin, KlFileOffset end
 KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFileOffset begin, KlFileOffset end);
 KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
 KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
-KlCstSel* klcst_sel_create(KlCst* cond, KlCst* texpr, KlCst* fexpr, KlFileOffset begin, KlFileOffset end);
+KlCstWhere* klcst_where_create(KlCst* expr, KlCst* block, KlStrDesc tmpid, KlFileOffset begin, KlFileOffset end);
 
 static inline bool klcst_isboolexpr(KlCst* cst) {
   if (klcst_kind(cst) == KLCST_EXPR_PRE) {

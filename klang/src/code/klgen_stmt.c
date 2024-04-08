@@ -219,7 +219,7 @@ static void klgen_stmtassign(KlGenUnit* gen, KlCstStmtAssign* assigncst) {
   size_t base = klgen_stacktop(gen);
   klgen_tuple(gen, rvals, rvals->nelem - 1);
   if (lvals->nelem > rvals->nelem) {
-    klgen_multival(gen, rvals->elems[rvals->nelem - 1], lvals->nelem - rvals->nelem + 1);
+    klgen_multival(gen, rvals->elems[rvals->nelem - 1], lvals->nelem - rvals->nelem + 1, base);
     for (size_t i = lvals->nelem; i-- > 0;)
       klgen_assignfrom(gen, lvals->elems[i], base + i);
   } else if (lvals->nelem < rvals->nelem) {
@@ -582,8 +582,8 @@ void klgen_stmtlist(KlGenUnit* gen, KlCstStmtList* cst) {
       }
       case KLCST_STMT_EXPR: {
         size_t stktop = klgen_stacktop(gen);
-        klgen_expr(gen, klcast(KlCstStmtExpr*, stmt)->expr);
-        klgen_stackfree(gen, stktop);
+        klgen_multival(gen, klcast(KlCstStmtExpr*, stmt)->expr, 0, stktop);
+        kl_assert(klgen_stacktop(gen) == stktop, "");
         break;
       }
       case KLCST_STMT_BLOCK: {

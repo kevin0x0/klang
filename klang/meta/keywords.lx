@@ -122,6 +122,9 @@ def bar(KL_BAR):
 def if (KLTK_IF):
   (KLTK_IF) $if
 
+def where (KLTK_WHERE):
+  (KLTK_WHERE) $where
+
 def else (KLTK_ELSE):
   (KLTK_ELSE) $else
 

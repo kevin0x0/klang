@@ -1,5 +1,7 @@
 #include "klang/include/code/klgen.h"
+#include "klang/include/code/klcontbl.h"
 #include "klang/include/code/klsymtbl.h"
+#include "klang/include/cst/klcst_expr.h"
 #include <string.h>
 
 kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
@@ -85,8 +87,53 @@ void klgen_destroy(KlGenUnit* gen) {
     symtbl = parent;
   }
   klcontbl_delete(gen->contbl);
+  for (size_t i = 0; i < klcodearr_size(&gen->nestedfunc); ++i) {
+    KlCode** code = klcodearr_access(&gen->nestedfunc, i);
+    klcode_delete(*code);
+  }
   klcodearr_destroy(&gen->nestedfunc);
   klinstarr_destroy(&gen->code);
+}
+
+KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
+  klinstarr_shrink(&gen->code);
+  klfparr_shrink(&gen->position);
+  klcodearr_shrink(&gen->nestedfunc);
+  KlConstant* constants = (KlConstant*)malloc(klcontbl_size(gen->contbl) * sizeof (KlConstant));
+  KlRefInfo* refinfo = (KlRefInfo*)malloc(klsymtbl_size(gen->reftbl) * sizeof (KlRefInfo));
+  if (kl_unlikely(!constants || !refinfo)) {
+    free(constants);
+    free(refinfo);
+    klgen_error_fatal(gen, "out of memory");
+  }
+  klcontbl_setconstants(gen->contbl, constants);
+  klreftbl_setrefinfo(gen->reftbl, refinfo);
+  size_t codelen = klinstarr_size(&gen->code);
+  KlInstruction* insts = klinstarr_steal(&gen->code);
+  KlFilePosition* lineinfo = gen->config.debug ? klfparr_steal(&gen->position) : NULL;
+  size_t nnested = klcodearr_size(&gen->nestedfunc);
+  KlCode** nestedfunc = klcodearr_steal(&gen->nestedfunc);
+
+  klgen_stackfree(gen, 0);
+  KlCode* code = klcode_create(refinfo, klsymtbl_size(gen->reftbl), constants, klcontbl_size(gen->contbl),
+                               insts, lineinfo, codelen, nestedfunc, nnested,
+                               gen->strtab, nparam, gen->framesize);
+  kl_assert(gen->symtbl->parent == gen->reftbl, "");
+  klsymtblpool_dealloc(gen->symtblpool, gen->symtbl);
+  klsymtblpool_dealloc(gen->symtblpool, gen->reftbl);
+  klcontbl_delete(gen->contbl);
+  if (kl_unlikely(!code)) {
+    for (size_t i = 0; i < nnested; ++i) {
+      klcode_delete(nestedfunc[i]);
+    }
+    free(nestedfunc);
+    free(insts);
+    free(lineinfo);
+    free(refinfo);
+    free(constants);
+    return NULL;
+  }
+  return code;
 }
 
 KlSymbol* klgen_getsymbolref(KlGenUnit* gen, KlStrDesc name) {

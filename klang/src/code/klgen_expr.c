@@ -4,6 +4,7 @@
 #include "klang/include/code/klgen_exprbool.h"
 #include "klang/include/code/klgen_stmt.h"
 #include "klang/include/cst/klcst_expr.h"
+#include "klang/include/cst/klstrtab.h"
 #include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klinst.h"
 #include <setjmp.h>
@@ -29,9 +30,15 @@ void klgen_exprarrgen(KlGenUnit* gen, KlCstArrayGenerator* arrgencst, size_t tar
   }
 }
 
-static bool klgen_mustreturn(KlGenUnit* gen, KlCstStmtList* stmtlist) {
-  kltodo("implement mustreturn");
-  return false;
+void klgen_exprwhere(KlGenUnit* gen, KlCstWhere* wherecst, size_t nwanted, size_t target) {
+  size_t stktop = klgen_stacktop(gen);
+  klgen_pushsymtbl(gen);
+  klgen_stmtlistpure(gen, klcast(KlCstStmtList*, wherecst->block));
+  kl_assert(klgen_stacktop(gen) == stktop, "");
+  klgen_multival(gen, wherecst->expr, nwanted, target);
+  if (gen->symtbl->info.referenced)
+    klgen_pushinst(gen, klinst_close(stktop), klgen_cstposition(wherecst));
+  klgen_popsymtbl(gen);
 }
 
 void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
@@ -41,12 +48,18 @@ void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
     klgen_error_fatal(gen, "out of memory");
   if (setjmp(newgen.jmppos) == 0) {
     /* the scope is already created in klgen_init() */
-    kltodo("create new symbols for parameters");
+    kl_assert(klgen_stacktop(gen) == 0, "");
+    size_t nparam = funccst->nparam;
+    KlStrDesc* params = funccst->params;
+    for (size_t i = 0; i < nparam; ++i)
+      klgen_newsymbol(gen, params[i], i, klcst_begin(funccst));
+    klgen_stackalloc(gen, nparam);
+
     klgen_stmtlist(&newgen, klcast(KlCstStmtList*, funccst->block));
-    if (!klgen_mustreturn(&newgen, klcast(KlCstStmtList*, funccst->block)))
+    if (!klcst_mustreturn(klcast(KlCstStmtList*, funccst->block)))
       klgen_pushinst(gen, klinst_return0(), klgen_position(klcst_end(funccst), klcst_end(funccst)));
 
-    KlCode* funccode = klgen_tocode_and_destroy(&newgen);
+    KlCode* funccode = klgen_tocode_and_destroy(&newgen, nparam);
     klgen_oomifnull(gen, funccode);
     size_t funcidx = klcodearr_size(&gen->nestedfunc);
     if (!klinst_inurange(funcidx, 16)) {
@@ -232,29 +245,41 @@ void klgen_call(KlGenUnit* gen, KlCstPost* callcst, size_t nret, size_t target) 
   }
 }
 
-void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval) {
-  kl_assert(nval > 0, "");
+void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target) {
   switch (klcst_kind(cst)) {
     case KLCST_EXPR_YIELD: {
+      size_t stktop = klgen_stacktop(gen);
       klgen_expryield(gen, klcast(KlCstYield*, cst), nval);
+      if (stktop != target && nval != 0) {
+        if (nval == 1) {
+          klgen_pushinst(gen, klinst_move(target, stktop), klgen_cstposition(cst));
+        } else {
+          klgen_pushinst(gen, klinst_multimove(target, stktop, nval), klgen_cstposition(cst));
+        }
+      }
+      klgen_stackfree(gen, target + nval > stktop ? target + nval : stktop);
       break;
     }
     case KLCST_EXPR_CALL: {
-      klgen_call(gen, klcast(KlCstPost*, cst), nval, klgen_stacktop(gen));
+      klgen_call(gen, klcast(KlCstPost*, cst), nval, target);
+      break;
+    }
+    case KLCST_EXPR_WHERE: {
+      klgen_exprwhere(gen, klcast(KlCstWhere*, cst), nval, target);
       break;
     }
     case KLCST_EXPR_VARARG: {
       kltodo("implement vararg");
     }
     default: {
-      size_t base = klgen_stacktop(gen);
-      KlCodeVal res = klgen_exprtarget(gen, cst, base);
+      size_t stktop = klgen_stacktop(gen);
+      KlCodeVal res = klgen_exprtarget(gen, cst, target);
       if (klcodeval_isconstant(res))
-        klgen_putinstktop(gen, &res, klgen_cstposition(cst));
+        klgen_loadval(gen, target, res, klgen_cstposition(cst));
       if (nval != 1) {
-        klgen_pushinst(gen, klinst_loadnil(res.index + 1, nval - 1), klgen_cstposition(cst));
-        klgen_stackalloc(gen, nval - 1);
+        klgen_pushinst(gen, klinst_loadnil(target + 1, nval - 1), klgen_cstposition(cst));
       }
+      klgen_stackfree(gen, target + nval > stktop ? target + nval : stktop);
       break;
     }
   }
@@ -276,7 +301,7 @@ void klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst, size_t nwanted) {
     if (klcodeval_isconstant(res))
       klgen_putinstktop(gen, &res, klgen_cstposition(exprs[i]));
   }
-  klgen_multival(gen, exprs[count], nwanted - count);
+  klgen_multival(gen, exprs[count], nwanted - count, klgen_stacktop(gen));
 }
 
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args) {
@@ -722,6 +747,11 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlCst* cst) {
       klgen_exprarrgen(gen, klcast(KlCstArrayGenerator*, cst), target);
       return klcodeval_stack(target);
     }
+    case KLCST_EXPR_WHERE: {
+      size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
+      klgen_exprwhere(gen, klcast(KlCstWhere*, cst), 1, target);
+      return klcodeval_stack(target);
+    }
     case KLCST_EXPR_MAP: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprmap(gen, klcast(KlCstMap*, cst), target);
@@ -791,6 +821,10 @@ KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlCst* cst, size_t target) {
     }
     case KLCST_EXPR_ARRGEN: {
       klgen_exprarrgen(gen, klcast(KlCstArrayGenerator*, cst), target);
+      return klcodeval_stack(target);
+    }
+    case KLCST_EXPR_WHERE: {
+      klgen_exprwhere(gen, klcast(KlCstWhere*, cst), 1, target);
       return klcodeval_stack(target);
     }
     case KLCST_EXPR_MAP: {

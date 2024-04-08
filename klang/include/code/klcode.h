@@ -9,6 +9,11 @@
 
 
 typedef struct tagKlCode KlCode;
+typedef struct tagKlFilePosition {
+  KlFileOffset begin;
+  KlFileOffset end;
+} KlFilePosition;
+
 
 struct tagKlCode {
   KlRefInfo* refinfo;
@@ -17,6 +22,7 @@ struct tagKlCode {
   size_t nconst;
   KlInstruction* code;
   size_t codelen;
+  KlFilePosition* lineinfo;
   KlCode** nestedfunc;        /* functions created inside this function */
   size_t nnested;
   KlStrTab* strtab;
@@ -25,12 +31,10 @@ struct tagKlCode {
 };
 
 
-KlCode* klcode_create(KlCst* cst);
+KlCode* klcode_create(KlRefInfo* refinfo, size_t nref, KlConstant* constants, size_t nconst,
+                      KlInstruction* code, KlFilePosition* lineinfo, size_t codelen,
+                      KlCode** nestedfunc, size_t nnested, KlStrTab* strtab, size_t nparam,
+                      size_t framesize);
 void klcode_delete(KlCode* code);
-
-typedef struct tagKlFilePosition {
-  KlFileOffset begin;
-  KlFileOffset end;
-} KlFilePosition;
 
 #endif

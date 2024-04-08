@@ -14,7 +14,7 @@ static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t 
 /* generate code that evaluates expressions on the tuple and put their values in the top of stack.
  * nwanted is the number of expected values. */
 void klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst, size_t nwanted);
-void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval);
+void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target);
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args);
 KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target);
 KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst, size_t target);

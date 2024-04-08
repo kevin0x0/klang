@@ -1,6 +1,7 @@
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/cst/klcst.h"
 #include "klang/include/value/klvalue.h"
+#include <stdbool.h>
 
 static void klcst_id_destroy(KlCstIdentifier* cstid);
 static void klcst_map_destroy(KlCstMap* cstmap);
@@ -17,7 +18,7 @@ static void klcst_yield_destroy(KlCstYield* cstyield);
 static void klcst_post_destroy(KlCstPost* cstpost);
 static void klcst_dot_destroy(KlCstDot* cstdot);
 static void klcst_func_destroy(KlCstFunc* cstfunc);
-static void klcst_sel_destroy(KlCstSel* cstsel);
+static void klcst_where_destroy(KlCstWhere* cstwhere);
 
 static KlCstInfo klcst_id_vfunc = { .destructor = (KlCstDelete)klcst_id_destroy, .kind = KLCST_EXPR_ID };
 static KlCstInfo klcst_map_vfunc = { .destructor = (KlCstDelete)klcst_map_destroy, .kind = KLCST_EXPR_MAP };
@@ -34,7 +35,7 @@ static KlCstInfo klcst_yield_vfunc = { .destructor = (KlCstDelete)klcst_yield_de
 static KlCstInfo klcst_post_vfunc = { .destructor = (KlCstDelete)klcst_post_destroy, .kind = KLCST_EXPR_POST };
 static KlCstInfo klcst_dot_vfunc = { .destructor = (KlCstDelete)klcst_dot_destroy, .kind = KLCST_EXPR_DOT };
 static KlCstInfo klcst_func_vfunc = { .destructor = (KlCstDelete)klcst_func_destroy, .kind = KLCST_EXPR_FUNC };
-static KlCstInfo klcst_sel_vfunc = { .destructor = (KlCstDelete)klcst_sel_destroy, .kind = KLCST_EXPR_SEL };
+static KlCstInfo klcst_where_vfunc = { .destructor = (KlCstDelete)klcst_where_destroy, .kind = KLCST_EXPR_WHERE };
 
 KlCstIdentifier* klcst_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset end) {
   KlCstIdentifier* cstid = klcst_alloc(KlCstIdentifier);
@@ -280,20 +281,19 @@ KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, 
   return cstdot;
 }
 
-KlCstSel* klcst_sel_create(KlCst* cond, KlCst* texpr, KlCst* fexpr, KlFileOffset begin, KlFileOffset end) {
-  KlCstSel* cstsel = klcst_alloc(KlCstSel);
-  if (kl_unlikely(!cstsel)) {
-    klcst_delete_raw(cond);
-    klcst_delete_raw(texpr);
-    klcst_delete_raw(fexpr);
+KlCstWhere* klcst_where_create(KlCst* expr, KlCst* block, KlStrDesc tmpid, KlFileOffset begin, KlFileOffset end) {
+  KlCstWhere* cstwhere = klcst_alloc(KlCstWhere);
+  if (kl_unlikely(!cstwhere)) {
+    klcst_delete_raw(expr);
+    klcst_delete_raw(block);
     return NULL;
   }
-  cstsel->cond = cond;
-  cstsel->texpr = texpr;
-  cstsel->fexpr = fexpr;
-  klcst_setposition(cstsel, begin, end);
-  klcst_init(cstsel, &klcst_sel_vfunc);
-  return cstsel;
+  cstwhere->expr = expr;
+  cstwhere->block = block;
+  cstwhere->tmpid = tmpid;
+  klcst_setposition(cstwhere, begin, end);
+  klcst_init(cstwhere, &klcst_where_vfunc);
+  return cstwhere;
 }
 
 
@@ -383,8 +383,7 @@ static void klcst_func_destroy(KlCstFunc* cstfunc) {
   klcst_delete_raw(cstfunc->block);
 }
 
-static void klcst_sel_destroy(KlCstSel* cstsel) {
-  klcst_delete_raw(cstsel->cond);
-  klcst_delete_raw(cstsel->texpr);
-  klcst_delete_raw(cstsel->fexpr);
+static void klcst_where_destroy(KlCstWhere* cstwhere) {
+  klcst_delete_raw(cstwhere->expr);
+  klcst_delete_raw(cstwhere->block);
 }

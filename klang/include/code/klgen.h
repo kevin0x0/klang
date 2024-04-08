@@ -64,7 +64,7 @@ void klgen_destroy(KlGenUnit* gen);
 
 /* convert to KlCode and destroy self.
  * if failed, return NULL, and destroy self. */
-KlCode* klgen_tocode_and_destroy(KlGenUnit* gen);
+KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam);
 void klgen_error(KlGenUnit* gen, KlFileOffset begin, KlFileOffset end, const char* format, ...);
 KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFileOffset symbolpos);
 KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name);

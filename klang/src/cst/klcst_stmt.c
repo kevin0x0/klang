@@ -283,3 +283,17 @@ static void klcst_stmtcontinue_destroy(KlCstStmtContinue* stmtcontinue) {
   (void)stmtcontinue;
 }
 
+
+bool klcst_mustreturn(KlCstStmtList* stmtlist) {
+  if (stmtlist->nstmt == 0) return false;
+  KlCst* laststmt = stmtlist->stmts[stmtlist->nstmt - 1];
+  if (klcst_kind(laststmt) == KLCST_STMT_RETURN)
+    return true;
+  if (klcst_kind(laststmt) == KLCST_STMT_IF) {
+    KlCstStmtIf* stmtif = klcast(KlCstStmtIf*, laststmt);
+    return klcst_mustreturn(klcast(KlCstStmtList*, stmtif->if_block)) &&
+           (!stmtif->else_block || klcst_mustreturn(klcast(KlCstStmtList*, stmtif->else_block)));
+  }
+  return false;
+}
+

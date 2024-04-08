@@ -41,6 +41,7 @@ static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_ARROW] = "->",
   [KLTK_ASSIGN] = "=",
   [KLTK_BAR] = "|",
+  [KLTK_WHERE] = "where",
   [KLTK_IF] = "if",
   [KLTK_ELSE] = "else",
   [KLTK_WHILE] = "while",

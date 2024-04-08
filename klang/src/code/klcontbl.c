@@ -157,6 +157,13 @@ void klcontbl_delete(KlConTbl* contbl) {
   free(contbl);
 }
 
+void klcontbl_setconstants(KlConTbl* contbl, KlConstant* constants) {
+  for (size_t i = 0; i < karray_size(&contbl->entries); ++i) {
+    KlConEntry* conent = (KlConEntry*)karray_access(&contbl->entries, i);
+    constants[i] = conent->con;
+  }
+}
+
 KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
   if (kl_unlikely(contbl->size >= contbl->capacity && !klcontbl_expand(contbl)))
     return NULL;

@@ -105,6 +105,15 @@ void klsymtbl_delete(KlSymTbl* symtbl) {
   free(symtbl);
 }
 
+void klreftbl_setrefinfo(KlSymTbl* reftbl, KlRefInfo* refinfo) {
+  KlSymbol* symbol = klsymtbl_iter_begin(reftbl);
+  while (symbol) {
+    refinfo[symbol->attr.idx].on_stack = symbol->attr.refto->attr.kind == KLVAL_STACK;
+    refinfo[symbol->attr.idx].index = symbol->attr.refto->attr.idx;
+    symbol = klsymtbl_iter_next(reftbl, symbol);
+  }
+}
+
 KlSymbol* klsymtbl_insert(KlSymTbl* symtbl, KlStrDesc name) {
   if (kl_unlikely(symtbl->size >= symtbl->capacity && !klsymtbl_expand(symtbl)))
     return NULL;
