@@ -265,3 +265,48 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
   }
 }
 
+void klgen_loadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition position) {
+  if (klgen_currcodesize(gen) == 0) {
+    klgen_pushinst(gen, klinst_loadnil(target, nnil), position);
+  } else {
+    KlInstruction* previnst = klinstarr_back(&gen->code);
+    if (KLINST_GET_OPCODE(*previnst) == KLOPCODE_LOADNIL) {
+      uint8_t prev_target = KLINST_AX_GETA(*previnst);
+      uint8_t prev_nnil = KLINST_AX_GETX(*previnst);
+      if ((prev_target <= target && target <= prev_target + prev_nnil) ||
+          (target <= prev_target && prev_target <= target + nnil)) {
+        uint8_t new_target = prev_target < target ? prev_target : target;
+        uint8_t new_nnil = prev_nnil > nnil ? prev_nnil : nnil;
+        *previnst = klinst_loadnil(new_target, new_nnil);
+        return;
+      } /* else fall through */
+    }
+    klgen_pushinst(gen, klinst_loadnil(target, nnil), position);
+  }
+}
+
+void klgen_movevals(KlGenUnit* gen, size_t target, size_t from, size_t nmove, KlFilePosition position) {
+  if (nmove == 0) return;
+  if (klgen_currcodesize(gen) == 0) {
+    klgen_pushinst(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
+  } else {
+    KlInstruction* previnst = klinstarr_back(&gen->code);
+    uint8_t prev_opcode = KLINST_GET_OPCODE(*previnst);
+    if (prev_opcode == KLOPCODE_MOVE || prev_opcode == KLOPCODE_MULTIMOVE) {
+      uint8_t prev_target = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETA(*previnst) : KLINST_ABX_GETA(*previnst);
+      uint8_t prev_from = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETB(*previnst) : KLINST_ABX_GETB(*previnst);
+      uint8_t prev_nmove = prev_opcode == KLOPCODE_MOVE ? 1 : KLINST_ABX_GETX(*previnst);
+      if (prev_from + target == from + prev_target &&
+          ((from <= prev_from && prev_from <= from + nmove) ||
+          (prev_from <= from && from <= prev_from + prev_nmove))) {
+        uint8_t new_target = prev_target < target ? prev_target : target;
+        uint8_t new_from = prev_from < from ? prev_from : from;
+        uint8_t new_nmove = prev_nmove > nmove ? prev_nmove : nmove;
+        *previnst = new_nmove == 1 ? klinst_move(new_target, new_from) : klinst_multimove(new_target, new_from, new_nmove);
+        return;
+      } /* else fall through */
+    }
+    klgen_pushinst(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
+  }
+}
+
