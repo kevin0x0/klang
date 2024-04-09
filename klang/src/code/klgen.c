@@ -213,7 +213,7 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
   switch (val.kind) {
     case KLVAL_STACK: {
       if (target != val.index)
-        klgen_pushinst(gen, klinst_move(target, val.index), position);
+        klgen_movevals(gen, target, val.index, 1, position);
       break;
     }
     case KLVAL_REF: {
@@ -221,8 +221,7 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
       break;
     }
     case KLVAL_NIL: {
-      KlInstruction inst = klinst_loadnil(target, 1);
-      klgen_pushinst(gen, inst, position);
+      klgen_loadnils(gen, target, 1, position);
       break;
     }
     case KLVAL_BOOL: {

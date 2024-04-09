@@ -162,7 +162,7 @@ static void klgen_assignfrom(KlGenUnit* gen, KlCst* lval, size_t stkid) {
       kl_assert(symbol->attr.kind == KLVAL_STACK, "");
       kl_assert(symbol->attr.idx < klgen_stacktop(gen), "");
       kl_assert(symbol->attr.idx != stkid, "");
-      klgen_pushinst(gen, klinst_move(symbol->attr.idx, stkid), klgen_cstposition(lval));
+      klgen_movevals(gen, symbol->attr.idx, stkid, 1, klgen_cstposition(lval));
     }
   } else if (klcst_kind(lval) == KLCST_EXPR_POST && klcast(KlCstPost*, lval)->op == KLTK_INDEX) {
     size_t stktop = klgen_stacktop(gen);
@@ -451,7 +451,7 @@ static void klgen_stmtifor(KlGenUnit* gen, KlCstStmtIFor* iforcst) {
     if (klcodeval_isconstant(step))
       klgen_putinstktop(gen, &step, klgen_cstposition(iforcst->step));
   } else {
-    klgen_pushinst(gen, klinst_loadnil(forbase + 2, 1), klgen_position(klcst_end(iforcst->end), klcst_end(iforcst->end)));
+    klgen_loadnils(gen, forbase + 2, 1, klgen_position(klcst_end(iforcst->end), klcst_end(iforcst->end)));
     step = klcodeval_stack(forbase + 2);
   }
   kl_assert(begin.index == forbase && end.index == forbase + 1 && step.index == forbase + 2, "");
