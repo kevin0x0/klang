@@ -1,5 +1,5 @@
-#include "klang/include/code/klcodeval.h"
 #include "klang/include/code/klgen.h"
+#include "klang/include/code/klcodeval.h"
 #include "klang/include/code/klgen_expr.h"
 #include "klang/include/code/klgen_exprbool.h"
 #include "klang/include/code/klgen_stmt.h"
@@ -20,7 +20,7 @@ void klgen_exprarr(KlGenUnit* gen, KlCstArray* arrcst, size_t target) {
 
 void klgen_exprarrgen(KlGenUnit* gen, KlCstArrayGenerator* arrgencst, size_t target) {
   size_t stktop = klgen_stackalloc1(gen);
-  klgen_newsymbol(gen, arrgencst->arrid, stktop, klcst_begin(arrgencst));
+  klgen_newsymbol(gen, arrgencst->arrid, stktop, klgen_position(klcst_begin(arrgencst), klcst_begin(arrgencst)));
   bool needclose = klgen_stmtblockpure(gen, klcast(KlCstStmtList*, arrgencst->block));
   if (needclose)
     klgen_pushinst(gen, klinst_close(stktop), klgen_cstposition(arrgencst));
@@ -49,6 +49,7 @@ void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
   if (setjmp(newgen.jmppos) == 0) {
     /* the scope is already created in klgen_init() */
     kl_assert(klgen_stacktop(gen) == 0, "");
+    kltodo("do pattern extract");
     size_t nparam = funccst->nparam;
     KlStrDesc* params = funccst->params;
     for (size_t i = 0; i < nparam; ++i)
@@ -264,15 +265,38 @@ void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target) {
     }
     default: {
       size_t stktop = klgen_stacktop(gen);
-      KlCodeVal res = klgen_exprtarget(gen, cst, target);
-      if (klcodeval_isconstant(res))
-        klgen_loadval(gen, target, res, klgen_cstposition(cst));
-      if (nval != 1) {
+      klgen_exprtarget_noconst(gen, cst, target);
+      if (nval > 1)
         klgen_loadnils(gen, target + 1, nval - 1, klgen_cstposition(cst));
-      }
       klgen_stackfree(gen, target + nval > stktop ? target + nval : stktop);
       break;
     }
+  }
+}
+
+void klgen_exprlist_raw(KlGenUnit* gen, KlCst** csts, size_t ncst, size_t nwanted, KlFilePosition filepos) {
+  size_t nvalid = nwanted < ncst ? nwanted : ncst;
+  if (nvalid == 0) {
+    if (nwanted == 0) {
+      size_t stktop = klgen_stacktop(gen);
+      for (size_t i = 0; i < ncst; ++i)
+        klgen_expr(gen, csts[0]);
+      klgen_stackfree(gen, stktop);
+    } else {  /* ncst is 0 */
+      size_t stktop = klgen_stacktop(gen);
+      klgen_loadnils(gen, stktop, nwanted, filepos);
+      klgen_stackalloc(gen, nwanted);
+    }
+    return;
+  }
+  size_t count = nvalid - 1;
+  for (size_t i = 0; i < count; ++i)
+    klgen_exprtarget_noconst(gen, csts[i], klgen_stacktop(gen));
+  klgen_multival(gen, csts[count], nwanted - count, klgen_stacktop(gen));
+  for (size_t i = nwanted; i < ncst; ++i) {
+    size_t stktop = klgen_stacktop(gen);
+    klgen_expr(gen, csts[i]);
+    klgen_stackfree(gen, stktop);
   }
 }
 

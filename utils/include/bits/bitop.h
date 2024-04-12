@@ -2,8 +2,8 @@
 #define KEVCC_UTILS_INCLUDE_BITS_BITOP_H
 
 #if defined (__GNUC__) || defined (__clang__)
-#define kbit_ctz64(x)       (__builtin_ctzll(x))
-#define kbit_popcount64(x)  (__builtin_popcountll(x))
+#define kbit_ctz(x)         (__builtin_ctzll(x))
+#define kbit_popcount(x)    (__builtin_popcountll(x))
 #else
 #error "TODO: give software implementation for bit operation"
 #endif

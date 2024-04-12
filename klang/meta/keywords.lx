@@ -39,7 +39,7 @@ def idiv(KLTK_IDIV):
   (KLTK_IDIV) $//
 
 def append(KLTK_APPEND):
-  (KLTK_APPEND) $\+\+
+  (KLTK_APPEND) $<<
 
 def dot(KLTK_DOT):
   (KLTK_DOT) $\.

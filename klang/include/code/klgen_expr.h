@@ -1,12 +1,15 @@
 #ifndef KEVCC_KLANG_INCLUDE_CODE_KLGEN_EXPR_H
 #define KEVCC_KLANG_INCLUDE_CODE_KLGEN_EXPR_H
 
+#include "klang/include/code/klcode.h"
 #include "klang/include/code/klcodeval.h"
 #include "klang/include/code/klgen.h"
 
 
 KlCodeVal klgen_expr(KlGenUnit* gen, KlCst* cst);
 KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlCst* cst, size_t target);
+void klgen_exprlist_raw(KlGenUnit* gen, KlCst** csts, size_t ncst, size_t nwanted, KlFilePosition filepos);
+static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlCst* cst, size_t target);
 static inline KlCodeVal klgen_tuple_as_singleval(KlGenUnit* gen, KlCstTuple* tuplecst);
 static inline KlCodeVal klgen_tuple_as_singleval_target(KlGenUnit* gen, KlCstTuple* tuplecst, size_t target);
 static inline void klgen_tuple_evaluate(KlGenUnit* gen, KlCstTuple* tuplecst, size_t ndiscard);
@@ -24,6 +27,14 @@ void klgen_exprarrgen(KlGenUnit* gen, KlCstArrayGenerator* arrgencst, size_t tar
 void klgen_exprmap(KlGenUnit* gen, KlCstMap* mapcst, size_t target);
 void klgen_exprclass(KlGenUnit* gen, KlCstClass* classcst, size_t target);
 
+
+static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlCst* cst, size_t target) {
+  KlCodeVal res = klgen_exprtarget(gen, cst, target);
+  if (klcodeval_isconstant(res))
+    klgen_loadval(gen, target, res, klgen_cstposition(cst));
+  if (klgen_stacktop(gen) <= target)
+    klgen_stackfree(gen, target);
+}
 
 static inline KlCodeVal klgen_tuple_as_singleval(KlGenUnit* gen, KlCstTuple* tuplecst) {
   if (tuplecst->nelem == 0)

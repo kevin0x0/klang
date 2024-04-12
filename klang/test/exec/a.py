@@ -5,3 +5,4 @@ def f(n : int) -> int:
 print(f(36));
 
 dis.dis(f);
+

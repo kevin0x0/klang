@@ -952,19 +952,18 @@ KlException klexec_execute(KlState* state) {
         kl_assert(klvalue_checktype(constants + KLINST_AX_GETX(inst), KL_STRING), "field name should be a string");
 
         KlValue* thisobj = stkbase + KLINST_AX_GETA(inst);
-        KlString* field = klvalue_getobj(constants + KLINST_AX_GETX(inst), KlString*);
         KlInstruction extra = *pc++;
         kl_assert(KLINST_GET_OPCODE(extra) == KLOPCODE_EXTRA, "something wrong in code generation");
-        size_t narg = KLINST_XYZ_GETX(extra);
-        size_t nret = KLINST_XYZ_GETY(extra);
         bool ismethod = klexec_is_method(thisobj);
+        size_t narg = ismethod ? KLINST_XYZ_GETX(extra) + 1 : KLINST_XYZ_GETX(extra);
+        size_t nret = KLINST_XYZ_GETY(extra);
         KlValue* argbase = ismethod ? thisobj : thisobj + 1;
-        if (ismethod) ++narg;
 
         klexec_savestate(argbase + narg, callinfo);
         KlCallInfo* newci = klexec_new_callinfo(state, nret, (stkbase + KLINST_XYZ_GETZ(extra)) - argbase);
         if (kl_unlikely(!newci))
           return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
+        KlString* field = klvalue_getobj(constants + KLINST_AX_GETX(inst), KlString*);
         KlValue* callable = klexec_getfield(state, thisobj, field);
         if (kl_unlikely(!callable))
           return klstate_throw(state, KL_E_INVLD, "can not find method named %s", field);
@@ -1373,7 +1372,6 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_NEWLOCAL: {
         KlValue* classval = stkbase + KLINST_AX_GETA(inst);
         KlValue* fieldname = constants + KLINST_AX_GETX(inst);
-        /* these are ensured by klang compiler */
         kl_assert(klvalue_checktype(classval, KL_CLASS), "NEWLOCAL should applied to a class");
         kl_assert(klvalue_checktype(fieldname, KL_STRING), "expected string to index field");
 

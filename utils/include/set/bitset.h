@@ -9,8 +9,8 @@
 #define KBITSET_SHIFT       (6)
 #define KBITSET_INTLEN      (64)
 
-#define kbitset_ctz(x)      (kbit_ctz64(x))
-#define kbitset_popcount(x) (kbit_popcount64(x))
+#define kbitset_ctz(x)      (kbit_ctz(x))
+#define kbitset_popcount(x) (kbit_popcount(x))
 
 typedef uint64_t KevBitSetInt;
 

@@ -4,6 +4,7 @@
 #include "klang/include/code/klgen.h"
 #include "klang/include/code/klgen_expr.h"
 #include "klang/include/code/klgen_exprbool.h"
+#include "klang/include/code/klgen_pattern.h"
 #include "klang/include/code/klsymtbl.h"
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_expr.h"
@@ -53,21 +54,31 @@ bool klgen_stmtblockpure(KlGenUnit* gen, KlCstStmtList* stmtlist) {
 }
 
 static void klgen_stmtlet(KlGenUnit* gen, KlCstStmtLet* letcst) {
-  size_t stkid = klgen_stacktop(gen);
+  size_t oristktop = klgen_stacktop(gen);
   KlCstTuple* rvals = klcast(KlCstTuple*, letcst->rvals);
-  klgen_tuple(gen, rvals, letcst->nlval);
-  if (letcst->nlval < rvals->nelem) { /* tuple is not completely evaluated */
-    size_t stktop = klgen_stacktop(gen);
-    for (size_t i = letcst->nlval; i < rvals->nelem; ++i) {
-      klgen_expr(gen, rvals->elems[i]);
-      klgen_stackfree(gen, stktop);
-    }
+  KlCst** patterns = klcast(KlCstTuple*, letcst->lvals)->elems;
+  size_t npattern = klcast(KlCstTuple*, letcst->lvals)->nelem;
+  size_t nrval = rvals->nelem;
+  /* do fast assignment */
+  size_t nfastassign = 0;
+  size_t fastassignlimit = npattern < nrval ? npattern : nrval;
+  for (; nfastassign < fastassignlimit; ++nfastassign) {
+    KlCst* lval = klgen_exprpromotion(patterns[nfastassign]);
+    if (klcst_kind(lval) != KLCST_EXPR_ID)
+      break;
+    klgen_exprtarget_noconst(gen, rvals->elems[nfastassign], klgen_stacktop(gen));
   }
-  kl_assert(stkid + letcst->nlval == klgen_stacktop(gen), "");
-  KlStrDesc* ids = letcst->lvals;
-  size_t nlval = letcst->nlval;
-  for (size_t i = 0; i < nlval; ++i)
-    klgen_newsymbol(gen, ids[i], stkid + i, klcst_begin(letcst));
+  size_t nvar = klgen_patterns_assign_stkid(gen, patterns, npattern, klgen_stacktop(gen));
+  klgen_stackalloc(gen, nvar);
+  klgen_exprlist_raw(gen, rvals->elems + nfastassign, nrval - nfastassign, npattern - nfastassign, klgen_cstposition(rvals));
+  kl_assert(klgen_stacktop(gen) == oristktop + nvar + npattern, "");
+  size_t targettail = oristktop + nfastassign + nvar - 1;
+  size_t count = npattern;
+  while (count-- >= nfastassign) {
+    targettail -= klgen_pattern_extract(gen, patterns[count], targettail);
+  }
+  for (size_t i = 0; i < npattern; ++i)
+    klgen_pattern_newsymbol(gen, patterns[i]);
 }
 
 static void klgen_singleassign(KlGenUnit* gen, KlCst* lval, KlCst* rval) {

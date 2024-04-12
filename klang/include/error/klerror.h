@@ -6,9 +6,14 @@
 #include <stddef.h>
 #include <stdio.h>
 typedef struct tagKlErrorConfig {
-  unsigned int tabstop;
+  unsigned tabstop;
+  unsigned maxtextline;
+  unsigned maxtextcol;
   char curl;
   char zerocurl;
+  char* promptmsg;
+  char* prompttext;
+  char* promptnorm;
 } KlErrorConfig;
 
 typedef struct tagKlError {

@@ -1,4 +1,5 @@
 #include "klang/include/code/klgen.h"
+#include "klang/include/code/klcode.h"
 #include "klang/include/code/klcontbl.h"
 #include "klang/include/code/klsymtbl.h"
 #include "klang/include/cst/klcst_expr.h"
@@ -158,11 +159,11 @@ KlSymbol* klgen_getsymbolref(KlGenUnit* gen, KlStrDesc name) {
   return symbol;
 }
 
-KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFileOffset symbolpos) {
+KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFilePosition symbolpos) {
   KlSymTbl* symtbl = gen->symtbl;
   KlSymbol* symbol = klsymtbl_search(symtbl, name);
   if (kl_unlikely(symbol)) {
-    klgen_error(gen, symbolpos, symbolpos,
+    klgen_error(gen, symbolpos.begin, symbolpos.end,
                 "redefinition of symbol: %*.s",
                 symbol->name.length,
                 klstrtab_getstring(gen->strtab, symbol->name.id));

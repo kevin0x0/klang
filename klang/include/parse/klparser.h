@@ -28,6 +28,7 @@ bool klparser_discardto(KlLex* lex, KlTokenKind kind);
 
 
 static inline KlCst* klparser_expr(KlParser* parser, KlLex* lex);
+KlCst* klparser_exprwhere(KlParser* parser, KlLex* lex, KlCst* expr);
 KlCst* klparser_exprunit(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprpost(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprpre(KlParser* parser, KlLex* lex);
@@ -71,7 +72,10 @@ static inline bool klparser_check(KlParser* parser, KlLex* lex, KlTokenKind kind
 }
 
 static inline KlCst* klparser_expr(KlParser* parser, KlLex* lex) {
-  return klparser_exprbin(parser, lex, 0);
+  KlCst* expr = klparser_exprbin(parser, lex, 0);
+  if (kl_unlikely(!expr)) return NULL;
+  return kllex_check(lex, KLTK_WHERE) ? klparser_exprwhere(parser, lex, expr) :
+                                        expr;
 }
 
 static inline KlCst* klparser_stmtbreak(KlParser* parser, KlLex* lex) {

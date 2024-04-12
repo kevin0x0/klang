@@ -13,7 +13,7 @@ let m = method -> print "AAA";
 let class = { say = m };
 class.say();
 
-let f = n -> n <+ 1 and n or f(n - 1) + f(n - 2) where let a = 3;
+let f = n -> n <+ 1 and n or f(n - 1) + f(n - 2) where let a = 1;
 
 let Window = inherit {} : {
   local width;
@@ -40,17 +40,16 @@ let a = foo(x, x + 1) where {
 
 let [a, b, [c, d]] = getarray(0, 100);
 
+let a << 3, 4, [(last_inner_left, _)] = expr;
 
 with = (obj, func) => {
   func(obj);
   obj.close();
 };
 
-openfile "test.kl" with f => {  };
+(a, b) -> a + b;
 
 with = obj -> func -> (func(), obj.close());
-
-open "text" with f -> f.write("hello");
 
 (a, b, ...) -> expr;
 

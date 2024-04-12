@@ -1,5 +1,6 @@
 #include "klang/include/error/klerror.h"
 #include "utils/include/kio/ki.h"
+#include "utils/include/kio/ko.h"
 #include <stdbool.h>
 
 
@@ -21,14 +22,21 @@ void klerror_errorv(KlError* klerror, Ki* input, const char* inputname, KlFileOf
   size_t linebegin = ki_tell(input);
 
   unsigned int col = begin - linebegin + 1;
-  ko_printf(err, "%s:%4u:%4u: ", inputname, line, col);
+  ko_printf(err, "%s%s:%4u:%4u: ", klerror->config.promptmsg, inputname, line, col);
   ko_vprintf(err, format, args);
   ko_putc(err, '\n');
 
-  while (klerror_helper_showline_withcurl(klerror, input, begin, end))
-    continue;
+  size_t nputline = 0;
+  while (nputline++ < klerror->config.maxtextline) {
+    if (!klerror_helper_showline_withcurl(klerror, input, begin, end)) {
+      break;
+    }
+  }
+  if (nputline > klerror->config.maxtextline)
+    ko_printf(err, "%stoo many lines...\n", klerror->config.promptnorm);
   ki_seek(input, orioffset);
-  ko_putc(err, '\n');
+  ko_printf(err, "%s\n", klerror->config.promptnorm);
+  //ko_putc(err, '\n');
   ko_flush(err);
 }
 
@@ -56,14 +64,28 @@ static bool klerror_helper_showline_withcurl(KlError* klerror, Ki* input, KlFile
   Ko* err = klerror->err;
   size_t curroffset = ki_tell(input);
   if (curroffset >= end) return false;
+  ko_printf(err, "%s", klerror->config.prompttext);
   int ch = ki_getc(input);
   while (!kl_isnl(ch) && ch != KOF) {
     ko_putc(err, ch);
     ch = ki_getc(input);
   }
   ko_putc(err, '\n');
+  ko_printf(err, "%s", klerror->config.prompttext);
   ki_seek(input, curroffset);
   ch = ki_getc(input);
+  /* leading white space should not be underlined. */
+  while (ch == ' ' || ch == '\t') {
+    if (ch == '\t') {
+      for (size_t i = 0; i < klerror->config.tabstop; ++i)
+        ko_putc(err, ' ');
+    } else {
+      ko_putc(err, ' ');
+    }
+    ch = ki_getc(input);
+    ++curroffset;
+  }
+
   while (!kl_isnl(ch)) {
     if (curroffset == begin && curroffset == end) {
       ko_putc(err, klerror->config.zerocurl);
@@ -75,7 +97,12 @@ static bool klerror_helper_showline_withcurl(KlError* klerror, Ki* input, KlFile
         ko_putc(err, klerror->config.curl);
       }
     } else {
-      ko_putc(err, ch == '\t' ? '\t' : ' ');
+      if (ch == '\t') {
+        for (size_t i = 0; i < klerror->config.tabstop; ++i)
+          ko_putc(err, ' ');
+      } else {
+        ko_putc(err, ' ');
+      }
     }
     if (ch == KOF) break;
     ch = ki_getc(input);

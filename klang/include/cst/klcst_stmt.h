@@ -7,8 +7,7 @@
 
 typedef struct tagKlCstStmtLet {
   KlCst base;
-  KlStrDesc* lvals;         /* list of identifiers */
-  size_t nlval;             /* number of ids */
+  KlCst* lvals;             /* left values(single value or tuple) */
   KlCst* rvals;             /* right values(must be tuple or single value). */
 } KlCstStmtLet;
 
@@ -33,15 +32,14 @@ typedef struct tagKlCstStmtIf {
 /* variable arguments for */
 typedef struct tagKlCstStmtVFor {
   KlCst base;
-  KlStrDesc* ids;
-  size_t nid;
+  KlCst* lvals;
   KlCst* block;
 } KlCstStmtVFor;
 
 /* integer for */
 typedef struct tagKlCstStmtIFor {
   KlCst base;
-  KlStrDesc id;
+  KlCst* lval;
   KlCst* begin;
   KlCst* end;
   KlCst* step;    /* nil if NULL */
@@ -51,20 +49,10 @@ typedef struct tagKlCstStmtIFor {
 /* generic for */
 typedef struct tagKlCstStmtGFor {
   KlCst base;
-  KlStrDesc* ids;
-  size_t nid;
+  KlCst* lvals;
   KlCst* expr;
   KlCst* block;
 } KlCstStmtGFor;
-
-/* c-style for */
-typedef struct tagKlCstStmtCFor {
-  KlCst base;
-  KlCst* init;
-  KlCst* cond;
-  KlCst* post;
-  KlCst* block;
-} KlCstStmtCFor;
 
 typedef struct tagKlCstStmtWhile {
   KlCst base;
@@ -97,13 +85,13 @@ typedef struct tagKlCstStmtContinue {
   KlCst base;
 } KlCstStmtContinue;
 
-KlCstStmtLet* klcst_stmtlet_create(KlStrDesc* lvals, size_t nlval, KlCst* rvals, KlFileOffset begin, KlFileOffset end);
+KlCstStmtLet* klcst_stmtlet_create(KlCst* lvals, KlCst* rvals, KlFileOffset begin, KlFileOffset end);
 KlCstStmtAssign* klcst_stmtassign_create(KlCst* lvals, KlCst* rvals, KlFileOffset begin, KlFileOffset end);
 KlCstStmtExpr* klcst_stmtexpr_create(KlCst* expr, KlFileOffset begin, KlFileOffset end);
 KlCstStmtIf* klcst_stmtif_create(KlCst* cond, KlCst* if_block, KlCst* else_block, KlFileOffset begin, KlFileOffset end);
-KlCstStmtVFor* klcst_stmtvfor_create(KlStrDesc* ids, size_t nid, KlCst* block, KlFileOffset begin, KlFileOffset end);
-KlCstStmtIFor* klcst_stmtifor_create(KlStrDesc id, KlCst* ibegin, KlCst* iend, KlCst* istep, KlCst* block, KlFileOffset begin, KlFileOffset end);
-KlCstStmtGFor* klcst_stmtgfor_create(KlStrDesc* ids, size_t nid, KlCst* expr, KlCst* block, KlFileOffset begin, KlFileOffset end);
+KlCstStmtVFor* klcst_stmtvfor_create(KlCst* lvals, KlCst* block, KlFileOffset begin, KlFileOffset end);
+KlCstStmtIFor* klcst_stmtifor_create(KlCst* lval, KlCst* ibegin, KlCst* iend, KlCst* istep, KlCst* block, KlFileOffset begin, KlFileOffset end);
+KlCstStmtGFor* klcst_stmtgfor_create(KlCst* lvals, KlCst* expr, KlCst* block, KlFileOffset begin, KlFileOffset end);
 KlCstStmtWhile* klcst_stmtwhile_create(KlCst* cond, KlCst* block, KlFileOffset begin, KlFileOffset end);
 KlCstStmtList* klcst_stmtlist_create(KlCst** stmts, size_t nstmt, KlFileOffset begin, KlFileOffset end);
 KlCstStmtRepeat* klcst_stmtrepeat_create(KlCst* block, KlCst* cond, KlFileOffset begin, KlFileOffset end);

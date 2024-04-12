@@ -17,7 +17,15 @@ void loop(void) {
   Ki* input = kifile_create(filename);
   Ko* err = kofile_attach(stderr);
   KlParser parser;
-  KlError klerr = { .err = err, .errcount = 0, .config = { .curl = '~', .tabstop = 8, .zerocurl = '^' } };
+  KlError klerr = { .err = err, .errcount = 0, .config = {
+    .curl = '~',
+    .tabstop = 8,
+    .zerocurl = '^',
+    .maxtextline = 3,
+    .promptnorm = "|| ",
+    .prompttext = "||== ",
+    .promptmsg = "|| "
+  }};
   KlLex* lex = kllex_create(input, &klerr, filename, strtab);
   klparser_init(&parser, lex->strtab, (char*)filename, &klerr);
   kllex_next(lex);

@@ -15,6 +15,7 @@ typedef struct tagKlCstClassFieldDesc {
 typedef struct tagKlCstIdentifier {
   KlCst base;
   KlStrDesc id;                     /* identifier */
+  size_t stkid;                     /* used by code generator for pattern-match and pattern-extract */
 } KlCstIdentifier;
 
 typedef struct tagKlCstMap {
@@ -103,8 +104,7 @@ typedef struct tagKlCstPost {
 typedef struct tagKlCstFunc {
   KlCst base;
   KlCst* block;         /* function body */
-  KlStrDesc* params;    /* parameters */
-  uint8_t nparam;       /* number of parameters */
+  KlCst* params;
   bool vararg;          /* has variable argument */
   bool is_method;
 } KlCstFunc;
@@ -140,7 +140,7 @@ KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFileOffset begin, K
 KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFileOffset begin, KlFileOffset end);
 KlCstYield* klcst_yield_create(KlCst* vals, KlFileOffset begin, KlFileOffset end);
 KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFileOffset begin, KlFileOffset end);
-KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
+KlCstFunc* klcst_func_create(KlCst* block, KlCst* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
 KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
 KlCstWhere* klcst_where_create(KlCst* expr, KlCst* block, KlStrDesc tmpid, KlFileOffset begin, KlFileOffset end);
 

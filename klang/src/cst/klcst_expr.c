@@ -251,7 +251,7 @@ KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFile
   return cstpost;
 }
 
-KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end) {
+KlCstFunc* klcst_func_create(KlCst* block, KlCst* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end) {
   KlCstFunc* cstfunc = klcst_alloc(KlCstFunc);
   if (kl_unlikely(!cstfunc)) {
     klcst_delete_raw(block);
@@ -260,7 +260,6 @@ KlCstFunc* klcst_func_create(KlCst* block, KlStrDesc* params, uint8_t nparam, bo
   }
   cstfunc->block = block;
   cstfunc->params = params;
-  cstfunc->nparam = nparam;
   cstfunc->vararg = vararg;
   cstfunc->is_method = is_method;
   klcst_setposition(cstfunc, begin, end);
@@ -379,7 +378,7 @@ static void klcst_dot_destroy(KlCstDot* cstdot) {
 }
 
 static void klcst_func_destroy(KlCstFunc* cstfunc) {
-  free(cstfunc->params);
+  klcst_delete_raw(cstfunc->params);
   klcst_delete_raw(cstfunc->block);
 }
 

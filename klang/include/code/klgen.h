@@ -67,7 +67,7 @@ void klgen_destroy(KlGenUnit* gen);
  * if failed, return NULL, and destroy self. */
 KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam);
 void klgen_error(KlGenUnit* gen, KlFileOffset begin, KlFileOffset end, const char* format, ...);
-KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFileOffset symbolpos);
+KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFilePosition symbolpos);
 KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name);
 void klgen_pushsymtbl(KlGenUnit* gen);
 void klgen_popsymtbl(KlGenUnit* gen);
@@ -75,7 +75,7 @@ void klgen_popsymtbl(KlGenUnit* gen);
 void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position);
 static inline void klgen_putinstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
 static inline void klgen_putinstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
-static inline void klgen_loadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition position);
+void klgen_loadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition position);
 static inline void klgen_movevals(KlGenUnit* gen, size_t target, size_t from, size_t nval, KlFilePosition position);
 
 static inline size_t klgen_stacktop(KlGenUnit* gen) {
