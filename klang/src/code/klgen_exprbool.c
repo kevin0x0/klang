@@ -36,35 +36,35 @@ void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, size_t jmppos) {
 static KlCodeVal klgen_pushrelinst(KlGenUnit* gen, KlCstBin* relcst, size_t leftid, size_t rightid, bool jumpcond) {
   switch (relcst->op) {
     case KLTK_LT: {
-      klgen_pushinst(gen, klinst_lt(leftid, rightid), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_lt(leftid, rightid), klgen_cstposition(relcst));
       break;
     }
     case KLTK_LE: {
-      klgen_pushinst(gen, klinst_le(leftid, rightid), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_le(leftid, rightid), klgen_cstposition(relcst));
       break;
     }
     case KLTK_GT: {
-      klgen_pushinst(gen, klinst_gt(leftid, rightid), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_gt(leftid, rightid), klgen_cstposition(relcst));
       break;
     }
     case KLTK_GE: {
-      klgen_pushinst(gen, klinst_ge(leftid, rightid), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_ge(leftid, rightid), klgen_cstposition(relcst));
       break;
     }
     case KLTK_EQ: {
-      klgen_pushinst(gen, klinst_eq(leftid, rightid), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_eq(leftid, rightid), klgen_cstposition(relcst));
       break;
     }
     case KLTK_IS: {
-      klgen_pushinst(gen, klinst_is(leftid, rightid), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_is(leftid, rightid), klgen_cstposition(relcst));
       break;
     }
     case KLTK_NE: {
-      klgen_pushinst(gen, klinst_ne(leftid, rightid), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_ne(leftid, rightid), klgen_cstposition(relcst));
       break;
     }
     case KLTK_ISNOT: {
-      klgen_pushinst(gen, klinst_is(leftid, rightid), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_is(leftid, rightid), klgen_cstposition(relcst));
       jumpcond = !jumpcond;
       break;
     }
@@ -73,44 +73,44 @@ static KlCodeVal klgen_pushrelinst(KlGenUnit* gen, KlCstBin* relcst, size_t left
       break;
     }
   }
-  size_t pc = klgen_pushinst(gen, klinst_condjmp(jumpcond, 0), klgen_cstposition(relcst));
+  size_t pc = klgen_emit(gen, klinst_condjmp(jumpcond, 0), klgen_cstposition(relcst));
   return klcodeval_jmp(pc);
 }
 
 static KlCodeVal klgen_pushrelinsti(KlGenUnit* gen, KlCstBin* relcst, size_t leftid, KlInt imm, bool jumpcond) {
   switch (relcst->op) {
     case KLTK_LT: {
-      klgen_pushinst(gen, klinst_lti(leftid, imm), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_lti(leftid, imm), klgen_cstposition(relcst));
       break;
     }
     case KLTK_LE: {
-      klgen_pushinst(gen, klinst_lei(leftid, imm), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_lei(leftid, imm), klgen_cstposition(relcst));
       break;
     }
     case KLTK_GT: {
-      klgen_pushinst(gen, klinst_gti(leftid, imm), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_gti(leftid, imm), klgen_cstposition(relcst));
       break;
     }
     case KLTK_GE: {
-      klgen_pushinst(gen, klinst_gei(leftid, imm), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_gei(leftid, imm), klgen_cstposition(relcst));
       break;
     }
     case KLTK_EQ: {
       if (jumpcond) {
-        klgen_pushinst(gen, klinst_eqi(leftid, imm), klgen_cstposition(relcst));
+        klgen_emit(gen, klinst_eqi(leftid, imm), klgen_cstposition(relcst));
       } else {
-        klgen_pushinst(gen, klinst_nei(leftid, imm), klgen_cstposition(relcst));
+        klgen_emit(gen, klinst_nei(leftid, imm), klgen_cstposition(relcst));
       }
-      size_t pc = klgen_pushinst(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
+      size_t pc = klgen_emit(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
       return klcodeval_jmp(pc);
     }
     case KLTK_NE: {
       if (jumpcond) {
-        klgen_pushinst(gen, klinst_nei(leftid, imm), klgen_cstposition(relcst));
+        klgen_emit(gen, klinst_nei(leftid, imm), klgen_cstposition(relcst));
       } else {
-        klgen_pushinst(gen, klinst_eqi(leftid, imm), klgen_cstposition(relcst));
+        klgen_emit(gen, klinst_eqi(leftid, imm), klgen_cstposition(relcst));
       }
-      size_t pc = klgen_pushinst(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
+      size_t pc = klgen_emit(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
       return klcodeval_jmp(pc);
     }
     default: {
@@ -118,44 +118,44 @@ static KlCodeVal klgen_pushrelinsti(KlGenUnit* gen, KlCstBin* relcst, size_t lef
       break;
     }
   }
-  size_t pc = klgen_pushinst(gen, klinst_condjmp(jumpcond, 0), klgen_cstposition(relcst));
+  size_t pc = klgen_emit(gen, klinst_condjmp(jumpcond, 0), klgen_cstposition(relcst));
   return klcodeval_jmp(pc);
 }
 
 static KlCodeVal klgen_pushrelinstc(KlGenUnit* gen, KlCstBin* relcst, size_t leftid, size_t conidx, bool jumpcond) {
   switch (relcst->op) {
     case KLTK_LT: {
-      klgen_pushinst(gen, klinst_ltc(leftid, conidx), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_ltc(leftid, conidx), klgen_cstposition(relcst));
       break;
     }
     case KLTK_LE: {
-      klgen_pushinst(gen, klinst_lec(leftid, conidx), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_lec(leftid, conidx), klgen_cstposition(relcst));
       break;
     }
     case KLTK_GT: {
-      klgen_pushinst(gen, klinst_gtc(leftid, conidx), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_gtc(leftid, conidx), klgen_cstposition(relcst));
       break;
     }
     case KLTK_GE: {
-      klgen_pushinst(gen, klinst_gec(leftid, conidx), klgen_cstposition(relcst));
+      klgen_emit(gen, klinst_gec(leftid, conidx), klgen_cstposition(relcst));
       break;
     }
     case KLTK_EQ: {
       if (jumpcond) {
-        klgen_pushinst(gen, klinst_eqc(leftid, conidx), klgen_cstposition(relcst));
+        klgen_emit(gen, klinst_eqc(leftid, conidx), klgen_cstposition(relcst));
       } else {
-        klgen_pushinst(gen, klinst_nec(leftid, conidx), klgen_cstposition(relcst));
+        klgen_emit(gen, klinst_nec(leftid, conidx), klgen_cstposition(relcst));
       }
-      size_t pc = klgen_pushinst(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
+      size_t pc = klgen_emit(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
       return klcodeval_jmp(pc);
     }
     case KLTK_NE: {
       if (jumpcond) {
-        klgen_pushinst(gen, klinst_nec(leftid, conidx), klgen_cstposition(relcst));
+        klgen_emit(gen, klinst_nec(leftid, conidx), klgen_cstposition(relcst));
       } else {
-        klgen_pushinst(gen, klinst_eqc(leftid, conidx), klgen_cstposition(relcst));
+        klgen_emit(gen, klinst_eqc(leftid, conidx), klgen_cstposition(relcst));
       }
-      size_t pc = klgen_pushinst(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
+      size_t pc = klgen_emit(gen, klinst_condjmp(true, 0), klgen_cstposition(relcst));
       return klcodeval_jmp(pc);
     }
     default: {
@@ -163,7 +163,7 @@ static KlCodeVal klgen_pushrelinstc(KlGenUnit* gen, KlCstBin* relcst, size_t lef
       break;
     }
   }
-  size_t pc = klgen_pushinst(gen, klinst_condjmp(jumpcond, 0), klgen_cstposition(relcst));
+  size_t pc = klgen_emit(gen, klinst_condjmp(jumpcond, 0), klgen_cstposition(relcst));
   return klcodeval_jmp(pc);
 }
 
@@ -257,7 +257,7 @@ static KlCodeVal klgen_exprrelleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCo
   size_t currcodesize = klgen_currcodesize(gen);
   /* we put left on the stack first */
   KlCodeVal leftonstack = left;
-  klgen_putinstack(gen, &leftonstack, klgen_cstposition(bincst->loperand));
+  klgen_putonstack(gen, &leftonstack, klgen_cstposition(bincst->loperand));
   size_t stksize_before_evaluete_right = klgen_currcodesize(gen);
   KlCodeVal right = klgen_expr(gen, bincst->roperand);
   if ((klcodeval_isnumber(right) && klcodeval_isnumber(left)) ||
@@ -289,7 +289,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
   /* left must be on stack */
   kl_assert(left.kind == KLVAL_STACK, "");
   if (bincst->op == KLTK_IS || bincst->op == KLTK_ISNOT) {
-    klgen_putinstack(gen, &right, klgen_cstposition(bincst->roperand));
+    klgen_putonstack(gen, &right, klgen_cstposition(bincst->roperand));
     klgen_stackfree(gen, oristktop);
     return klgen_pushrelinst(gen, bincst, left.index, right.index, jumpcond);
   }
@@ -305,7 +305,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
           size_t nextconidx = klcontbl_nextindex(gen->contbl);
           if (!klinst_inurange(nextconidx, 8) && klinst_inrange(right.intval, 16)) {
             size_t stktop = klgen_stackalloc1(gen);
-            klgen_pushinst(gen, klinst_loadi(stktop, right.intval), klgen_cstposition(bincst->roperand));
+            klgen_emit(gen, klinst_loadi(stktop, right.intval), klgen_cstposition(bincst->roperand));
             klgen_stackfree(gen, oristktop);
             return klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
           }
@@ -316,7 +316,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
           res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
         } else {
           size_t stktop = klgen_stackalloc1(gen);
-          klgen_pushinst(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
+          klgen_emit(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
           res = klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
         }
       }
@@ -332,7 +332,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
         res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
       } else {
         size_t stktop = klgen_stackalloc1(gen);
-        klgen_pushinst(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
+        klgen_emit(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
         res = klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
       }
       klgen_stackfree(gen, oristktop);
@@ -347,7 +347,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
         res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
       } else {
         size_t stktop = klgen_stackalloc1(gen);
-        klgen_pushinst(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
+        klgen_emit(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
         res = klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
       }
       klgen_stackfree(gen, oristktop);
@@ -356,7 +356,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
     case KLVAL_REF:
     case KLVAL_BOOL:
     case KLVAL_NIL: {
-      klgen_putinstack(gen, &right, klgen_cstposition(bincst->roperand));
+      klgen_putonstack(gen, &right, klgen_cstposition(bincst->roperand));
       klgen_stackfree(gen, oristktop);
       return klgen_pushrelinst(gen, bincst, left.index, right.index, jumpcond);
     }
@@ -373,7 +373,7 @@ KlCodeVal klgen_exprrelation(KlGenUnit* gen, KlCstBin* relcst, bool jumpcond) {
   if (klcodeval_isconstant(left)) {
     return klgen_exprrelleftliteral(gen, relcst, left, jumpcond);
   } else {
-    klgen_putinstack(gen, &left, klgen_cstposition(relcst->loperand));
+    klgen_putonstack(gen, &left, klgen_cstposition(relcst->loperand));
   }
   /* now left is on stack */
   KlCodeVal right = klgen_expr(gen, relcst->roperand);
@@ -408,8 +408,8 @@ KlCodeVal klgen_exprbool(KlGenUnit* gen, KlCst* cst, bool jumpcond) {
   KlCodeVal res = klgen_expr(gen, cst);
   if (klcodeval_isconstant(res)) return res;
   size_t stktop = klgen_stacktop(gen);
-  klgen_putinstack(gen, &res, klgen_cstposition(cst));
-  size_t pc = klgen_pushinst(gen, jumpcond ? klinst_truejmp(res.index, 0) : klinst_falsejmp(res.index, 0), klgen_cstposition(cst));
+  klgen_putonstack(gen, &res, klgen_cstposition(cst));
+  size_t pc = klgen_emit(gen, jumpcond ? klinst_truejmp(res.index, 0) : klinst_falsejmp(res.index, 0), klgen_cstposition(cst));
   klgen_stackfree(gen, stktop);
   return klcodeval_jmp(pc);
 }
@@ -430,8 +430,8 @@ KlCodeVal klgen_expror(KlGenUnit* gen, KlCstBin* orcst, bool jumpcond) {
   KlCodeVal rjmp = klgen_exprbool(gen, orcst->roperand, jumpcond);
   if (klcodeval_isconstant(rjmp)) {
     size_t stktop = klgen_stacktop(gen);
-    klgen_putinstack(gen, &rjmp, klgen_cstposition(orcst->roperand));
-    rjmp = klcodeval_jmp(klgen_pushinst(gen,
+    klgen_putonstack(gen, &rjmp, klgen_cstposition(orcst->roperand));
+    rjmp = klcodeval_jmp(klgen_emit(gen,
                                         jumpcond ? klinst_truejmp(rjmp.index, 0)
                                                  : klinst_falsejmp(rjmp.index, 0),
                                         klgen_cstposition(orcst->roperand)));
@@ -454,8 +454,8 @@ KlCodeVal klgen_exprand(KlGenUnit* gen, KlCstBin* andcst, bool jumpcond) {
   KlCodeVal rjmp = klgen_exprbool(gen, andcst->roperand, jumpcond);
   if (klcodeval_isconstant(rjmp)) {
     size_t stktop = klgen_stacktop(gen);
-    klgen_putinstack(gen, &rjmp, klgen_cstposition(andcst->roperand));
-    rjmp = klcodeval_jmp(klgen_pushinst(gen,
+    klgen_putonstack(gen, &rjmp, klgen_cstposition(andcst->roperand));
+    rjmp = klcodeval_jmp(klgen_emit(gen,
                                         jumpcond ? klinst_truejmp(rjmp.index, 0)
                                                  : klinst_falsejmp(rjmp.index, 0),
                                         klgen_cstposition(andcst->roperand)));
@@ -479,9 +479,9 @@ static KlCodeVal klgen_exprorset(KlGenUnit* gen, KlCstBin* orcst, size_t target,
     KlCodeVal rval = klgen_exprboolset(gen, orcst->roperand, target, setcond);
     if (klcodeval_isconstant(rval)) {
       size_t stktop = klgen_stacktop(gen);
-      klgen_putinstack(gen, &rval, klgen_cstposition(orcst->roperand));
-      klgen_pushinst(gen, klinst_testset(target, rval.index), klgen_cstposition(orcst->roperand));
-      size_t pc = klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(orcst->roperand));
+      klgen_putonstack(gen, &rval, klgen_cstposition(orcst->roperand));
+      klgen_emit(gen, klinst_testset(target, rval.index), klgen_cstposition(orcst->roperand));
+      size_t pc = klgen_emit(gen, klinst_condjmp(setcond, 0), klgen_cstposition(orcst->roperand));
       klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->truelist, klcodeval_jmp(pc));
       klgen_stackfree(gen, stktop);
     }
@@ -495,9 +495,9 @@ static KlCodeVal klgen_exprorset(KlGenUnit* gen, KlCstBin* orcst, size_t target,
     KlCodeVal rval = klgen_exprboolset(gen, orcst->roperand, target, setcond);
     if (klcodeval_isconstant(rval)) {
       size_t stktop = klgen_stacktop(gen);
-      klgen_putinstack(gen, &rval, klgen_cstposition(orcst->roperand));
-      klgen_pushinst(gen, klinst_testset(target, rval.index), klgen_cstposition(orcst->roperand));
-      size_t pc = klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(orcst->roperand));
+      klgen_putonstack(gen, &rval, klgen_cstposition(orcst->roperand));
+      klgen_emit(gen, klinst_testset(target, rval.index), klgen_cstposition(orcst->roperand));
+      size_t pc = klgen_emit(gen, klinst_condjmp(setcond, 0), klgen_cstposition(orcst->roperand));
       klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->falselist, klcodeval_jmp(pc));
       klgen_stackfree(gen, stktop);
     }
@@ -516,9 +516,9 @@ static KlCodeVal klgen_exprandset(KlGenUnit* gen, KlCstBin* andcst, size_t targe
     KlCodeVal rval = klgen_exprboolset(gen, andcst->roperand, target, setcond);
     if (klcodeval_isconstant(rval)) {
       size_t stktop = klgen_stacktop(gen);
-      klgen_putinstack(gen, &rval, klgen_cstposition(andcst->roperand));
-      klgen_pushinst(gen, klinst_testset(target, rval.index), klgen_cstposition(andcst->roperand));
-      size_t pc = klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(andcst->roperand));
+      klgen_putonstack(gen, &rval, klgen_cstposition(andcst->roperand));
+      klgen_emit(gen, klinst_testset(target, rval.index), klgen_cstposition(andcst->roperand));
+      size_t pc = klgen_emit(gen, klinst_condjmp(setcond, 0), klgen_cstposition(andcst->roperand));
       klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->truelist, klcodeval_jmp(pc));
       klgen_stackfree(gen, stktop);
     }
@@ -533,9 +533,9 @@ static KlCodeVal klgen_exprandset(KlGenUnit* gen, KlCstBin* andcst, size_t targe
     KlCodeVal rval = klgen_exprboolset(gen, andcst->roperand, target, setcond);
     if (klcodeval_isconstant(rval)) {
       size_t stktop = klgen_stacktop(gen);
-      klgen_putinstack(gen, &rval, klgen_cstposition(andcst->roperand));
-      klgen_pushinst(gen, klinst_testset(target, rval.index), klgen_cstposition(andcst->roperand));
-      size_t pc = klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(andcst->roperand));
+      klgen_putonstack(gen, &rval, klgen_cstposition(andcst->roperand));
+      klgen_emit(gen, klinst_testset(target, rval.index), klgen_cstposition(andcst->roperand));
+      size_t pc = klgen_emit(gen, klinst_condjmp(setcond, 0), klgen_cstposition(andcst->roperand));
       klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->falselist, klcodeval_jmp(pc));
       klgen_stackfree(gen, stktop);
     }
@@ -577,10 +577,10 @@ static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlCst* cst, size_t target, bo
   KlCodeVal res = klgen_expr(gen, cst);
   if (klcodeval_isconstant(res)) return res;
   size_t stktop = klgen_stacktop(gen);
-  klgen_putinstack(gen, &res, klgen_cstposition(cst));
-  klgen_pushinst(gen, klinst_testset(target, res.index), klgen_cstposition(cst));
-  klgen_pushinst(gen, klinst_condjmp(setcond, 0), klgen_cstposition(cst));
-  klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->terminatelist, klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(cst))));
+  klgen_putonstack(gen, &res, klgen_cstposition(cst));
+  klgen_emit(gen, klinst_testset(target, res.index), klgen_cstposition(cst));
+  klgen_emit(gen, klinst_condjmp(setcond, 0), klgen_cstposition(cst));
+  klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->terminatelist, klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(cst))));
   klgen_stackfree(gen, stktop);
   return klcodeval_none();
 }
@@ -588,8 +588,8 @@ static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlCst* cst, size_t target, bo
 static void klgen_finishexprboolvalraw(KlGenUnit* gen, size_t target, KlFilePosition pos) {
   KlGenJumpInfo* jumpinfo = gen->info.jumpinfo;
   if (jumpinfo->truelist.kind != KLVAL_NONE || jumpinfo->falselist.kind != KLVAL_NONE) {
-    size_t falsepos = klgen_pushinst(gen, klinst_loadfalseskip(target), pos);
-    size_t truepos = klgen_pushinst(gen, klinst_loadbool(target, true), pos);
+    size_t falsepos = klgen_emit(gen, klinst_loadfalseskip(target), pos);
+    size_t truepos = klgen_emit(gen, klinst_loadbool(target, true), pos);
     klgen_setinstjmppos(gen, jumpinfo->falselist, falsepos);
     klgen_setinstjmppos(gen, jumpinfo->truelist, truepos);
   }
@@ -616,7 +616,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlCst* cst, size_t target)
       KlCodeVal rjmp = klgen_exprboolvalraw(gen, bincst->roperand, target);
       if (klcodeval_isconstant(rjmp)) {
         if (klcodeval_istrue(rjmp)) {
-          rjmp = klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(bincst->roperand)));
+          rjmp = klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(bincst->roperand)));
           klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->truelist, rjmp);
         }
         klgen_finishexprboolvalraw(gen, target, klgen_cstposition(cst));
@@ -632,7 +632,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlCst* cst, size_t target)
       KlCodeVal rjmp = klgen_exprboolvalraw(gen, bincst->roperand, target);
       if (klcodeval_isconstant(rjmp)) {
         if (klcodeval_istrue(rjmp)) {
-          rjmp = klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(bincst->roperand)));
+          rjmp = klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(bincst->roperand)));
           klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->truelist, rjmp);
         }
         klgen_finishexprboolvalraw(gen, target, klgen_cstposition(cst));
@@ -663,7 +663,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlCst* cst, size_t target)
     if (gen->info.jumpinfo->terminatelist.kind != KLVAL_NONE)
       klgen_setinstjmppos(gen, gen->info.jumpinfo->terminatelist, klgen_currcodesize(gen));
   } else {
-    KlCodeVal jmp = klcodeval_jmp(klgen_pushinst(gen, klinst_jmp(0), klgen_cstposition(cst)));
+    KlCodeVal jmp = klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(cst)));
     klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->terminatelist, jmp);
     klgen_finishexprboolvalraw(gen, target, klgen_cstposition(cst));
   }

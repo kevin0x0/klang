@@ -78,7 +78,7 @@ static inline void klgen_tuple_evaluate(KlGenUnit* gen, KlCstTuple* tuplecst, si
 static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t nwanted) {
   size_t base = klgen_stacktop(gen);
   size_t nres = klgen_passargs(gen, yieldcst->vals);
-  klgen_pushinst(gen, klinst_yield(base, nres, nwanted), klgen_cstposition(yieldcst));
+  klgen_emit(gen, klinst_yield(base, nres, nwanted), klgen_cstposition(yieldcst));
   klgen_stackfree(gen, base + nwanted);
 }
 

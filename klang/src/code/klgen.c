@@ -21,7 +21,7 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
     return false;
   }
   gen->symtblpool = symtblpool;
-  if (kl_unlikely(!klcodearr_init(&gen->nestedfunc, 2))) {
+  if (kl_unlikely(!klcodearr_init(&gen->subfunc, 2))) {
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
     klsymtblpool_dealloc(symtblpool, gen->reftbl);
     klcontbl_delete(gen->contbl);
@@ -31,14 +31,14 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
     klsymtblpool_dealloc(symtblpool, gen->reftbl);
     klcontbl_delete(gen->contbl);
-    klcodearr_destroy(&gen->nestedfunc);
+    klcodearr_destroy(&gen->subfunc);
     return false;
   }
   if (kl_unlikely(!klfparr_init(&gen->position, 32))) {
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
     klsymtblpool_dealloc(symtblpool, gen->reftbl);
     klcontbl_delete(gen->contbl);
-    klcodearr_destroy(&gen->nestedfunc);
+    klcodearr_destroy(&gen->subfunc);
     klinstarr_destroy(&gen->code);
     return false;
   }
@@ -68,7 +68,7 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
     klsymtblpool_dealloc(symtblpool, gen->reftbl);
     klcontbl_delete(gen->contbl);
-    klcodearr_destroy(&gen->nestedfunc);
+    klcodearr_destroy(&gen->subfunc);
     klinstarr_destroy(&gen->code);
     klfparr_destroy(&gen->position);
     return false;
@@ -88,18 +88,18 @@ void klgen_destroy(KlGenUnit* gen) {
     symtbl = parent;
   }
   klcontbl_delete(gen->contbl);
-  for (size_t i = 0; i < klcodearr_size(&gen->nestedfunc); ++i) {
-    KlCode** code = klcodearr_access(&gen->nestedfunc, i);
+  for (size_t i = 0; i < klcodearr_size(&gen->subfunc); ++i) {
+    KlCode** code = klcodearr_access(&gen->subfunc, i);
     klcode_delete(*code);
   }
-  klcodearr_destroy(&gen->nestedfunc);
+  klcodearr_destroy(&gen->subfunc);
   klinstarr_destroy(&gen->code);
 }
 
 KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
   klinstarr_shrink(&gen->code);
   klfparr_shrink(&gen->position);
-  klcodearr_shrink(&gen->nestedfunc);
+  klcodearr_shrink(&gen->subfunc);
   KlConstant* constants = (KlConstant*)malloc(klcontbl_size(gen->contbl) * sizeof (KlConstant));
   KlRefInfo* refinfo = (KlRefInfo*)malloc(klsymtbl_size(gen->reftbl) * sizeof (KlRefInfo));
   if (kl_unlikely(!constants || !refinfo)) {
@@ -112,8 +112,8 @@ KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
   size_t codelen = klinstarr_size(&gen->code);
   KlInstruction* insts = klinstarr_steal(&gen->code);
   KlFilePosition* lineinfo = gen->config.debug ? klfparr_steal(&gen->position) : NULL;
-  size_t nnested = klcodearr_size(&gen->nestedfunc);
-  KlCode** nestedfunc = klcodearr_steal(&gen->nestedfunc);
+  size_t nnested = klcodearr_size(&gen->subfunc);
+  KlCode** nestedfunc = klcodearr_steal(&gen->subfunc);
 
   klgen_stackfree(gen, 0);
   KlCode* code = klcode_create(refinfo, klsymtbl_size(gen->reftbl), constants, klcontbl_size(gen->contbl),
@@ -214,27 +214,27 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
   switch (val.kind) {
     case KLVAL_STACK: {
       if (target != val.index)
-        klgen_movevals(gen, target, val.index, 1, position);
+        klgen_emitmove(gen, target, val.index, 1, position);
       break;
     }
     case KLVAL_REF: {
-      klgen_pushinst(gen, klinst_loadref(target, val.index), position);
+      klgen_emit(gen, klinst_loadref(target, val.index), position);
       break;
     }
     case KLVAL_NIL: {
-      klgen_loadnils(gen, target, 1, position);
+      klgen_emitloadnils(gen, target, 1, position);
       break;
     }
     case KLVAL_BOOL: {
       KlInstruction inst = klinst_loadbool(target, val.boolval);
-      klgen_pushinst(gen, inst, position);
+      klgen_emit(gen, inst, position);
       break;
     }
     case KLVAL_STRING: {
       KlConstant constant = { .type = KL_STRING, .string = val.string };
       KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
       klgen_oomifnull(gen, conent);
-      klgen_pushinst(gen, klinst_loadc(target, conent->index), position);
+      klgen_emit(gen, klinst_loadc(target, conent->index), position);
       break;
     }
     case KLVAL_INTEGER: {
@@ -247,7 +247,7 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
         klgen_oomifnull(gen, conent);
         inst = klinst_loadc(target, conent->index);
       }
-      klgen_pushinst(gen, inst, position);
+      klgen_emit(gen, inst, position);
       break;
     }
     case KLVAL_FLOAT: {
@@ -256,7 +256,7 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
       KlConEntry* conent = klcontbl_get(gen->contbl, &con);
       klgen_oomifnull(gen, conent);
       inst = klinst_loadc(target, conent->index);
-      klgen_pushinst(gen, inst, position);
+      klgen_emit(gen, inst, position);
       break;
     }
     default: {
@@ -266,9 +266,9 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
   }
 }
 
-void klgen_loadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition position) {
+void klgen_emitloadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition position) {
   if (klgen_currcodesize(gen) == 0) {
-    klgen_pushinst(gen, klinst_loadnil(target, nnil), position);
+    klgen_emit(gen, klinst_loadnil(target, nnil), position);
   } else {
     KlInstruction* previnst = klinstarr_back(&gen->code);
     if (KLINST_GET_OPCODE(*previnst) == KLOPCODE_LOADNIL) {
@@ -282,14 +282,14 @@ void klgen_loadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition p
         return;
       } /* else fall through */
     }
-    klgen_pushinst(gen, klinst_loadnil(target, nnil), position);
+    klgen_emit(gen, klinst_loadnil(target, nnil), position);
   }
 }
 
-void klgen_movevals(KlGenUnit* gen, size_t target, size_t from, size_t nmove, KlFilePosition position) {
+void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, KlFilePosition position) {
   if (nmove == 0) return;
   if (klgen_currcodesize(gen) == 0) {
-    klgen_pushinst(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
+    klgen_emit(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
   } else {
     KlInstruction* previnst = klinstarr_back(&gen->code);
     uint8_t prev_opcode = KLINST_GET_OPCODE(*previnst);
@@ -307,7 +307,7 @@ void klgen_movevals(KlGenUnit* gen, size_t target, size_t from, size_t nmove, Kl
         return;
       } /* else fall through */
     }
-    klgen_pushinst(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
+    klgen_emit(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
   }
 }
 
