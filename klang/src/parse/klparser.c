@@ -1137,13 +1137,8 @@ static KlCst* klparser_stmtinfor(KlParser* parser, KlLex* lex) {
       klcst_delete(block);
       return NULL;
     }
-    if (kl_unlikely(lvals->nelem != 1)) {
+    if (kl_unlikely(lvals->nelem != 1))
       klparser_error(parser, kllex_inputstream(lex), klcst_begin(lvals), klcst_end(lvals), "integer loop requires only one iteration variable");
-      klcst_delete(lvals);
-      klcst_delete(block);
-      klcst_delete(exprlist);
-      return NULL;
-    }
     size_t nelem = klcast(KlCstTuple*, exprlist)->nelem;
     if (kl_unlikely(nelem != 3 && nelem != 2)) {
       klparser_error(parser, kllex_inputstream(lex), exprlist->begin, exprlist->end, "expect 2 or 3 expressions here");
@@ -1177,6 +1172,7 @@ static KlCst* klparser_stmtinfor(KlParser* parser, KlLex* lex) {
     klcst_delete(block);
     return NULL;
   }
+  kl_assert(klcast(KlCstTuple*, lvals)->nelem != 0, "");
   if (klcst_kind(iterable) == KLCST_EXPR_VARARG) {
     /* is variable argument for loop : stmtfor -> for a, b, ... in ... */
     klcst_delete(iterable); /* 'iterable' is no longer needed */

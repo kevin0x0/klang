@@ -263,11 +263,9 @@ void klgen_call(KlGenUnit* gen, KlCstPost* callcst, size_t nret, size_t target) 
     return;
   }
   size_t base = klgen_stacktop(gen);
-  KlCodeVal callable = klgen_exprtarget(gen, callcst->operand, base);
-  if (klcodeval_isconstant(callable))
-    klgen_putonstktop(gen, &callable, klgen_cstposition(callcst->operand));
+  klgen_exprtarget_noconst(gen, callcst->operand, base);
   size_t narg = klgen_passargs(gen, callcst->post);
-  klgen_emit(gen, klinst_call(callable.index, narg, nret), klgen_cstposition(callcst));
+  klgen_emit(gen, klinst_call(base, narg, nret), klgen_cstposition(callcst));
   klgen_stackfree(gen, base + nret);
   if (nret == 0 || target == base) return;
   kl_assert(target < base, "");
@@ -345,11 +343,8 @@ void klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst, size_t nwanted) {
   }
   KlCst** exprs = tuplecst->elems;
   size_t count = nvalid - 1;
-  for (size_t i = 0; i < count; ++i) {
-    KlCodeVal res = klgen_exprtarget(gen, exprs[i], klgen_stacktop(gen));
-    if (klcodeval_isconstant(res))
-      klgen_putonstktop(gen, &res, klgen_cstposition(exprs[i]));
-  }
+  for (size_t i = 0; i < count; ++i)
+    klgen_exprtarget_noconst(gen, exprs[i], klgen_stacktop(gen));
   klgen_multival(gen, exprs[count], nwanted - count, klgen_stacktop(gen));
 }
 
@@ -359,9 +354,7 @@ size_t klgen_passargs(KlGenUnit* gen, KlCst* args) {
     klgen_tuple(gen, klcast(KlCstTuple*, args), narg);
     return narg;
   } else {  /* else is a normal expression */
-    KlCodeVal res = klgen_exprtarget(gen, args, klgen_stacktop(gen));
-    if (klcodeval_isconstant(res))
-      klgen_putonstktop(gen, &res, klgen_cstposition(args));
+    klgen_exprtarget_noconst(gen, args, klgen_stacktop(gen));
     return 1;
   }
 }

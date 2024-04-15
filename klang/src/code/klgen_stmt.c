@@ -221,6 +221,7 @@ static void klgen_assignfrom(KlGenUnit* gen, KlCst* lval, size_t stkid) {
 }
 
 static void klgen_stmtassign(KlGenUnit* gen, KlCstStmtAssign* assigncst) {
+  kltodo("support pattern deconstruction");
   KlCstTuple* lvals = klcast(KlCstTuple*, assigncst->lvals);
   KlCstTuple* rvals = klcast(KlCstTuple*, assigncst->rvals);
   kl_assert(lvals->nelem != 0, "");
@@ -448,29 +449,32 @@ static void klgen_stmtifor(KlGenUnit* gen, KlCstStmtIFor* iforcst) {
   gen->info.continue_scope = gen->symtbl;
 
   size_t forbase = klgen_stacktop(gen);
-  KlCodeVal begin = klgen_exprtarget(gen, iforcst->begin, forbase);
-  if (klcodeval_isconstant(begin))
-    klgen_putonstktop(gen, &begin, klgen_cstposition(iforcst->begin));
-  KlCodeVal end = klgen_exprtarget(gen, iforcst->end, forbase + 1);
-  if (klcodeval_isconstant(end))
-    klgen_putonstktop(gen, &end, klgen_cstposition(iforcst->step));
-  KlCodeVal step;
+  klgen_exprtarget_noconst(gen, iforcst->begin, forbase);
+  // KlCodeVal begin = klcodeval_stack(forbase);
+  klgen_exprtarget_noconst(gen, iforcst->end, forbase + 1);
   if (iforcst->step) {
-    step = klgen_exprtarget(gen, iforcst->step, forbase + 2);
-    if (klcodeval_isconstant(step))
-      klgen_putonstktop(gen, &step, klgen_cstposition(iforcst->step));
+    klgen_exprtarget_noconst(gen, iforcst->step, forbase + 2);
   } else {
     klgen_emitloadnils(gen, forbase + 2, 1, klgen_position(klcst_end(iforcst->end), klcst_end(iforcst->end)));
-    step = klcodeval_stack(forbase + 2);
+    klgen_stackalloc1(gen);
   }
-  kl_assert(begin.index == forbase && end.index == forbase + 1 && step.index == forbase + 2, "");
   kl_assert(klgen_stacktop(gen) == forbase + 3, "");
 
   klgen_mergejmp_maynone(gen, gen->info.breakjmp,
                          klcodeval_jmp(klgen_emit(gen, klinst_iforprep(forbase, 0), klgen_cstposition(iforcst))));
-  klgen_pushsymtbl(gen);  /* begin a new scope here */
-  klgen_newsymbol(gen, iforcst->id, forbase, klcst_begin(iforcst)); /* create iteration variable */
+  klgen_pushsymtbl(gen);  /* enter a new scope here */
   size_t looppos = klgen_currcodesize(gen);
+  kl_assert(klcst_kind(iforcst->lval) == KLCST_EXPR_TUPLE && klcast(KlCstTuple*, iforcst->lval)->nelem == 1, "");
+
+  KlCst* pattern = klgen_exprpromotion(klcast(KlCstTuple*, iforcst->lval)->elems[0]);
+  if ((klcst_kind(pattern) == KLCST_EXPR_ID)) {
+    klgen_newsymbol(gen, klcast(KlCstIdentifier*, pattern)->id, forbase, klgen_cstposition(pattern));
+  } else {  /* else is pattern deconstruction */
+    kl_assert(klgen_stacktop(gen) == forbase + 3, "");
+    klgen_pattern_deconstruct_tostktop(gen, pattern, forbase);
+    kl_assert(forbase + 3 + klgen_pattern_assign_stkid(gen, pattern, forbase + 3) == klgen_stacktop(gen), "");
+  }
+
   klgen_stmtlist(gen, klcast(KlCstStmtList*, iforcst->block));
   if (gen->symtbl->info.referenced)
       klgen_emit(gen, klinst_close(forbase), klgen_cstposition(iforcst));
@@ -499,20 +503,27 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlCstStmtVFor* vforcst) {
   gen->info.continue_scope = gen->symtbl;
 
   size_t forbase = klgen_stacktop(gen);
-  KlCodeVal step = klcodeval_integer(vforcst->nid);
+  KlCst** patterns = klcast(KlCstTuple*, vforcst->lvals)->elems;
+  size_t npattern = klcast(KlCstTuple*, vforcst->lvals)->nelem;
+  KlCodeVal step = klcodeval_integer(npattern);
   klgen_putonstktop(gen, &step, klgen_cstposition(vforcst));
   klgen_mergejmp_maynone(gen, gen->info.breakjmp,
                          klcodeval_jmp(klgen_emit(gen, klinst_vforprep(forbase, 0), klgen_cstposition(vforcst))));
-  klgen_stackalloc1(gen); /* forbase + 1: step, forbase + 2: index */
-  klgen_pushsymtbl(gen);  /* begin a new scope */
-  size_t nid = vforcst->nid;
-  KlStrDesc* ids = vforcst->ids;
-  klgen_stackalloc(gen, nid);
-  for (size_t i = 0; i < nid; ++i)
-    klgen_newsymbol(gen, ids[i], forbase + 2 + i, klcst_begin(vforcst));
-  klgen_mergejmp_maynone(gen, gen->info.breakjmp,
-                         klcodeval_jmp(klgen_emit(gen, klinst_vforprep(forbase, 0), klgen_cstposition(vforcst))));
   size_t looppos = klgen_currcodesize(gen);
+  klgen_stackalloc1(gen); /* forbase + 0: step, forbase + 1: index */
+  klgen_pushsymtbl(gen);  /* begin a new scope */
+
+  klgen_stackalloc(gen, npattern);
+  for (KlCst** ppattern = patterns + npattern - 1; ppattern != patterns; --ppattern) {
+    KlCst* pattern = klgen_exprpromotion(*ppattern);
+    size_t valstkid = forbase + 2 + (ppattern - patterns);
+    if (klcst_kind(pattern) == KLCST_EXPR_ID) {
+      klgen_newsymbol(gen, klcast(KlCstIdentifier*, pattern)->id, valstkid, klgen_cstposition(pattern));
+    } else {
+      klgen_pattern_deconstruct_tostktop(gen, pattern, valstkid);
+    }
+  }
+
   klgen_stmtlist(gen, klcast(KlCstStmtList*, vforcst->block));
   if (gen->symtbl->info.referenced)
       klgen_emit(gen, klinst_close(forbase), klgen_cstposition(vforcst));
@@ -541,31 +552,38 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlCstStmtGFor* gforcst) {
   gen->info.continue_scope = gen->symtbl;
 
   size_t forbase = klgen_stacktop(gen);
-  KlCodeVal iterable = klgen_exprtarget(gen, gforcst->expr, forbase);
-  if (klcodeval_isconstant(iterable))
-    klgen_putonstktop(gen, &iterable, klgen_cstposition(gforcst->expr));
-  kl_assert(iterable.index == forbase, "");
+  size_t iterable = forbase;
+  klgen_exprtarget_noconst(gen, gforcst->expr, iterable);
   klgen_stackfree(gen, forbase);
   KlConstant constant = { .type = KL_STRING, .string = gen->string.itermethod };
   KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
   klgen_oomifnull(gen, conent);
-  klgen_emitmethod(gen, iterable.index, conent->index, 0, 3, forbase, klgen_cstposition(gforcst));
+  klgen_emitmethod(gen, iterable, conent->index, 0, 3, forbase, klgen_cstposition(gforcst));
   klgen_mergejmp_maynone(gen, gen->info.continuejmp,
                          klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(gforcst))));
+  size_t looppos = klgen_currcodesize(gen);
   klgen_pushsymtbl(gen);    /* begin a new scope */
   klgen_stackalloc(gen, 3); /* forbase: iteration function, forbase + 1: static state, forbase + 2: index state */
-  size_t nid = gforcst->nid;
-  KlStrDesc* ids = gforcst->ids;
-  klgen_stackalloc(gen, nid);
-  for (size_t i = 0; i < nid; ++i)
-    klgen_newsymbol(gen, ids[i], forbase + 3 + i, klcst_begin(gforcst));
-  size_t looppos = klgen_currcodesize(gen);
+
+  KlCst** patterns = klcast(KlCstTuple*, gforcst->lvals)->elems;
+  size_t npattern = klcast(KlCstTuple*, gforcst->lvals)->nelem;
+  klgen_stackalloc(gen, npattern);
+  for (KlCst** ppattern = patterns + npattern - 1; ppattern != patterns; --ppattern) {
+    KlCst* pattern = klgen_exprpromotion(*ppattern);
+    size_t valstkid = forbase + 3 + (ppattern - patterns);
+    if (klcst_kind(pattern) == KLCST_EXPR_ID) {
+      klgen_newsymbol(gen, klcast(KlCstIdentifier*, pattern)->id, valstkid, klgen_cstposition(pattern));
+    } else {
+      klgen_pattern_deconstruct_tostktop(gen, pattern, valstkid);
+    }
+  }
+
   klgen_stmtlist(gen, klcast(KlCstStmtList*, gforcst->block));
   if (gen->symtbl->info.referenced)
       klgen_emit(gen, klinst_close(forbase), klgen_cstposition(gforcst));
   klgen_popsymtbl(gen);   /* close the scope */
   klgen_setinstjmppos(gen, cjmplist, klgen_currcodesize(gen));
-  klgen_emit(gen, klinst_gforloop(forbase, nid + 2), klgen_cstposition(gforcst));
+  klgen_emit(gen, klinst_gforloop(forbase, npattern + 2), klgen_cstposition(gforcst));
   klgen_emit(gen, klinst_truejmp(forbase + 1, looppos - klgen_currcodesize(gen) - 1), klgen_cstposition(gforcst));
   klgen_setinstjmppos(gen, bjmplist, klgen_currcodesize(gen));
   klgen_stackfree(gen, forbase);

@@ -6,8 +6,11 @@
 
 
 size_t klgen_pattern_deconstruct(KlGenUnit* gen, KlCst* pattern, size_t targettail);
-bool klgen_pattern_fastdeconstruct(KlGenUnit* gen, KlCst* pattern);
+/* deconstruct a val to top of stack.
+ * do assign id and newsymbol. */
+size_t klgen_pattern_deconstruct_tostktop(KlGenUnit* gen, KlCst* pattern, size_t val);
 size_t klgen_pattern_assign_stkid(KlGenUnit* gen, KlCst* pattern, size_t base);
+bool klgen_pattern_fastdeconstruct(KlGenUnit* gen, KlCst* pattern);
 
 void klgen_pattern_newsymbol(KlGenUnit* gen, KlCst* pattern);
 static inline void klgen_patterns_newsymbol(KlGenUnit* gen, KlCst** patterns, size_t npattern);

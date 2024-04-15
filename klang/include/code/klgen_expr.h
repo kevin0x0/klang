@@ -33,7 +33,7 @@ static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlCst* cst, size_t t
   if (klcodeval_isconstant(res))
     klgen_loadval(gen, target, res, klgen_cstposition(cst));
   if (klgen_stacktop(gen) <= target)
-    klgen_stackfree(gen, target);
+    klgen_stackfree(gen, target + 1);
 }
 
 static inline KlCodeVal klgen_tuple_as_singleval(KlGenUnit* gen, KlCstTuple* tuplecst) {
