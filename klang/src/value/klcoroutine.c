@@ -1,11 +1,12 @@
 #include "klang/include/value/klcoroutine.h"
-#include "klang/include/mm/klmm.h"
 #include "klang/include/value/klclosure.h"
 #include "klang/include/value/klstate.h"
 #include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klexception.h"
 #include "klang/include/vm/klexec.h"
+#include "klang/include/vm/klinst.h"
 #include "klang/include/vm/klstack.h"
+#include "klang/include/mm/klmm.h"
 #include <stddef.h>
 
 
@@ -26,11 +27,12 @@ KlState* klco_create(KlState* state, KlKClosure* kclo) {
 
 KlException klco_start(KlState* costate, KlState* caller, size_t narg, size_t nret) {
   kl_assert(klco_status(&costate->coinfo) == KLCO_NORMAL, "should be normal coroutine");
-  kl_assert(klstack_size(klstate_stack(caller)) >= narg, "not enough number of argument");
+  kl_assert(narg != KLINST_VARRES && klstack_size(klstate_stack(caller)) >= narg, "not enough number of argument");
   kl_assert(costate->coinfo.kclo != NULL, "no executable");
 
   if (kl_unlikely(klstate_checkframe(costate, narg)))
     return klstate_throw(caller, KL_E_OOM, "out of memory when starting a coroutine");
+
   /* move arguments to execution environment of coroutine */
   KlValue* argbase = klstate_getval(caller, -narg);
   KlValue* costktop = klstate_stktop(costate);
@@ -40,34 +42,60 @@ KlException klco_start(KlState* costate, KlState* caller, size_t narg, size_t nr
   while (count--)
     klvalue_setvalue(costktop++, argpos++);
   klstack_set_top(klstate_stack(costate), costktop);
+
   KlValue kclo;
   klvalue_setobj(&kclo, costate->coinfo.kclo, KL_KCLOSURE);
   klco_setstatus(&costate->coinfo, KLCO_RUNNING); /* now we run this coroutine */
   if (setjmp(costate->coinfo.yieldpos) == KLCOJMP_NORMAL) {
-    KlException exception = klexec_call(costate, &kclo, narg, nret);
+    KlException exception = klexec_call(costate, &kclo, narg, KLINST_VARRES);
     if (kl_unlikely(exception)) {
       klco_setstatus(&costate->coinfo, KLCO_DEAD);
       return exception;
     }
-    /* the caller will never be called until this function return, so the argbase should not change. */
-    kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
     KlValue* firstres = klexec_restorestack(costate, costate->coinfo.respos_save);
-    size_t ncopy = nret;
-    while (ncopy--)   /* copy results */
-      klvalue_setvalue(argbase++, firstres++);
+    size_t nres = (size_t)(klstate_stktop(costate) - firstres);
+    if (nret == KLINST_VARRES) {
+      size_t ncopy = nres;
+      if (kl_unlikely(klstate_checkframe(caller, ncopy))) {
+        klco_setstatus(&costate->coinfo, KLCO_DEAD);
+        return klstate_throw(costate, KL_E_OOM, "out of memory when grow stack");
+      }
+      KlValue* retpos = klstate_getval(caller, klexec_newed_callinfo(caller)->retoff);
+      while (ncopy--)   /* copy results */
+        klvalue_setvalue(retpos++, firstres++);
+      klstack_set_top(klstate_stack(caller), retpos);
+    } else {
+      size_t ncopy = nret < nres ? nret : nres;
+      KlValue* retpos = klstate_getval(caller, klexec_newed_callinfo(caller)->retoff);
+      while (ncopy--)   /* copy results */
+        klvalue_setvalue(retpos++, firstres++);
+      if (nres < nret)  /* completing missing returned value */
+        klexec_setnils(retpos, nret - nres);
+    }
     klstack_set_top(klstate_stack(costate), klexec_restorestack(costate, costate->coinfo.respos_save));
     klco_setstatus(&costate->coinfo, KLCO_DEAD);
     return KL_E_NONE;
   } else {  /* yielded */
-    /* the caller will never be called until this function return, so the argbase should not change. */
-    kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
     size_t nres = costate->coinfo.nyield;
     KlValue* firstres = costate->coinfo.yieldvals;
-    size_t ncopy = nret < nres ? nret : nres;
-    while (ncopy--)   /* copy results */
-      klvalue_setvalue(argbase++, firstres++);
-    if (nret > nres)  /* completing missing returned value */
-      klexec_setnils(argbase, nret - nres);
+    if (nret == KLINST_VARRES) {
+      size_t ncopy = nres;
+      if (kl_unlikely(klstate_checkframe(caller, ncopy))) {
+        klco_setstatus(&costate->coinfo, KLCO_DEAD);
+        return klstate_throw(costate, KL_E_OOM, "out of memory when grow stack");
+      }
+      KlValue* retpos = klstate_getval(caller, klexec_newed_callinfo(caller)->retoff);
+      while (ncopy--)   /* copy results */
+        klvalue_setvalue(retpos++, firstres++);
+      klstack_set_top(klstate_stack(caller), retpos);
+    } else {
+      size_t ncopy = nret < nres ? nret : nres;
+      KlValue* retpos = klstate_getval(caller, klexec_newed_callinfo(caller)->retoff);
+      while (ncopy--)   /* copy results */
+        klvalue_setvalue(retpos++, firstres++);
+      if (nres < nret)  /* completing missing returned value */
+        klexec_setnils(retpos, nret - nres);
+    }
     klstack_set_top(klstate_stack(costate), costate->coinfo.yieldvals);
     return KL_E_NONE;
   }
@@ -98,19 +126,26 @@ KlException klco_resume(KlState* costate, KlState* caller, size_t narg, size_t n
   kl_assert(klstack_size(klstate_stack(caller)) >= narg, "not enough number of argument");
   kl_assert(costate->coinfo.kclo != NULL, "no executable");
 
-  /* framesize of costate is guaranteed.
-   * move arguments to execution environment of coroutine */
+  if (kl_unlikely(klstate_checkframe(costate, narg)))
+    return klstate_throw(caller, KL_E_OOM, "out of memory when resuming a coroutine");
+
+  /* move arguments to execution environment of coroutine */
   kl_assert(klstack_residual(klstate_stack(costate)) >= costate->coinfo.nwanted, "not enough number of argument");
   KlValue* argbase = klstate_getval(caller, -narg);
   KlValue* costktop = klstate_stktop(costate);
+  kl_assert(KLINST_VARRES == 255 && narg < KLINST_VARRES, "");
   size_t nwanted = costate->coinfo.nwanted;
   size_t ncopy = narg < nwanted ? narg : nwanted;
   KlValue* argpos = argbase;
   while (ncopy--)
     klvalue_setvalue(costktop++, argpos++);
-  klstack_set_top(klstate_stack(costate), costktop);
+  if (nwanted == KLINST_VARRES)
+    nwanted = narg;
   if (narg < nwanted)
-    klstack_pushnil(klstate_stack(costate), nwanted - narg);
+    klexec_setnils(costktop, nwanted - narg);
+  klstack_set_top(klstate_stack(costate), costktop + nwanted - narg);
+  klstack_set_top(klstate_stack(caller), argbase);
+
   klco_setstatus(&costate->coinfo, KLCO_RUNNING);
   if (setjmp(costate->coinfo.yieldpos) == KLCOJMP_NORMAL) {
     KlException exception = klco_resume_execute(costate);
@@ -118,25 +153,50 @@ KlException klco_resume(KlState* costate, KlState* caller, size_t narg, size_t n
       klco_setstatus(&costate->coinfo, KLCO_DEAD);
       return exception;
     }
-    /* the caller will never be called until this function return, so the argbase should not change. */
-    kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
     KlValue* firstres = klexec_restorestack(costate, costate->coinfo.respos_save);
-    size_t ncopy = nret;
-    while (ncopy--)   /* copy results */
-      klvalue_setvalue(argbase++, firstres++);
+    size_t nres = (size_t)(klstate_stktop(costate) - firstres);
+    if (nret == KLINST_VARRES) {
+      size_t ncopy = nres;
+      if (kl_unlikely(klstate_checkframe(caller, ncopy))) {
+        klco_setstatus(&costate->coinfo, KLCO_DEAD);
+        return klstate_throw(costate, KL_E_OOM, "out of memory when grow stack");
+      }
+      KlValue* retpos = klstate_getval(caller, klexec_newed_callinfo(caller)->retoff);
+      while (ncopy--)   /* copy results */
+        klvalue_setvalue(retpos++, firstres++);
+      klstack_set_top(klstate_stack(caller), retpos);
+    } else {
+      size_t ncopy = nret < nres ? nret : nres;
+      KlValue* retpos = klstate_getval(caller, klexec_newed_callinfo(caller)->retoff);
+      while (ncopy--)   /* copy results */
+        klvalue_setvalue(retpos++, firstres++);
+      if (nres < nret)  /* completing missing returned value */
+        klexec_setnils(retpos, nret - nres);
+    }
     klstack_set_top(klstate_stack(costate), klexec_restorestack(costate, costate->coinfo.respos_save));
     klco_setstatus(&costate->coinfo, KLCO_DEAD);
     return KL_E_NONE;
   } else {  /* yielded */
-    /* the caller will never be called until this function return, so the argbase should not change. */
-    kl_assert(argbase == klstate_getval(caller, -narg), "stack reallocated!");
     size_t nres = costate->coinfo.nyield;
     KlValue* firstres = costate->coinfo.yieldvals;
-    size_t ncopy = nret < nres ? nret : nres;
-    while (ncopy--)   /* copy results */
-      klvalue_setvalue(argbase++, firstres++);
-    if (nret > nres)  /* completing missing returned value */
-      klexec_setnils(argbase, nret - nres);
+    if (nret == KLINST_VARRES) {
+      size_t ncopy = nres;
+      if (kl_unlikely(klstate_checkframe(caller, ncopy))) {
+        klco_setstatus(&costate->coinfo, KLCO_DEAD);
+        return klstate_throw(costate, KL_E_OOM, "out of memory when grow stack");
+      }
+      KlValue* retpos = klstate_getval(caller, klexec_newed_callinfo(caller)->retoff);
+      while (ncopy--)   /* copy results */
+        klvalue_setvalue(retpos++, firstres++);
+      klstack_set_top(klstate_stack(caller), retpos);
+    } else {
+      size_t ncopy = nret < nres ? nret : nres;
+      KlValue* retpos = klstate_getval(caller, klexec_newed_callinfo(caller)->retoff);
+      while (ncopy--)   /* copy results */
+        klvalue_setvalue(retpos++, firstres++);
+      if (nres < nret)  /* completing missing returned value */
+        klexec_setnils(retpos, nret - nres);
+    }
     klstack_set_top(klstate_stack(costate), costate->coinfo.yieldvals);
     return KL_E_NONE;
   }

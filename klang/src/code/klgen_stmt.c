@@ -9,7 +9,6 @@
 #include "klang/include/cst/klcst.h"
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/cst/klcst_stmt.h"
-#include <unistd.h>
 
 
 bool klgen_stmtblock(KlGenUnit *gen, KlCstStmtList *stmtlist) {

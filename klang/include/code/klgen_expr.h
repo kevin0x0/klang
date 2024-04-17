@@ -4,6 +4,7 @@
 #include "klang/include/code/klcode.h"
 #include "klang/include/code/klcodeval.h"
 #include "klang/include/code/klgen.h"
+#include "klang/include/vm/klinst.h"
 
 
 KlCodeVal klgen_expr(KlGenUnit* gen, KlCst* cst);
@@ -18,6 +19,8 @@ static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t 
  * nwanted is the number of expected values. */
 void klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst, size_t nwanted);
 void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target);
+/* try to generate code for expressions that can have variable number of results */
+size_t klgen_allres(KlGenUnit* gen, KlCst* cst, size_t target);
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args);
 KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target);
 KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst, size_t target);
@@ -79,7 +82,8 @@ static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t 
   size_t base = klgen_stacktop(gen);
   size_t nres = klgen_passargs(gen, yieldcst->vals);
   klgen_emit(gen, klinst_yield(base, nres, nwanted), klgen_cstposition(yieldcst));
-  klgen_stackfree(gen, base + nwanted);
+  if (nwanted != KLINST_VARRES)
+    klgen_stackfree(gen, base + nwanted);
 }
 
 

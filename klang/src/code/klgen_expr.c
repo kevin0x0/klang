@@ -31,15 +31,22 @@ void klgen_exprarrgen(KlGenUnit* gen, KlCstArrayGenerator* arrgencst, size_t tar
   }
 }
 
-void klgen_exprwhere(KlGenUnit* gen, KlCstWhere* wherecst, size_t nwanted, size_t target) {
+static size_t klgen_exprwhere(KlGenUnit* gen, KlCstWhere* wherecst, size_t nwanted, size_t target) {
   size_t stktop = klgen_stacktop(gen);
   klgen_pushsymtbl(gen);
   klgen_stmtlistpure(gen, klcast(KlCstStmtList*, wherecst->block));
   kl_assert(klgen_stacktop(gen) == stktop, "");
-  klgen_multival(gen, wherecst->expr, nwanted, target);
+  size_t nres;
+  if (nwanted != KLINST_VARRES) {
+    klgen_multival(gen, wherecst->expr, nwanted, target);
+    nres = nwanted;
+  } else {
+    nres = klgen_allres(gen, wherecst->expr, target);
+  }
   if (gen->symtbl->info.referenced)
     klgen_emit(gen, klinst_close(stktop), klgen_cstposition(wherecst));
   klgen_popsymtbl(gen);
+  return nres;
 }
 
 /* deconstruct parameters but do not insert parameters' names into symbol table. */
@@ -252,8 +259,11 @@ void klgen_method(KlGenUnit* gen, KlCst* objcst, KlStrDesc method, KlCst* args, 
   KlConEntry* conent = klcontbl_get(gen->contbl, &con);
   klgen_oomifnull(gen, conent);
   klgen_emitmethod(gen, base, conent->index, narg, nret, target, position);
-  size_t stktop = target + nret > base ? target + nret : base;
-  klgen_stackfree(gen, stktop);
+  kl_assert(nret != KLINST_VARRES || target == base, "");
+  if (nret != KLINST_VARRES) {
+    size_t stktop = target + nret > base ? target + nret : base;
+    klgen_stackfree(gen, stktop);
+  }
 }
 
 void klgen_call(KlGenUnit* gen, KlCstPost* callcst, size_t nret, size_t target) {
@@ -266,14 +276,16 @@ void klgen_call(KlGenUnit* gen, KlCstPost* callcst, size_t nret, size_t target) 
   klgen_exprtarget_noconst(gen, callcst->operand, base);
   size_t narg = klgen_passargs(gen, callcst->post);
   klgen_emit(gen, klinst_call(base, narg, nret), klgen_cstposition(callcst));
-  klgen_stackfree(gen, base + nret);
+  if (nret != KLINST_VARRES)
+    klgen_stackfree(gen, base + nret);
   if (nret == 0 || target == base) return;
-  kl_assert(target < base, "");
+  kl_assert(target < base && nret != KLINST_VARRES, "");
   klgen_emitmove(gen, target, base, nret, klgen_cstposition(callcst));
   klgen_stackfree(gen, target + nret > base ? target + nret : base);
 }
 
 void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target) {
+  kl_assert(nval != KLINST_VARRES, "");
   switch (klcst_kind(cst)) {
     case KLCST_EXPR_YIELD: {
       size_t stktop = klgen_stacktop(gen);
@@ -350,9 +362,13 @@ void klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst, size_t nwanted) {
 
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args) {
   if (klcst_kind(args) == KLCST_EXPR_TUPLE) {
-    size_t narg = klcast(KlCstTuple*, args)->nelem;
-    klgen_tuple(gen, klcast(KlCstTuple*, args), narg);
-    return narg;
+    KlCstTuple* tuple = klcast(KlCstTuple*, args);
+    if (tuple->nelem == 0) return 0;
+    /* evaluate the first tuple->nelem - 1 expressions */
+    klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, tuple->nelem - 1, klgen_cstposition(args));
+    KlCst* last = tuple->elems[tuple->nelem - 1];
+    klgen_multival(gen, last, KLINST_VARRES, klgen_stacktop(gen));
+    return 
   } else {  /* else is a normal expression */
     klgen_exprtarget_noconst(gen, args, klgen_stacktop(gen));
     return 1;

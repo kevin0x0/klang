@@ -194,6 +194,7 @@ typedef uint32_t KlInstruction;
 #define KLOPCODE_EXTRA              (255)
   
 
+#define KLINST_VARRES               (255)
 
 #define klinst_move(a, b)                                 klinst_ABC(KLOPCODE_MOVE, (a), (b), 0)
 #define klinst_multimove(a, b, nmove)                     klinst_ABX(KLOPCODE_MULTIMOVE, (a), (b), (nmove))
