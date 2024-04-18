@@ -37,11 +37,11 @@ static size_t klgen_exprwhere(KlGenUnit* gen, KlCstWhere* wherecst, size_t nwant
   klgen_stmtlistpure(gen, klcast(KlCstStmtList*, wherecst->block));
   kl_assert(klgen_stacktop(gen) == stktop, "");
   size_t nres;
-  if (nwanted != KLINST_VARRES) {
-    klgen_multival(gen, wherecst->expr, nwanted, target);
-    nres = nwanted;
+  if (nwanted == KLINST_VARRES) {
+    kl_assert(stktop == target, "");
+    nres = klgen_takeall(gen, wherecst->expr);
   } else {
-    nres = klgen_allres(gen, wherecst->expr, target);
+    klgen_multival(gen, wherecst->expr, (nres = nwanted), target);
   }
   if (gen->symtbl->info.referenced)
     klgen_emit(gen, klinst_close(stktop), klgen_cstposition(wherecst));
@@ -54,7 +54,7 @@ static void klgen_exprfunc_deconstruct_params(KlGenUnit* gen, KlCstTuple* funcpa
   kl_assert(klgen_stacktop(gen) == 0, "");
   size_t npattern = funcparams->nelem;
   KlCst** patterns = funcparams->elems;
-  size_t nid = klgen_patterns_assign_stkid(gen, patterns, npattern, 0);
+  size_t nid = klgen_patterns_count_result(gen, patterns, npattern, 0);
   klgen_stackalloc(gen, npattern);
   for (size_t i = 0; i < npattern; ++i) {
     KlCst* pattern = klgen_exprpromotion(patterns[i]);
@@ -90,34 +90,30 @@ void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
     if (newgen.vararg)
       klgen_emit(&newgen, klinst_adjustargs(), klgen_cstposition(funccst->params));
     /* deconstruct parameters */
-    klgen_exprfunc_deconstruct_params(gen, klcast(KlCstTuple*, funccst->params));
+    klgen_exprfunc_deconstruct_params(&newgen, klcast(KlCstTuple*, funccst->params));
 
     /* generate code for function body */
     klgen_stmtlist(&newgen, klcast(KlCstStmtList*, funccst->block));
     /* add a return statement if 'return' is missing */
     if (!klcst_mustreturn(klcast(KlCstStmtList*, funccst->block)))
-      klgen_emit(gen, klinst_return0(), klgen_position(klcst_end(funccst), klcst_end(funccst)));
-    kltodo("check whether the function is valid");
+      klgen_emit(&newgen, klinst_return0(), klgen_position(klcst_end(funccst), klcst_end(funccst)));
+    klgen_validate(&newgen);
     /* code generation is done */
     /* convert the 'newgen' to KlCode */
     KlCode* funccode = klgen_tocode_and_destroy(&newgen, klcast(KlCstTuple*, funccst->params)->nelem);
     klgen_oomifnull(gen, funccode);
     /* add the new function to subfunction table of upper function */
     size_t funcidx = klcodearr_size(&gen->subfunc);
-    if (!klinst_inurange(funcidx, 16)) {
-      klcode_delete(funccode);
-      klgen_error(gen, klcst_begin(funccst), klcst_begin(funccst), "too many functions defined in this function");
-      return;
-    }
     if (kl_unlikely(!klcodearr_push_back(&gen->subfunc, funccode))) {
       klcode_delete(funccode);
       klgen_error_fatal(gen, "out of memory");
     }
     klgen_emit(gen, funccst->is_method ? klinst_mkmethod(target, funcidx)
-                                           : klinst_mkclosure(target, funcidx),
-                   klgen_cstposition(funccst));
+                                       : klinst_mkclosure(target, funcidx),
+               klgen_cstposition(funccst));
     if (target == stktop)
       klgen_stackalloc1(gen);
+  } else {
   }
 }
 
@@ -251,9 +247,7 @@ static KlCodeVal klgen_identifier(KlGenUnit* gen, KlCstIdentifier* idcst) {
 
 void klgen_method(KlGenUnit* gen, KlCst* objcst, KlStrDesc method, KlCst* args, KlFilePosition position, size_t nret, size_t target) {
   size_t base = klgen_stacktop(gen);
-  KlCodeVal obj = klgen_exprtarget(gen, objcst, base);
-  if (klcodeval_isconstant(obj))
-    klgen_putonstktop(gen, &obj, klgen_cstposition(objcst));
+  klgen_exprtarget_noconst(gen, objcst, base);
   size_t narg = klgen_passargs(gen, args);
   KlConstant con = { .type = KL_STRING, .string = method };
   KlConEntry* conent = klcontbl_get(gen->contbl, &con);
@@ -279,6 +273,7 @@ void klgen_call(KlGenUnit* gen, KlCstPost* callcst, size_t nret, size_t target) 
   if (nret != KLINST_VARRES)
     klgen_stackfree(gen, base + nret);
   if (nret == 0 || target == base) return;
+  /* if nret is KLINST_VARRES, then target must be equal to base */
   kl_assert(target < base && nret != KLINST_VARRES, "");
   klgen_emitmove(gen, target, base, nret, klgen_cstposition(callcst));
   klgen_stackfree(gen, target + nret > base ? target + nret : base);
@@ -318,14 +313,38 @@ void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target) {
   }
 }
 
+size_t klgen_takeall(KlGenUnit* gen, KlCst* cst) {
+  switch (klcst_kind(cst)) {
+    case KLCST_EXPR_YIELD: {
+      klgen_expryield(gen, klcast(KlCstYield*, cst), KLINST_VARRES);
+      return KLINST_VARRES;
+    }
+    case KLCST_EXPR_CALL: {
+      klgen_call(gen, klcast(KlCstPost*, cst), KLINST_VARRES, klgen_stacktop(gen));
+      return KLINST_VARRES;
+    }
+    case KLCST_EXPR_WHERE: {
+      return klgen_exprwhere(gen, klcast(KlCstWhere*, cst), KLINST_VARRES, klgen_stacktop(gen));
+    }
+    case KLCST_EXPR_VARARG: {
+      kltodo("implement vararg");
+    }
+    default: {
+      klgen_exprtarget_noconst(gen, cst, klgen_stacktop(gen));
+      return 1;
+    }
+  }
+}
+
 void klgen_exprlist_raw(KlGenUnit* gen, KlCst** csts, size_t ncst, size_t nwanted, KlFilePosition filepos) {
   size_t nvalid = nwanted < ncst ? nwanted : ncst;
   if (nvalid == 0) {
     if (nwanted == 0) {
       size_t stktop = klgen_stacktop(gen);
-      for (size_t i = 0; i < ncst; ++i)
-        klgen_expr(gen, csts[0]);
-      klgen_stackfree(gen, stktop);
+      for (size_t i = 0; i < ncst; ++i) {
+        klgen_expr(gen, csts[i]);
+        klgen_stackfree(gen, stktop);
+      }
     } else {  /* ncst is 0 */
       size_t stktop = klgen_stacktop(gen);
       klgen_emitloadnils(gen, stktop, nwanted, filepos);
@@ -344,35 +363,15 @@ void klgen_exprlist_raw(KlGenUnit* gen, KlCst** csts, size_t ncst, size_t nwante
   }
 }
 
-void klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst, size_t nwanted) {
-  size_t nvalid = nwanted < tuplecst->nelem ? nwanted : tuplecst->nelem;
-  if (nvalid == 0) {
-    if (nwanted == 0) return;
-    size_t stktop = klgen_stacktop(gen);
-    klgen_emitloadnils(gen, stktop, nwanted, klgen_cstposition(tuplecst));
-    klgen_stackalloc(gen, nwanted);
-    return;
-  }
-  KlCst** exprs = tuplecst->elems;
-  size_t count = nvalid - 1;
-  for (size_t i = 0; i < count; ++i)
-    klgen_exprtarget_noconst(gen, exprs[i], klgen_stacktop(gen));
-  klgen_multival(gen, exprs[count], nwanted - count, klgen_stacktop(gen));
-}
-
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args) {
-  if (klcst_kind(args) == KLCST_EXPR_TUPLE) {
-    KlCstTuple* tuple = klcast(KlCstTuple*, args);
-    if (tuple->nelem == 0) return 0;
-    /* evaluate the first tuple->nelem - 1 expressions */
-    klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, tuple->nelem - 1, klgen_cstposition(args));
-    KlCst* last = tuple->elems[tuple->nelem - 1];
-    klgen_multival(gen, last, KLINST_VARRES, klgen_stacktop(gen));
-    return 
-  } else {  /* else is a normal expression */
-    klgen_exprtarget_noconst(gen, args, klgen_stacktop(gen));
-    return 1;
-  }
+  kl_assert(klcst_kind(args) == KLCST_EXPR_TUPLE, "");
+  KlCstTuple* tuple = klcast(KlCstTuple*, args);
+  if (tuple->nelem == 0) return 0;
+  /* evaluate the first tuple->nelem - 1 expressions */
+  klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, tuple->nelem - 1, klgen_cstposition(args));
+  KlCst* last = tuple->elems[tuple->nelem - 1];
+  /* try to get all results of the last expression */
+  return klgen_takeall(gen, last) + tuple->nelem - 1;
 }
 
 KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst, size_t target) {
@@ -571,25 +570,15 @@ static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCo
   kl_assert(klcodeval_isnumber(left) || left.kind == KLVAL_STRING, "");
   /* left is not on the stack, so the stack top is not changed */
   size_t oristktop = klgen_stacktop(gen);
-  size_t currcodesize = klgen_currcodesize(gen);
-  /* we put left on the stack first */
-  KlCodeVal leftonstack = left;
-  klgen_putonstack(gen, &leftonstack, klgen_cstposition(bincst->loperand));
-  size_t stksize_before_evaluete_right = klgen_currcodesize(gen);
   KlCodeVal right = klgen_expr(gen, bincst->roperand);
   if ((klcodeval_isnumber(right) && klcodeval_isnumber(left)) ||
       (left.kind == KLVAL_STRING && right.kind == KLVAL_STRING)) {
+    kl_assert(oristktop == klgen_stacktop(gen), "");
     /* try to compute at compile time */
     if (klcodeval_isnumber(left) && bincst->op != KLTK_CONCAT) {
-      if (stksize_before_evaluete_right == klgen_currcodesize(gen))
-        klgen_popinstto(gen, currcodesize);   /* pop the instruction that put left on stack */
-      klgen_stackfree(gen, oristktop);
       return klgen_tryarithcomptime(gen, bincst, left, right, target);
     }
     if (left.kind == KLVAL_STRING && bincst->op == KLTK_CONCAT) {
-      if (stksize_before_evaluete_right == klgen_currcodesize(gen))
-        klgen_popinstto(gen, currcodesize);   /* pop the instruction that put left on stack */
-      klgen_stackfree(gen, oristktop);
       char* res = klstrtab_concat(gen->strtab, left.string, right.string);
       klgen_oomifnull(gen, res);
       KlStrDesc str = { .id = klstrtab_stringid(gen->strtab, res),
@@ -598,21 +587,21 @@ static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCo
     }
     /* can not apply compile time computation, fall through */
   }
+  klgen_putonstack(gen, &left, klgen_cstposition(bincst->loperand));
   if (right.kind == KLVAL_STACK) {
-    /* now we are sure that left should indeed be put on the stack */
-    KlInstruction inst = klgen_bininst(bincst, target, leftonstack.index, right.index);
+    KlInstruction inst = klgen_bininst(bincst, target, left.index, right.index);
     klgen_emit(gen, inst, klgen_cstposition(bincst));
     klgen_stackfree(gen, oristktop == target ? target + 1 : oristktop);
     return klcodeval_stack(target);
   } else {
-    return klgen_exprbinrightnonstk(gen, bincst, leftonstack, right, target, oristktop);
+    return klgen_exprbinrightnonstk(gen, bincst, left, right, target, oristktop);
   }
 }
 
 static KlCodeVal klgen_exprbinrightnonstk(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, KlCodeVal right, size_t target, size_t oristktop) {
   /* left must be on stack */
   kl_assert(left.kind == KLVAL_STACK, "");
-  size_t finstktop = target == oristktop == target ? target + 1 : oristktop;
+  size_t finstktop = oristktop == target ? target + 1 : oristktop;
   switch (right.kind) {
     case KLVAL_INTEGER: {
       if (bincst->op == KLTK_CONCAT) {
@@ -830,7 +819,7 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlCst* cst) {
       kltodo("implement vararg");
     }
     case KLCST_EXPR_TUPLE: {
-      return klgen_tuple_as_singleval(gen, klcast(KlCstTuple*, cst));
+      return klgen_tuple(gen, klcast(KlCstTuple*, cst));
     }
     case KLCST_EXPR_PRE: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
@@ -916,7 +905,7 @@ KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlCst* cst, size_t target) {
       kltodo("implement vararg");
     }
     case KLCST_EXPR_TUPLE: {
-      return klgen_tuple_as_singleval_target(gen, klcast(KlCstTuple*, cst), target);
+      return klgen_tuple_target(gen, klcast(KlCstTuple*, cst), target);
     }
     case KLCST_EXPR_PRE: {
       return klgen_exprpre(gen, klcast(KlCstPre*, cst), target);

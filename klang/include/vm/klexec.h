@@ -11,6 +11,8 @@
 
 #define klexec_savestack(state, stkptr)     ((stkptr) - klstack_raw(klstate_stack((state))))
 #define klexec_restorestack(state, diff)    (klstack_raw(klstate_stack((state))) + (diff))
+#define klexec_satisfy(val, cond)           ((klvalue_checktype((val), KL_BOOL) && klvalue_getbool((val)) == (cond)) || (!klvalue_checktype((val), KL_NIL)) == (cond))
+
 
 typedef KlException (*KlCallPrepCallBack)(KlState* state, KlValue* callable, size_t narg);
 
@@ -33,9 +35,6 @@ KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue
 KlException klexec_mapsearch(KlState* state, KlMap* map, KlValue* key, KlValue* res);
 KlException klexec_mapinsert(KlState* state, KlMap* map, KlValue* key, KlValue* val);
 
-static inline bool klexec_if(KlValue* val) {
-  return !(klvalue_checktype(val, KL_NIL) || (klvalue_checktype(val, KL_BOOL) && klvalue_getbool(val) == KL_FALSE));
-}
 
 static inline void klexec_pop_callinfo(KlState* state) {
   state->callinfo = state->callinfo->prev;

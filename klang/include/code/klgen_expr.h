@@ -11,16 +11,12 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlCst* cst);
 KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlCst* cst, size_t target);
 void klgen_exprlist_raw(KlGenUnit* gen, KlCst** csts, size_t ncst, size_t nwanted, KlFilePosition filepos);
 static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlCst* cst, size_t target);
-static inline KlCodeVal klgen_tuple_as_singleval(KlGenUnit* gen, KlCstTuple* tuplecst);
-static inline KlCodeVal klgen_tuple_as_singleval_target(KlGenUnit* gen, KlCstTuple* tuplecst, size_t target);
-static inline void klgen_tuple_evaluate(KlGenUnit* gen, KlCstTuple* tuplecst, size_t ndiscard);
+static inline KlCodeVal klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst);
+static inline KlCodeVal klgen_tuple_target(KlGenUnit* gen, KlCstTuple* tuplecst, size_t target);
 static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t nwanted);
-/* generate code that evaluates expressions on the tuple and put their values in the top of stack.
- * nwanted is the number of expected values. */
-void klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst, size_t nwanted);
 void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target);
 /* try to generate code for expressions that can have variable number of results */
-size_t klgen_allres(KlGenUnit* gen, KlCst* cst, size_t target);
+size_t klgen_takeall(KlGenUnit* gen, KlCst* cst);
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args);
 KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target);
 KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst, size_t target);
@@ -39,7 +35,7 @@ static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlCst* cst, size_t t
     klgen_stackfree(gen, target + 1);
 }
 
-static inline KlCodeVal klgen_tuple_as_singleval(KlGenUnit* gen, KlCstTuple* tuplecst) {
+static inline KlCodeVal klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst) {
   if (tuplecst->nelem == 0)
     return klcodeval_nil();
 
@@ -53,7 +49,7 @@ static inline KlCodeVal klgen_tuple_as_singleval(KlGenUnit* gen, KlCstTuple* tup
   return klgen_expr(gen, *expr);
 }
 
-static inline KlCodeVal klgen_tuple_as_singleval_target(KlGenUnit* gen, KlCstTuple* tuplecst, size_t target) {
+static inline KlCodeVal klgen_tuple_target(KlGenUnit* gen, KlCstTuple* tuplecst, size_t target) {
   if (tuplecst->nelem == 0)
     return klcodeval_nil();
 
@@ -65,17 +61,6 @@ static inline KlCodeVal klgen_tuple_as_singleval_target(KlGenUnit* gen, KlCstTup
     klgen_stackfree(gen, oristktop);
   }
   return klgen_exprtarget(gen, *expr, target);
-}
-
-static inline void klgen_tuple_evaluate(KlGenUnit* gen, KlCstTuple* tuplecst, size_t ndiscard) {
-  kl_assert(ndiscard <= tuplecst->nelem, "");
-  KlCst** expr = tuplecst->elems;
-  KlCst** end = expr + ndiscard;
-  size_t oristktop = klgen_stacktop(gen);
-  while (expr != end) {
-    klgen_expr(gen, *expr++);
-    klgen_stackfree(gen, oristktop);
-  }
 }
 
 static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t nwanted) {

@@ -9,6 +9,22 @@ kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
 kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
 kgarray_impl(KlFilePosition, KlFPArray, klfparr, pass_val,)
 
+#define KLGEN_NSUBFUNC  (klbit(16))
+#define KLGEN_NREG      (klbit(8) - 1)
+#define KLGEN_NCONST    (klbit(16))
+#define KLGEN_NREF      (klbit(16))
+
+void klgen_validate(KlGenUnit* gen) {
+  if (klcodearr_size(&gen->subfunc) >= KLGEN_NSUBFUNC)
+    klgen_error_fatal(gen, "too many functions defined in a function");
+  if (klcontbl_size(gen->contbl) >= KLGEN_NCONST)
+    klgen_error_fatal(gen, "too many constants");
+  klgen_stackfree(gen, 0);
+  if (gen->framesize >= KLGEN_NREG)
+    klgen_error_fatal(gen, "too many registers used");
+  if (klsymtbl_size(gen->reftbl) >= KLGEN_NREF)
+    klgen_error_fatal(gen, "refereces too many variables from upper function");
+}
 
 bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGenUnit* prev, Ki* input, KlError* klerror) {
   if (kl_unlikely(!(gen->symtbl = klsymtblpool_alloc(symtblpool, strtab, NULL)))) {

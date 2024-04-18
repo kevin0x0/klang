@@ -64,6 +64,8 @@ struct tagKlGenUnit {
 bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGenUnit* prev, Ki* input, KlError* klerror);
 void klgen_destroy(KlGenUnit* gen);
 
+/* check range */
+void klgen_validate(KlGenUnit* gen);
 /* convert to KlCode and destroy self.
  * if failed, return NULL, and destroy self. */
 KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam);

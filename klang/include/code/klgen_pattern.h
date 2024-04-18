@@ -9,18 +9,19 @@ size_t klgen_pattern_deconstruct(KlGenUnit* gen, KlCst* pattern, size_t targetta
 /* deconstruct a val to top of stack.
  * do assign id and newsymbol. */
 size_t klgen_pattern_deconstruct_tostktop(KlGenUnit* gen, KlCst* pattern, size_t val);
-size_t klgen_pattern_assign_stkid(KlGenUnit* gen, KlCst* pattern, size_t base);
+size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern, size_t base);
 bool klgen_pattern_fastdeconstruct(KlGenUnit* gen, KlCst* pattern);
 
 void klgen_pattern_newsymbol(KlGenUnit* gen, KlCst* pattern);
+void klgen_patterns_do_assignment(KlGenUnit* gen, KlCst** patterns, size_t npattern);
 static inline void klgen_patterns_newsymbol(KlGenUnit* gen, KlCst** patterns, size_t npattern);
-static inline size_t klgen_patterns_assign_stkid(KlGenUnit* gen, KlCst** patterns, size_t npattern, size_t base);
+static inline size_t klgen_patterns_count_result(KlGenUnit* gen, KlCst** patterns, size_t npattern, size_t base);
 
 
-static inline size_t klgen_patterns_assign_stkid(KlGenUnit* gen, KlCst** patterns, size_t npattern, size_t base) {
+static inline size_t klgen_patterns_count_result(KlGenUnit* gen, KlCst** patterns, size_t npattern, size_t base) {
   size_t nid = 0;
   for (size_t i = 0; i < npattern; ++i)
-    nid += klgen_pattern_assign_stkid(gen, patterns[i], base + nid);
+    nid += klgen_pattern_count_result(gen, patterns[i], base + nid);
   return nid;
 }
 

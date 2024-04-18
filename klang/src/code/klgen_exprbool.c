@@ -253,35 +253,26 @@ static KlCodeVal klgen_equalitycomptime(KlGenUnit* gen, KlCstBin* bincst, KlCode
 
 static KlCodeVal klgen_exprrelleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, bool jumpcond) {
   /* left is not on the stack, so the stack top is not changed */
-  size_t stktop = klgen_stacktop(gen);
-  size_t currcodesize = klgen_currcodesize(gen);
-  /* we put left on the stack first */
-  KlCodeVal leftonstack = left;
-  klgen_putonstack(gen, &leftonstack, klgen_cstposition(bincst->loperand));
-  size_t stksize_before_evaluete_right = klgen_currcodesize(gen);
+  size_t oristktop = klgen_stacktop(gen);
   KlCodeVal right = klgen_expr(gen, bincst->roperand);
   if ((klcodeval_isnumber(right) && klcodeval_isnumber(left)) ||
       (right.kind == KLVAL_STRING && right.kind == KLVAL_STRING)) {
-    if (stksize_before_evaluete_right == klgen_currcodesize(gen))
-      klgen_popinstto(gen, currcodesize);   /* pop the instruction that put left on stack */
-    klgen_stackfree(gen, stktop);
+    kl_assert(oristktop == klgen_stacktop(gen), "");
     /* do compile time comparison */
     return klgen_relcomptime(gen, bincst, left, right);
   } else if (bincst->op == KLTK_NE || bincst->op == KLTK_EQ ||
              bincst->op == KLTK_IS || bincst->op == KLTK_ISNOT) {
     if (klcodeval_isconstant(right)) {
-      if (stksize_before_evaluete_right == klgen_currcodesize(gen))
-        klgen_popinstto(gen, currcodesize);   /* pop the instruction that put left on stack */
-      klgen_stackfree(gen, stktop);
+      kl_assert(oristktop == klgen_stacktop(gen), "");
       return klgen_equalitycomptime(gen, bincst, left, right);
     }
   } /* else can not apply compile time comparison */
+  klgen_putonstack(gen, &left, klgen_cstposition(bincst->loperand));
   if (right.kind == KLVAL_STACK) {
-    /* now we are sure that left should indeed be put on the stack */
-    klgen_stackfree(gen, stktop);
-    return klgen_pushrelinst(gen, bincst, leftonstack.index, right.index, jumpcond);
+    klgen_stackfree(gen, oristktop);
+    return klgen_pushrelinst(gen, bincst, left.index, right.index, jumpcond);
   } else {
-    return klgen_exprrelrightnonstk(gen, bincst, stktop, leftonstack, right, jumpcond);
+    return klgen_exprrelrightnonstk(gen, bincst, oristktop, left, right, jumpcond);
   }
 }
 
@@ -400,7 +391,7 @@ KlCodeVal klgen_exprbool(KlGenUnit* gen, KlCst* cst, bool jumpcond) {
     KlCstTuple* tuple = klcast(KlCstTuple*, cst);
     KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
     if (lastelem && klcst_isboolexpr(lastelem = klgen_exprpromotion(lastelem))) {
-      klgen_tuple_evaluate(gen, tuple, tuple->nelem - 1);
+      klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, 0, klgen_cstposition(tuple));
       return klgen_exprbool(gen, lastelem, jumpcond);
     }
     /* else the tuple should be evaluated by klgen_expr, fallthrough */
@@ -569,7 +560,7 @@ static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlCst* cst, size_t target, bo
     KlCstTuple* tuple = klcast(KlCstTuple*, cst);
     KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
     if (lastelem && klcst_isboolexpr(lastelem = klgen_exprpromotion(lastelem))) {
-      klgen_tuple_evaluate(gen, tuple, tuple->nelem - 1);
+      klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, 0, klgen_cstposition(tuple));
       return klgen_exprboolset(gen, lastelem, target, setcond);
     }
     /* else the tuple should be evaluated by klgen_expr, fallthrough */
@@ -579,8 +570,8 @@ static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlCst* cst, size_t target, bo
   size_t stktop = klgen_stacktop(gen);
   klgen_putonstack(gen, &res, klgen_cstposition(cst));
   klgen_emit(gen, klinst_testset(target, res.index), klgen_cstposition(cst));
-  klgen_emit(gen, klinst_condjmp(setcond, 0), klgen_cstposition(cst));
-  klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->terminatelist, klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(cst))));
+  KlCodeVal terminate = klcodeval_jmp(klgen_emit(gen, klinst_condjmp(setcond, 0), klgen_cstposition(cst)));
+  klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->terminatelist, terminate);
   klgen_stackfree(gen, stktop);
   return klcodeval_none();
 }
@@ -651,7 +642,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlCst* cst, size_t target)
     KlCstTuple* tuple = klcast(KlCstTuple*, cst);
     KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
     if (lastelem && klcst_isboolexpr(lastelem = klgen_exprpromotion(lastelem))) {
-      klgen_tuple_evaluate(gen, tuple, tuple->nelem - 1);
+      klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, 0, klgen_cstposition(tuple));
       return klgen_exprboolvalraw(gen, lastelem, target);
     }
     /* else the tuple should be evaluated by klgen_expr, fallthrough */
@@ -660,8 +651,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlCst* cst, size_t target)
   if (klcodeval_isconstant(res)) return res;
   if (gen->info.jumpinfo->truelist.kind == KLVAL_NONE &&
       gen->info.jumpinfo->falselist.kind == KLVAL_NONE) {
-    if (gen->info.jumpinfo->terminatelist.kind != KLVAL_NONE)
-      klgen_setinstjmppos(gen, gen->info.jumpinfo->terminatelist, klgen_currcodesize(gen));
+    klgen_setinstjmppos(gen, gen->info.jumpinfo->terminatelist, klgen_currcodesize(gen));
   } else {
     KlCodeVal jmp = klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(cst)));
     klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->terminatelist, jmp);

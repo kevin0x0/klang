@@ -592,7 +592,8 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
     } else {  /* C function or C closure */                                       \
       /* stack may have grown. restore stkbase. */                                \
       stkbase = callinfo->base;                                                   \
-      if (klexec_if(callinfo->top) == cond) pc += offset;                         \
+      KlValue* testval = callinfo->top;                                           \
+      if (klexec_satisfy(testval, cond)) pc += offset;                            \
     }                                                                             \
   }                                                                               \
 }
@@ -618,7 +619,8 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
     } else {  /* C function or C closure */                                       \
       /* stack may have grown. restore stkbase. */                                \
       stkbase = callinfo->base;                                                   \
-      if (klexec_if(callinfo->top) == cond) pc += offset;                         \
+      KlValue* testval = callinfo->top;                                           \
+      if (klexec_satisfy(testval, cond)) pc += offset;                            \
     }                                                                             \
   }                                                                               \
 }
@@ -640,7 +642,8 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
       } else {  /* C function or C closure */                                     \
         /* stack may have grown. restore stkbase. */                              \
         stkbase = callinfo->base;                                                 \
-        if (klexec_if(callinfo->top) == cond) pc += offset;                       \
+        KlValue* testval = callinfo->top;                                         \
+        if (klexec_satisfy(testval, cond)) pc += offset;                          \
       }                                                                           \
     } else {                                                                      \
       if (!cond) pc += offset;                                                    \
@@ -673,7 +676,8 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
       } else {  /* C function or C closure */                                     \
         /* stack may have grown. restore stkbase. */                              \
         stkbase = callinfo->base;                                                 \
-        if (klexec_if(callinfo->top) == cond) pc += offset;                       \
+        KlValue* testval = callinfo->top;                                         \
+        if (klexec_satisfy(testval, cond)) pc += offset;                          \
       }                                                                           \
     }                                                                             \
   } else if (klvalue_bothnumber((a), (b))) {                                      \
@@ -1416,12 +1420,12 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_TESTSET: {
-        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
+          KlValue* a = stkbase + KLINST_ABC_GETA(inst);
         KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction extra = *pc++;
         bool cond = KLINST_XI_GETX(extra);
-        if (klexec_if(b) == cond) {
+        if (klexec_satisfy(b, cond)) {
           klvalue_setvalue(a, b);
           pc += KLINST_XI_GETI(extra);
         }
@@ -1430,13 +1434,13 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_TRUEJMP: {
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);
         int offset = KLINST_XI_GETI(inst);
-        if (klexec_if(a)) pc += offset;
+        if (klexec_satisfy(a, KL_TRUE)) pc += offset;
         break;
       }
       case KLOPCODE_FALSEJMP: {
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);
         int offset = KLINST_XI_GETI(inst);
-        if (!klexec_if(a)) pc += offset;
+        if (klexec_satisfy(a, KL_FALSE)) pc += offset;
         break;
       }
       case KLOPCODE_JMP: {
@@ -1452,7 +1456,8 @@ KlException klexec_execute(KlState* state) {
          * comparison result is stored at 'callinfo->top'.
          */
         bool cond = KLINST_XI_GETX(inst);
-        if (klexec_if(callinfo->top) == cond)
+        KlValue* val = callinfo->top;
+        if (klexec_satisfy(val, cond))
           pc += KLINST_XI_GETI(inst);
         break;
       }
@@ -1472,7 +1477,7 @@ KlException klexec_execute(KlState* state) {
         if (klvalue_sametype(a, b) && klvalue_sameinstance(a, b)) {
           if (cond) pc += offset;
         } else {
-          if (cond) pc += offset;
+          if (!cond) pc += offset;
         }
         break;
       }
@@ -1767,10 +1772,10 @@ KlException klexec_execute(KlState* state) {
         } else {  /* C function or C closure */
           /* stack may have grown. restore stkbase. */
           stkbase = callinfo->base;
-          uint8_t argbase = KLINST_AX_GETA(inst) + 1;
           KlInstruction jmp = *pc++;
-          kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_TRUEJMP && KLINST_AI_GETA(jmp) == argbase, "");
-          if (kl_likely(klexec_if(stkbase + argbase)))
+          kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_TRUEJMP && KLINST_AI_GETA(jmp) == KLINST_AX_GETA(inst) + 1, "");
+          KlValue* testval = stkbase + KLINST_AX_GETA(inst) + 1;
+          if (kl_likely(klexec_satisfy(testval, KL_TRUE)))
             pc += KLINST_AI_GETI(jmp);
         }
         break;
