@@ -5,29 +5,30 @@
 #include "klang/include/code/klgen.h"
 
 
-size_t klgen_pattern_deconstruct(KlGenUnit* gen, KlCst* pattern, size_t targettail);
+size_t klgen_pattern_deconstruct(KlGenUnit* gen, KlCst* pattern, size_t target);
 /* deconstruct a val to top of stack.
  * do assign id and newsymbol. */
 size_t klgen_pattern_deconstruct_tostktop(KlGenUnit* gen, KlCst* pattern, size_t val);
-size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern, size_t base);
+size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern);
 bool klgen_pattern_fastdeconstruct(KlGenUnit* gen, KlCst* pattern);
 
-void klgen_pattern_newsymbol(KlGenUnit* gen, KlCst* pattern);
 void klgen_patterns_do_assignment(KlGenUnit* gen, KlCst** patterns, size_t npattern);
-static inline void klgen_patterns_newsymbol(KlGenUnit* gen, KlCst** patterns, size_t npattern);
-static inline size_t klgen_patterns_count_result(KlGenUnit* gen, KlCst** patterns, size_t npattern, size_t base);
+size_t klgen_pattern_newsymbol(KlGenUnit* gen, KlCst* pattern, size_t base);
+static inline size_t klgen_patterns_newsymbol(KlGenUnit* gen, KlCst** patterns, size_t npattern, size_t base);
+static inline size_t klgen_patterns_count_result(KlGenUnit* gen, KlCst** patterns, size_t npattern);
 
 
-static inline size_t klgen_patterns_count_result(KlGenUnit* gen, KlCst** patterns, size_t npattern, size_t base) {
+static inline size_t klgen_patterns_count_result(KlGenUnit* gen, KlCst** patterns, size_t npattern) {
   size_t nid = 0;
   for (size_t i = 0; i < npattern; ++i)
-    nid += klgen_pattern_count_result(gen, patterns[i], base + nid);
+    nid += klgen_pattern_count_result(gen, patterns[i]);
   return nid;
 }
 
-static inline void klgen_patterns_newsymbol(KlGenUnit* gen, KlCst** patterns, size_t npattern) {
+static inline size_t klgen_patterns_newsymbol(KlGenUnit* gen, KlCst** patterns, size_t npattern, size_t base) {
   for (size_t i = 0; i < npattern; ++i)
-    klgen_pattern_newsymbol(gen, patterns[i]);
+    base = klgen_pattern_newsymbol(gen, patterns[i], base);
+  return base;
 }
 
 #endif

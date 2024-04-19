@@ -511,7 +511,7 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
   if (kl_likely(klvalue_checktype((b), KL_INT))) {                                \
     klvalue_setint((a), klop_##op(klvalue_getint((b)), (imm)));                   \
   } else if (kl_likely(klvalue_checktype((b), KL_FLOAT))) {                       \
-    klvalue_setfloat((a), klop_##op(klvalue_getnumber((b)), (KlFloat)(imm)));     \
+    klvalue_setfloat((a), klop_##op(klvalue_getfloat((b)), (KlFloat)(imm)));      \
   } else {                                                                        \
     klexec_savestate(callinfo->top);  /* in case of error and gc */               \
     KlValue tmp;                                                                  \
@@ -764,6 +764,10 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         KlValue* b = stkbase + KLINST_ABX_GETB(inst);
         size_t nmove = KLINST_ABX_GETX(inst);
+        if (nmove == KLINST_VARRES) {
+          nmove = klstate_stktop(state) - b;
+          klstack_set_top(klstate_stack(state), a + nmove);
+        }
         if (a <= b) {
           while (nmove--)
             klvalue_setvalue(a++, b++);
@@ -1029,16 +1033,19 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_RETURN1: {
-        size_t nret = callinfo->nret;
-        KlValue* retpos = stkbase + callinfo->retoff;
         kl_assert(KLINST_VARRES != 0, "");
-        if (nret == KLINST_VARRES) nret = 1;
+        KlValue* retpos = stkbase + callinfo->retoff;
         KlValue* res = stkbase + KLINST_A_GETA(inst);
-        if (nret != 0) {
+        size_t nret = callinfo->nret;
+        if (kl_likely(nret == 1)) {
           klvalue_setvalue(retpos, res);
-          klexec_setnils(retpos + 1, nret - 1);   /* rest results is nil. */
+        } else if (nret == KLINST_VARRES) {
+          klvalue_setvalue(retpos, res);
+          klstack_set_top(klstate_stack(state), retpos + nret);
+        } else if (nret != 0) {
+          klvalue_setvalue(retpos, res);
+          klexec_setnils(retpos + 1, nret - 1);   /* complete missing results */
         }
-        klstack_set_top(klstate_stack(state), retpos + nret);
         klexec_pop_callinfo(state);
         if (kl_unlikely(callinfo->status & KLSTATE_CI_STATUS_STOP))
           return KL_E_NONE;
@@ -1766,7 +1773,7 @@ KlException klexec_execute(KlState* state) {
           return klstate_throw(state, KL_E_OOM, "out of memory when do generic for loop");
         KlException exception = klexec_callprepare(state, a, nret, NULL);
         if (kl_unlikely(exception)) return exception;
-        if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
+        if (callinfo != state->callinfo) { /* is a klang call ? */
           KlValue* newbase = state->callinfo->base;
           klexec_updateglobal(newbase);
         } else {  /* C function or C closure */

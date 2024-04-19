@@ -3,6 +3,7 @@
 #include "klang/include/code/klcontbl.h"
 #include "klang/include/code/klsymtbl.h"
 #include "klang/include/cst/klcst_expr.h"
+#include "klang/include/vm/klinst.h"
 #include <string.h>
 
 kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
@@ -304,6 +305,10 @@ void klgen_emitloadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePositi
 
 void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, KlFilePosition position) {
   if (nmove == 0) return;
+  if (nmove == KLINST_VARRES) {
+    klgen_emit(gen, klinst_multimove(target, from, nmove), position);
+    return;
+  }
   if (klgen_currcodesize(gen) == 0) {
     klgen_emit(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
   } else {

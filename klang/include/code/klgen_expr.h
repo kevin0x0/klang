@@ -7,6 +7,7 @@
 #include "klang/include/vm/klinst.h"
 
 
+
 KlCodeVal klgen_expr(KlGenUnit* gen, KlCst* cst);
 KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlCst* cst, size_t target);
 void klgen_exprlist_raw(KlGenUnit* gen, KlCst** csts, size_t ncst, size_t nwanted, KlFilePosition filepos);
@@ -16,7 +17,8 @@ static inline KlCodeVal klgen_tuple_target(KlGenUnit* gen, KlCstTuple* tuplecst,
 static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t nwanted);
 void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target);
 /* try to generate code for expressions that can have variable number of results */
-size_t klgen_takeall(KlGenUnit* gen, KlCst* cst);
+size_t klgen_trytakeall(KlGenUnit* gen, KlCst* cst, KlCodeVal* val);
+size_t klgen_takeall(KlGenUnit* gen, KlCst* cst, size_t target);
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args);
 KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target);
 KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst, size_t target);
@@ -26,6 +28,12 @@ void klgen_exprarrgen(KlGenUnit* gen, KlCstArrayGenerator* arrgencst, size_t tar
 void klgen_exprmap(KlGenUnit* gen, KlCstMap* mapcst, size_t target);
 void klgen_exprclass(KlGenUnit* gen, KlCstClass* classcst, size_t target);
 
+
+static inline KlCodeVal klgen_expr_onstack(KlGenUnit* gen, KlCst* cst) {
+  KlCodeVal res = klgen_expr(gen, cst);
+  klgen_putonstack(gen, &res, klgen_cstposition(cst));
+  return res;
+}
 
 static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlCst* cst, size_t target) {
   KlCodeVal res = klgen_exprtarget(gen, cst, target);
