@@ -13,6 +13,6 @@ bool klgen_stmtblock(KlGenUnit* gen, KlCstStmtList* stmtlist);
 bool klgen_stmtblockpure(KlGenUnit* gen, KlCstStmtList* stmtlist);
 /* do not allow continue or break out of this scope */
 void klgen_stmtlistpure(KlGenUnit* gen, KlCstStmtList* stmtlist);
-
+void klgen_assignfrom(KlGenUnit* gen, KlCst* lval, size_t stkid);
 
 #endif

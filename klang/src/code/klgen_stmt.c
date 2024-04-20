@@ -62,7 +62,16 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlCst** patterns, size_t
   if (nfastassign == npattern) {
     klgen_exprlist_raw(gen, rvals, nrval, nfastassign, filepos);
   } else {  /* now nfastassign < npattern */
-    if (nfastassign <= nrval) {
+    if (nfastassign == npattern - 1) {
+      klgen_exprlist_raw(gen, rvals, nrval, nfastassign, filepos);
+      if (klgen_pattern_fastdeconstruct(gen, patterns[nfastassign]))
+        return;
+      size_t nreserved = klgen_pattern_count_result(gen, patterns[nfastassign]);
+      size_t lastval = klgen_stacktop(gen) - 1;
+      klgen_emitmove(gen, lastval + nreserved, lastval, 1, filepos);
+      klgen_stackalloc(gen, nreserved);
+      klgen_pattern_deconstruct(gen, patterns[nfastassign], lastval);
+    } else if (nfastassign <= nrval) {
       klgen_exprlist_raw(gen, rvals, nfastassign, nfastassign, filepos);
       size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
       klgen_stackalloc(gen, nreserved);
@@ -170,7 +179,7 @@ static void klgen_singleassign(KlGenUnit* gen, KlCst* lval, KlCst* rval) {
   }
 }
 
-static void klgen_assignfrom(KlGenUnit* gen, KlCst* lval, size_t stkid) {
+void klgen_assignfrom(KlGenUnit* gen, KlCst* lval, size_t stkid) {
   if (klcst_kind(lval) == KLCST_EXPR_ID) {
     KlCstIdentifier* id = klcast(KlCstIdentifier*, lval);
     KlSymbol* symbol = klgen_getsymbol(gen, id->id);

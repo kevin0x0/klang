@@ -34,7 +34,6 @@ typedef enum tagKlCstKind {
   KLCST_EXPR_POST,
   KLCST_EXPR_DOT,
   KLCST_EXPR_FUNC,
-  KLCST_EXPR_CALL,
 
   KLCST_EXPR_BIN,
 
