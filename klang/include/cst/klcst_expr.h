@@ -101,6 +101,12 @@ typedef struct tagKlCstPost {
   KlCst* post;
 } KlCstPost;
 
+typedef struct tagKlCstCall {
+  KlCst base;
+  KlCst* callable;
+  KlCst* args;
+} KlCstCall;
+
 typedef struct tagKlCstFunc {
   KlCst base;
   KlCst* block;         /* function body */
@@ -140,6 +146,7 @@ KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFileOffset begin, K
 KlCstNew* klcst_new_create(KlCst* klclass, KlCst* params, KlFileOffset begin, KlFileOffset end);
 KlCstYield* klcst_yield_create(KlCst* vals, KlFileOffset begin, KlFileOffset end);
 KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFileOffset begin, KlFileOffset end);
+KlCstCall* klcst_call_create(KlCst* callable, KlCst* args, KlFileOffset begin, KlFileOffset end);
 KlCstFunc* klcst_func_create(KlCst* block, KlCst* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
 KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
 KlCstWhere* klcst_where_create(KlCst* expr, KlCst* block, KlStrDesc tmpid, KlFileOffset begin, KlFileOffset end);

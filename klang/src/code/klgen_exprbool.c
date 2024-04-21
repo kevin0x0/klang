@@ -390,7 +390,7 @@ KlCodeVal klgen_exprbool(KlGenUnit* gen, KlCst* cst, bool jumpcond) {
   } else if (klcst_kind(cst) == KLCST_EXPR_TUPLE) {
     KlCstTuple* tuple = klcast(KlCstTuple*, cst);
     KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
-    if (lastelem && klcst_isboolexpr(lastelem = klgen_exprpromotion(lastelem))) {
+    if (lastelem && klcst_isboolexpr(lastelem)) {
       klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, 0, klgen_cstposition(tuple));
       return klgen_exprbool(gen, lastelem, jumpcond);
     }
@@ -559,7 +559,7 @@ static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlCst* cst, size_t target, bo
   } else if (klcst_kind(cst) == KLCST_EXPR_TUPLE) {
     KlCstTuple* tuple = klcast(KlCstTuple*, cst);
     KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
-    if (lastelem && klcst_isboolexpr(lastelem = klgen_exprpromotion(lastelem))) {
+    if (lastelem && klcst_isboolexpr(lastelem)) {
       klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, 0, klgen_cstposition(tuple));
       return klgen_exprboolset(gen, lastelem, target, setcond);
     }
@@ -641,7 +641,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlCst* cst, size_t target)
   } else if (klcst_kind(cst) == KLCST_EXPR_TUPLE) {
     KlCstTuple* tuple = klcast(KlCstTuple*, cst);
     KlCst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
-    if (lastelem && klcst_isboolexpr(lastelem = klgen_exprpromotion(lastelem))) {
+    if (lastelem && klcst_isboolexpr(lastelem)) {
       klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, 0, klgen_cstposition(tuple));
       return klgen_exprboolvalraw(gen, lastelem, target);
     }

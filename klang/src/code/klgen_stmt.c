@@ -56,7 +56,7 @@ bool klgen_stmtblockpure(KlGenUnit* gen, KlCstStmtList* stmtlist) {
 static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlCst** patterns, size_t npattern, KlCst** rvals, size_t nrval, KlFilePosition filepos) {
   size_t nfastassign = 0;
   for (; nfastassign < npattern; ++nfastassign) {
-    if (klcst_kind(klgen_exprpromotion(patterns[nfastassign])) != KLCST_EXPR_ID)
+    if (klcst_kind(patterns[nfastassign]) != KLCST_EXPR_ID)
       break;
   }
   if (nfastassign == npattern) {
@@ -64,13 +64,13 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlCst** patterns, size_t
   } else {  /* now nfastassign < npattern */
     if (nfastassign == npattern - 1) {
       klgen_exprlist_raw(gen, rvals, nrval, nfastassign, filepos);
-      if (klgen_pattern_fastdeconstruct(gen, patterns[nfastassign]))
+      if (klgen_pattern_fastbinding(gen, patterns[nfastassign]))
         return;
       size_t nreserved = klgen_pattern_count_result(gen, patterns[nfastassign]);
       size_t lastval = klgen_stacktop(gen) - 1;
       klgen_emitmove(gen, lastval + nreserved, lastval, 1, filepos);
       klgen_stackalloc(gen, nreserved);
-      klgen_pattern_deconstruct(gen, patterns[nfastassign], lastval);
+      klgen_pattern_binding(gen, patterns[nfastassign], lastval);
     } else if (nfastassign <= nrval) {
       klgen_exprlist_raw(gen, rvals, nfastassign, nfastassign, filepos);
       size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
@@ -79,7 +79,7 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlCst** patterns, size_t
       klgen_exprlist_raw(gen, rvals + nfastassign, nrval - nfastassign, npattern - nfastassign, filepos);
       size_t count = npattern;
       while (count-- > nfastassign)
-        target -= klgen_pattern_deconstruct(gen, patterns[count], target);
+        target -= klgen_pattern_binding(gen, patterns[count], target);
     } else {
       size_t oristktop = klgen_stacktop(gen);
       klgen_exprlist_raw(gen, rvals, nrval, npattern, filepos);
@@ -89,7 +89,7 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlCst** patterns, size_t
       size_t target = oristktop + nfastassign + nreserved;
       size_t count = npattern;
       while (count-- > nfastassign)
-        target -= klgen_pattern_deconstruct(gen, patterns[count], target);
+        target -= klgen_pattern_binding(gen, patterns[count], target);
     }
   }
 }
@@ -266,7 +266,7 @@ static void klgen_stmtassign(KlGenUnit* gen, KlCstStmtAssign* assigncst) {
     klgen_stackfree(gen, base);
   } else {
     for (size_t i = 0; i < npattern; ++i) {
-      if (!klgen_canassign(klgen_exprpromotion(patterns[i]))) {
+      if (!klgen_canassign(patterns[i])) {
         klgen_deconstruct_to_stktop(gen, patterns, npattern - 1, rvals, nrval - 1, rvals_pos);
         klgen_patterns_do_assignment(gen, patterns, npattern);
         klgen_stackfree(gen, base);
@@ -508,11 +508,11 @@ static void klgen_stmtifor(KlGenUnit* gen, KlCstStmtIFor* iforcst) {
   size_t looppos = klgen_currcodesize(gen);
   kl_assert(klcst_kind(iforcst->lval) == KLCST_EXPR_TUPLE && klcast(KlCstTuple*, iforcst->lval)->nelem == 1, "");
 
-  KlCst* pattern = klgen_exprpromotion(klcast(KlCstTuple*, iforcst->lval)->elems[0]);
+  KlCst* pattern = klcast(KlCstTuple*, iforcst->lval)->elems[0];
   if ((klcst_kind(pattern) == KLCST_EXPR_ID)) {
     klgen_newsymbol(gen, klcast(KlCstIdentifier*, pattern)->id, forbase, klgen_cstposition(pattern));
   } else {  /* else is pattern deconstruction */
-    klgen_pattern_deconstruct_tostktop(gen, pattern, forbase);
+    klgen_pattern_binding_tostktop(gen, pattern, forbase);
     klgen_pattern_newsymbol(gen, pattern, forbase + 3);
     kl_assert(forbase + 3 + klgen_pattern_count_result(gen, pattern) == klgen_stacktop(gen), "");
   }
@@ -557,13 +557,13 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlCstStmtVFor* vforcst) {
 
   klgen_stackalloc(gen, npattern);
   for (KlCst** ppattern = patterns + npattern - 1; ppattern != patterns; --ppattern) {
-    KlCst* pattern = klgen_exprpromotion(*ppattern);
+    KlCst* pattern = *ppattern;
     size_t valstkid = forbase + 2 + (ppattern - patterns);
     if (klcst_kind(pattern) == KLCST_EXPR_ID) {
       klgen_newsymbol(gen, klcast(KlCstIdentifier*, pattern)->id, valstkid, klgen_cstposition(pattern));
     } else {
       size_t newsymbol_base = klgen_stacktop(gen);
-      klgen_pattern_deconstruct_tostktop(gen, pattern, valstkid);
+      klgen_pattern_binding_tostktop(gen, pattern, valstkid);
       klgen_pattern_newsymbol(gen, pattern, newsymbol_base);
     }
   }
@@ -613,13 +613,13 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlCstStmtGFor* gforcst) {
   size_t npattern = klcast(KlCstTuple*, gforcst->lvals)->nelem;
   klgen_stackalloc(gen, npattern);
   for (KlCst** ppattern = patterns + npattern - 1; ppattern != patterns; --ppattern) {
-    KlCst* pattern = klgen_exprpromotion(*ppattern);
+    KlCst* pattern = *ppattern;
     size_t valstkid = forbase + 3 + (ppattern - patterns);
     if (klcst_kind(pattern) == KLCST_EXPR_ID) {
       klgen_newsymbol(gen, klcast(KlCstIdentifier*, pattern)->id, valstkid, klgen_cstposition(pattern));
     } else {
       size_t newsymbol_base = klgen_stacktop(gen);
-      klgen_pattern_deconstruct_tostktop(gen, pattern, valstkid);
+      klgen_pattern_binding_tostktop(gen, pattern, valstkid);
       klgen_pattern_newsymbol(gen, pattern, newsymbol_base);
     }
   }

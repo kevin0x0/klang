@@ -30,8 +30,6 @@ let Window = inherit {} : {
   };
 };
 
-let win = new Window(10, 20);
-
 
 let a = foo(x, x + 1) where {
   let x = bar(4);
@@ -51,10 +49,9 @@ with = (obj, func) => {
 
 with = obj -> func -> (func(), obj.close());
 
-(a, b, ...) -> expr;
+let f = ((a, b)) => (p, q);
 
-
-
+f ();
 
 let f = n -> n + 1;
 

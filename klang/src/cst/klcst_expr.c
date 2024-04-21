@@ -16,6 +16,7 @@ static void klcst_pre_destroy(KlCstPre* cstpre);
 static void klcst_new_destroy(KlCstNew* cstnew);
 static void klcst_yield_destroy(KlCstYield* cstyield);
 static void klcst_post_destroy(KlCstPost* cstpost);
+static void klcst_call_destroy(KlCstCall* cstcall);
 static void klcst_dot_destroy(KlCstDot* cstdot);
 static void klcst_func_destroy(KlCstFunc* cstfunc);
 static void klcst_where_destroy(KlCstWhere* cstwhere);
@@ -33,6 +34,7 @@ static KlCstInfo klcst_pre_vfunc = { .destructor = (KlCstDelete)klcst_pre_destro
 static KlCstInfo klcst_new_vfunc = { .destructor = (KlCstDelete)klcst_new_destroy, .kind = KLCST_EXPR_NEW };
 static KlCstInfo klcst_yield_vfunc = { .destructor = (KlCstDelete)klcst_yield_destroy, .kind = KLCST_EXPR_YIELD };
 static KlCstInfo klcst_post_vfunc = { .destructor = (KlCstDelete)klcst_post_destroy, .kind = KLCST_EXPR_POST };
+static KlCstInfo klcst_call_vfunc = { .destructor = (KlCstDelete)klcst_call_destroy, .kind = KLCST_EXPR_CALL };
 static KlCstInfo klcst_dot_vfunc = { .destructor = (KlCstDelete)klcst_dot_destroy, .kind = KLCST_EXPR_DOT };
 static KlCstInfo klcst_func_vfunc = { .destructor = (KlCstDelete)klcst_func_destroy, .kind = KLCST_EXPR_FUNC };
 static KlCstInfo klcst_where_vfunc = { .destructor = (KlCstDelete)klcst_where_destroy, .kind = KLCST_EXPR_WHERE };
@@ -251,6 +253,20 @@ KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFile
   return cstpost;
 }
 
+KlCstCall* klcst_call_create(KlCst* callable, KlCst* args, KlFileOffset begin, KlFileOffset end) {
+  KlCstCall* cstcall = klcst_alloc(KlCstCall);
+  if (kl_unlikely(!cstcall)) {
+    klcst_delete_raw(callable);
+    klcst_delete_raw(args);
+    return NULL;
+  }
+  cstcall->callable = callable;
+  cstcall->args = args;
+  klcst_setposition(cstcall, begin, end);
+  klcst_init(cstcall, &klcst_call_vfunc);
+  return cstcall;
+}
+
 KlCstFunc* klcst_func_create(KlCst* block, KlCst* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end) {
   KlCstFunc* cstfunc = klcst_alloc(KlCstFunc);
   if (kl_unlikely(!cstfunc)) {
@@ -371,6 +387,11 @@ static void klcst_yield_destroy(KlCstYield* cstyield) {
 static void klcst_post_destroy(KlCstPost* cstpost) {
   klcst_delete_raw(cstpost->operand);
   klcst_delete_raw(cstpost->post);
+}
+
+static void klcst_call_destroy(KlCstCall* cstcall) {
+  klcst_delete_raw(cstcall->callable);
+  klcst_delete_raw(cstcall->args);
 }
 
 static void klcst_dot_destroy(KlCstDot* cstdot) {

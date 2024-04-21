@@ -153,13 +153,6 @@ static inline void klgen_emitmethod(KlGenUnit* gen, size_t obj, size_t method, s
   klgen_emit(gen, klinst_methodextra(narg, nret, retpos), position);
 }
 
-static inline KlCst* klgen_exprpromotion(KlCst* cst) {
-  while (klcst_kind(cst) == KLCST_EXPR_TUPLE && klcast(KlCstTuple*, cst)->nelem == 1) {
-    cst = klcast(KlCstTuple*, cst)->elems[0];
-  }
-  return cst;
-}
-
 static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position) {
   if (val->kind == KLVAL_STACK) return;
   size_t stkid = klgen_stackalloc1(gen);

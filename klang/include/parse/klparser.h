@@ -29,7 +29,7 @@ bool klparser_discardto(KlLex* lex, KlTokenKind kind);
 
 static inline KlCst* klparser_expr(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprwhere(KlParser* parser, KlLex* lex, KlCst* expr);
-KlCst* klparser_exprunit(KlParser* parser, KlLex* lex);
+KlCst* klparser_exprunit(KlParser* parser, KlLex* lex, bool* inparenthesis);
 KlCst* klparser_exprpost(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprpre(KlParser* parser, KlLex* lex);
 KlCst* klparser_exprbin(KlParser* parser, KlLex* lex, int prio);
