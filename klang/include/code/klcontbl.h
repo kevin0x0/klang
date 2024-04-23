@@ -17,13 +17,13 @@ typedef struct tagKlConTbl {
   KArray entries;       /* all entries */
   size_t capacity;
   size_t size;
-  KlStrTab* strtab;
+  KlStrTbl* strtbl;
 } KlConTbl;
 
 
-bool klcontbl_init(KlConTbl* contbl, size_t capacity, KlStrTab* strtab);
+bool klcontbl_init(KlConTbl* contbl, size_t capacity, KlStrTbl* strtbl);
 void klcontbl_destroy(KlConTbl* contbl);
-KlConTbl* klcontbl_create(size_t capacity, KlStrTab* strtab);
+KlConTbl* klcontbl_create(size_t capacity, KlStrTbl* strtbl);
 void klcontbl_delete(KlConTbl* contbl);
 
 static inline size_t klcontbl_size(KlConTbl* contbl);

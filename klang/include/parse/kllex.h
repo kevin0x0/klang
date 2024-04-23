@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 #define KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 
-#include "klang/include/cst/klstrtab.h"
+#include "klang/include/cst/klstrtbl.h"
 #include "klang/include/parse/kltokens.h"
 #include "klang/include/value/klvalue.h"
 #include "klang/include/error/klerror.h"
@@ -12,7 +12,7 @@
 #define KLLEX_STRLIMIT  (KLSTRTAB_EXTRA)
 
 typedef struct tagKlLex {
-  KlStrTab* strtab;         /* string table */
+  KlStrTbl* strtbl;         /* string table */
   Ki* input;                /* input stream */
   char* inputname;          /* name of input stream */
   size_t nerror;            /* number of lexical error */
@@ -32,9 +32,9 @@ typedef struct tagKlLex {
   } tok;                    /* token information */
 } KlLex;
 
-bool kllex_init(KlLex* lex, Ki* ki, KlError* klerr, const char* inputname, KlStrTab* strtab);
+bool kllex_init(KlLex* lex, Ki* ki, KlError* klerr, const char* inputname, KlStrTbl* strtbl);
 void kllex_destroy(KlLex* lex);
-KlLex* kllex_create(Ki* ki, KlError* klerr, const char* inputname, KlStrTab* strtab);
+KlLex* kllex_create(Ki* ki, KlError* klerr, const char* inputname, KlStrTbl* strtbl);
 void kllex_delete(KlLex* lex);
 
 void kllex_next(KlLex* lex);

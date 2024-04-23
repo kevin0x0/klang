@@ -188,8 +188,8 @@ static KlCodeVal klgen_relcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal l
   } else if (left.kind == KLVAL_STRING && right.kind == KLVAL_STRING) {
     int cmpres;
     if (left.string.length == right.string.length) {
-      cmpres = strncmp(klstrtab_getstring(gen->strtab, left.string.id),
-                       klstrtab_getstring(gen->strtab, right.string.id),
+      cmpres = strncmp(klstrtbl_getstring(gen->strtbl, left.string.id),
+                       klstrtbl_getstring(gen->strtbl, right.string.id),
                        left.string.length);
     } else {
       cmpres = left.string.length > right.string.length ? 1 : -1;

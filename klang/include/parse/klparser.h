@@ -7,7 +7,7 @@
 
 typedef struct tagKlParser {
   char* inputname;
-  KlStrTab* strtab;
+  KlStrTbl* strtbl;
   size_t incid;
   KlError* klerror;
   struct {
@@ -16,7 +16,7 @@ typedef struct tagKlParser {
 } KlParser;
 
 
-bool klparser_init(KlParser* parser, KlStrTab* strtab, char* inputname, KlError* klerror);
+bool klparser_init(KlParser* parser, KlStrTbl* strtbl, char* inputname, KlError* klerror);
 
 static inline bool klparser_match(KlParser* parser, KlLex* lex, KlTokenKind kind);
 /* check whether current token match 'kind', if not, report an error and try to discover.

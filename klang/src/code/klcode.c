@@ -5,7 +5,7 @@
 
 KlCode* klcode_create(KlRefInfo* refinfo, size_t nref, KlConstant* constants, size_t nconst,
                       KlInstruction* code, KlFilePosition* lineinfo, size_t codelen,
-                      KlCode** nestedfunc, size_t nnested, KlStrTab* strtab, size_t nparam,
+                      KlCode** nestedfunc, size_t nnested, KlStrTbl* strtbl, size_t nparam,
                       size_t framesize) {
   KlCode* klcode = (KlCode*)malloc(sizeof (KlCode));
   if (kl_unlikely(!klcode)) return NULL;
@@ -18,7 +18,7 @@ KlCode* klcode_create(KlRefInfo* refinfo, size_t nref, KlConstant* constants, si
   klcode->codelen = codelen;
   klcode->nestedfunc = nestedfunc;
   klcode->nnested = nnested;
-  klcode->strtab = strtab;
+  klcode->strtbl = strtbl;
   klcode->nparam = nparam;
   klcode->framesize = framesize;
   return klcode;
@@ -30,6 +30,6 @@ void klcode_delete(KlCode* code) {
   free(code->code);
   free(code->lineinfo);
   free(code->nestedfunc);
-  free(code->strtab);
+  free(code->strtbl);
   free(code);
 }

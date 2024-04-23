@@ -13,7 +13,7 @@ int main(void) {
 
 void loop(void) {
   const char* filename = "test.kl";
-  KlStrTab* strtab = klstrtab_create();
+  KlStrTbl* strtbl = klstrtbl_create();
   Ki* input = kifile_create(filename);
   Ko* err = kofile_attach(stderr);
   KlParser parser;
@@ -26,8 +26,8 @@ void loop(void) {
     .prompttext = "||== ",
     .promptmsg = "|| "
   }};
-  KlLex* lex = kllex_create(input, &klerr, filename, strtab);
-  klparser_init(&parser, lex->strtab, (char*)filename, &klerr);
+  KlLex* lex = kllex_create(input, &klerr, filename, strtbl);
+  klparser_init(&parser, lex->strtbl, (char*)filename, &klerr);
   kllex_next(lex);
   KlCst* expr = klparser_stmtlist(&parser, lex);
 
@@ -37,7 +37,7 @@ void loop(void) {
 
   if (expr) klcst_delete(expr);
   kllex_delete(lex);
-  klstrtab_delete(strtab);
+  klstrtbl_delete(strtbl);
   ki_delete(input);
   ko_delete(err);
 }

@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_AST_KLCST_STMT_H
 #define KEVCC_KLANG_INCLUDE_AST_KLCST_STMT_H
 #include "klang/include/cst/klcst.h"
-#include "klang/include/cst/klstrtab.h"
+#include "klang/include/cst/klstrtbl.h"
 #include <stddef.h>
 
 

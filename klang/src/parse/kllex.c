@@ -86,7 +86,7 @@ static inline int kllex_nextvalid(KlLex* lex) {
   }
 }
 
-bool kllex_init(KlLex* lex, Ki* ki, KlError* klerr, const char* inputname, KlStrTab* strtab) {
+bool kllex_init(KlLex* lex, Ki* ki, KlError* klerr, const char* inputname, KlStrTbl* strtbl) {
   lex->input = ki;
   lex->klerror = klerr;
   lex->nerror = 0;
@@ -95,7 +95,7 @@ bool kllex_init(KlLex* lex, Ki* ki, KlError* klerr, const char* inputname, KlStr
   strcpy(namebuf, inputname);
   lex->inputname = namebuf;
   lex->currline = 1;
-  lex->strtab = strtab;
+  lex->strtbl = strtbl;
   return true;
 }
 
@@ -103,10 +103,10 @@ void kllex_destroy(KlLex* lex) {
   free(lex->inputname);
 }
 
-KlLex* kllex_create(Ki* ki, KlError* klerr, const char* inputname, KlStrTab* strtab) {
+KlLex* kllex_create(Ki* ki, KlError* klerr, const char* inputname, KlStrTbl* strtbl) {
   KlLex* lex = (KlLex*)malloc(sizeof (KlLex));
   if (kl_unlikely(!lex)) return NULL;
-  if (kl_unlikely(!kllex_init(lex, ki, klerr, inputname, strtab))) {
+  if (kl_unlikely(!kllex_init(lex, ki, klerr, inputname, strtbl))) {
     free(lex);
     return NULL;
   }
@@ -201,7 +201,7 @@ static size_t kllex_longstring(KlLex* lex, char* buf) {
 static void kllex_handlestring(KlLex* lex, char* buf, int ch) {
   kl_assert(ch == '\"' || ch == '`', "something wrong in lexer when reading a string");
   size_t len = ch == '`' ? kllex_longstring(lex, buf) : kllex_escapestring(lex, buf);
-  lex->tok.string.id = klstrtab_pushstring(lex->strtab, len);
+  lex->tok.string.id = klstrtbl_pushstring(lex->strtbl, len);
   lex->tok.string.length = len;
 }
 
@@ -291,7 +291,7 @@ void kllex_next(KlLex* lex) {
   lex->tok.begin = curroff - 1;
   uint8_t state = start;
   uint8_t nextstate;
-  char* buf = klstrtab_allocstring(lex->strtab, KLLEX_STRLIMIT);
+  char* buf = klstrtbl_allocstring(lex->strtbl, KLLEX_STRLIMIT);
   if (kl_unlikely(!buf)) {
     kllex_error(lex, "out of memory in kllex_next(). pretend to reach end of file");
     kllex_return(KLTK_END);
@@ -320,7 +320,7 @@ void kllex_next(KlLex* lex) {
     case KLTK_ID: {
       size_t len = buf[0] == '\'' ? kllex_escapeid(lex, buf) : strlength;
       lex->tok.string.length = len;
-      lex->tok.string.id = klstrtab_pushstring(lex->strtab, len);
+      lex->tok.string.id = klstrtbl_pushstring(lex->strtbl, len);
       kllex_return(KLTK_ID);
     }
     case KLTK_BOOLVAL: {

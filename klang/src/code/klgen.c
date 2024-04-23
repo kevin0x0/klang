@@ -27,12 +27,12 @@ void klgen_validate(KlGenUnit* gen) {
     klgen_error_fatal(gen, "refereces too many variables from upper function");
 }
 
-bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGenUnit* prev, Ki* input, KlError* klerror) {
-  if (kl_unlikely(!(gen->symtbl = klsymtblpool_alloc(symtblpool, strtab, NULL)))) {
+bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTbl* strtbl, KlGenUnit* prev, Ki* input, KlError* klerror) {
+  if (kl_unlikely(!(gen->symtbl = klsymtblpool_alloc(symtblpool, strtbl, NULL)))) {
     return false;
   }
   gen->reftbl = gen->symtbl;
-  if (kl_unlikely(gen->contbl = klcontbl_create(8, strtab))) {
+  if (kl_unlikely(gen->contbl = klcontbl_create(8, strtbl))) {
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
     klsymtblpool_dealloc(symtblpool, gen->reftbl);
     return false;
@@ -59,7 +59,7 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
     klinstarr_destroy(&gen->code);
     return false;
   }
-  gen->strtab = strtab;
+  gen->strtbl = strtbl;
   gen->stksize = 0;
   gen->framesize = 0;
   gen->info.jumpinfo = NULL;
@@ -79,8 +79,8 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
   }
 
 
-  char* constructor = klstrtab_newstring(strtab, "constructor");
-  char* itermethod = klstrtab_newstring(strtab, "<-");
+  char* constructor = klstrtbl_newstring(strtbl, "constructor");
+  char* itermethod = klstrtbl_newstring(strtbl, "<-");
   if (kl_unlikely(!constructor || !itermethod)) {
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
     klsymtblpool_dealloc(symtblpool, gen->reftbl);
@@ -90,9 +90,9 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGe
     klfparr_destroy(&gen->position);
     return false;
   }
-  gen->string.constructor.id = klstrtab_stringid(gen->strtab, constructor);
+  gen->string.constructor.id = klstrtbl_stringid(gen->strtbl, constructor);
   gen->string.constructor.length = strlen("constructor");
-  gen->string.itermethod.id = klstrtab_stringid(gen->strtab, itermethod);
+  gen->string.itermethod.id = klstrtbl_stringid(gen->strtbl, itermethod);
   gen->string.itermethod.length = strlen("<-");
   return true;
 }
@@ -135,7 +135,7 @@ KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
   klgen_stackfree(gen, 0);
   KlCode* code = klcode_create(refinfo, klsymtbl_size(gen->reftbl), constants, klcontbl_size(gen->contbl),
                                insts, lineinfo, codelen, nestedfunc, nnested,
-                               gen->strtab, nparam, gen->framesize);
+                               gen->strtbl, nparam, gen->framesize);
   kl_assert(gen->symtbl->parent == gen->reftbl, "");
   klsymtblpool_dealloc(gen->symtblpool, gen->symtbl);
   klsymtblpool_dealloc(gen->symtblpool, gen->reftbl);
@@ -183,7 +183,7 @@ KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFilePosi
     klgen_error(gen, symbolpos.begin, symbolpos.end,
                 "redefinition of symbol: %*.s",
                 symbol->name.length,
-                klstrtab_getstring(gen->strtab, symbol->name.id));
+                klstrtbl_getstring(gen->strtbl, symbol->name.id));
     symbol->attr.idx = idx;
     return symbol;
   }
@@ -215,7 +215,7 @@ KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name) {
 }
 
 void klgen_pushsymtbl(KlGenUnit* gen) {
-  KlSymTbl* symtbl = klsymtblpool_alloc(gen->symtblpool, gen->strtab, gen->symtbl);
+  KlSymTbl* symtbl = klsymtblpool_alloc(gen->symtblpool, gen->strtbl, gen->symtbl);
   klgen_oomifnull(gen, symtbl);
   gen->symtbl = symtbl;
   symtbl->info.stkbase = klgen_stacktop(gen);

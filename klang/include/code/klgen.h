@@ -4,7 +4,7 @@
 #include "klang/include/code/klcode.h"
 #include "klang/include/code/klcontbl.h"
 #include "klang/include/code/klsymtbl.h"
-#include "klang/include/cst/klstrtab.h"
+#include "klang/include/cst/klstrtbl.h"
 #include "klang/include/vm/klinst.h"
 #include <setjmp.h>
 
@@ -36,7 +36,7 @@ struct tagKlGenUnit {
   KlCodeArray subfunc;     /* functions created inside this function */
   KlInstArray code;
   KlFPArray position;         /* position information (for debug) */
-  KlStrTab* strtab;
+  KlStrTbl* strtbl;
   size_t stksize;             /* current used stack size */
   size_t framesize;           /* stack frame size of this klang function */
   bool vararg;                /* has variable arguments */
@@ -61,7 +61,7 @@ struct tagKlGenUnit {
   } string;
 };
 
-bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTab* strtab, KlGenUnit* prev, Ki* input, KlError* klerror);
+bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTbl* strtbl, KlGenUnit* prev, Ki* input, KlError* klerror);
 void klgen_destroy(KlGenUnit* gen);
 
 /* check range */

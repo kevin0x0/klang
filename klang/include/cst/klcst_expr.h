@@ -2,7 +2,7 @@
 #define KEVCC_KLANG_INCLUDE_AST_KLCST_EXPR_H
 
 #include "klang/include/cst/klcst.h"
-#include "klang/include/cst/klstrtab.h"
+#include "klang/include/cst/klstrtbl.h"
 #include "klang/include/parse/kltokens.h"
 #include "klang/include/value/klvalue.h"
 #include <stddef.h>

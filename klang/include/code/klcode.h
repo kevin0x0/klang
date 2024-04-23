@@ -25,7 +25,7 @@ struct tagKlCode {
   KlFilePosition* lineinfo;
   KlCode** nestedfunc;        /* functions created inside this function */
   size_t nnested;
-  KlStrTab* strtab;
+  KlStrTbl* strtbl;
   size_t nparam;              /* number of parameters */
   size_t framesize;           /* stack frame size of this klang function */
 };
@@ -33,7 +33,7 @@ struct tagKlCode {
 
 KlCode* klcode_create(KlRefInfo* refinfo, size_t nref, KlConstant* constants, size_t nconst,
                       KlInstruction* code, KlFilePosition* lineinfo, size_t codelen,
-                      KlCode** nestedfunc, size_t nnested, KlStrTab* strtab, size_t nparam,
+                      KlCode** nestedfunc, size_t nnested, KlStrTbl* strtbl, size_t nparam,
                       size_t framesize);
 void klcode_delete(KlCode* code);
 

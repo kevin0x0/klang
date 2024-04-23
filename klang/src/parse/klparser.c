@@ -20,23 +20,23 @@ static KlFileOffset ph_filepos = ~(size_t)0;
 
 
 
-bool klparser_init(KlParser* parser, KlStrTab* strtab, char* inputname, KlError* klerror) {
-  parser->strtab = strtab;
+bool klparser_init(KlParser* parser, KlStrTbl* strtbl, char* inputname, KlError* klerror) {
+  parser->strtbl = strtbl;
   parser->inputname = inputname;
   parser->incid = 0;
   parser->klerror = klerror;
 
   int thislen = strlen("this");
-  char* this = klstrtab_allocstring(strtab, thislen);
+  char* this = klstrtbl_allocstring(strtbl, thislen);
   if (kl_unlikely(!this)) return false;
   memcpy(this, "this", thislen * sizeof (char));
-  parser->string.this.id = klstrtab_pushstring(strtab, thislen);
+  parser->string.this.id = klstrtbl_pushstring(strtbl, thislen);
   parser->string.this.length = thislen;
   return true;
 }
 
 static KlStrDesc klparser_newtmpid(KlParser* parser, KlLex* lex) {
-  char* newid = klstrtab_allocstring(parser->strtab, sizeof (size_t) * 8);
+  char* newid = klstrtbl_allocstring(parser->strtbl, sizeof (size_t) * 8);
   if (kl_unlikely(!newid)) {
     klparser_error_oom(parser, lex);
     KlStrDesc str = { .id = 0, .length = 0 };
@@ -44,7 +44,7 @@ static KlStrDesc klparser_newtmpid(KlParser* parser, KlLex* lex) {
   }
   newid[0] = '\0';  /* all temporary identifiers begin with '\0' */
   int len = sprintf(newid + 1, "%zu", parser->incid++) + 1;
-  size_t strid = klstrtab_pushstring(parser->strtab, len);
+  size_t strid = klstrtbl_pushstring(parser->strtbl, len);
   KlStrDesc str = { .id = strid, .length = len };
   return str;
 }

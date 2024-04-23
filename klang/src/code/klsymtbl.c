@@ -1,10 +1,10 @@
 #include "klang/include/code/klsymtbl.h"
-#include "klang/include/cst/klstrtab.h"
+#include "klang/include/cst/klstrtbl.h"
 #include <stdlib.h>
 #include <string.h>
 
-inline static size_t klsymtbl_hashing(KlStrTab* strtab, KlStrDesc name) {
-  char* str = klstrtab_getstring(strtab, name.id);
+inline static size_t klsymtbl_hashing(KlStrTbl* strtbl, KlStrDesc name) {
+  char* str = klstrtbl_getstring(strtbl, name.id);
   char* end = str + name.length;
   size_t hash = 0;
   while (str != end)
@@ -37,11 +37,11 @@ static void klsymtbl_rehash(KlSymTbl* to, KlSymTbl* from) {
 }
 
 static bool klsymtbl_expand(KlSymTbl* symtbl) {
-  KlSymTbl new_map;
-  if (kl_unlikely(!klsymtbl_init(&new_map, symtbl->symbolpool, symtbl->capacity << 1, symtbl->strtab, symtbl->parent)))
+  KlSymTbl newsymtbl;
+  if (kl_unlikely(!klsymtbl_init(&newsymtbl, symtbl->symbolpool, symtbl->capacity << 1, symtbl->strtbl, symtbl->parent)))
     return false;
-  klsymtbl_rehash(&new_map, symtbl);
-  *symtbl = new_map;
+  klsymtbl_rehash(&newsymtbl, symtbl);
+  *symtbl = newsymtbl;
   return true;
 }
 
@@ -61,7 +61,7 @@ inline static size_t pow_of_2_above(size_t num) {
   return pow;
 }
 
-bool klsymtbl_init(KlSymTbl* symtbl, KlSymbolPool* pool, size_t capacity, KlStrTab* strtab, KlSymTbl* parent) {
+bool klsymtbl_init(KlSymTbl* symtbl, KlSymbolPool* pool, size_t capacity, KlStrTbl* strtbl, KlSymTbl* parent) {
   if (!symtbl) return false;
 
   /* TODO: make sure capacity is power of 2 */
@@ -76,7 +76,7 @@ bool klsymtbl_init(KlSymTbl* symtbl, KlSymbolPool* pool, size_t capacity, KlStrT
   symtbl->capacity = capacity;
   symtbl->size = 0;
   symtbl->parent = parent;
-  symtbl->strtab = strtab;
+  symtbl->strtbl = strtbl;
   symtbl->symbolpool = pool;
   symtbl->info.referenced = false;
   return true;
@@ -92,10 +92,10 @@ void klsymtbl_destroy(KlSymTbl* symtbl) {
   free(array);
 }
 
-KlSymTbl* klsymtbl_create(size_t capacity, KlSymbolPool* pool, KlStrTab* strtab, KlSymTbl* parent) {
+KlSymTbl* klsymtbl_create(size_t capacity, KlSymbolPool* pool, KlStrTbl* strtbl, KlSymTbl* parent) {
   KlSymTbl* symtbl = (KlSymTbl*)malloc(sizeof (KlSymTbl));
-  if (kl_unlikely(!symtbl || !klsymtbl_init(symtbl, pool, capacity, strtab, parent))) {
-    free(strtab);
+  if (kl_unlikely(!symtbl || !klsymtbl_init(symtbl, pool, capacity, strtbl, parent))) {
+    free(strtbl);
   }
   return symtbl;
 }
@@ -119,26 +119,26 @@ KlSymbol* klsymtbl_insert(KlSymTbl* symtbl, KlStrDesc name) {
     return NULL;
 
   KlSymbol* newsymbol = klsymbolpool_alloc(symtbl->symbolpool);
-  if (kl_unlikely(!newsymbol)) return false;
+  if (kl_unlikely(!newsymbol)) return NULL;
 
-  size_t hash = klsymtbl_hashing(symtbl->strtab, name);
+  size_t hash = klsymtbl_hashing(symtbl->strtbl, name);
   size_t index = (symtbl->capacity - 1) & hash;
   newsymbol->name = name;
   newsymbol->hash = hash;
   newsymbol->next = symtbl->array[index];
   symtbl->array[index] = newsymbol;
   symtbl->size++;
-  return true;
+  return newsymbol;
 }
 
 KlSymbol* klsymtbl_search(KlSymTbl* symtbl, KlStrDesc name) {
-  size_t hash = klsymtbl_hashing(symtbl->strtab, name);
+  size_t hash = klsymtbl_hashing(symtbl->strtbl, name);
   size_t index = (symtbl->capacity - 1) & hash;
   KlSymbol* symbol = symtbl->array[index];
   for (; symbol; symbol = symbol->next) {
     if (hash == symbol->hash && symbol->name.length == name.length &&
-        0 == strncmp(klstrtab_getstring(symtbl->strtab, symbol->name.id),
-                klstrtab_getstring(symtbl->strtab, name.id), name.length)) {
+        0 == strncmp(klstrtbl_getstring(symtbl->strtbl, symbol->name.id),
+                klstrtbl_getstring(symtbl->strtbl, name.id), name.length)) {
       return symbol;
     }
   }
@@ -148,12 +148,12 @@ KlSymbol* klsymtbl_search(KlSymTbl* symtbl, KlStrDesc name) {
 
 
 
-KlSymTbl* klsymtblpool_init(KlSymTblPool* pool) {
+void klsymtblpool_init(KlSymTblPool* pool) {
   pool->tables = NULL;
   pool->symbolpool.symbols = NULL;
 }
 
-KlSymTbl* klsymtblpool_destroy(KlSymTblPool* pool) {
+void klsymtblpool_destroy(KlSymTblPool* pool) {
   KlSymTbl* tbl = pool->tables;
   while (tbl) {
     KlSymTbl* tmp = tbl->next;
@@ -169,13 +169,13 @@ KlSymTbl* klsymtblpool_destroy(KlSymTblPool* pool) {
   }
 }
 
-KlSymTbl* klsymtblpool_alloc(KlSymTblPool* pool, KlStrTab* strtab, KlSymTbl* parent) {
+KlSymTbl* klsymtblpool_alloc(KlSymTblPool* pool, KlStrTbl* strtbl, KlSymTbl* parent) {
   if (kl_likely(pool->tables)) {
     KlSymTbl* symtbl = pool->tables;
     pool->tables = symtbl->next;
     return symtbl;
   }
-  return klsymtbl_create(4, &pool->symbolpool, strtab, parent);
+  return klsymtbl_create(4, &pool->symbolpool, strtbl, parent);
 }
 
 void klsymtblpool_dealloc(KlSymTblPool* pool, KlSymTbl* symtbl) {

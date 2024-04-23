@@ -6,13 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-static inline size_t klcontbl_hashing(KlStrTab* strtab, KlConstant* con) {
+static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
   switch (con->type) {
     case KL_INT: {
       return (con->intval << 8) + con->intval;
     }
     case KL_STRING: {
-      char* str = klstrtab_getstring(strtab, con->string.id);
+      char* str = klstrtbl_getstring(strtbl, con->string.id);
       char* end = str + con->string.length;
       size_t hash = 0;
       while (str != end)
@@ -36,7 +36,7 @@ static inline size_t klcontbl_hashing(KlStrTab* strtab, KlConstant* con) {
     }
   }
 }
-static inline bool klcontbl_constant_equal(KlStrTab* strtab, KlConstant* con1, KlConstant* con2) {
+static inline bool klcontbl_constant_equal(KlStrTbl* strtbl, KlConstant* con1, KlConstant* con2) {
   if (con1->type != con2->type) return false;
   switch (con1->type) {
     case KL_INT: {
@@ -44,8 +44,8 @@ static inline bool klcontbl_constant_equal(KlStrTab* strtab, KlConstant* con1, K
     }
     case KL_STRING: {
       return con1->string.length == con2->string.length &&
-             0 == strncmp(klstrtab_getstring(strtab, con1->string.id),
-                          klstrtab_getstring(strtab, con2->string.id), con1->string.length);
+             0 == strncmp(klstrtbl_getstring(strtbl, con1->string.id),
+                          klstrtbl_getstring(strtbl, con2->string.id), con1->string.length);
     }
     default: {
       kl_assert(false, "this type can not be inserted into constant table.");
@@ -80,7 +80,7 @@ static void klcontbl_rehash(KlConTbl* to, KlConTbl* from) {
 
 static bool klcontbl_expand(KlConTbl* contbl) {
   KlConTbl new_map;
-  if (kl_unlikely(!klcontbl_init(&new_map, contbl->capacity << 1, contbl->strtab)))
+  if (kl_unlikely(!klcontbl_init(&new_map, contbl->capacity << 1, contbl->strtbl)))
     return false;
   klcontbl_rehash(&new_map, contbl);
   *contbl = new_map;
@@ -103,7 +103,7 @@ inline static size_t pow_of_2_above(size_t num) {
   return pow;
 }
 
-bool klcontbl_init(KlConTbl* contbl, size_t capacity, KlStrTab* strtab) {
+bool klcontbl_init(KlConTbl* contbl, size_t capacity, KlStrTbl* strtbl) {
   if (!contbl) return false;
 
   capacity = pow_of_2_above(capacity);
@@ -126,7 +126,7 @@ bool klcontbl_init(KlConTbl* contbl, size_t capacity, KlStrTab* strtab) {
   contbl->array = array;
   contbl->capacity = capacity;
   contbl->size = 0;
-  contbl->strtab = strtab;
+  contbl->strtbl = strtbl;
   return true;
 }
 
@@ -144,10 +144,10 @@ void klcontbl_destroy(KlConTbl* contbl) {
   contbl->size = 0;
 }
 
-KlConTbl* klcontbl_create(size_t capacity, KlStrTab* strtab) {
+KlConTbl* klcontbl_create(size_t capacity, KlStrTbl* strtbl) {
   KlConTbl* contbl = (KlConTbl*)malloc(sizeof (KlConTbl));
-  if (kl_unlikely(!contbl || !klcontbl_init(contbl, capacity, strtab))) {
-    free(strtab);
+  if (kl_unlikely(!contbl || !klcontbl_init(contbl, capacity, strtbl))) {
+    free(strtbl);
   }
   return contbl;
 }
@@ -175,7 +175,7 @@ KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
     return NULL;
   }
 
-  size_t hash = klcontbl_hashing(contbl->strtab, con);
+  size_t hash = klcontbl_hashing(contbl->strtbl, con);
   size_t index = (contbl->capacity - 1) & hash;
   newconentry->con = *con;
   newconentry->hash = hash;
@@ -187,11 +187,11 @@ KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
 }
 
 KlConEntry* klcontbl_search(KlConTbl* contbl, KlConstant* constant) {
-  size_t hash = klcontbl_hashing(contbl->strtab, constant);
+  size_t hash = klcontbl_hashing(contbl->strtbl, constant);
   size_t index = (contbl->capacity - 1) & hash;
   KlConEntry* conentry = contbl->array[index];
   for (; conentry; conentry = conentry->next) {
-    if (hash == conentry->hash && klcontbl_constant_equal(contbl->strtab, constant, &conentry->con))
+    if (hash == conentry->hash && klcontbl_constant_equal(contbl->strtbl, constant, &conentry->con))
       return conentry;
   }
 
@@ -199,11 +199,11 @@ KlConEntry* klcontbl_search(KlConTbl* contbl, KlConstant* constant) {
 }
 
 KlConEntry* klcontbl_get(KlConTbl* contbl, KlConstant* constant) {
-  size_t hash = klcontbl_hashing(contbl->strtab, constant);
+  size_t hash = klcontbl_hashing(contbl->strtbl, constant);
   size_t index = (contbl->capacity - 1) & hash;
   KlConEntry* conentry = contbl->array[index];
   for (; conentry; conentry = conentry->next) {
-    if (hash == conentry->hash && klcontbl_constant_equal(contbl->strtab, constant, &conentry->con))
+    if (hash == conentry->hash && klcontbl_constant_equal(contbl->strtbl, constant, &conentry->con))
       return conentry;
   }
   /* not found, insert */

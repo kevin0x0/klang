@@ -5,7 +5,7 @@
 #include "klang/include/code/klgen_exprbool.h"
 #include "klang/include/code/klgen_stmt.h"
 #include "klang/include/cst/klcst_expr.h"
-#include "klang/include/cst/klstrtab.h"
+#include "klang/include/cst/klstrtbl.h"
 #include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klinst.h"
 #include <setjmp.h>
@@ -100,7 +100,7 @@ static void klgen_exprfunc_deconstruct_params(KlGenUnit* gen, KlCstTuple* funcpa
 void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
   size_t stktop = klgen_stacktop(gen);
   KlGenUnit newgen;
-  if (kl_unlikely(!klgen_init(&newgen, gen->symtblpool, gen->strtab, gen, gen->input, gen->klerror)))
+  if (kl_unlikely(!klgen_init(&newgen, gen->symtblpool, gen->strtbl, gen, gen->input, gen->klerror)))
     klgen_error_fatal(gen, "out of memory");
   if (setjmp(newgen.jmppos) == 0) {
     /* the scope is already created in klgen_init() */
@@ -629,9 +629,9 @@ static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCo
       return klgen_tryarithcomptime(gen, bincst, left, right, target);
     }
     if (left.kind == KLVAL_STRING && bincst->op == KLTK_CONCAT) {
-      char* res = klstrtab_concat(gen->strtab, left.string, right.string);
+      char* res = klstrtbl_concat(gen->strtbl, left.string, right.string);
       klgen_oomifnull(gen, res);
-      KlStrDesc str = { .id = klstrtab_stringid(gen->strtab, res),
+      KlStrDesc str = { .id = klstrtbl_stringid(gen->strtbl, res),
         .length = left.string.length + right.string.length };
       return klcodeval_string(str);
     }

@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_CODE_KLCODEVAL_H
 #define KEVCC_KLANG_INCLUDE_CODE_KLCODEVAL_H
 
-#include "klang/include/cst/klstrtab.h"
+#include "klang/include/cst/klstrtbl.h"
 #include "klang/include/value/klvalue.h"
 #include <stddef.h>
 

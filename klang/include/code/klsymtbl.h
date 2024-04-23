@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_CODE_KLSYMTBL_H
 #define KEVCC_KLANG_INCLUDE_CODE_KLSYMTBL_H
 
-#include "klang/include/cst/klstrtab.h"
+#include "klang/include/cst/klstrtbl.h"
 #include "klang/include/misc/klutils.h"
 #include "klang/include/code/klcodeval.h"
 #include "klang/include/value/klref.h"
@@ -38,7 +38,7 @@ struct tagKlSymTbl {
     KlSymTbl* next;     /* used in symtbl pool */
   };
   KlSymbolPool* symbolpool;
-  KlStrTab* strtab;
+  KlStrTbl* strtbl;
   struct {
     size_t stkbase;
     bool referenced;
@@ -46,9 +46,9 @@ struct tagKlSymTbl {
 };
 
 
-bool klsymtbl_init(KlSymTbl* symtbl, KlSymbolPool* pool, size_t capacity, KlStrTab* strtab, KlSymTbl* parent);
+bool klsymtbl_init(KlSymTbl* symtbl, KlSymbolPool* pool, size_t capacity, KlStrTbl* strtbl, KlSymTbl* parent);
 void klsymtbl_destroy(KlSymTbl* symtbl);
-KlSymTbl* klsymtbl_create(size_t capacity, KlSymbolPool* pool, KlStrTab* strtab, KlSymTbl* parent);
+KlSymTbl* klsymtbl_create(size_t capacity, KlSymbolPool* pool, KlStrTbl* strtbl, KlSymTbl* parent);
 void klsymtbl_delete(KlSymTbl* symtbl);
 
 void klreftbl_setrefinfo(KlSymTbl* reftbl, KlRefInfo* refinfo);
@@ -110,9 +110,9 @@ typedef struct tagKlSymTblPool {
   KlSymbolPool symbolpool;
 } KlSymTblPool;
 
-KlSymTbl* klsymtblpool_init(KlSymTblPool* pool);
-KlSymTbl* klsymtblpool_destroy(KlSymTblPool* pool);
-KlSymTbl* klsymtblpool_alloc(KlSymTblPool* pool, KlStrTab* strtab, KlSymTbl* parent);
+void klsymtblpool_init(KlSymTblPool* pool);
+void klsymtblpool_destroy(KlSymTblPool* pool);
+KlSymTbl* klsymtblpool_alloc(KlSymTblPool* pool, KlStrTbl* strtbl, KlSymTbl* parent);
 void klsymtblpool_dealloc(KlSymTblPool* pool, KlSymTbl* symtbl);
 
 
