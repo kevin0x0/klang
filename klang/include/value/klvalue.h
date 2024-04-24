@@ -14,15 +14,16 @@
 #define klvalue_checktype(value, valtype)   ((value)->type == (valtype))
 #define klvalue_gettype(value)              ((value)->type)
 #define klvalue_sametype(val1, val2)        (klvalue_gettype(val1) == klvalue_gettype(val2))
-#define klvalue_sameinstance(val1, val2)    (klvalue_getany(val1) == klvalue_getany(val2))
 
 #define klvalue_getobj(val, type)           ((type)((val)->value.gcobj))
 #define klvalue_setobj(val, obj, type)      klvalue_setgcobj((val), (KlGCObject*)(obj), (type))
 
-#define klvalue_equal(v1, v2)               ((v1)->value.any == (v2)->value.any && (v1)->type == (v2)->type)
+#define klvalue_equal(v1, v2)               (klvalue_sametype((v1), (v2)) && klvalue_sameinstance((v1), (v2)))
 
 #define klvalue_bothinteger(v1, v2)         ((v1)->type + (v2)->type == KL_INT)
 #define klvalue_bothnumber(v1, v2)          ((v1)->type + (v2)->type <= KL_NUMBER)
+
+#define KLVALUE_NIL_INIT                    { .type = KL_NIL, .value.nilval = 0 }
 
 
 typedef enum tagKlType {
@@ -44,13 +45,13 @@ typedef double KlFloat;
 
 typedef struct tagKlValue {
   union {
+    KlInt nilval;
     KlInt intval;
     KlFloat floatval;
     KlBool boolval;
     KlCFunction* cfunc;
     KlGCObject* gcobj;
     size_t id;
-    void* any;
   } value;
   KlType type;
 } KlValue;
@@ -58,8 +59,8 @@ typedef struct tagKlValue {
 const char* klvalue_typename(KlType type);
 
 
-static inline void* klvalue_getany(KlValue* val) {
-  return val->value.any;
+static inline KlInt klvalue_getnil(KlValue* val) {
+  return val->value.nilval;
 }
 
 static inline KlInt klvalue_getint(KlValue* val) {
@@ -121,12 +122,37 @@ static inline void klvalue_setgcobj(KlValue* val, KlGCObject* gcobj, KlType type
 }
 
 static inline void klvalue_setnil(KlValue *val) {
-  val->value.intval = 0;
+  val->value.nilval = 0;
   val->type = KL_NIL;
 }
 
 static inline void klvalue_setvalue(KlValue *val, KlValue *other) {
   *val = *other;
+}
+
+
+static inline bool klvalue_sameinstance(KlValue* val1, KlValue* val2) {
+  kl_assert(klvalue_sametype(val1, val2), "must call this function with two values with same type");
+  switch (klvalue_gettype(val1)) {
+    case KL_INT: {
+      return klvalue_getint(val1) == klvalue_getint(val2);
+    }
+    case KL_FLOAT: {
+      return klvalue_getfloat(val1) == klvalue_getfloat(val2);
+    }
+    case KL_BOOL: {
+      return klvalue_getbool(val1) == klvalue_getbool(val2);
+    }
+    case KL_NIL: {
+      return klvalue_getnil(val1) == klvalue_getnil(val2);
+    }
+    case KL_CFUNCTION: {
+      return klvalue_getcfunc(val1) == klvalue_getcfunc(val2);
+    }
+    default: {
+      return klvalue_getgcobj(val1) == klvalue_getgcobj(val2);
+    }
+  }
 }
 
 #endif

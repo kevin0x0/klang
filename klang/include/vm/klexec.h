@@ -16,7 +16,7 @@
 
 typedef KlException (*KlCallPrepCallBack)(KlState* state, KlValue* callable, size_t narg);
 
-KlValue* klexec_getfield(KlState* state, KlValue* callable, KlString* op);
+KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field);
 KlException klexec_callc(KlState* state, KlCFunction* cfunc, size_t narg, size_t nret);
 KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback);
 KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret);

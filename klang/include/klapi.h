@@ -25,6 +25,7 @@ static inline KlType klapi_gettype(KlState* state, int index);
 static inline void klapi_pop(KlState* state, size_t count);
 static inline KlException klapi_pushcfunc(KlState* state, KlCFunction* cfunc);
 static inline KlException klapi_pushint(KlState* state, KlInt val);
+static inline KlException klapi_pushfloat(KlState* state, KlFloat val);
 static inline KlException klapi_pushnil(KlState* state, size_t count);
 static inline KlException klapi_pushbool(KlState* state, KlBool val);
 static inline KlException klapi_pushstring(KlState* state, const char* str);
@@ -42,6 +43,7 @@ static inline KlException klapi_setgcobj(KlState* state, int index, KlGCObject* 
 static inline KlException klapi_setvalue(KlState* state, int index, KlValue* val);
 
 static inline KlInt klapi_getint(KlState* state, int index);
+static inline KlFloat klapi_getfloat(KlState* state, int index);
 static inline KlBool klapi_getbool(KlState* state, int index);
 static inline KlString* klapi_getstring(KlState* state, int index);
 static inline KlMap* klapi_getmap(KlState* state, int index);
@@ -99,6 +101,13 @@ static inline KlException klapi_pushint(KlState* state, KlInt val) {
   if (!klstack_expand_if_full(&state->stack, klstate_getmm(state)))
     return KL_E_OOM;
   klstack_pushint(&state->stack, val);
+  return KL_E_NONE;
+}
+
+static inline KlException klapi_pushfloat(KlState* state, KlFloat val) {
+  if (!klstack_expand_if_full(&state->stack, klstate_getmm(state)))
+    return KL_E_OOM;
+  klstack_pushfloat(&state->stack, val);
   return KL_E_NONE;
 }
 
@@ -203,6 +212,10 @@ static inline KlException klapi_setvalue(KlState* state, int index, KlValue* oth
 
 static inline KlInt klapi_getint(KlState* state, int index) {
   return klvalue_getint(klapi_access(state, index));
+}
+
+static inline KlFloat klapi_getfloat(KlState* state, int index) {
+  return klvalue_getfloat(klapi_access(state, index));
 }
 
 static inline KlBool klapi_getbool(KlState* state, int index) {

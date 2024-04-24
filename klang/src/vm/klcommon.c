@@ -1,16 +1,19 @@
 #include "klang/include/vm/klcommon.h"
+#include "klang/include/misc/klutils.h"
 #include "klang/include/value/klarray.h"
 #include "klang/include/value/klmap.h"
 #include "klang/include/value/klvalue.h"
+#include "klang/include/vm/klexception.h"
 #include <string.h>
 
 static KlClass* klcommon_phonyclass(KlMM* klmm);
-static KlObject* klcommon_null_contructor(KlClass* klclass, KlMM* klmm);
+static KlException klcommon_null_contructor(KlClass* klclass, KlMM* klmm, KlValue* value);
 
-static KlObject* klcommon_null_contructor(KlClass* klclass, KlMM* klmm) {
-  (void)klclass;
-  (void)klmm;
-  return NULL;
+static KlException klcommon_null_contructor(KlClass* klclass, KlMM* klmm, KlValue* value) {
+  kl_unused(klclass);
+  kl_unused(klmm);
+  kl_unused(value);
+  return KL_E_INVLD;
 }
 static KlClass* klcommon_phonyclass(KlMM* klmm) {
   KlClass* klclass = klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klcommon_null_contructor);
@@ -26,7 +29,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   common->ref_count = 0;
 
   bool done = true;
-  done = done && (common->string.neg = klstrpool_new_string(strpool, "-u"));
+  done = done && (common->string.neg = klstrpool_new_string(strpool, "u-"));
   done = done && (common->string.add = klstrpool_new_string(strpool, "+"));
   done = done && (common->string.sub = klstrpool_new_string(strpool, "-"));
   done = done && (common->string.mul = klstrpool_new_string(strpool, "*"));
@@ -34,7 +37,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   done = done && (common->string.mod = klstrpool_new_string(strpool, "%"));
   done = done && (common->string.call = klstrpool_new_string(strpool, "()"));
   done = done && (common->string.concat = klstrpool_new_string(strpool, ".."));
-  done = done && (common->string.index = klstrpool_new_string(strpool, "[]"));
+  done = done && (common->string.index = klstrpool_new_string(strpool, "=[]"));
   done = done && (common->string.indexas = klstrpool_new_string(strpool, "[]="));
   done = done && (common->string.eq = klstrpool_new_string(strpool, "=="));
   done = done && (common->string.neq = klstrpool_new_string(strpool, "!="));
@@ -42,8 +45,8 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   done = done && (common->string.gt = klstrpool_new_string(strpool, ">"));
   done = done && (common->string.le = klstrpool_new_string(strpool, "<="));
   done = done && (common->string.ge = klstrpool_new_string(strpool, ">="));
-  done = done && (common->string.hash = klstrpool_new_string(strpool, "__hash"));
-  done = done && (common->string.append = klstrpool_new_string(strpool, "++"));
+  done = done && (common->string.hash = klstrpool_new_string(strpool, "[]"));
+  done = done && (common->string.append = klstrpool_new_string(strpool, "<<"));
 
 
   KlClass* fallback = klcommon_phonyclass(klmm);

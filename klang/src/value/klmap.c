@@ -1,6 +1,8 @@
 #include "klang/include/value/klmap.h"
+#include "klang/include/misc/klutils.h"
 #include "klang/include/mm/klmm.h"
 #include "klang/include/value/klvalue.h"
+#include "klang/include/vm/klexception.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -15,22 +17,36 @@ static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* elem);
 static inline void klmap_init_head_tail(KlMapNode* head, KlMapNode* tail);
 
 static inline size_t klmap_gethash(KlValue* key) {
-  if (klvalue_checktype(key, KL_STRING)) {
-    return klstring_hash(klvalue_getobj(key, KlString*));
-  } else if (klvalue_checktype(key, KL_INT) || klvalue_checktype(key, KL_BOOL)) {
-    return klvalue_getint(key);
-  } else if (klvalue_checktype(key, KL_FLOAT)) {
-    kl_assert(sizeof (KlFloat) == sizeof (KlInt), "");
-    union {
-      size_t hash;
-      KlFloat floatval;
-    } num;
-    num.floatval = klvalue_getfloat(key);
-    /* +0.0 and -0.0 is equal but have difference binary representations */
-    if (num.floatval == 0.0) return 0;
-    return num.hash;
-  } else {
-    return ((size_t)klvalue_getany(key) >> 3) + klvalue_gettype(key);
+  switch (klvalue_gettype(key)) {
+    case KL_STRING: {
+      return klstring_hash(klvalue_getobj(key, KlString*));
+    }
+    case KL_INT: {
+      KlInt val = klvalue_getint(key);
+      return (val << 16) ^ val;
+    }
+    case KL_NIL: {
+      return klvalue_getnil(key);
+    }
+    case KL_BOOL: {
+      return klvalue_getbool(key);
+    }
+    case KL_FLOAT: {
+      kl_static_assert(sizeof (KlFloat) == sizeof (KlInt), "");
+      union {
+        size_t hash;
+        KlFloat floatval;
+      } num;
+      num.floatval = klvalue_getfloat(key);
+      /* +0.0 and -0.0 is equal but have difference binary representations */
+      return num.floatval == 0.0 ? 0 : num.hash;
+    }
+    case KL_CFUNCTION: {
+      return ((size_t)klvalue_getcfunc(key) >> 3);
+    }
+    default: {
+      return ((size_t)klvalue_getgcobj(key) >> 3);
+    }
   }
 }
 
@@ -206,9 +222,12 @@ KlMapIter klmap_erase(KlMap* map, KlMapIter iter) {
   return next;
 }
 
-static KlMap* klmap_constructor(KlClass* klclass, KlMM* klmm) {
+static KlException klmap_constructor(KlClass* klclass, KlMM* klmm, KlValue* value) {
   (void)klmm;
-  return klmap_create(klclass, 3, klcast(KlMapNodePool*, klclass_constructor_data(klclass)));
+  KlMap* map = klmap_create(klclass, 3, klcast(KlMapNodePool*, klclass_constructor_data(klclass)));
+  if (kl_unlikely(!map)) return KL_E_OOM;
+  klvalue_setobj(value, map, KL_MAP);
+  return KL_E_NONE;
 }
 
 KlClass* klmap_class(KlMM* klmm, KlMapNodePool* mapnodepool) {

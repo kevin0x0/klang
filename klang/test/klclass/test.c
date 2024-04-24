@@ -38,7 +38,9 @@ int main(void) {
       klapi_pop(K, 1);
     }
   }
-  KlObject* person = klclass_new_object(Person, &klmm);
+  KlValue val;
+  klclass_new_object(Person, &klmm, &val);
+  KlObject* person = val.value.gcobj;
   klapi_pushobj(K, person, KL_OBJECT);
   while (true) {
     char cmd[100];

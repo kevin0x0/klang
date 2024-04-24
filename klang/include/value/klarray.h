@@ -1,6 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_VALUE_KLARRAY_H
 #define KEVCC_KLANG_INCLUDE_VALUE_KLARRAY_H
 
+#include "klang/include/misc/klutils.h"
 #include "klang/include/mm/klmm.h"
 #include "klang/include/value/klclass.h"
 #include "klang/include/value/klvalue.h"
@@ -44,6 +45,7 @@ static inline KlValue* klarray_raw(KlArray* array);
 static inline KlArrayIter klarray_iter_begin(KlArray* array);
 static inline KlArrayIter klarray_iter_end(KlArray* array);
 static inline KlArrayIter klarray_iter_next(KlArrayIter itr);
+static inline KlValue* klarray_iter_get(KlArray* array, KlArrayIter itr);
 
 
 static inline size_t klarray_size(KlArray* array) {
@@ -123,6 +125,11 @@ static inline KlArrayIter klarray_iter_end(KlArray* array) {
 
 static inline KlArrayIter klarray_iter_next(KlArrayIter itr) {
   return itr + 1;
+}
+
+static inline KlValue* klarray_iter_get(KlArray* array, KlArrayIter itr) {
+  kl_unused(array);
+  return itr;
 }
 
 

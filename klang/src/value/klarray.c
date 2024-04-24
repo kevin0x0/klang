@@ -1,4 +1,5 @@
 #include "klang/include/value/klarray.h"
+#include "klang/include/vm/klexception.h"
 
 #include <stdlib.h>
 
@@ -28,8 +29,11 @@ static void klarray_delete(KlArray* array, KlMM* klmm) {
   klobject_free(klcast(KlObject*, array), klmm);
 }
 
-static KlArray* klarray_constructor(KlClass* arrayclass, KlMM* klmm) {
-  return klarray_create(arrayclass, klmm, 1);
+static KlException klarray_constructor(KlClass* arrayclass, KlMM* klmm, KlValue* value) {
+  KlArray* arr = klarray_create(arrayclass, klmm, 1);
+  if (kl_unlikely(!arr)) return KL_E_OOM;
+  klvalue_setobj(value, arr, KL_ARRAY);
+  return KL_E_NONE;
 }
 
 KlClass* klarray_class(KlMM* klmm) {

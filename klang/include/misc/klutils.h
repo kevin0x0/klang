@@ -16,13 +16,18 @@
 #define kllow8bits(a)         kllowbits(a, 8)
 
 
+#define kl_static_assert(expr, info)    _Static_assert((expr), info)
+#define kl_unused(param)                ((void)(param))
+
 #ifdef NDEBUG
 #define kl_assert(expr, info)   ((void)0)
 #define kltodo(message)         ((void)0)
 #else
 kl_noreturn void kl_abort(const char* expr, const char* head, int line_no, const char* filename, const char* info);
-#define kl_assert(expr, info)   ((void)((expr) || (kl_abort(#expr, "assertion failed", __LINE__, __FILE__, (info)), 0)))
-#define kltodo(message)         kl_abort(message, "TODO", __LINE__, __FILE__, "")
+
+#define kl_assert(expr, info)           ((void)((expr) || (kl_abort(#expr, "assertion failed", __LINE__, __FILE__, (info)), 0)))
+#define kltodo(message)                 kl_abort(message, "TODO", __LINE__, __FILE__, "")
+
 #endif
 
 #if defined (__GNUC__) || defined (__clang__)

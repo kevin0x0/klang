@@ -27,6 +27,16 @@ struct tagKlGenBlockInfo {
   KlGenBlockInfo* prev;
 };
 
+typedef struct tagKlGenUnitCommonString {
+  KlStrDesc constructor;
+  KlStrDesc itermethod;
+  KlStrDesc extract_tuple;
+  KlStrDesc extract_array;
+  KlStrDesc extract_;
+  KlStrDesc extract_tuple;
+  KlStrDesc extract_tuple;
+} KlGenUnitCommonString;
+
 typedef struct tagKlGenUnit KlGenUnit;
 struct tagKlGenUnit {
   KlSymTbl* symtbl;           /* current symbol table */
