@@ -12,6 +12,7 @@ typedef struct tagKlCommon {
     KlString* sub;
     KlString* mul;
     KlString* div;
+    KlString* idiv;
     KlString* mod;
     KlString* call;
     KlString* concat;

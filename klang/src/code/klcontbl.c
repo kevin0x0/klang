@@ -30,6 +30,9 @@ static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
       if (num.floatval == 0.0) return 0;
       return num.hash;
     }
+    case KL_BOOL: {
+      return con->boolval;
+    }
     default: {
       kl_assert(false, "this type can not be inserted into constant table.");
       return 0;

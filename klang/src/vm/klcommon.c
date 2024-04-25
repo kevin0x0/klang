@@ -34,6 +34,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   done = done && (common->string.sub = klstrpool_new_string(strpool, "-"));
   done = done && (common->string.mul = klstrpool_new_string(strpool, "*"));
   done = done && (common->string.div = klstrpool_new_string(strpool, "/"));
+  done = done && (common->string.idiv = klstrpool_new_string(strpool, "//"));
   done = done && (common->string.mod = klstrpool_new_string(strpool, "%"));
   done = done && (common->string.call = klstrpool_new_string(strpool, "()"));
   done = done && (common->string.concat = klstrpool_new_string(strpool, ".."));
@@ -76,6 +77,7 @@ KlGCObject* klcommon_propagate(KlCommon* common, KlGCObject* gclist) {
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.sub), gclist);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.mul), gclist);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.div), gclist);
+  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.idiv), gclist);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.mod), gclist);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.call), gclist);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.concat), gclist);

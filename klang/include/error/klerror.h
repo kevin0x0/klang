@@ -4,7 +4,6 @@
 #include "utils/include/kio/ki.h"
 #include "utils/include/kio/ko.h"
 #include <stddef.h>
-#include <stdio.h>
 typedef struct tagKlErrorConfig {
   unsigned tabstop;
   unsigned maxtextline;

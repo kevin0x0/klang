@@ -27,15 +27,19 @@ struct tagKlGenBlockInfo {
   KlGenBlockInfo* prev;
 };
 
-typedef struct tagKlGenUnitCommonString {
+typedef struct tagKlGUCommonString {
   KlStrDesc constructor;
   KlStrDesc itermethod;
-  KlStrDesc extract_tuple;
-  KlStrDesc extract_array;
-  KlStrDesc extract_;
-  KlStrDesc extract_tuple;
-  KlStrDesc extract_tuple;
-} KlGenUnitCommonString;
+  KlStrDesc pattern_add;
+  KlStrDesc pattern_sub;
+  KlStrDesc pattern_mul;
+  KlStrDesc pattern_div;
+  KlStrDesc pattern_idiv;
+  KlStrDesc pattern_mod;
+  KlStrDesc pattern_concat;
+  KlStrDesc pattern_neg;
+  KlStrDesc pattern;
+} KlGUCommonString;
 
 typedef struct tagKlGenUnit KlGenUnit;
 struct tagKlGenUnit {
@@ -65,15 +69,13 @@ struct tagKlGenUnit {
     char* inputname;
     bool debug;
   } config;
-  struct {
-    KlStrDesc constructor;
-    KlStrDesc itermethod;
-  } string;
+  KlGUCommonString* strings;
 };
 
-bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTbl* strtbl, KlGenUnit* prev, Ki* input, KlError* klerror);
+bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* strings, KlStrTbl* strtbl, KlGenUnit* prev, Ki* input, KlError* klerror);
 void klgen_destroy(KlGenUnit* gen);
 
+bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings);
 /* check range */
 void klgen_validate(KlGenUnit* gen);
 /* convert to KlCode and destroy self.
@@ -85,11 +87,54 @@ KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name);
 void klgen_pushsymtbl(KlGenUnit* gen);
 void klgen_popsymtbl(KlGenUnit* gen);
 
+static inline size_t klgen_newstring(KlGenUnit* gen, KlStrDesc str);
+static inline size_t klgen_newfloat(KlGenUnit* gen, KlFloat val);
+static inline size_t klgen_newinteger(KlGenUnit* gen, KlInt val);
+
+
 void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position);
 static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
 static inline void klgen_putonstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
 void klgen_emitloadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition position);
 void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nval, KlFilePosition position);
+
+
+kl_noreturn static inline void klgen_error_fatal(KlGenUnit* gen, const char* message) {
+  klgen_error(gen, 0, 0, message);
+  longjmp(gen->jmppos, 1);
+}
+
+#define klgen_oomifnull(gen, expr)  {                                           \
+  if (kl_unlikely(!expr))                                                       \
+    klgen_error_fatal(gen, "out of memory");                                    \
+}
+
+static inline size_t klgen_newstring(KlGenUnit* gen, KlStrDesc str) {
+  KlConstant constant = { .type = KL_STRING, .string = str };
+  KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
+  klgen_oomifnull(gen, conent);
+  return conent->index;
+}
+
+static inline size_t klgen_newfloat(KlGenUnit* gen, KlFloat val) {
+  KlConstant constant = { .type = KL_FLOAT, .floatval = val };
+  KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
+  klgen_oomifnull(gen, conent);
+  return conent->index;
+}
+
+static inline size_t klgen_newinteger(KlGenUnit* gen, KlInt val) {
+  KlConstant constant = { .type = KL_INT, .intval = val };
+  KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
+  klgen_oomifnull(gen, conent);
+  return conent->index;
+}
+
+static inline size_t klgen_newconstant(KlGenUnit* gen, KlConstant* constant) {
+  KlConEntry* conent = klcontbl_get(gen->contbl, constant);
+  klgen_oomifnull(gen, conent);
+  return conent->index;
+}
 
 static inline size_t klgen_stacktop(KlGenUnit* gen) {
   return gen->stksize;
@@ -137,17 +182,6 @@ static inline KlFilePosition klgen_position(KlFileOffset begin, KlFileOffset end
 
 #define klgen_cstposition(cst) klgen_position(klcst_begin(cst), klcst_end(cst))
 
-
-
-kl_noreturn static inline void klgen_error_fatal(KlGenUnit* gen, const char* message) {
-  klgen_error(gen, 0, 0, message);
-  longjmp(gen->jmppos, 1);
-}
-
-#define klgen_oomifnull(gen, expr)  {                                           \
-  if (kl_unlikely(!expr))                                                       \
-    klgen_error_fatal(gen, "out of memory");                                    \
-}
 
 static inline size_t klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position) {
   size_t pc = klinstarr_size(&gen->code);

@@ -35,7 +35,6 @@ KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con);
 KlConEntry* klcontbl_search(KlConTbl* contbl, KlConstant* con);
 KlConEntry* klcontbl_get(KlConTbl* contbl, KlConstant* con);
 
-
 static inline KlConEntry* klcontbl_getbyindex(KlConTbl* contbl, size_t index) {
   return klcast(KlConEntry*, karray_access(&contbl->entries, index));
 }

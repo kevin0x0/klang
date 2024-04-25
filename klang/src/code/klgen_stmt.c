@@ -599,7 +599,7 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlCstStmtGFor* gforcst) {
   size_t iterable = forbase;
   klgen_exprtarget_noconst(gen, gforcst->expr, iterable);
   klgen_stackfree(gen, forbase);
-  KlConstant constant = { .type = KL_STRING, .string = gen->string.itermethod };
+  KlConstant constant = { .type = KL_STRING, .string = gen->strings->itermethod };
   KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
   klgen_oomifnull(gen, conent);
   klgen_emitmethod(gen, iterable, conent->index, 0, 3, forbase, klgen_cstposition(gforcst));

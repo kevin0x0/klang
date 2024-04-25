@@ -5,6 +5,7 @@
 #include "klang/include/value/klbool.h"
 #include "klang/include/value/klcfunc.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define klvalue_collectable(value)          ((value)->type >= KL_COLLECTABLE)

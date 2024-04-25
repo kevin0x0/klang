@@ -100,7 +100,7 @@ static void klgen_exprfunc_deconstruct_params(KlGenUnit* gen, KlCstTuple* funcpa
 void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
   size_t stktop = klgen_stacktop(gen);
   KlGenUnit newgen;
-  if (kl_unlikely(!klgen_init(&newgen, gen->symtblpool, gen->strtbl, gen, gen->input, gen->klerror)))
+  if (kl_unlikely(!klgen_init(&newgen, gen->symtblpool, gen->strings, gen->strtbl, gen, gen->input, gen->klerror)))
     klgen_error_fatal(gen, "out of memory");
   if (setjmp(newgen.jmppos) == 0) {
     /* the scope is already created in klgen_init() */
@@ -793,7 +793,7 @@ static void klgen_exprnew(KlGenUnit* gen, KlCstNew* newcst, size_t target) {
   size_t stktop = klgen_stackalloc1(gen);
   klgen_emitmove(gen, stktop, target, 1, klgen_cstposition(newcst));
   size_t narg = klgen_passargs(gen, newcst->args);
-  KlConstant con = { .type = KL_STRING, .string = gen->string.constructor };
+  KlConstant con = { .type = KL_STRING, .string = gen->strings->constructor };
   KlConEntry* conent = klcontbl_get(gen->contbl, &con);
   klgen_oomifnull(gen, conent);
   klgen_emitmethod(gen, stktop, conent->index, narg, 0, stktop, klgen_cstposition(newcst));

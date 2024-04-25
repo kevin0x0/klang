@@ -1,8 +1,6 @@
 #ifndef KEVCC_KLANG_INCLUDE_MISC_KLUTILS_H
 #define KEVCC_KLANG_INCLUDE_MISC_KLUTILS_H
 
-#include <stdbool.h>
-
 #define kl_likely(expr)       (__builtin_expect(!!(expr), 1))
 #define kl_unlikely(expr)     (__builtin_expect(!!(expr), 0))
 
@@ -33,7 +31,7 @@ kl_noreturn void kl_abort(const char* expr, const char* head, int line_no, const
 #if defined (__GNUC__) || defined (__clang__)
 #define kl_fallthrough  __attribute__ ((fallthrough))
 #else
-#define kl_fallthrough  (void)0;
+#define kl_fallthrough  /* fall through */
 #endif
 
 

@@ -5,6 +5,7 @@
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/vm/klinst.h"
 #include <string.h>
+#include <unistd.h>
 
 kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
 kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
@@ -27,7 +28,34 @@ void klgen_validate(KlGenUnit* gen) {
     klgen_error_fatal(gen, "refereces too many variables from upper function");
 }
 
-bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTbl* strtbl, KlGenUnit* prev, Ki* input, KlError* klerror) {
+bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings) {
+  memset(strings, 0, sizeof (KlGUCommonString));
+#define newstring(member, str) {                                                \
+  char* _str = klstrtbl_newstring(strtbl, str);                                 \
+  if (kl_unlikely(!_str)) {                                                     \
+    return false;                                                               \
+  } else {                                                                      \
+    strings->member.id = klstrtbl_stringid(strtbl, _str);                       \
+    strings->member.length = sizeof (str) - 1;                                  \
+  }                                                                             \
+}
+
+  newstring(pattern, "pattern ");
+  newstring(pattern_add, "pattern +");
+  newstring(pattern_sub, "pattern -");
+  newstring(pattern_mul, "pattern *");
+  newstring(pattern_div, "pattern /");
+  newstring(pattern_idiv, "pattern //");
+  newstring(pattern_mod, "pattern %");
+  newstring(pattern_neg, "pattern u-");
+  newstring(pattern_concat, "pattern ..");
+  newstring(itermethod, "<-");
+  newstring(itermethod, "constructor");
+  return true;
+#undef newstring
+}
+
+bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* strings, KlStrTbl* strtbl, KlGenUnit* prev, Ki* input, KlError* klerror) {
   if (kl_unlikely(!(gen->symtbl = klsymtblpool_alloc(symtblpool, strtbl, NULL)))) {
     return false;
   }
@@ -60,6 +88,7 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTbl* strtbl, KlGe
     return false;
   }
   gen->strtbl = strtbl;
+  gen->strings = strings;
   gen->stksize = 0;
   gen->framesize = 0;
   gen->info.jumpinfo = NULL;
@@ -78,22 +107,6 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlStrTbl* strtbl, KlGe
     gen->config.debug = false;
   }
 
-
-  char* constructor = klstrtbl_newstring(strtbl, "constructor");
-  char* itermethod = klstrtbl_newstring(strtbl, "<-");
-  if (kl_unlikely(!constructor || !itermethod)) {
-    klsymtblpool_dealloc(symtblpool, gen->symtbl);
-    klsymtblpool_dealloc(symtblpool, gen->reftbl);
-    klcontbl_delete(gen->contbl);
-    klcodearr_destroy(&gen->subfunc);
-    klinstarr_destroy(&gen->code);
-    klfparr_destroy(&gen->position);
-    return false;
-  }
-  gen->string.constructor.id = klstrtbl_stringid(gen->strtbl, constructor);
-  gen->string.constructor.length = strlen("constructor");
-  gen->string.itermethod.id = klstrtbl_stringid(gen->strtbl, itermethod);
-  gen->string.itermethod.length = strlen("<-");
   return true;
 }
 
