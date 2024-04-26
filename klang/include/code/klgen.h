@@ -62,9 +62,9 @@ struct tagKlGenUnit {
     KlSymTbl* break_scope;
   } info;
   KlGenUnit* prev;
-  Ki* input;
   jmp_buf jmppos;
   KlError* klerror;
+  Ki* input;
   struct {
     char* inputname;
     bool debug;
@@ -76,6 +76,8 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* stri
 void klgen_destroy(KlGenUnit* gen);
 
 bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings);
+
+KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, KlError* klerr);
 /* check range */
 void klgen_validate(KlGenUnit* gen);
 /* convert to KlCode and destroy self.

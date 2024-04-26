@@ -6,7 +6,6 @@
 #include "klang/include/value/klclosure.h"
 #include "klang/include/vm/klexception.h"
 #include <setjmp.h>
-#include <stddef.h>
 
 typedef struct tagKlState KlState;
 

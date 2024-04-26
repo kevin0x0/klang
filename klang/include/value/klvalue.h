@@ -6,7 +6,6 @@
 #include "klang/include/value/klcfunc.h"
 
 #include <stdbool.h>
-#include <stdint.h>
 
 #define klvalue_collectable(value)          ((value)->type >= KL_COLLECTABLE)
 #define klvalue_dotable(value)              ((value)->type >= KL_DOTABLE && (value)->type <= KL_DOTABLE_END)

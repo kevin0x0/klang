@@ -202,6 +202,8 @@ typedef uint32_t KlInstruction;
 #define KLOPCODE_GFORLOOP           (98)
 #define KLOPCODE_ASYNC              (99)
 #define KLOPCODE_YIELD              (100)
+#define KLOPCODE_VARARG             (101)
+#define KLOPCODE_NINST              (102)
 
 
 /* extra information for some instructions */
@@ -315,6 +317,7 @@ typedef uint32_t KlInstruction;
 #define klinst_gforloop(a, nret)                          klinst_AX(KLOPCODE_GFORLOOP, (a), (nret))
 #define klinst_async(a, f)                                klinst_ABC(KLOPCODE_ASYNC, (a), (f), (0))
 #define klinst_yield(first, nres, nwanted)                klinst_AXY(KLOPCODE_YIELD, (first), (nres), (nwanted))
+#define klinst_vararg(a, nwanted)                         klinst_AXY(KLOPCODE_VARARG, (a), (nwanted), (0))
 #define klinst_gforloopextra(offset)                      klinst_extra_i((offset))
 #define klinst_extra_xyz(x, y, z)                         klinst_XYZ(KLOPCODE_EXTRA, (x), (y), (z))
 #define klinst_extra_xi(x, imm)                           klinst_XI(KLOPCODE_EXTRA, (x), (imm))

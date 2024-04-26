@@ -44,10 +44,10 @@ struct tagKlCallInfo {
     KlInstruction* savedpc;     /* pointed to current klang instruction */
     KlCIUD resume_ud;           /* userdata for C call when coroutine resuming */
   };
-  uint32_t status;
   int32_t retoff;               /* the offset of position relative to stkbase where returned values place. */
+  uint32_t narg;                 /* actual number of received arguments */
   uint8_t nret;                 /* expected number of returned value */
-  uint8_t narg;                 /* actual number of received arguments */
+  uint8_t status;
 };
 
 typedef struct tagKlState {

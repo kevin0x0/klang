@@ -4,7 +4,6 @@
 #include "klang/include/value/klstring.h"
 #include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klexception.h"
-#include <stdbool.h>
 
 #define KL_CLASS_TAG_SHARED     (0x1)
 

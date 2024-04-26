@@ -1,4 +1,6 @@
 #include "klang/include/code/klcode.h"
+#include "klang/include/code/klgen.h"
+#include "klang/include/code/klsymtbl.h"
 #include "klang/include/misc/klutils.h"
 
 
@@ -32,4 +34,8 @@ void klcode_delete(KlCode* code) {
   free(code->nestedfunc);
   free(code->strtbl);
   free(code);
+}
+
+KlCode* klcode_create_fromcst(KlCst* cst, KlStrTbl* strtbl, Ki* input, KlError* klerr) {
+  return klgen_file(cst, strtbl, input, klerr);
 }

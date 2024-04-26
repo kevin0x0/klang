@@ -3,7 +3,6 @@
 
 #include "klang/include/mm/klmm.h"
 #include "klang/include/value/klvalue.h"
-#include <stdbool.h>
 
 #define klstack_pushobj(stack, obj, type)   klstack_pushgcobj((stack), klmm_to_gcobj((obj)), (type))
 

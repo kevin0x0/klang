@@ -6,7 +6,6 @@
 #include "klang/include/value/klvalue.h"
 #include "klang/include/vm/klexception.h"
 #include "klang/include/value/klstate.h"
-#include <stddef.h>
 
 
 #define klexec_savestack(state, stkptr)     ((stkptr) - klstack_raw(klstate_stack((state))))
@@ -27,7 +26,7 @@ static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int r
 static inline KlCallInfo* klexec_newed_callinfo(KlState* state);
 KlCallInfo* klexec_alloc_callinfo(KlState* state);
 
-static inline void klexec_setnils(KlValue* vals, size_t ncopy);
+static inline void klexec_setnils(KlValue* vals, size_t nnil);
 
 /* 'a' should be stack value */
 KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue* c, KlString* op);
@@ -56,8 +55,8 @@ static inline KlCallInfo* klexec_newed_callinfo(KlState* state) {
   return state->callinfo->next;
 }
 
-static inline void klexec_setnils(KlValue* vals, size_t ncopy) {
-  while (ncopy--) klvalue_setnil(vals);
+static inline void klexec_setnils(KlValue* vals, size_t nnil) {
+  while (nnil--) klvalue_setnil(vals);
 }
 
 #endif

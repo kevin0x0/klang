@@ -31,6 +31,13 @@ void klgen_exprarrgen(KlGenUnit* gen, KlCstArrayGenerator* arrgencst, size_t tar
   }
 }
 
+void klgen_exprvararg(KlGenUnit* gen, KlCstVararg* varargcst, size_t nwanted, size_t target) {
+  size_t stktop = klgen_stacktop(gen);
+  klgen_emit(gen, klinst_vararg(target, nwanted), klgen_cstposition(varargcst));
+  if (nwanted != KLINST_VARRES)
+    klgen_stackfree(gen, stktop > target + nwanted ? stktop : target + nwanted);
+}
+
 static inline size_t klgen_takeval(KlGenUnit* gen, KlCst* cst, size_t nwanted, size_t target) {
   if (nwanted == KLINST_VARRES) {
     return klgen_takeall(gen, cst, target);
@@ -133,6 +140,9 @@ void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
     if (target == stktop)
       klgen_stackalloc1(gen);
   } else {
+    klgen_destroy(&newgen);
+    if (target == stktop)
+      klgen_stackalloc1(gen);
   }
 }
 
@@ -319,7 +329,8 @@ void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target) {
       break;
     }
     case KLCST_EXPR_VARARG: {
-      kltodo("implement vararg");
+      klgen_exprvararg(gen, klcast(KlCstVararg*, cst), nval, target);
+      break;
     }
     default: {
       size_t stktop = klgen_stacktop(gen);
@@ -353,7 +364,10 @@ size_t klgen_trytakeall(KlGenUnit* gen, KlCst* cst, KlCodeVal* val) {
       return nres;
     }
     case KLCST_EXPR_VARARG: {
-      kltodo("implement vararg");
+      size_t stktop = klgen_stacktop(gen);
+      klgen_exprvararg(gen, klcast(KlCstVararg*, cst), KLINST_VARRES, stktop);
+      *val = klcodeval_stack(stktop);
+      return KLINST_VARRES;
     }
     default: {
       *val = klgen_expr_onstack(gen, cst);
@@ -379,7 +393,8 @@ size_t klgen_takeall(KlGenUnit* gen, KlCst* cst, size_t target) {
       return klgen_exprwhere(gen, klcast(KlCstWhere*, cst), KLINST_VARRES, target);
     }
     case KLCST_EXPR_VARARG: {
-      kltodo("implement vararg");
+      klgen_exprvararg(gen, klcast(KlCstVararg*, cst), KLINST_VARRES, target);
+      return KLINST_VARRES;
     }
     default: {
       klgen_exprtarget_noconst(gen, cst, target);
@@ -866,7 +881,9 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlCst* cst) {
       return klgen_identifier(gen, klcast(KlCstIdentifier*, cst));
     }
     case KLCST_EXPR_VARARG: {
-      kltodo("implement vararg");
+      size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
+      klgen_exprvararg(gen, klcast(KlCstVararg*, cst), 1, target);
+      return klcodeval_stack(target);
     }
     case KLCST_EXPR_TUPLE: {
       return klgen_tuple(gen, klcast(KlCstTuple*, cst));
@@ -957,7 +974,8 @@ KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlCst* cst, size_t target) {
       return klcodeval_stack(target);
     }
     case KLCST_EXPR_VARARG: {
-      kltodo("implement vararg");
+      klgen_exprvararg(gen, klcast(KlCstVararg*, cst), 1, target);
+      return klcodeval_stack(target);
     }
     case KLCST_EXPR_TUPLE: {
       return klgen_tuple_target(gen, klcast(KlCstTuple*, cst), target);

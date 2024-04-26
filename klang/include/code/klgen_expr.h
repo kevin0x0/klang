@@ -16,8 +16,16 @@ static inline KlCodeVal klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst);
 static inline KlCodeVal klgen_tuple_target(KlGenUnit* gen, KlCstTuple* tuplecst, size_t target);
 static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t nwanted);
 void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target);
-/* try to generate code for expressions that can have variable number of results */
+/* try to generate code for expressions that can have variable number of results.
+ * the results may not on the top of stack.
+ * for example:
+ *  let a = 0;
+ *  let b = 1;
+ *  return a;
+ * in this case, this function does not generate code that moves 'a' to top of stack.
+ * */
 size_t klgen_trytakeall(KlGenUnit* gen, KlCst* cst, KlCodeVal* val);
+/* try to generate code for expressions that can have variable number of results */
 size_t klgen_takeall(KlGenUnit* gen, KlCst* cst, size_t target);
 size_t klgen_passargs(KlGenUnit* gen, KlCst* args);
 KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target);

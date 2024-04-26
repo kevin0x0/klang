@@ -6,9 +6,8 @@
 
 
 size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target);
-/* deconstruct a val to top of stack.
- * do assign id and newsymbol. */
-size_t klgen_pattern_binding_tostktop(KlGenUnit* gen, KlCst* pattern, size_t val);
+/* deconstruct a val to top of stack. */
+void klgen_pattern_binding_tostktop(KlGenUnit* gen, KlCst* pattern, size_t val);
 size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern);
 bool klgen_pattern_fastbinding(KlGenUnit* gen, KlCst* pattern);
 

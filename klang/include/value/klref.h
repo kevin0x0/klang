@@ -3,8 +3,7 @@
 
 #include "klang/include/mm/klmm.h"
 #include "klang/include/value/klvalue.h"
-#include <stdlib.h>
-#include <stdbool.h>
+#include <stddef.h>
 
 typedef struct tagKlRefInfo {
   uint8_t index;

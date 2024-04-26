@@ -7,7 +7,6 @@
 #include "klang/include/value/klvalue.h"
 
 #include <stddef.h>
-#include <stdbool.h>
 
 typedef struct tagKlArray {
   KlObject objbase;

@@ -251,7 +251,6 @@ static inline bool klgen_canassign(KlCst* lval) {
 }
 
 static void klgen_stmtassign(KlGenUnit* gen, KlCstStmtAssign* assigncst) {
-  kltodo("support pattern deconstruction");
   KlCst** patterns = klcast(KlCstTuple*, assigncst->lvals)->elems;
   size_t npattern = klcast(KlCstTuple*, assigncst->lvals)->nelem;
   KlCst** rvals = klcast(KlCstTuple*, assigncst->rvals)->elems;
@@ -267,7 +266,7 @@ static void klgen_stmtassign(KlGenUnit* gen, KlCstStmtAssign* assigncst) {
   } else {
     for (size_t i = 0; i < npattern; ++i) {
       if (!klgen_canassign(patterns[i])) {
-        klgen_deconstruct_to_stktop(gen, patterns, npattern - 1, rvals, nrval - 1, rvals_pos);
+        klgen_deconstruct_to_stktop(gen, patterns, npattern, rvals, nrval, rvals_pos);
         klgen_patterns_do_assignment(gen, patterns, npattern);
         klgen_stackfree(gen, base);
         return;
@@ -457,7 +456,7 @@ static void klgen_stmtreturn(KlGenUnit* gen, KlCstStmtReturn* returncst) {
   size_t stktop = klgen_stacktop(gen);
   if (res->nelem == 1) {
     KlCodeVal retval;
-    size_t nres = klgen_trytakeall(gen, returncst->retval, &retval);
+    size_t nres = klgen_trytakeall(gen, res->elems[0], &retval);
     kl_assert(retval.kind == KLVAL_STACK, "");
     kl_assert(nres == 1 || nres == KLINST_VARRES, "");
     if (needclose)

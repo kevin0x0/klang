@@ -1,6 +1,7 @@
 #include "klang/include/code/klgen.h"
 #include "klang/include/code/klcode.h"
 #include "klang/include/code/klcontbl.h"
+#include "klang/include/code/klgen_stmt.h"
 #include "klang/include/code/klsymtbl.h"
 #include "klang/include/cst/klcst_expr.h"
 #include "klang/include/vm/klinst.h"
@@ -98,8 +99,8 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* stri
   gen->info.continue_scope = NULL;
   gen->prev = prev;
   gen->klerror = klerror;
-
   gen->input = input;
+
   if (prev) {
     gen->config = prev->config;
   } else {
@@ -318,6 +319,7 @@ void klgen_emitloadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePositi
 
 void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, KlFilePosition position) {
   if (nmove == 0) return;
+  kl_assert(from != target, "");
   if (nmove == KLINST_VARRES) {
     klgen_emit(gen, klinst_multimove(target, from, nmove), position);
     return;
@@ -345,3 +347,45 @@ void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, Kl
   }
 }
 
+KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, KlError* klerr) {
+  /* create genunit */
+  KlGUCommonString strings;
+  if (kl_unlikely(!klgen_init_commonstrings(strtbl, &strings)))
+    return NULL;
+  KlSymTblPool symtblpool;
+  klsymtblpool_init(&symtblpool);
+  KlGenUnit gen;
+  if (kl_unlikely(!klgen_init(&gen, &symtblpool, &strings, strtbl, NULL, input, klerr))) {
+    klsymtblpool_destroy(&symtblpool);
+    return NULL;
+  }
+  gen.vararg = true;
+  if (setjmp(gen.jmppos) == 0) {
+    /* the scope is already created in klgen_init() */
+    /* handle variable arguments */
+    klgen_emit(&gen, klinst_adjustargs(), klgen_position(klcst_begin(cst), klcst_begin(cst)));
+
+    /* generate code for function body */
+    kl_assert(klcst_kind(cst) == KLCST_STMT_BLOCK, "");
+    klgen_stmtlist(&gen, klcast(KlCstStmtList*, cst));
+    /* add a return statement if 'return' is missing */
+    if (!klcst_mustreturn(klcast(KlCstStmtList*, cst)))
+      klgen_emit(&gen, klinst_return0(), klgen_position(klcst_end(cst), klcst_end(cst)));
+    klgen_validate(&gen);
+    /* code generation is done */
+    /* convert the 'newgen' to KlCode */
+    KlCode* funccode = klgen_tocode_and_destroy(&gen, klcast(KlCstTuple*, funccode->nparam)->nelem);
+    klgen_oomifnull(&gen, funccode);
+    return funccode;
+  } else {
+    klgen_destroy(&gen);
+    return NULL;
+  }
+}
+
+void klgen_error(KlGenUnit* gen, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  klerror_errorv(gen->klerror, gen->input, gen->config.inputname, begin, end, format, args);
+  va_end(args);
+}
