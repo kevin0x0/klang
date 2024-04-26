@@ -565,6 +565,28 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
   }                                                                               \
 }
 
+#define klexec_bindiv_i(op, a, b, imm) {                                          \
+  if (kl_likely(klvalue_checktype((b), KL_FLOAT))) {                              \
+    klvalue_setfloat((a), klop_##op(klvalue_getnumber((b)),                       \
+                                    klcast(KlFloat, (imm))));                     \
+  } else {                                                                        \
+    klexec_savestate(callinfo->top);  /* in case of error and gc */               \
+    KlValue tmp;                                                                  \
+    klvalue_setint(&tmp, (imm));                                                  \
+    KlString* opname = state->common->string.op;                                  \
+    KlException exception = klexec_dobinopmethod(state, (a), (b), &tmp, opname);  \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
+      KlValue* newbase = state->callinfo->base;                                   \
+      klexec_updateglobal(newbase);                                               \
+    } else {                                                                      \
+      if (kl_unlikely(exception)) return exception;                               \
+      /* C function or C closure */                                               \
+      /* stack may have grown. restore stkbase. */                                \
+      stkbase = callinfo->base;                                                   \
+    }                                                                             \
+  }                                                                               \
+}
+
 #define klexec_binmod_i(op, a, b, imm) {                                          \
   if (kl_likely(klvalue_checktype((b), KL_INT))) {                                \
     if (kl_unlikely((imm) == 0))                                                  \
@@ -887,6 +909,13 @@ KlException klexec_execute(KlState* state) {
         klexec_binop_i(mul, a, b, c);
         break;
       }
+      case KLOPCODE_DIVI: {
+        KlValue* a = stkbase + KLINST_ABI_GETA(inst);
+        KlValue* b = stkbase + KLINST_ABI_GETB(inst);
+        KlInt imm = KLINST_ABI_GETI(inst);
+        klexec_bindiv_i(div, a, b, imm);
+        break;
+      }
       case KLOPCODE_MODI: {
         KlValue* a = stkbase + KLINST_ABI_GETA(inst);
         KlValue* b = stkbase + KLINST_ABI_GETB(inst);
@@ -898,7 +927,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_ABI_GETA(inst);
         KlValue* b = stkbase + KLINST_ABI_GETB(inst);
         KlInt imm = KLINST_ABI_GETI(inst);
-        klexec_binidiv_i(div, a, b, imm);
+        klexec_binidiv_i(idiv, a, b, imm);
         break;
       }
       case KLOPCODE_ADDC: {
@@ -940,7 +969,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);
         KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         KlValue* c = constants + KLINST_ABC_GETC(inst);
-        klexec_binidiv(div, a, b, c);
+        klexec_binidiv(idiv, a, b, c);
         break;
       }
       case KLOPCODE_NEG: {
