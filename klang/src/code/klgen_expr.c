@@ -494,6 +494,8 @@ static KlInstruction klgen_bininsti(KlCstBin* bincst, size_t stkid, size_t lefti
       return klinst_subi(stkid, leftid, imm);
     case KLTK_MUL:
       return klinst_muli(stkid, leftid, imm);
+    case KLTK_DIV:
+      return klinst_divi(stkid, leftid, imm);
     case KLTK_MOD:
       return klinst_modi(stkid, leftid, imm);
     case KLTK_IDIV:
