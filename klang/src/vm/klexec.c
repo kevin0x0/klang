@@ -961,7 +961,7 @@ KlException klexec_execute(KlState* state) {
         }
         break;
       }
-      case KLOPCODE_CALL: {
+      case KLOPCODE_SCALL: {
         KlValue* callable = stkbase + KLINST_AXY_GETA(inst);
         size_t narg = KLINST_AXY_GETX(inst);
         if (narg == KLINST_VARRES)
@@ -969,6 +969,30 @@ KlException klexec_execute(KlState* state) {
         size_t nret = KLINST_AXY_GETY(inst);
         klexec_savestate(callable + 1 + narg);
         KlCallInfo* newci = klexec_new_callinfo(state, nret, -1);
+        if (kl_unlikely(!newci))
+          return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
+        KlException exception = klexec_callprepare(state, callable, narg, klexec_callprep_callback_for_call);
+        if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
+          KlValue* newbase = state->callinfo->base;
+          klexec_updateglobal(newbase);
+        } else {
+          if (kl_unlikely(exception)) return exception;
+          /* C function or C closure */
+          /* stack may have grown. restore stkbase. */
+          stkbase = callinfo->base;
+        }
+        break;
+      }
+      case KLOPCODE_CALL: {
+        KlValue* callable = stkbase + KLINST_AXY_GETA(inst);
+        KlInstruction extra = *pc++;
+        kl_assert(KLINST_GET_OPCODE(extra) == KLOPCODE_EXTRA, "something wrong in code generation");
+        size_t narg = KLINST_XYZ_GETX(extra);
+        if (narg == KLINST_VARRES)
+          narg = klstate_stktop(state) - callable - 1;
+        size_t nret = KLINST_XYZ_GETY(extra);
+        klexec_savestate(callable + 1 + narg);
+        KlCallInfo* newci = klexec_new_callinfo(state, nret, (stkbase + KLINST_AXY_GETY(extra)) - callable);
         if (kl_unlikely(!newci))
           return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
         KlException exception = klexec_callprepare(state, callable, narg, klexec_callprep_callback_for_call);

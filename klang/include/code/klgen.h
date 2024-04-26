@@ -197,6 +197,11 @@ static inline void klgen_emitmethod(KlGenUnit* gen, size_t obj, size_t method, s
   klgen_emit(gen, klinst_methodextra(narg, nret, retpos), position);
 }
 
+static inline void klgen_emitcall(KlGenUnit* gen, size_t callable, size_t narg, size_t nret, size_t retpos, KlFilePosition position) {
+  klgen_emit(gen, klinst_call(callable), position);
+  klgen_emit(gen, klinst_callextra(narg, nret, retpos), position);
+}
+
 static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position) {
   if (val->kind == KLVAL_STACK) return;
   size_t stkid = klgen_stackalloc1(gen);

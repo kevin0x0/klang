@@ -287,13 +287,15 @@ void klgen_exprcall(KlGenUnit* gen, KlCstCall* callcst, size_t nret, size_t targ
   size_t base = klgen_stacktop(gen);
   klgen_exprtarget_noconst(gen, callcst->callable, base);
   size_t narg = klgen_passargs(gen, callcst->args);
-  klgen_emit(gen, klinst_call(base, narg, nret), klgen_cstposition(callcst));
-  if (nret != KLINST_VARRES)
-    klgen_stackfree(gen, base + nret);
-  if (nret == 0 || target == base) return;
-  klgen_emitmove(gen, target, base, nret, klgen_cstposition(callcst));
-  if (nret != KLINST_VARRES)
-    klgen_stackfree(gen, target + nret > base ? target + nret : base);
+  if (target == base) {
+    klgen_emit(gen, klinst_scall(base, narg, nret), klgen_cstposition(callcst));
+    if (nret != KLINST_VARRES)
+      klgen_stackfree(gen, base + nret);
+  } else {
+    klgen_emitcall(gen, base, narg, nret, target, klgen_cstposition(callcst));
+    if (nret != KLINST_VARRES)
+      klgen_stackfree(gen, target + nret > base ? target + nret : base);
+  }
 }
 
 void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target) {

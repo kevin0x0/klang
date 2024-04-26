@@ -53,10 +53,10 @@ void fibonacci(KlState* state) {
   code[3] = klinst_condjmp(true, 7);
   code[4] = klinst_loadref(1, 0);
   code[5] = klinst_subi(2, 0, 1);
-  code[6] = klinst_call(1, 1, 1);
+  code[6] = klinst_scall(1, 1, 1);
   code[7] = klinst_loadref(2, 0);
   code[8] = klinst_subi(3, 0, 2);
-  code[9] = klinst_call(2, 1, 1);
+  code[9] = klinst_scall(2, 1, 1);
   code[10] = klinst_add(1, 1, 2);
   code[11] = klinst_return1(1);
   klapi_pushnil(state, 1);
