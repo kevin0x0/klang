@@ -1770,6 +1770,8 @@ KlException klexec_execute(KlState* state) {
           break;
         }
         /* else is array with exactly 'nwanted' elements */
+        if (opcode == KLOPCODE_PMTUP) /* is pattern binding? */
+          ++pc; /* skip extra instruction */
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         KlValue* end = klarray_iter_end(array);
         for (KlValue* itr = klarray_iter_begin(array); itr != end; ++itr)
@@ -1790,6 +1792,7 @@ KlException klexec_execute(KlState* state) {
           pc += KLINST_XI_GETI(extra);
           break;
         }
+        ++pc; /* skip pmmappost */
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         size_t nwanted = KLINST_ABX_GETX(inst);
         KlMap* map = klvalue_getobj(b, KlMap*);
@@ -1810,6 +1813,7 @@ KlException klexec_execute(KlState* state) {
             if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
               KlValue* newbase = state->callinfo->base;
               klexec_updateglobal(newbase);
+              --pc; /* do pmmappost instruction */
               break;  /* break to execute new function */
             } else {
               if (kl_unlikely(exception)) return exception;
