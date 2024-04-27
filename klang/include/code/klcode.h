@@ -37,7 +37,7 @@ KlCode* klcode_create(KlRefInfo* refinfo, size_t nref, KlConstant* constants, si
                       size_t framesize);
 void klcode_delete(KlCode* code);
 
-KlCode* klcode_create_fromcst(KlCst* cst, KlStrTbl* strtbl, Ki* input, KlError* klerr);
+KlCode* klcode_create_fromcst(KlCst* cst, KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, bool debug);
 void klcode_print(KlCode* code, Ko* out);
 
 #endif

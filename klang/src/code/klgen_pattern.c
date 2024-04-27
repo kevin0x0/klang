@@ -108,7 +108,7 @@ static KlStrDesc klgen_pattern_methodname(KlGenUnit* gen, KlCst* cst) {
     }
   } else if (klcst_kind(cst) == KLCST_EXPR_CALL) {
     KlCstCall* call = klcast(KlCstCall*, cst);
-    if (klcst_kind(call->callable) != KLTK_ID) {
+    if (klcst_kind(call->callable) != KLCST_EXPR_ID) {
       klgen_error(gen, klcst_begin(call->callable), klcst_end(call->callable), "should be an identifier in pattern binding and pattern matching");
       return gen->strings->pattern;
     }

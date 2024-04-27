@@ -66,7 +66,7 @@ struct tagKlGenUnit {
   KlError* klerror;
   Ki* input;
   struct {
-    char* inputname;
+    const char* inputname;
     bool debug;
   } config;
   KlGUCommonString* strings;
@@ -77,7 +77,7 @@ void klgen_destroy(KlGenUnit* gen);
 
 bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings);
 
-KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, KlError* klerr);
+KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, bool debug);
 /* check range */
 void klgen_validate(KlGenUnit* gen);
 /* convert to KlCode and destroy self.

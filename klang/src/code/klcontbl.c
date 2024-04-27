@@ -223,6 +223,6 @@ KlConEntry* klcontbl_get(KlConTbl* contbl, KlConstant* constant) {
   newconentry->index = contbl->size++;
   newconentry->next = contbl->array[index];
   contbl->array[index] = newconentry;
-  kl_assert(newconentry->index = karray_size(&contbl->entries) - 1, "");
+  kl_assert(newconentry->index == karray_size(&contbl->entries) - 1, "");
   return newconentry;
 }

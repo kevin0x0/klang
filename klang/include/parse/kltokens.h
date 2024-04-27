@@ -78,7 +78,7 @@ typedef enum tagKlTokenKind {
 } KlTokenKind;
 
 #define kltoken_isbinop(kind)     ((kind) >= KLTK_CONCAT && (kind) <= KLTK_OR)
-#define kltoken_isarith(kind)     ((kind) >= KLTK_ADD && (kind) <= KLTK_MOD)
+#define kltoken_isarith(kind)     ((kind) >= KLTK_ADD && (kind) <= KLTK_IDIV)
 #define kltoken_isrelation(kind)  ((kind) >= KLTK_LT && (kind) <= KLTK_ISNOT)
 
 const char* kltoken_desc(KlTokenKind kind);

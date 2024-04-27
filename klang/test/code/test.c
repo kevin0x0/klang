@@ -3,7 +3,7 @@
 #include "klang/include/parse/klparser.h"
 #include <time.h>
 
-void codegen_test(KlStrTbl* strtbl, Ki* input, KlError* klerr, KlCst* cst);
+void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, KlCst* cst);
 
 int main(void) {
   const char* filename = "test.kl";
@@ -24,9 +24,10 @@ int main(void) {
   klparser_init(&parser, lex->strtbl, (char*)filename, &klerr);
   kllex_next(lex);
   KlCst* expr = klparser_stmtlist(&parser, lex);
+  if (expr) klcst_setposition(expr, 0, lex->tok.begin);
 
   if (klerr.errcount == 0) {
-    codegen_test(strtbl, input, &klerr, expr);
+    codegen_test(strtbl, input, filename, &klerr, expr);
   }
 
   if (expr) klcst_delete(expr);
@@ -37,7 +38,10 @@ int main(void) {
   return 0;
 }
 
-void codegen_test(KlStrTbl* strtbl, Ki* input, KlError* klerr, KlCst* cst) {
-  KlCode* code = klcode_create_fromcst(cst, strtbl, input, klerr);
-  klcode_
+void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, KlCst* cst) {
+  KlCode* code = klcode_create_fromcst(cst, strtbl, input, inputname, klerr, true);
+  if (kl_unlikely(!code)) return;
+  Ko* ko = kofile_attach(stdout);
+  klcode_print(code, ko);
+  ko_delete(ko);
 }

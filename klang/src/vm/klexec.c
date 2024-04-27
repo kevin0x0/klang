@@ -1537,14 +1537,14 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_TRUEJMP: {
-        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
-        int offset = KLINST_XI_GETI(inst);
+        KlValue* a = stkbase + KLINST_AI_GETA(inst);
+        int offset = KLINST_AI_GETI(inst);
         if (klexec_satisfy(a, KL_TRUE)) pc += offset;
         break;
       }
       case KLOPCODE_FALSEJMP: {
-        KlValue* a = stkbase + KLINST_ABC_GETA(inst);
-        int offset = KLINST_XI_GETI(inst);
+        KlValue* a = stkbase + KLINST_AI_GETA(inst);
+        int offset = KLINST_AI_GETI(inst);
         if (klexec_satisfy(a, KL_FALSE)) pc += offset;
         break;
       }
@@ -1784,7 +1784,7 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_MATCH: {
-        KlValue* a = stkbase + KLINST_AI_GETA(inst);
+        KlValue* a = stkbase + KLINST_AX_GETA(inst);
         KlValue* b = constants + KLINST_AX_GETX(inst);
         if (kl_unlikely(!(klvalue_sametype(a, b) && klvalue_sameinstance(a, b)))) {
           klexec_savestate(callinfo->top);
@@ -2067,7 +2067,7 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_ASYNC: {
-        KlValue* f = stkbase + KLINST_ABC_GETA(inst);
+        KlValue* f = stkbase + KLINST_ABC_GETB(inst);
         klexec_savestate(callinfo->top);
         if (kl_unlikely(klvalue_checktype(f, KL_KCLOSURE))) {
           return klstate_throw(state, KL_E_TYPE,

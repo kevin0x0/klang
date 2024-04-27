@@ -110,7 +110,8 @@ void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
   if (kl_unlikely(!klgen_init(&newgen, gen->symtblpool, gen->strings, gen->strtbl, gen, gen->input, gen->klerror)))
     klgen_error_fatal(gen, "out of memory");
   if (setjmp(newgen.jmppos) == 0) {
-    /* the scope is already created in klgen_init() */
+    /* begin a new scope */
+    klgen_pushsymtbl(&newgen);
     /* handle variable arguments */
     newgen.vararg = funccst->vararg;
     if (newgen.vararg)
@@ -121,8 +122,14 @@ void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
     /* generate code for function body */
     klgen_stmtlist(&newgen, klcast(KlCstStmtList*, funccst->block));
     /* add a return statement if 'return' is missing */
-    if (!klcst_mustreturn(klcast(KlCstStmtList*, funccst->block)))
+    if (!klcst_mustreturn(klcast(KlCstStmtList*, funccst->block))) {
+      if (newgen.symtbl->info.referenced)
+        klgen_emit(&newgen, klinst_close(0), klgen_position(klcst_end(funccst), klcst_end(funccst)));
       klgen_emit(&newgen, klinst_return0(), klgen_position(klcst_end(funccst), klcst_end(funccst)));
+    }
+    /* close the scope */
+    klgen_popsymtbl(&newgen);
+
     klgen_validate(&newgen);
     /* code generation is done */
     /* convert the 'newgen' to KlCode */
@@ -148,7 +155,7 @@ void klgen_exprfunc(KlGenUnit* gen, KlCstFunc* funccst, size_t target) {
 
 static inline size_t abovelog2(size_t num) {
   size_t n = 0;
-  while ((1 << n) < num)
+  while (((size_t)1 << n) < num)
     ++n;
   return n;
 }

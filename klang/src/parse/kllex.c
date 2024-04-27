@@ -223,7 +223,7 @@ static inline void kllex_handlefloat(KlLex* lex, char* buf, size_t len) {
     len = KLLEX_STRLIMIT - 1;
   }
   buf[len] = '\0';
-  lex->tok.intval = strtod(buf, NULL);
+  lex->tok.floatval = strtod(buf, NULL);
 }
 
 static size_t kllex_escapeid(KlLex* lex, char* buf) {

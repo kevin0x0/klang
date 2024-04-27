@@ -286,61 +286,19 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlCstBin* bincst, size
   }
   switch (right.kind) {
     case KLVAL_INTEGER: {
-      KlCodeVal res;
-      if (klinst_inrange(right.intval, 8)) {
-        res = klgen_pushrelinsti(gen, bincst, left.index, right.intval, jumpcond);
-      } else {
-        KlConstant con = { .type = KL_INT, .intval = right.intval };
-        KlConEntry* conent = klcontbl_search(gen->contbl, &con);
-        if (!conent) {
-          size_t nextconidx = klcontbl_nextindex(gen->contbl);
-          if (!klinst_inurange(nextconidx, 8) && klinst_inrange(right.intval, 16)) {
-            size_t stktop = klgen_stackalloc1(gen);
-            klgen_emit(gen, klinst_loadi(stktop, right.intval), klgen_cstposition(bincst->roperand));
-            klgen_stackfree(gen, oristktop);
-            return klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
-          }
-          conent = klcontbl_insert(gen->contbl, &con);
-          klgen_oomifnull(gen, conent);
-        }
-        if (klinst_inurange(conent->index, 8)) {
-          res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
-        } else {
-          size_t stktop = klgen_stackalloc1(gen);
-          klgen_emit(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
-          res = klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
-        }
-      }
+      KlCodeVal res = klinst_inrange(right.intval, 16)
+                    ? klgen_pushrelinsti(gen, bincst, left.index, right.intval, jumpcond)
+                    : klgen_pushrelinstc(gen, bincst, left.index, klgen_newinteger(gen, right.intval), jumpcond);
       klgen_stackfree(gen, oristktop);
       return res;
     }
     case KLVAL_FLOAT: {
-      KlConstant con = { .type = KL_FLOAT, .intval = right.floatval };
-      KlConEntry* conent = klcontbl_get(gen->contbl, &con);
-      klgen_oomifnull(gen, conent);
-      KlCodeVal res;
-      if (klinst_inurange(conent->index, 8)) {
-        res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
-      } else {
-        size_t stktop = klgen_stackalloc1(gen);
-        klgen_emit(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
-        res = klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
-      }
+      KlCodeVal res = klgen_pushrelinstc(gen, bincst, left.index, klgen_newfloat(gen, right.floatval), jumpcond);
       klgen_stackfree(gen, oristktop);
       return res;
     }
     case KLVAL_STRING: {
-      KlConstant con = { .type = KL_STRING, .string = right.string };
-      KlConEntry* conent = klcontbl_get(gen->contbl, &con);
-      klgen_oomifnull(gen, conent);
-      KlCodeVal res;
-      if (klinst_inurange(conent->index, 8)) {
-        res = klgen_pushrelinstc(gen, bincst, left.index, conent->index, jumpcond);
-      } else {
-        size_t stktop = klgen_stackalloc1(gen);
-        klgen_emit(gen, klinst_loadc(stktop, conent->index), klgen_cstposition(bincst->roperand));
-        res = klgen_pushrelinst(gen, bincst, left.index, stktop, jumpcond);
-      }
+      KlCodeVal res = klgen_pushrelinstc(gen, bincst, left.index, klgen_newstring(gen, right.string), jumpcond);
       klgen_stackfree(gen, oristktop);
       return res;
     }

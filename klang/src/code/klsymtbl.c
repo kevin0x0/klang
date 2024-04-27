@@ -163,7 +163,7 @@ void klsymtblpool_destroy(KlSymTblPool* pool) {
   }
   KlSymbol* symbol = pool->symbolpool.symbols;
   while (symbol) {
-    KlSymbol* tmp = symbol;
+    KlSymbol* tmp = symbol->next;
     free(symbol);
     symbol = tmp;
   }

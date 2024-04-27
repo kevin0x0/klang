@@ -41,7 +41,9 @@ KlCst* klparser_stmtexpr(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtif(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtfor(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtwhile(KlParser* parser, KlLex* lex);
+/* do not set file position */
 KlCst* klparser_stmtblock(KlParser* parser, KlLex* lex);
+/* do not set file position */
 KlCst* klparser_stmtlist(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtrepeat(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtreturn(KlParser* parser, KlLex* lex);

@@ -36,6 +36,6 @@ void klcode_delete(KlCode* code) {
   free(code);
 }
 
-KlCode* klcode_create_fromcst(KlCst* cst, KlStrTbl* strtbl, Ki* input, KlError* klerr) {
-  return klgen_file(cst, strtbl, input, klerr);
+KlCode* klcode_create_fromcst(KlCst* cst, KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, bool debug) {
+  return klgen_file(cst, strtbl, input, inputname, klerr, debug);
 }

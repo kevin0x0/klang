@@ -42,7 +42,7 @@ static inline KlCodeVal klcodeval_stack(size_t index);
 static inline KlCodeVal klcodeval_ref(size_t index);
 static inline KlCodeVal klcodeval_string(KlStrDesc str);
 static inline KlCodeVal klcodeval_integer(KlInt intval);
-static inline KlCodeVal klcodeval_float(KlInt floatval);
+static inline KlCodeVal klcodeval_float(KlFloat floatval);
 static inline KlCodeVal klcodeval_bool(KlBool boolval);
 static inline KlCodeVal klcodeval_nil(void);
 static inline KlCodeVal klcodeval_jmp(size_t pc);
@@ -73,8 +73,8 @@ static inline KlCodeVal klcodeval_integer(KlInt intval) {
   return val;
 }
 
-static inline KlCodeVal klcodeval_float(KlInt floatval) {
-  KlCodeVal val = { .kind = KLVAL_FLOAT, .intval = floatval };
+static inline KlCodeVal klcodeval_float(KlFloat floatval) {
+  KlCodeVal val = { .kind = KLVAL_FLOAT, .floatval = floatval };
   return val;
 }
 

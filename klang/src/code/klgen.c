@@ -61,28 +61,24 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* stri
     return false;
   }
   gen->reftbl = gen->symtbl;
-  if (kl_unlikely(gen->contbl = klcontbl_create(8, strtbl))) {
+  if (kl_unlikely(!(gen->contbl = klcontbl_create(8, strtbl)))) {
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
-    klsymtblpool_dealloc(symtblpool, gen->reftbl);
     return false;
   }
   gen->symtblpool = symtblpool;
   if (kl_unlikely(!klcodearr_init(&gen->subfunc, 2))) {
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
-    klsymtblpool_dealloc(symtblpool, gen->reftbl);
     klcontbl_delete(gen->contbl);
     return false;
   }
   if (kl_unlikely(!klinstarr_init(&gen->code, 32))) {
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
-    klsymtblpool_dealloc(symtblpool, gen->reftbl);
     klcontbl_delete(gen->contbl);
     klcodearr_destroy(&gen->subfunc);
     return false;
   }
   if (kl_unlikely(!klfparr_init(&gen->position, 32))) {
     klsymtblpool_dealloc(symtblpool, gen->symtbl);
-    klsymtblpool_dealloc(symtblpool, gen->reftbl);
     klcontbl_delete(gen->contbl);
     klcodearr_destroy(&gen->subfunc);
     klinstarr_destroy(&gen->code);
@@ -150,9 +146,8 @@ KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
   KlCode* code = klcode_create(refinfo, klsymtbl_size(gen->reftbl), constants, klcontbl_size(gen->contbl),
                                insts, lineinfo, codelen, nestedfunc, nnested,
                                gen->strtbl, nparam, gen->framesize);
-  kl_assert(gen->symtbl->parent == gen->reftbl, "");
+  kl_assert(gen->symtbl == gen->reftbl, "");
   klsymtblpool_dealloc(gen->symtblpool, gen->symtbl);
-  klsymtblpool_dealloc(gen->symtblpool, gen->reftbl);
   klcontbl_delete(gen->contbl);
   if (kl_unlikely(!code)) {
     for (size_t i = 0; i < nnested; ++i) {
@@ -195,14 +190,14 @@ KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFilePosi
   KlSymbol* symbol = klsymtbl_search(symtbl, name);
   if (kl_unlikely(symbol)) {
     klgen_error(gen, symbolpos.begin, symbolpos.end,
-                "redefinition of symbol: %*.s",
+                "redefinition of symbol: %.*s",
                 symbol->name.length,
                 klstrtbl_getstring(gen->strtbl, symbol->name.id));
     symbol->attr.idx = idx;
     return symbol;
   }
   symbol = klsymtbl_insert(symtbl, name);
-  if (kl_unlikely(symbol))
+  if (kl_unlikely(!symbol))
     klgen_error_fatal(gen, "out of memory");
   symbol->attr.kind = KLVAL_STACK;
   symbol->attr.idx = idx;
@@ -347,21 +342,27 @@ void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, Kl
   }
 }
 
-KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, KlError* klerr) {
+KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, bool debug) {
   /* create genunit */
   KlGUCommonString strings;
-  if (kl_unlikely(!klgen_init_commonstrings(strtbl, &strings)))
+  if (kl_unlikely(!klgen_init_commonstrings(strtbl, &strings))) {
+    klerror_error(klerr, input, inputname, 0, 0, "out of memory");
     return NULL;
+  }
   KlSymTblPool symtblpool;
   klsymtblpool_init(&symtblpool);
   KlGenUnit gen;
   if (kl_unlikely(!klgen_init(&gen, &symtblpool, &strings, strtbl, NULL, input, klerr))) {
     klsymtblpool_destroy(&symtblpool);
+    klerror_error(klerr, input, inputname, 0, 0, "out of memory");
     return NULL;
   }
   gen.vararg = true;
+  gen.config.inputname = inputname;
+  gen.config.debug = debug;
   if (setjmp(gen.jmppos) == 0) {
-    /* the scope is already created in klgen_init() */
+    /* begin a new scope */
+    klgen_pushsymtbl(&gen);
     /* handle variable arguments */
     klgen_emit(&gen, klinst_adjustargs(), klgen_position(klcst_begin(cst), klcst_begin(cst)));
 
@@ -369,12 +370,18 @@ KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, KlError* klerr) {
     kl_assert(klcst_kind(cst) == KLCST_STMT_BLOCK, "");
     klgen_stmtlist(&gen, klcast(KlCstStmtList*, cst));
     /* add a return statement if 'return' is missing */
-    if (!klcst_mustreturn(klcast(KlCstStmtList*, cst)))
+    if (!klcst_mustreturn(klcast(KlCstStmtList*, cst))) {
+      if (gen.symtbl->info.referenced)
+        klgen_emit(&gen, klinst_close(0), klgen_position(klcst_end(cst), klcst_end(cst)));
       klgen_emit(&gen, klinst_return0(), klgen_position(klcst_end(cst), klcst_end(cst)));
+    }
+    /* close the scope */
+    klgen_popsymtbl(&gen);
+
     klgen_validate(&gen);
     /* code generation is done */
     /* convert the 'newgen' to KlCode */
-    KlCode* funccode = klgen_tocode_and_destroy(&gen, klcast(KlCstTuple*, funccode->nparam)->nelem);
+    KlCode* funccode = klgen_tocode_and_destroy(&gen, 0);
     klgen_oomifnull(&gen, funccode);
     return funccode;
   } else {
