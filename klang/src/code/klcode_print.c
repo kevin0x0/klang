@@ -3,8 +3,8 @@
 #include "klang/include/vm/klinst.h"
 
 static void klcode_print_prefix(KlCode* code, Ko* out, KlInstruction* pc, const char* name) {
-  code->lineinfo ? ko_printf(out, "(%4u, %4u) [%03u] %-15s", code->lineinfo[pc - code->code].begin, code->lineinfo[pc - code->code].end, pc - code->code, name)
-                 : ko_printf(out, "(no line info) [%03u] %-15s", pc - code->code, name);
+  code->posinfo ? ko_printf(out, "(%4u, %4u) [%03u] %-15s", code->posinfo[pc - code->code].begin, code->posinfo[pc - code->code].end, pc - code->code, name)
+                 : ko_printf(out, "(no position info) [%03u] %-15s", pc - code->code, name);
 }
 
 static const char* klcode_get_instname(KlInstruction inst) {
@@ -121,51 +121,51 @@ static void klcode_print_(Ko* out, KlInstruction inst) {
 }
 
 static void klcode_print_A(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4s %4s %4s | ", KLINST_A_GETA(inst), "", "", "");
+  ko_printf(out, "| %4u %4s %4s %4s | ", (unsigned)KLINST_A_GETA(inst), "", "", "");
 }
 
 static void klcode_print_AB(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4u %4s %4s | ", KLINST_ABC_GETA(inst), KLINST_ABC_GETB(inst), "", "");
+  ko_printf(out, "| %4u %4u %4s %4s | ", (unsigned)KLINST_ABC_GETA(inst), (unsigned)KLINST_ABC_GETB(inst), "", "");
 }
 
 static void klcode_print_AX(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4u %4s %4s | ", KLINST_AX_GETA(inst), KLINST_AX_GETX(inst), "", "");
+  ko_printf(out, "| %4u %4u %4s %4s | ", (unsigned)KLINST_AX_GETA(inst), (unsigned)KLINST_AX_GETX(inst), "", "");
 }
 
 static void klcode_print_ABC(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4u %4u %4s | ", KLINST_ABC_GETA(inst), KLINST_ABC_GETB(inst), KLINST_ABC_GETC(inst), "");
+  ko_printf(out, "| %4u %4u %4u %4s | ", (unsigned)KLINST_ABC_GETA(inst), (unsigned)KLINST_ABC_GETB(inst), (unsigned)KLINST_ABC_GETC(inst), "");
 }
 
 static void klcode_print_ABX(Ko* out, KlInstruction inst) {
-  ko_printf(out, "%| 4u %4u %4u %4s | ", KLINST_ABX_GETA(inst), KLINST_ABX_GETB(inst), KLINST_ABX_GETX(inst), "");
+  ko_printf(out, "| %4u %4u %4u %4s | ", (unsigned)KLINST_ABX_GETA(inst), (unsigned)KLINST_ABX_GETB(inst), (unsigned)KLINST_ABX_GETX(inst), "");
 }
 
 static void klcode_print_ABTX(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4u %4u %4u | ", KLINST_ABTX_GETA(inst), KLINST_ABTX_GETB(inst), KLINST_ABTX_GETT(inst), KLINST_ABTX_GETX(inst));
+  ko_printf(out, "| %4u %4u %4u %4u | ", (unsigned)KLINST_ABTX_GETA(inst), (unsigned)KLINST_ABTX_GETB(inst), (unsigned)(KLINST_ABTX_GETT(inst) != 0), (unsigned)KLINST_ABTX_GETX(inst));
 }
 
 static void klcode_print_AXY(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4u %4u %4s | ", KLINST_AXY_GETA(inst), KLINST_AXY_GETX(inst), KLINST_AXY_GETY(inst), "");
+  ko_printf(out, "| %4u %4u %4u %4s | ", (unsigned)KLINST_AXY_GETA(inst), (unsigned)KLINST_AXY_GETX(inst), (unsigned)KLINST_AXY_GETY(inst), "");
 }
 
 static void klcode_print_XYZ(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4u %4u %4s | ", KLINST_XYZ_GETX(inst), KLINST_XYZ_GETY(inst), KLINST_XYZ_GETZ(inst), "");
+  ko_printf(out, "| %4u %4u %4u %4s | ", (unsigned)KLINST_XYZ_GETX(inst), (unsigned)KLINST_XYZ_GETY(inst), (unsigned)KLINST_XYZ_GETZ(inst), "");
 }
 
 static void klcode_print_ABI(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4u %4d %4s | ", KLINST_ABI_GETA(inst), KLINST_ABI_GETB(inst), KLINST_ABI_GETI(inst), "");
+  ko_printf(out, "| %4u %4u %4d %4s | ", (unsigned)KLINST_ABI_GETA(inst), (unsigned)KLINST_ABI_GETB(inst), (signed)KLINST_ABI_GETI(inst), "");
 }
 
 static void klcode_print_AI(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4d %4s %4s | ", KLINST_AI_GETA(inst), KLINST_AI_GETI(inst), "", "");
+  ko_printf(out, "| %4u %4d %4s %4s | ", (unsigned)KLINST_AI_GETA(inst), (signed)KLINST_AI_GETI(inst), "", "");
 }
 
 static void klcode_print_XI(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4d %4s %4s | ", KLINST_XI_GETX(inst), KLINST_AI_GETI(inst), "", "");
+  ko_printf(out, "| %4u %4d %4s %4s | ", KLINST_XI_GETX(inst), (signed)KLINST_AI_GETI(inst), "", "");
 }
 
 static void klcode_print_I(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4d %4s %4s %4s | ", KLINST_I_GETI(inst), "", "", "");
+  ko_printf(out, "| %4d %4s %4s %4s | ", (signed)KLINST_I_GETI(inst), "", "", "");
 }
 
 static void klcode_print_constant(KlCode* code, Ko* out, KlConstant* constant) {
@@ -175,7 +175,7 @@ static void klcode_print_constant(KlCode* code, Ko* out, KlConstant* constant) {
       break;
     }
     case KL_FLOAT: {
-      ko_printf(out, "%lf", constant->floatval);
+      ko_printf(out, "%#lf", constant->floatval);
       break;
     }
     case KL_STRING: {
@@ -203,8 +203,8 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     }
     case KLOPCODE_MULTIMOVE: {
       klcode_print_ABX(out, inst);
-      if (KLINST_ABX_GETX(inst) == KLINST_VARRES)
-        ko_printf(out, "move all");
+      size_t nmove = KLINST_ABX_GETX(inst);
+      nmove == KLINST_VARRES ? ko_printf(out, "move all") : ko_printf(out, "move %u values", nmove);
       return pc;
     }
     case KLOPCODE_ADD: {
@@ -237,26 +237,32 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     }
     case KLOPCODE_ADDI: {
       klcode_print_ABI(out, inst);
+      ko_printf(out, "%d", KLINST_ABI_GETI(inst));
       return pc;
     }
     case KLOPCODE_SUBI: {
       klcode_print_ABI(out, inst);
+      ko_printf(out, "%d", KLINST_ABI_GETI(inst));
       return pc;
     }
     case KLOPCODE_MULI: {
       klcode_print_ABI(out, inst);
+      ko_printf(out, "%d", KLINST_ABI_GETI(inst));
       return pc;
     }
     case KLOPCODE_DIVI: {
       klcode_print_ABI(out, inst);
+      ko_printf(out, "%d", KLINST_ABI_GETI(inst));
       return pc;
     }
     case KLOPCODE_MODI: {
       klcode_print_ABI(out, inst);
+      ko_printf(out, "%d", KLINST_ABI_GETI(inst));
       return pc;
     }
     case KLOPCODE_IDIVI: {
       klcode_print_ABI(out, inst);
+      ko_printf(out, "%d", KLINST_ABI_GETI(inst));
       return pc;
     }
     case KLOPCODE_ADDC: {
@@ -297,13 +303,13 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       klcode_print_AXY(out, inst);
       size_t narg = KLINST_AXY_GETX(inst);
       size_t nret = KLINST_AXY_GETY(inst);
-      narg == KLINST_VARRES ? ko_printf(out, "all arguments") : ko_printf(out, "%u arguments", narg);
-      nret == KLINST_VARRES ? ko_printf(out, " all results") : ko_printf(out, " %u results", nret);
+      narg == KLINST_VARRES ? ko_printf(out, "all arguments, ") : ko_printf(out, "%u arguments, ", narg);
+      nret == KLINST_VARRES ? ko_printf(out, "all results") : ko_printf(out, "%u results", nret);
       return pc;
     }
     case KLOPCODE_CALL: {
       klcode_print_A(out, inst);
-      ko_printf(out, "callable object at %u\n", KLINST_AXY_GETA(inst));
+      ko_printf(out, "callable object at R%u\n", KLINST_AXY_GETA(inst));
       KlInstruction extra = *pc++;
 
       klcode_print_prefix(code, out, pc - 1, "CALL EXTRA");
@@ -311,14 +317,14 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       size_t narg = KLINST_XYZ_GETX(extra);
       size_t nret = KLINST_XYZ_GETY(extra);
       size_t target = KLINST_XYZ_GETZ(extra);
-      narg == KLINST_VARRES ? ko_printf(out, "all arguments") : ko_printf(out, "%u arguments", narg);
-      nret == KLINST_VARRES ? ko_printf(out, " all results") : ko_printf(out, " %u results", nret);
-      ko_printf(out, "target at %u", target);
+      narg == KLINST_VARRES ? ko_printf(out, "all arguments, ") : ko_printf(out, "%u arguments, ", narg);
+      nret == KLINST_VARRES ? ko_printf(out, "all results, ") : ko_printf(out, "%u results, ", nret);
+      ko_printf(out, "target at R%u", target);
       return pc;
     }
     case KLOPCODE_METHOD: {
       klcode_print_AX(out, inst);
-      ko_printf(out, "object at %u, method name: ", KLINST_AX_GETA(inst));
+      ko_printf(out, "object at R%u, method name: ", KLINST_AX_GETA(inst));
       klcode_print_constant(code, out, &code->constants[KLINST_AX_GETX(inst)]);
       ko_putc(out, '\n');
       KlInstruction extra = *pc++;
@@ -328,9 +334,9 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       size_t narg = KLINST_XYZ_GETX(extra);
       size_t nret = KLINST_XYZ_GETY(extra);
       size_t target = KLINST_XYZ_GETZ(extra);
-      narg == KLINST_VARRES ? ko_printf(out, "all arguments") : ko_printf(out, "%u arguments", narg);
-      nret == KLINST_VARRES ? ko_printf(out, " all results") : ko_printf(out, " %u results", nret);
-      ko_printf(out, "target at %u", target);
+      narg == KLINST_VARRES ? ko_printf(out, "all arguments, ") : ko_printf(out, "%u arguments, ", narg);
+      nret == KLINST_VARRES ? ko_printf(out, "all results, ") : ko_printf(out, "%u results, ", nret);
+      ko_printf(out, "target at R%u", target);
       return pc;
     }
     case KLOPCODE_RETURN: {
@@ -390,7 +396,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       size_t stktop = KLINST_ABX_GETB(inst);
       size_t capacity = KLINST_ABX_GETX(inst);
       klcode_print_ABC(out, inst);
-      ko_printf(out, "capacity: %zu, stack top: %u", klbit(capacity), stktop);
+      ko_printf(out, "capacity: %u, stack top: %u", klbit(capacity), stktop);
       return pc;
     }
     case KLOPCODE_MKARRAY: {
@@ -415,9 +421,9 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       size_t stktop = KLINST_ABTX_GETB(inst);
       size_t capacity = KLINST_ABTX_GETX(inst);
       klcode_print_ABTX(out, inst);
-      ko_printf(out, "capacity: %zu, stack top: %u", klbit(capacity), stktop);
+      ko_printf(out, "capacity: %u, stack top: %u, ", klbit(capacity), stktop);
       if (KLINST_ABTX_GETT(inst))
-        ko_printf(out, " parent at ", stktop);
+        ko_printf(out, "parent at R%u", stktop);
       return pc;
     }
     case KLOPCODE_INDEXI: {
@@ -460,7 +466,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       klcode_print_ABC(out, inst);
       ko_printf(out, "R%u.", KLINST_ABC_GETB(inst));
       klcode_print_constant(code, out, &code->constants[KLINST_ABC_GETC(inst)]);
-      ko_printf(out, "\n = R%u", KLINST_ABC_GETA(inst));
+      ko_printf(out, " = R%u", KLINST_ABC_GETA(inst));
       return pc;
     }
     case KLOPCODE_REFGETFIELDR: {
@@ -483,7 +489,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       klcode_print_ABC(out, inst);
       ko_printf(out, "REF%u.", KLINST_AXY_GETX(inst));
       klcode_print_constant(code, out, &code->constants[KLINST_AXY_GETY(inst)]);
-      ko_printf(out, "\n = R%u", KLINST_AXY_GETA(inst));
+      ko_printf(out, " = R%u", KLINST_AXY_GETA(inst));
       return pc;
     }
     case KLOPCODE_NEWLOCAL: {
@@ -500,9 +506,9 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR TESTSET");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
-      ko_printf(out, "set and jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
+      ko_printf(out, "set R%u = R%u and jump to %u if %s", KLINST_ABC_GETA(inst), KLINST_ABC_GETB(inst), pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
     }
     case KLOPCODE_TRUEJMP: {
@@ -537,7 +543,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR HASFIELD");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -547,7 +553,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR IS");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -557,7 +563,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR EQ");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -567,7 +573,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR NE");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -577,7 +583,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR LT");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -587,7 +593,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR GT");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -597,7 +603,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR LE");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -607,7 +613,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR GE");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -618,7 +624,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR EQC");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -629,7 +635,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR NEC");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -640,7 +646,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR LTC");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -651,7 +657,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR GTC");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -662,7 +668,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR LEC");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -673,7 +679,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_putc(out, '\n');
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR GEC");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -683,7 +689,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_printf(out, "%d\n", KLINST_AI_GETI(inst));
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR EQI");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -693,7 +699,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_printf(out, "%d\n", KLINST_AI_GETI(inst));
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR NEI");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -703,7 +709,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_printf(out, "%d\n", KLINST_AI_GETI(inst));
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR LTI");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -713,7 +719,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_printf(out, "%d\n", KLINST_AI_GETI(inst));
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR GTI");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -723,7 +729,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_printf(out, "%d\n", KLINST_AI_GETI(inst));
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR LEI");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -733,7 +739,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       ko_printf(out, "%d\n", KLINST_AI_GETI(inst));
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
       KlInstruction extra = *pc++;
-      klcode_print_prefix(code, out, pc - 1, "CONDJMP FOR GEI");
+      klcode_print_prefix(code, out, pc - 1, klcode_get_instname(extra));
       klcode_print_XI(out, extra);
       ko_printf(out, "jump to %u if %s", pc + KLINST_XI_GETI(extra) - code->code, KLINST_XI_GETX(extra) ? "true" : "false");
       return pc;
@@ -851,8 +857,8 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       klcode_print_AXY(out, inst);
       size_t nres = KLINST_AXY_GETX(inst);
       size_t nwanted = KLINST_AXY_GETY(inst);
-      nres == KLINST_VARRES ? ko_printf(out, "all yielded") : ko_printf(out, "%u yielded", nres);
-      nwanted == KLINST_VARRES ? ko_printf(out, " all results wanted") : ko_printf(out, " %u results wanted", nwanted);
+      nres == KLINST_VARRES ? ko_printf(out, "all results yielded, ") : ko_printf(out, "%u results yielded, ", nres);
+      nwanted == KLINST_VARRES ? ko_printf(out, "all results wanted") : ko_printf(out, "%u results wanted", nwanted);
       return pc;
     }
     case KLOPCODE_VARARG: {
@@ -869,11 +875,26 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
   }
 }
 
-void klcode_print(KlCode* code, Ko* out) {
+void klcode_print_function(KlCode* code, Ko* out, size_t idx) {
   KlInstruction* pc = code->code;
   KlInstruction* end = code->code + code->codelen;
+  ko_printf(out, "function(%u), %u instructions:\n", idx, code->codelen);
   while (pc != end) {
     pc = klcode_print_instruction(code, out, pc);
     ko_putc(out, '\n');
   }
+  ko_putc(out, '\n');
+  ko_printf(out, "%u constants:\n", code->nconst);
+  for (size_t i = 0; i < code->nconst; ++i) {
+    ko_printf(out, "constant %u: ", i);
+    klcode_print_constant(code, out, &code->constants[i]);
+    ko_putc(out, '\n');
+  }
+  ko_putc(out, '\n');
+  ko_printf(out, "%u registers\n", code->framesize);
+  ko_putc(out, '\n');
+}
+
+void klcode_print(KlCode* code, Ko* out) {
+  klcode_print_function(code, out, 0);
 }

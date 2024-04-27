@@ -35,7 +35,7 @@ typedef struct tagKlCodeVal {
 #define klcodeval_isnumber(v)   ((v).kind == KLVAL_FLOAT || (v).kind == KLVAL_INTEGER)
 #define klcodeval_isconstant(v) ((v).kind <= KLVAL_FLOAT)
 #define klcodeval_isfalse(v)    (((v).kind == KLVAL_BOOL && (v).boolval == KL_FALSE) || (v).kind == KLVAL_NIL)
-#define klcodeval_istrue(v)     (!klcodeval_isfalse((v)))
+#define klcodeval_istrue(v)     (klcodeval_isconstant((v)) && !klcodeval_isfalse((v)))
 
 static inline KlCodeVal klcodeval_index(KlValKind kind, size_t index);
 static inline KlCodeVal klcodeval_stack(size_t index);

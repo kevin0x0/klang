@@ -83,8 +83,22 @@ static void klcontbl_rehash(KlConTbl* to, KlConTbl* from) {
 
 static bool klcontbl_expand(KlConTbl* contbl) {
   KlConTbl new_map;
-  if (kl_unlikely(!klcontbl_init(&new_map, contbl->capacity << 1, contbl->strtbl)))
+  size_t newcap = contbl->capacity * 2;
+  KlConEntry** array = (KlConEntry**)malloc(sizeof (KlConEntry*) * newcap);
+  if (kl_unlikely(!array)) {
+    new_map.array = NULL;
+    new_map.capacity = 0;
+    new_map.size = 0;
     return false;
+  }
+  for (size_t i = 0; i < newcap; ++i)
+    array[i] = NULL;
+  
+  new_map.array = array;
+  new_map.capacity = newcap;
+  new_map.size = 0;
+  new_map.strtbl = contbl->strtbl;
+  new_map.entries = contbl->entries;
   klcontbl_rehash(&new_map, contbl);
   *contbl = new_map;
   return true;

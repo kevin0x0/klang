@@ -44,4 +44,5 @@ void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* k
   Ko* ko = kofile_attach(stdout);
   klcode_print(code, ko);
   ko_delete(ko);
+  klcode_delete(code);
 }

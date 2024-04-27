@@ -173,6 +173,8 @@ KlSymTbl* klsymtblpool_alloc(KlSymTblPool* pool, KlStrTbl* strtbl, KlSymTbl* par
   if (kl_likely(pool->tables)) {
     KlSymTbl* symtbl = pool->tables;
     pool->tables = symtbl->next;
+    symtbl->parent = parent;
+    symtbl->strtbl = strtbl;
     return symtbl;
   }
   return klsymtbl_create(4, &pool->symbolpool, strtbl, parent);

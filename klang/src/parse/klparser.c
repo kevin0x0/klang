@@ -257,8 +257,10 @@ KlCst* klparser_exprunit(KlParser* parser, KlLex* lex, bool* inparenthesis) {
       }
       /* may be a tuple */
       KlCst* expr = klparser_expr(parser, lex);
-      if (kllex_trymatch(lex, KLTK_RPAREN)) {
+      if (kllex_check(lex, KLTK_RPAREN)) {
         if (inparenthesis) *inparenthesis = true;
+        klcst_setposition(expr, begin, lex->tok.end);
+        kllex_next(lex);
         return expr;
       }
       /* it is a tuple */

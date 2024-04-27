@@ -16,7 +16,7 @@ KlCode* klcode_create(KlRefInfo* refinfo, size_t nref, KlConstant* constants, si
   klcode->constants = constants;
   klcode->nconst = nconst;
   klcode->code = code;
-  klcode->lineinfo = lineinfo;
+  klcode->posinfo = lineinfo;
   klcode->codelen = codelen;
   klcode->nestedfunc = nestedfunc;
   klcode->nnested = nnested;
@@ -30,9 +30,8 @@ void klcode_delete(KlCode* code) {
   free(code->refinfo);
   free(code->constants);
   free(code->code);
-  free(code->lineinfo);
+  free(code->posinfo);
   free(code->nestedfunc);
-  free(code->strtbl);
   free(code);
 }
 

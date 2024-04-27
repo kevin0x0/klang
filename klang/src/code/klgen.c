@@ -51,7 +51,7 @@ bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings) {
   newstring(pattern_neg, "pattern u-");
   newstring(pattern_concat, "pattern ..");
   newstring(itermethod, "<-");
-  newstring(itermethod, "constructor");
+  newstring(constructor, "constructor");
   return true;
 #undef newstring
 }
@@ -119,6 +119,7 @@ void klgen_destroy(KlGenUnit* gen) {
     KlCode** code = klcodearr_access(&gen->subfunc, i);
     klcode_delete(*code);
   }
+  klfparr_destroy(&gen->position);
   klcodearr_destroy(&gen->subfunc);
   klinstarr_destroy(&gen->code);
 }
@@ -138,13 +139,13 @@ KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
   klreftbl_setrefinfo(gen->reftbl, refinfo);
   size_t codelen = klinstarr_size(&gen->code);
   KlInstruction* insts = klinstarr_steal(&gen->code);
-  KlFilePosition* lineinfo = gen->config.debug ? klfparr_steal(&gen->position) : NULL;
+  KlFilePosition* posinfo = gen->config.debug ? klfparr_steal(&gen->position) : NULL;
   size_t nnested = klcodearr_size(&gen->subfunc);
   KlCode** nestedfunc = klcodearr_steal(&gen->subfunc);
 
   klgen_stackfree(gen, 0);
   KlCode* code = klcode_create(refinfo, klsymtbl_size(gen->reftbl), constants, klcontbl_size(gen->contbl),
-                               insts, lineinfo, codelen, nestedfunc, nnested,
+                               insts, posinfo, codelen, nestedfunc, nnested,
                                gen->strtbl, nparam, gen->framesize);
   kl_assert(gen->symtbl == gen->reftbl, "");
   klsymtblpool_dealloc(gen->symtblpool, gen->symtbl);
@@ -155,7 +156,7 @@ KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
     }
     free(nestedfunc);
     free(insts);
-    free(lineinfo);
+    free(posinfo);
     free(refinfo);
     free(constants);
     return NULL;
@@ -298,12 +299,14 @@ void klgen_emitloadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePositi
   } else {
     KlInstruction* previnst = klinstarr_back(&gen->code);
     if (KLINST_GET_OPCODE(*previnst) == KLOPCODE_LOADNIL) {
-      uint8_t prev_target = KLINST_AX_GETA(*previnst);
-      uint8_t prev_nnil = KLINST_AX_GETX(*previnst);
+      size_t prev_target = KLINST_AX_GETA(*previnst);
+      size_t prev_nnil = KLINST_AX_GETX(*previnst);
       if ((prev_target <= target && target <= prev_target + prev_nnil) ||
           (target <= prev_target && prev_target <= target + nnil)) {
-        uint8_t new_target = prev_target < target ? prev_target : target;
-        uint8_t new_nnil = prev_nnil > nnil ? prev_nnil : nnil;
+        size_t new_target = prev_target < target ? prev_target : target;
+        size_t new_nnil = prev_target + prev_nnil > target + nnil
+                        ? (size_t)(prev_target + prev_nnil - new_target)
+                        : target + nnil - new_target;
         *previnst = klinst_loadnil(new_target, new_nnil);
         return;
       } /* else fall through */
@@ -325,15 +328,17 @@ void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, Kl
     KlInstruction* previnst = klinstarr_back(&gen->code);
     uint8_t prev_opcode = KLINST_GET_OPCODE(*previnst);
     if (prev_opcode == KLOPCODE_MOVE || prev_opcode == KLOPCODE_MULTIMOVE) {
-      uint8_t prev_target = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETA(*previnst) : KLINST_ABX_GETA(*previnst);
-      uint8_t prev_from = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETB(*previnst) : KLINST_ABX_GETB(*previnst);
-      uint8_t prev_nmove = prev_opcode == KLOPCODE_MOVE ? 1 : KLINST_ABX_GETX(*previnst);
+      size_t prev_target = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETA(*previnst) : KLINST_ABX_GETA(*previnst);
+      size_t prev_from = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETB(*previnst) : KLINST_ABX_GETB(*previnst);
+      size_t prev_nmove = prev_opcode == KLOPCODE_MOVE ? 1 : KLINST_ABX_GETX(*previnst);
       if (prev_from + target == from + prev_target &&
           ((from <= prev_from && prev_from <= from + nmove) ||
           (prev_from <= from && from <= prev_from + prev_nmove))) {
-        uint8_t new_target = prev_target < target ? prev_target : target;
-        uint8_t new_from = prev_from < from ? prev_from : from;
-        uint8_t new_nmove = prev_nmove > nmove ? prev_nmove : nmove;
+        size_t new_target = prev_target < target ? prev_target : target;
+        size_t new_from = prev_from < from ? prev_from : from;
+        size_t new_nmove = prev_target + prev_nmove > target + nmove
+                         ? prev_target + prev_nmove - new_target
+                         : target + nmove - new_target;
         *previnst = new_nmove == 1 ? klinst_move(new_target, new_from) : klinst_multimove(new_target, new_from, new_nmove);
         return;
       } /* else fall through */
@@ -383,9 +388,11 @@ KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, const char* inputnam
     /* convert the 'newgen' to KlCode */
     KlCode* funccode = klgen_tocode_and_destroy(&gen, 0);
     klgen_oomifnull(&gen, funccode);
+    klsymtblpool_destroy(&symtblpool);
     return funccode;
   } else {
     klgen_destroy(&gen);
+    klsymtblpool_destroy(&symtblpool);
     return NULL;
   }
 }

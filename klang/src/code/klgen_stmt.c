@@ -450,7 +450,7 @@ static void klgen_stmtcontinue(KlGenUnit* gen, KlCstStmtContinue* continuecst) {
 }
 
 static void klgen_stmtreturn(KlGenUnit* gen, KlCstStmtReturn* returncst) {
-  kl_assert(klcst_kind(returncst) == KLCST_EXPR_TUPLE, "");
+  kl_assert(klcst_kind(returncst->retval) == KLCST_EXPR_TUPLE, "");
   KlCstTuple* res = klcast(KlCstTuple*, returncst->retval);
   bool needclose = klgen_needclose(gen, gen->reftbl, NULL);
   size_t stktop = klgen_stacktop(gen);
@@ -555,9 +555,9 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlCstStmtVFor* vforcst) {
   klgen_pushsymtbl(gen);  /* begin a new scope */
 
   klgen_stackalloc(gen, npattern);
-  for (KlCst** ppattern = patterns + npattern - 1; ppattern != patterns; --ppattern) {
-    KlCst* pattern = *ppattern;
-    size_t valstkid = forbase + 2 + (ppattern - patterns);
+  for (size_t i = npattern; i--;) {
+    KlCst* pattern = patterns[i];
+    size_t valstkid = forbase + 2 + i;
     if (klcst_kind(pattern) == KLCST_EXPR_ID) {
       klgen_newsymbol(gen, klcast(KlCstIdentifier*, pattern)->id, valstkid, klgen_cstposition(pattern));
     } else {
@@ -611,9 +611,9 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlCstStmtGFor* gforcst) {
   KlCst** patterns = klcast(KlCstTuple*, gforcst->lvals)->elems;
   size_t npattern = klcast(KlCstTuple*, gforcst->lvals)->nelem;
   klgen_stackalloc(gen, npattern);
-  for (KlCst** ppattern = patterns + npattern - 1; ppattern != patterns; --ppattern) {
-    KlCst* pattern = *ppattern;
-    size_t valstkid = forbase + 3 + (ppattern - patterns);
+  for (size_t i = npattern; i--;) {
+    KlCst* pattern = patterns[i];
+    size_t valstkid = forbase + 3 + i;
     if (klcst_kind(pattern) == KLCST_EXPR_ID) {
       klgen_newsymbol(gen, klcast(KlCstIdentifier*, pattern)->id, valstkid, klgen_cstposition(pattern));
     } else {
@@ -653,9 +653,7 @@ void klgen_stmtlist(KlGenUnit* gen, KlCstStmtList* cst) {
         break;
       }
       case KLCST_STMT_EXPR: {
-        size_t stktop = klgen_stacktop(gen);
-        klgen_multival(gen, klcast(KlCstStmtExpr*, stmt)->expr, 0, stktop);
-        kl_assert(klgen_stacktop(gen) == stktop, "");
+        klgen_multival(gen, klcast(KlCstStmtExpr*, stmt)->expr, 0, klgen_stacktop(gen));
         break;
       }
       case KLCST_STMT_BLOCK: {

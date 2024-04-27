@@ -22,7 +22,7 @@ struct tagKlCode {
   size_t nconst;
   KlInstruction* code;
   size_t codelen;
-  KlFilePosition* lineinfo;
+  KlFilePosition* posinfo;
   KlCode** nestedfunc;        /* functions created inside this function */
   size_t nnested;
   KlStrTbl* strtbl;
