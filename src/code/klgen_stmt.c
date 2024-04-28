@@ -63,14 +63,17 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlCst** patterns, size_t
     klgen_exprlist_raw(gen, rvals, nrval, nfastassign, filepos);
   } else {  /* now nfastassign < npattern */
     if (nfastassign == npattern - 1) {
-      klgen_exprlist_raw(gen, rvals, nrval, nfastassign, filepos);
-      if (klgen_pattern_fastbinding(gen, patterns[nfastassign]))
+      klgen_exprlist_raw(gen, rvals, nrval, npattern, filepos);
+      if (klgen_pattern_fastbinding(gen, patterns[npattern - 1]))
         return;
-      size_t nreserved = klgen_pattern_count_result(gen, patterns[nfastassign]);
+      size_t nreserved = klgen_pattern_count_result(gen, patterns[npattern - 1]);
+      kl_assert(klgen_stacktop(gen) > 0, "");
       size_t lastval = klgen_stacktop(gen) - 1;
-      klgen_emitmove(gen, lastval + nreserved, lastval, 1, filepos);
-      klgen_stackalloc(gen, nreserved);
-      klgen_pattern_binding(gen, patterns[nfastassign], lastval);
+      if (nreserved != 0) {
+        klgen_emitmove(gen, lastval + nreserved, lastval, 1, filepos);
+        klgen_stackalloc(gen, nreserved);
+      }
+      klgen_pattern_binding(gen, patterns[npattern - 1], lastval + nreserved);
     } else if (nfastassign <= nrval) {
       klgen_exprlist_raw(gen, rvals, nfastassign, nfastassign, filepos);
       size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
@@ -79,17 +82,19 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlCst** patterns, size_t
       klgen_exprlist_raw(gen, rvals + nfastassign, nrval - nfastassign, npattern - nfastassign, filepos);
       size_t count = npattern;
       while (count-- > nfastassign)
-        target -= klgen_pattern_binding(gen, patterns[count], target);
+        target = klgen_pattern_binding(gen, patterns[count], target);
     } else {
       size_t oristktop = klgen_stacktop(gen);
       klgen_exprlist_raw(gen, rvals, nrval, npattern, filepos);
       size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
-      klgen_stackfree(gen, oristktop + nreserved + npattern);
-      klgen_emitmove(gen, oristktop + nfastassign + nreserved, oristktop + nfastassign, npattern - nfastassign, filepos);
+      if (nreserved != 0) {
+        klgen_stackalloc(gen, nreserved);
+        klgen_emitmove(gen, oristktop + nfastassign + nreserved, oristktop + nfastassign, npattern - nfastassign, filepos);
+      }
       size_t target = oristktop + nfastassign + nreserved;
       size_t count = npattern;
       while (count-- > nfastassign)
-        target -= klgen_pattern_binding(gen, patterns[count], target);
+        target = klgen_pattern_binding(gen, patterns[count], target);
     }
   }
 }
@@ -280,7 +285,50 @@ static void klgen_stmtassign(KlGenUnit* gen, KlCstStmtAssign* assigncst) {
   }
 }
 
+static bool klgen_needclose(KlGenUnit* gen, KlSymTbl* endtbl, size_t* closebase) {
+  KlSymTbl* symtbl = gen->symtbl;
+  bool needclose = false;
+  while (symtbl != endtbl) {
+    if (symtbl->info.referenced) {
+      needclose = true;
+      if (closebase) *closebase = symtbl->info.stkbase;
+    }
+    symtbl = klsymtbl_parent(symtbl);
+  }
+  return needclose;
+}
+
+/* if success, return true, else return false */
+static bool klgen_stmttryfastjmp_inif(KlGenUnit* gen, KlCstStmtIf* ifcst) {
+  KlCstStmtList* block = klcast(KlCstStmtList*, ifcst->if_block);
+  if (block->nstmt != 1) return false;
+  if (klcst_kind(block->stmts[block->nstmt - 1]) != KLCST_STMT_BREAK &&
+      klcst_kind(block->stmts[block->nstmt - 1]) != KLCST_STMT_CONTINUE) {
+    return false;
+  }
+  KlCst* stmtcst = block->stmts[block->nstmt - 1];
+  KlSymTbl* endtbl = klcst_kind(stmtcst) == KLCST_STMT_BREAK ? gen->info.break_scope : gen->info.continue_scope;
+  KlCodeVal* jmplist = klcst_kind(stmtcst) == KLCST_STMT_BREAK ? gen->info.breakjmp : gen->info.continuejmp;
+  if (kl_unlikely(!jmplist)) {
+    klgen_error(gen, klcst_begin(stmtcst), klcst_end(stmtcst), "break and continue statement is not allowed here");
+    return true;
+  }
+  if (klgen_needclose(gen, endtbl, NULL))
+    return false;
+  KlCodeVal cond = klgen_exprbool(gen, ifcst->cond, true);
+  if (klcodeval_isconstant(cond)) {
+    if (klcodeval_isfalse(cond)) return true;
+    klgen_mergejmp_maynone(gen, jmplist,
+                           klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(stmtcst))));
+  } else {
+    klgen_mergejmp_maynone(gen, jmplist, cond);
+  }
+  return true;
+}
+
 static void klgen_stmtif(KlGenUnit* gen, KlCstStmtIf* ifcst) {
+  if (klgen_stmttryfastjmp_inif(gen, ifcst)) return;
+
   KlCodeVal cond = klgen_exprbool(gen, ifcst->cond, false);
   if (klcodeval_isconstant(cond)) {
     if (klcodeval_istrue(cond)) {
@@ -379,7 +427,7 @@ static void klgen_stmtrepeat(KlGenUnit* gen, KlCstStmtRepeat* repeatcst) {
   if (needclose)
       klgen_emit(gen, klinst_close(stktop), klgen_cstposition(repeatcst));
   size_t continuepos = klgen_currcodesize(gen);
-  KlCodeVal cond = klgen_exprbool(gen, repeatcst->cond, true);
+  KlCodeVal cond = klgen_exprbool(gen, repeatcst->cond, false);
   if (klcodeval_isconstant(cond)) {
     if (klcodeval_istrue(cond)) {
       klgen_setinstjmppos(gen, cjmplist, continuepos);
@@ -402,19 +450,6 @@ static void klgen_stmtrepeat(KlGenUnit* gen, KlCstStmtRepeat* repeatcst) {
   gen->info.continuejmp = prev_cjmp;
   gen->info.break_scope = prev_bscope;
   gen->info.continue_scope = prev_cscope;
-}
-
-static bool klgen_needclose(KlGenUnit* gen, KlSymTbl* endtbl, size_t* closebase) {
-  KlSymTbl* symtbl = gen->symtbl;
-  bool needclose = false;
-  while (symtbl != endtbl) {
-    if (symtbl->info.referenced) {
-      needclose = true;
-      if (closebase) *closebase = symtbl->info.stkbase;
-    }
-    symtbl = klsymtbl_parent(symtbl);
-  }
-  return needclose;
 }
 
 static void klgen_stmtbreak(KlGenUnit* gen, KlCstStmtBreak* breakcst) {

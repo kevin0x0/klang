@@ -95,7 +95,7 @@ static void klgen_exprfunc_deconstruct_params(KlGenUnit* gen, KlCstTuple* funcpa
         size_t count = npattern;
         size_t target = i + nreserved;
         while (count-- > i)
-          target -= klgen_pattern_binding(gen, patterns[count], target);
+          target = klgen_pattern_binding(gen, patterns[count], target);
         kl_assert(target == i, "");
       }
     }
@@ -353,9 +353,14 @@ void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target) {
     }
     default: {
       size_t stktop = klgen_stacktop(gen);
-      klgen_exprtarget_noconst(gen, cst, target);
-      if (nval > 1)
-        klgen_emitloadnils(gen, target + 1, nval - 1, klgen_cstposition(cst));
+      if (nval == 0) {
+        klgen_expr(gen, cst);
+        klgen_stackfree(gen, stktop);
+      } else {
+        klgen_exprtarget_noconst(gen, cst, target);
+        if (nval > 1)
+          klgen_emitloadnils(gen, target + 1, nval - 1, klgen_cstposition(cst));
+      }
       klgen_stackfree(gen, target + nval > stktop ? target + nval : stktop);
       break;
     }
@@ -780,6 +785,11 @@ KlCodeVal klgen_exprbin(KlGenUnit* gen, KlCstBin* bincst, size_t target) {
     if (klcodeval_isconstant(res)) return res;
     return klcodeval_stack(target);
   }
+}
+
+static KlCodeVal klgen_exprappend(KlGenUnit* gen, KlCstPost* postcst) {
+  kl_assert(postcst->op == KLTK_APPEND, "");
+  kltodo("implement append");
 }
 
 KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target) {

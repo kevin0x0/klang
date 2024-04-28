@@ -527,9 +527,14 @@ static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlCst* cst, size_t target, bo
   KlCodeVal res = klgen_expr(gen, cst);
   if (klcodeval_isconstant(res)) return res;
   klgen_putonstack(gen, &res, klgen_cstposition(cst));
-  klgen_emit(gen, klinst_testset(target, res.index), klgen_cstposition(cst));
-  KlCodeVal terminate = klcodeval_jmp(klgen_emit(gen, klinst_condjmp(setcond, 0), klgen_cstposition(cst)));
-  klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->terminatelist, terminate);
+  size_t terminatepc;
+  if (target == res.index) {
+    terminatepc = klgen_emit(gen, setcond ? klinst_truejmp(target, 0) : klinst_falsejmp(target, 0), klgen_cstposition(cst));
+  } else {
+    klgen_emit(gen, klinst_testset(target, res.index), klgen_cstposition(cst));
+    terminatepc = klgen_emit(gen, klinst_condjmp(setcond, 0), klgen_cstposition(cst));
+  }
+  klgen_mergejmp_maynone(gen, &gen->info.jumpinfo->terminatelist, klcodeval_jmp(terminatepc));
   klgen_stackfree(gen, stktop);
   return klcodeval_none();
 }

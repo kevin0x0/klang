@@ -882,7 +882,11 @@ KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
         }
         bool vararg;
         KlCst* params = klparser_correctfuncparams(parser, lex, postexpr, &vararg);
-        KlCstFunc* func = klcst_func_create(block, params, vararg, false, postexpr->begin, block->end);
+        if (kl_unlikely(!params)) {
+          klcst_delete(block);
+          return NULL;
+        }
+        KlCstFunc* func = klcst_func_create(block, params, vararg, false, params->begin, block->end);
         klparser_oomifnull(func);
         postexpr = klcst(func);
         break;
@@ -897,7 +901,11 @@ KlCst* klparser_exprpost(KlParser* parser, KlLex* lex) {
         }
         bool vararg;
         KlCst* params = klparser_correctfuncparams(parser, lex, postexpr, &vararg);
-        KlCstFunc* func = klcst_func_create(block, params, vararg, false, postexpr->begin, block->end);
+        if (kl_unlikely(!params)) {
+          klcst_delete(block);
+          return NULL;
+        }
+        KlCstFunc* func = klcst_func_create(block, params, vararg, false, params->begin, block->end);
         klparser_oomifnull(func);
         postexpr = klcst(func);
         break;

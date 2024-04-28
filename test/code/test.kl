@@ -1,1 +1,1 @@
-return a and b and c and d;
+[ x | x in 12 ];

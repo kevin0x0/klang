@@ -1,5 +1,6 @@
 #include "include/code/klcode.h"
 #include "include/misc/klutils.h"
+#include "include/value/klvalue.h"
 #include "include/vm/klinst.h"
 
 static void klcode_print_prefix(KlCode* code, Ko* out, KlInstruction* pc, const char* name) {
@@ -161,7 +162,7 @@ static void klcode_print_AI(Ko* out, KlInstruction inst) {
 }
 
 static void klcode_print_XI(Ko* out, KlInstruction inst) {
-  ko_printf(out, "| %4u %4d %4s %4s | ", KLINST_XI_GETX(inst), (signed)KLINST_AI_GETI(inst), "", "");
+  ko_printf(out, "| %4u %4d %4s %4s | ", (unsigned)KLINST_XI_GETX(inst), (signed)KLINST_AI_GETI(inst), "", "");
 }
 
 static void klcode_print_I(Ko* out, KlInstruction inst) {
@@ -179,7 +180,7 @@ static void klcode_print_constant(KlCode* code, Ko* out, KlConstant* constant) {
       break;
     }
     case KL_STRING: {
-      ko_printf(out, "%.*s", constant->string.length, klstrtbl_getstring(code->strtbl, constant->string.id));
+      ko_printf(out, "\"%.*s\"", constant->string.length, klstrtbl_getstring(code->strtbl, constant->string.id));
       break;
     }
     case KL_BOOL: {
@@ -190,6 +191,11 @@ static void klcode_print_constant(KlCode* code, Ko* out, KlConstant* constant) {
       kl_assert(false, "impossible constant type");
     }
   }
+}
+
+static void klcode_print_string_noquote(KlCode* code, Ko* out, KlConstant* constant) {
+  kl_assert(constant->type == KL_STRING, "");
+  ko_printf(out, "%.*s", constant->string.length, klstrtbl_getstring(code->strtbl, constant->string.id));
 }
 
 static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruction* pc) {
@@ -325,7 +331,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     case KLOPCODE_METHOD: {
       klcode_print_AX(out, inst);
       ko_printf(out, "object at R%u, method name: ", KLINST_AX_GETA(inst));
-      klcode_print_constant(code, out, &code->constants[KLINST_AX_GETX(inst)]);
+      klcode_print_string_noquote(code, out, &code->constants[KLINST_AX_GETX(inst)]);
       ko_putc(out, '\n');
       KlInstruction extra = *pc++;
 
@@ -379,7 +385,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     }
     case KLOPCODE_LOADGLOBAL: {
       klcode_print_AX(out, inst);
-      klcode_print_constant(code, out, &code->constants[KLINST_AX_GETX(inst)]);
+      klcode_print_string_noquote(code, out, &code->constants[KLINST_AX_GETX(inst)]);
       return pc;
     }
     case KLOPCODE_STOREREF: {
@@ -388,7 +394,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     }
     case KLOPCODE_STOREGLOBAL: {
       klcode_print_AX(out, inst);
-      klcode_print_constant(code, out, &code->constants[KLINST_AX_GETX(inst)]);
+      klcode_print_string_noquote(code, out, &code->constants[KLINST_AX_GETX(inst)]);
       return pc;
     }
     case KLOPCODE_MKMAP: {
@@ -454,7 +460,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     case KLOPCODE_GETFIELDC: {
       klcode_print_ABC(out, inst);
       ko_printf(out, "R%u = R%u.", KLINST_ABC_GETA(inst), KLINST_ABC_GETB(inst));
-      klcode_print_constant(code, out, &code->constants[KLINST_ABC_GETC(inst)]);
+      klcode_print_string_noquote(code, out, &code->constants[KLINST_ABC_GETC(inst)]);
       return pc;
     }
     case KLOPCODE_SETFIELDR: {
@@ -465,7 +471,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     case KLOPCODE_SETFIELDC: {
       klcode_print_ABC(out, inst);
       ko_printf(out, "R%u.", KLINST_ABC_GETB(inst));
-      klcode_print_constant(code, out, &code->constants[KLINST_ABC_GETC(inst)]);
+      klcode_print_string_noquote(code, out, &code->constants[KLINST_ABC_GETC(inst)]);
       ko_printf(out, " = R%u", KLINST_ABC_GETA(inst));
       return pc;
     }
@@ -477,7 +483,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     case KLOPCODE_REFGETFIELDC: {
       klcode_print_ABC(out, inst);
       ko_printf(out, "R%u = REF%u.", KLINST_AXY_GETA(inst), KLINST_AXY_GETY(inst)); 
-      klcode_print_constant(code, out, &code->constants[KLINST_AXY_GETX(inst)]);
+      klcode_print_string_noquote(code, out, &code->constants[KLINST_AXY_GETX(inst)]);
       return pc;
     }
     case KLOPCODE_REFSETFIELDR: {
@@ -488,7 +494,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     case KLOPCODE_REFSETFIELDC: {
       klcode_print_ABC(out, inst);
       ko_printf(out, "REF%u.", KLINST_AXY_GETX(inst));
-      klcode_print_constant(code, out, &code->constants[KLINST_AXY_GETY(inst)]);
+      klcode_print_string_noquote(code, out, &code->constants[KLINST_AXY_GETY(inst)]);
       ko_printf(out, " = R%u", KLINST_AXY_GETA(inst));
       return pc;
     }
@@ -767,7 +773,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       KlInstruction extra = *pc++;
       klcode_print_prefix(code, out, pc - 1, "PBARR EXTRA");
       klcode_print_XI(out, extra);
-      ko_printf(out, "back: %u", KLINST_XI_GETX(inst));
+      ko_printf(out, "back: %u", KLINST_XI_GETX(extra));
       return pc;
     }
     case KLOPCODE_PMTUP: {
@@ -782,7 +788,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     }
     case KLOPCODE_PBTUP: {
       klcode_print_ABX(out, inst);
-      ko_printf(out, "bind R%u to R%u, %u elements\n", KLINST_ABX_GETB(inst), KLINST_ABX_GETA(inst), KLINST_ABX_GETX(inst));
+      ko_printf(out, "bind R%u to R%u, %u elements", KLINST_ABX_GETB(inst), KLINST_ABX_GETA(inst), KLINST_ABX_GETX(inst));
       return pc;
     }
     case KLOPCODE_PMMAP: {
@@ -812,7 +818,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     case KLOPCODE_PMOBJ:
     case KLOPCODE_PBOBJ: {
       klcode_print_ABX(out, inst);
-      ko_printf(out, "bind R%u to R%u, %u fields\n", KLINST_ABX_GETB(inst), KLINST_ABX_GETA(inst), KLINST_ABX_GETX(inst));
+      ko_printf(out, "bind R%u to R%u, %u fields", KLINST_ABX_GETB(inst), KLINST_ABX_GETA(inst), KLINST_ABX_GETX(inst));
       return pc;
     }
     case KLOPCODE_NEWOBJ: {
@@ -893,6 +899,16 @@ void klcode_print_function(KlCode* code, Ko* out, size_t idx) {
   ko_putc(out, '\n');
   ko_printf(out, "%u registers\n", code->framesize);
   ko_putc(out, '\n');
+  if (code->nnested == 0) {
+    ko_printf(out, "0 sub-function\n");
+    return;
+  }
+  ko_printf(out, "%u sub-functions:\n", code->nnested);
+  for (size_t i = 0; i < code->nnested; ++i) {
+    ko_putc(out, '\n');
+    klcode_print_function(code->nestedfunc[i], out, i);
+  }
+  ko_printf(out, "end sub-functions: %u\n", idx);
 }
 
 void klcode_print(KlCode* code, Ko* out) {

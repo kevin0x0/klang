@@ -83,9 +83,6 @@ inline static size_t pow_of_2_above(size_t num) {
 }
 
 bool klsymtbl_init(KlSymTbl* symtbl, KlSymbolPool* pool, size_t capacity, KlStrTbl* strtbl, KlSymTbl* parent) {
-  if (!symtbl) return false;
-
-  /* TODO: make sure capacity is power of 2 */
   capacity = pow_of_2_above(capacity);
   KlSymbol** array = (KlSymbol**)malloc(sizeof (KlSymbol*) * capacity);
   if (kl_unlikely(!array)) return false;
@@ -106,13 +103,9 @@ bool klsymtbl_init(KlSymTbl* symtbl, KlSymbolPool* pool, size_t capacity, KlStrT
 }
 
 void klsymtbl_destroy(KlSymTbl* symtbl) {
-  if (kl_unlikely(!symtbl)) return;
-
-  KlSymbol** array = symtbl->array;
-  size_t capacity = symtbl->capacity;
+  free(symtbl->array);
   if (symtbl->size != 0)
     klsymbolpool_dealloclist(symtbl->symbolpool, symtbl->head.next, symtbl->tail.prev);
-  free(array);
 }
 
 KlSymTbl* klsymtbl_create(size_t capacity, KlSymbolPool* pool, KlStrTbl* strtbl, KlSymTbl* parent) {

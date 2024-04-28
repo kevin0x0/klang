@@ -248,7 +248,7 @@ typedef uint32_t KlInstruction;
 #define klinst_loadnil(a, count)                          klinst_AX(KLOPCODE_LOADNIL, (a), (count))
 #define klinst_loadref(a, refidx)                         klinst_AX(KLOPCODE_LOADREF, (a), (refidx))
 #define klinst_loadglobal(a, x)                           klinst_AX(KLOPCODE_LOADGLOBAL, (a), (x))
-#define klinst_storeref(a, refidx)                        klinst_AX(KLOPCODE_LOADREF, (a), (refidx))
+#define klinst_storeref(a, refidx)                        klinst_AX(KLOPCODE_STOREREF, (a), (refidx))
 #define klinst_storeglobal(a, x)                          klinst_AX(KLOPCODE_STOREGLOBAL, (a), (x))
 #define klinst_mkmap(a, stktop, capacity)                 klinst_ABX(KLOPCODE_MKMAP, (a), (stktop), (capacity))
 #define klinst_mkarray(a, first, nelem)                   klinst_ABX(KLOPCODE_MKARRAY, (a), (first), (nelem))

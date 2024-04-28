@@ -31,7 +31,12 @@ void klcode_delete(KlCode* code) {
   free(code->constants);
   free(code->code);
   free(code->posinfo);
-  free(code->nestedfunc);
+  size_t nnested = code->nnested;
+  KlCode** codes = code->nestedfunc;
+  for (size_t i = 0; i < nnested; ++i) {
+    klcode_delete(codes[i]);
+  }
+  free(codes);
   free(code);
 }
 

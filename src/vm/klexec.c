@@ -1240,24 +1240,15 @@ KlException klexec_execute(KlState* state) {
         /* first value to be inserted to the array */
         KlValue* first = stkbase + KLINST_ABX_GETB(inst);
         size_t nelem = KLINST_ABX_GETX(inst);
-        if (nelem == KLINST_VARRES)
+        if (nelem == KLINST_VARRES) {
           nelem = klstate_stktop(state) - first;
-        /* now stack top is first + nelem */
-        klexec_savestate(first + nelem);  /* creating array may trigger gc */
-        if (kl_likely(klvalue_checktype(a, KL_ARRAY))) {
-          klarray_push_back(klvalue_getobj(a, KlArray*), klstate_getmm(state), first, nelem);
+          klexec_savestate(first + nelem);  /* creating array may trigger gc */
         } else {
-          KlException exception = klexec_domultiargsmethod(state, a, a, nelem, state->common->string.append);
-          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
-            KlValue* newbase = state->callinfo->base;
-            klexec_updateglobal(newbase);
-          } else {
-            if (kl_unlikely(exception)) return exception;
-            /* C function or C closure */
-            /* stack may have grown. restore stkbase. */
-            stkbase = callinfo->base;
-          }
+          klexec_savestate(callinfo->top);  /* creating array may trigger gc */
         }
+        if (kl_unlikely(klvalue_checktype(a, KL_ARRAY)))
+          return klstate_throw(state, KL_E_TYPE, "can only append to an array");
+        klarray_push_back(klvalue_getobj(a, KlArray*), klstate_getmm(state), first, nelem);
         break;
       }
       case KLOPCODE_MKCLASS: {
