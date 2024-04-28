@@ -1,6 +1,6 @@
-#include "klang/include/error/klerror.h"
-#include "utils/include/kio/ki.h"
-#include "utils/include/kio/ko.h"
+#include "include/error/klerror.h"
+#include "deps/k/include/kio/ki.h"
+#include "deps/k/include/kio/ko.h"
 #include <stdbool.h>
 
 

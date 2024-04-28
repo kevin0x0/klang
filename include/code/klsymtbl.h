@@ -22,6 +22,7 @@ struct tagKlSymbol {
   KlStrDesc name;
   KlSymbolAttr attr;
   KlSymbol* next;
+  KlSymbol* prev;
 };
 
 typedef struct tagKlSymbolPool {
@@ -31,6 +32,8 @@ typedef struct tagKlSymbolPool {
 typedef struct tagKlSymTbl KlSymTbl;
 struct tagKlSymTbl {
   KlSymbol** array;
+  KlSymbol head;
+  KlSymbol tail;
   size_t capacity;
   size_t size;
   union {
@@ -55,6 +58,7 @@ void klreftbl_setrefinfo(KlSymTbl* reftbl, KlRefInfo* refinfo);
 
 static inline KlSymbol* klsymtbl_iter_begin(KlSymTbl* symtbl);
 static inline KlSymbol* klsymtbl_iter_next(KlSymTbl* symtbl, KlSymbol* symbol);
+static inline KlSymbol* klsymtbl_iter_end(KlSymTbl* symtbl);
 
 KlSymbol* klsymtbl_insert(KlSymTbl* symtbl, KlStrDesc name);
 KlSymbol* klsymtbl_search(KlSymTbl* map, KlStrDesc name);
@@ -65,21 +69,16 @@ static inline KlSymbol* klsymbolpool_alloc(KlSymbolPool* pool);
 static inline void klsymbolpool_dealloc(KlSymbolPool* pool, KlSymbol* symbol);
 
 static inline KlSymbol* klsymtbl_iter_begin(KlSymTbl* symtbl) {
-  for (size_t i = 0; i < symtbl->capacity; ++i) {
-    if (symtbl->array[i])
-      return symtbl->array[i];
-  }
-  return NULL;
+  return symtbl->head.next;
 }
 
 static inline KlSymbol* klsymtbl_iter_next(KlSymTbl* symtbl, KlSymbol* symbol) {
-  if (symbol->next) return symbol->next;
-  size_t index = symbol->hash & (symtbl->capacity - 1);
-  for (size_t i = index + 1; i < symtbl->capacity; ++i) {
-    if (symtbl->array[i])
-      return symtbl->array[i];
-  }
-  return NULL;
+  kl_unused(symtbl);
+  return symbol->next;
+}
+
+static inline KlSymbol* klsymtbl_iter_end(KlSymTbl* symtbl) {
+  return &symtbl->tail;
 }
 
 static inline KlSymTbl* klsymtbl_parent(KlSymTbl* symtbl) {
@@ -102,6 +101,12 @@ static inline KlSymbol* klsymbolpool_alloc(KlSymbolPool* pool) {
 static inline void klsymbolpool_dealloc(KlSymbolPool* pool, KlSymbol* symbol) {
   symbol->next = pool->symbols;
   pool->symbols = symbol;
+}
+
+static inline void klsymbolpool_dealloclist(KlSymbolPool* pool, KlSymbol* head, KlSymbol* tail) {
+  kl_assert(head->prev != tail, "");
+  tail->next = pool->symbols;
+  pool->symbols = head;
 }
 
 

@@ -1,1 +1,1 @@
-let a = 1 + b;
+return a and b and c and d;

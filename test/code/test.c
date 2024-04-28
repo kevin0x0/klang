@@ -1,6 +1,6 @@
-#include "klang/include/code/klcode.h"
-#include "klang/include/error/klerror.h"
-#include "klang/include/parse/klparser.h"
+#include "include/code/klcode.h"
+#include "include/error/klerror.h"
+#include "include/parse/klparser.h"
 #include <time.h>
 
 void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, KlCst* cst);
