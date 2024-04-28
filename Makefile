@@ -1,49 +1,105 @@
-DEBUGINFO = -g
-OPTIMIZE =
-export CC = gcc
-export AR = ar rcs
-export ROOT_DIR = $(abspath $(shell pwd))/
-export KEVFA_DIR = $(ROOT_DIR)kevfa/
-export KEVLR_DIR = $(ROOT_DIR)kevlr/
-export KLANG_DIR = $(ROOT_DIR)klang/
-export LEXGEN_DIR = $(ROOT_DIR)lexgen/
-export PARGEN_DIR = $(ROOT_DIR)pargen/
-export UTILS_DIR = $(ROOT_DIR)utils/
-export TEMPL_DIR = $(ROOT_DIR)template/
-export CFLAGS = -Wall -Wextra -Winline -pedantic $(OPTIMIZE) $(DEBUGINFO) -I $(ROOT_DIR)
-export TARGET_LEXGEN_NAME = lexgen
-export TARGET_PARGEN_NAME = pargen
+ROOT_DIR = $(abspath ./)/
 
-all : lexgen_t pargen_t kevfa_t kevlr_t klang_t utils_t
+INC_DIR = $(ROOT_DIR)include/
+SRC_DIR = $(ROOT_DIR)src/
+LIB_DIR = $(ROOT_DIR)lib/
 
-lexgen_t : kevfa_t
-	$(MAKE) -C $(LEXGEN_DIR)
-
-pargen_t : kevlr_t
-	$(MAKE) -C $(PARGEN_DIR)
-
-kevfa_t : utils_t template_t
-	$(MAKE) -C $(KEVFA_DIR)
-
-klang_t : utils_t
-	$(MAKE) -C $(KLANG_DIR)
-
-kevlr_t : utils_t template_t
-	$(MAKE) -C $(KEVLR_DIR)
-
-template_t : utils_t
-	$(MAKE) -C $(TEMPL_DIR)
-
-utils_t : 
-	$(MAKE) -C $(UTILS_DIR)
+DEPS_K_DIR = $(ROOT_DIR)deps/k/
 
 
-.PHONY: clean
+AR = ar rcs
+CC = gcc
+OPTIMIZE = -O2
+CFLAGS = $(OPTIMIZE) -I $(ROOT_DIR) -I $(DEPS_K_DIR)
+
+KLANG_OBJS = $(LIB_DIR)klapi.o $(LIB_DIR)klutils.o $(LIB_DIR)klgc.o $(LIB_DIR)klmm.o $(LIB_DIR)klarray.o $(LIB_DIR)klmap.o $(LIB_DIR)klclass.o $(LIB_DIR)klclosure.o \
+       $(LIB_DIR)klkfunc.o $(LIB_DIR)klref.o $(LIB_DIR)klstring.o $(LIB_DIR)klvalue.o $(LIB_DIR)klcommon.o $(LIB_DIR)klexec.o $(LIB_DIR)klstack.o \
+			 $(LIB_DIR)klstate.o $(LIB_DIR)klthrow.o
+
+# KLANGC_OBJS = $(LIB_DIR)
+
+
+all : $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a | create_lib_dir
+	echo "done"
+
+$(LIB_DIR)libklang.a : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_lib_dir
+	cp $(DEPS_K_DIR)lib/libk.a $(LIB_DIR)libklang.a
+	$(AR) $@ $^
+
+$(LIB_DIR)libklangc.a : $(KLANGC_OBJS) $(DEPS_K_DIR)lib/libk.a | create_lib_dir
+	cp $(DEPS_K_DIR)lib/libk.a $(LIB_DIR)libklangc.a
+	$(AR) $@ $^
+
+$(DEPS_K_DIR)lib/libk.a :
+	$(MAKE) -C $(DEPS_K_DIR) "CFLAGS=$(CFLAGS)" "CC=$(CC)"
+
+
+# klang/klapi
+$(LIB_DIR)klapi.o : $(SRC_DIR)klapi.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+# klang/misc/
+$(LIB_DIR)klutils.o : $(SRC_DIR)misc/klutils.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+# klang/mm/
+$(LIB_DIR)klgc.o : $(SRC_DIR)mm/klgc.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klmm.o : $(SRC_DIR)mm/klmm.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+# klang/value/
+$(LIB_DIR)klarray.o : $(SRC_DIR)value/klarray.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klmap.o : $(SRC_DIR)value/klmap.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klclass.o : $(SRC_DIR)value/klclass.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klclosure.o : $(SRC_DIR)value/klclosure.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klkfunc.o : $(SRC_DIR)value/klkfunc.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klref.o : $(SRC_DIR)value/klref.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klstring.o : $(SRC_DIR)value/klstring.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klvalue.o : $(SRC_DIR)value/klvalue.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klstate.o : $(SRC_DIR)value/klstate.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+
+# klang/vm/
+$(LIB_DIR)klcommon.o : $(SRC_DIR)vm/klcommon.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klexec.o : $(SRC_DIR)vm/klexec.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klstack.o : $(SRC_DIR)vm/klstack.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klthrow.o : $(SRC_DIR)vm/klthrow.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+
+
+
+
+
+.PHONY: clean create_lib_dir
 clean :
-	$(MAKE) -C $(UTILS_DIR) clean
-	$(MAKE) -C $(LEXGEN_DIR) clean
-	$(MAKE) -C $(PARGEN_DIR) clean
-	$(MAKE) -C $(KEVFA_DIR) clean
-	$(MAKE) -C $(KEVLR_DIR) clean
-	$(MAKE) -C $(KLANG_DIR) clean
-	$(MAKE) -C $(TEMPL_DIR) clean
+	$(RM) $(LIB_DIR)*
+	$(MAKE) -C $(DEPS_K_DIR) clean
+
+create_lib_dir :
+	mkdir -p $(LIB_DIR)

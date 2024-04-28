@@ -1,7 +1,0 @@
-upper = $[A-Z]
-lower = $[a-z]
-alpha = $[A-Za-z]
-digit = $[0-9]
-alnum = $[A-Za-z0-9]
-print = $[\x20-\x7E]
-graph = $[\x21-\x7E]
