@@ -56,7 +56,7 @@ bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings) {
 #undef newstring
 }
 
-bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* strings, KlStrTbl* strtbl, KlGenUnit* prev, Ki* input, KlError* klerror) {
+bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* strings, KlStrTbl* strtbl, KlGenUnit* prev, KlCodeGenConfig* config) {
   if (kl_unlikely(!(gen->symtbl = klsymtblpool_alloc(symtblpool, strtbl, NULL)))) {
     return false;
   }
@@ -94,16 +94,7 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* stri
   gen->info.break_scope = NULL;
   gen->info.continue_scope = NULL;
   gen->prev = prev;
-  gen->klerror = klerror;
-  gen->input = input;
-
-  if (prev) {
-    gen->config = prev->config;
-  } else {
-    gen->config.inputname = "unnamed";
-    gen->config.debug = false;
-  }
-
+  gen->config = config;
   return true;
 }
 
@@ -139,7 +130,7 @@ KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
   klreftbl_setrefinfo(gen->reftbl, refinfo);
   size_t codelen = klinstarr_size(&gen->code);
   KlInstruction* insts = klinstarr_steal(&gen->code);
-  KlFilePosition* posinfo = gen->config.debug ? klfparr_steal(&gen->position) : NULL;
+  KlFilePosition* posinfo = gen->config->posinfo ? klfparr_steal(&gen->position) : (klfparr_destroy(&gen->position), NULL);
   size_t nnested = klcodearr_size(&gen->subfunc);
   KlCode** nestedfunc = klcodearr_steal(&gen->subfunc);
 
@@ -151,9 +142,8 @@ KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
   klsymtblpool_dealloc(gen->symtblpool, gen->symtbl);
   klcontbl_delete(gen->contbl);
   if (kl_unlikely(!code)) {
-    for (size_t i = 0; i < nnested; ++i) {
+    for (size_t i = 0; i < nnested; ++i)
       klcode_delete(nestedfunc[i]);
-    }
     free(nestedfunc);
     free(insts);
     free(posinfo);
@@ -347,24 +337,22 @@ void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, Kl
   }
 }
 
-KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, bool debug) {
+KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, KlCodeGenConfig* config) {
   /* create genunit */
   KlGUCommonString strings;
   if (kl_unlikely(!klgen_init_commonstrings(strtbl, &strings))) {
-    klerror_error(klerr, input, inputname, 0, 0, "out of memory");
+    klerror_error(config->klerr, config->input, config->inputname, 0, 0, "out of memory");
     return NULL;
   }
   KlSymTblPool symtblpool;
   klsymtblpool_init(&symtblpool);
   KlGenUnit gen;
-  if (kl_unlikely(!klgen_init(&gen, &symtblpool, &strings, strtbl, NULL, input, klerr))) {
+  if (kl_unlikely(!klgen_init(&gen, &symtblpool, &strings, strtbl, NULL, config))) {
     klsymtblpool_destroy(&symtblpool);
-    klerror_error(klerr, input, inputname, 0, 0, "out of memory");
+    klerror_error(config->klerr, config->input, config->inputname, 0, 0, "out of memory");
     return NULL;
   }
   gen.vararg = true;
-  gen.config.inputname = inputname;
-  gen.config.debug = debug;
   if (setjmp(gen.jmppos) == 0) {
     /* begin a new scope */
     klgen_pushsymtbl(&gen);
@@ -400,6 +388,6 @@ KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, const char* inputnam
 void klgen_error(KlGenUnit* gen, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
   va_list args;
   va_start(args, format);
-  klerror_errorv(gen->klerror, gen->input, gen->config.inputname, begin, end, format, args);
+  klerror_errorv(gen->config->klerr, gen->config->input, gen->config->inputname, begin, end, format, args);
   va_end(args);
 }

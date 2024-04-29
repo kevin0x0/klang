@@ -39,7 +39,8 @@ int main(void) {
 }
 
 void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, KlCst* cst) {
-  KlCode* code = klcode_create_fromcst(cst, strtbl, input, inputname, klerr, true);
+  KlCodeGenConfig config = { .posinfo = true, .klerr = klerr, .inputname = inputname, .input = input, .debug = false };
+  KlCode* code = klcode_create_fromcst(cst, strtbl, &config);
   if (kl_unlikely(!code)) return;
   Ko* ko = kofile_attach(stdout);
   klcode_print(code, ko);

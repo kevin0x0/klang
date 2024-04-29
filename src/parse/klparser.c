@@ -451,7 +451,7 @@ static KlCst* klparser_generatorclass(KlParser* parser, KlLex* lex) {
   }
   /* else is a generator */
   klparser_match(parser, lex, KLTK_BAR);
-  KlCstPre* yieldexpr = klcst_pre_create(KLTK_YIELD, klcst(exprlist), klcst_begin(exprlist), klcst_end(exprlist));
+  KlCstYield* yieldexpr = klcst_yield_create(klcst(exprlist), klcst_begin(exprlist), klcst_end(exprlist));
   klparser_oomifnull(yieldexpr);
   KlCstStmtExpr* stmtexpr = klcst_stmtexpr_create(klcst(yieldexpr), klcst_begin(yieldexpr),  klcst_end(yieldexpr));
   klparser_oomifnull(stmtexpr);
@@ -1364,6 +1364,7 @@ static KlCst* klparser_generatorfor(KlParser* parser, KlLex* lex, KlCst* tuple, 
     KlCst** exprs = klcast(KlCstTuple*, exprlist)->elems;
     KlCstStmtIFor* ifor = klcst_stmtifor_create(klcst(lvals), exprs[0], exprs[1], nelem == 3 ? exprs[2] : NULL, block, klcst_begin(lvals), block->end);
     klcst_tuple_shallow_replace(klcast(KlCstTuple*, exprlist), NULL, 0);
+    klcst_delete(exprlist);
     klparser_oomifnull(ifor);
     return klcst(ifor);
   }

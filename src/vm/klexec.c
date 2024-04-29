@@ -119,20 +119,6 @@ static bool klexec_is_method(KlValue* callable) {
   }
 }
 
-/* insert 'thisobj' before all parameters.
- * stack size is guaranteed by caller.
- */
-static void klexec_addthis(KlState* state, KlValue* thisobj, size_t narg) {
-  kl_assert(klstack_residual(klstate_stack(state)) >= 1, "");
-  KlValue* stktop = klstate_stktop(state);
-  while (narg--) {
-    klvalue_setvalue(stktop, stktop - 1);
-      --stktop;
-  }
-  klvalue_setvalue(stktop, thisobj);
-  klstack_move_top(klstate_stack(state), 1);
-}
-
 /* Prepare for calling a callable object (C function, C closure, klang closure).
  * Also perform the actual call for C function and C closure.
  */
@@ -316,19 +302,6 @@ static KlException klexec_doindexasmethod(KlState* state, KlValue* indexable, Kl
   klstack_pushvalue(klstate_stack(state), key);
   klstack_pushvalue(klstate_stack(state), val);
   return klexec_callprepare(state, method, 3, NULL);
-}
-
-static KlException klexec_domultiargsmethod(KlState* state, KlValue* obj, KlValue* res, size_t narg, KlString* op) {
-  KlValue* method = klexec_getfield(state, obj, op);
-  if (kl_unlikely(klvalue_checktype(method, KL_NIL) || !klexec_is_method(method))) {
-    return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s'",
-                         klstring_content(op), klvalue_typename(klvalue_gettype(obj)));
-  }
-  KlCallInfo* newci = klexec_new_callinfo(state, 1, res - (klstate_stktop(state) - narg));
-  if (kl_unlikely(!newci))
-    return klstate_throw(state, KL_E_OOM, "out of memory when calling indexas operator method");
-  klexec_addthis(state, obj, narg);
-  return klexec_callprepare(state, method, narg, NULL);
 }
 
 static KlException klexec_dolt(KlState* state, KlValue* a, KlValue* b, KlValue* c) {

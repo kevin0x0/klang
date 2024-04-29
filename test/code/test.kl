@@ -1,1 +1,7 @@
-[ x | x in 12 ];
+# let a = 0;
+# return {
+#   get = -> -> a,
+#   set = n => { a = n; }
+# };
+
+let a, b = f((=> (a, b))() where let a, b = 1, 2);

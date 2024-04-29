@@ -11,7 +11,7 @@ typedef enum tagKlValKind {
   KLVAL_STRING,
   KLVAL_INTEGER,  
   KLVAL_FLOAT,  
-  KLVAL_JMP,
+  KLVAL_JMPLIST,
   KLVAL_STACK,
   KLVAL_REF,
   KLVAL_NONE,   /* currently only used for boolean expression */
@@ -22,8 +22,8 @@ typedef struct tagKlCodeVal {
   union {
     size_t index;
     struct {
-      ptrdiff_t tail;
-      ptrdiff_t head;
+      unsigned tail;
+      unsigned head;
     } jmplist;
     KlInt intval;
     KlFloat floatval;
@@ -45,7 +45,7 @@ static inline KlCodeVal klcodeval_integer(KlInt intval);
 static inline KlCodeVal klcodeval_float(KlFloat floatval);
 static inline KlCodeVal klcodeval_bool(KlBool boolval);
 static inline KlCodeVal klcodeval_nil(void);
-static inline KlCodeVal klcodeval_jmp(size_t pc);
+static inline KlCodeVal klcodeval_jmplist(size_t pc);
 static inline KlCodeVal klcodeval_none(void);
 
 static inline KlCodeVal klcodeval_index(KlValKind kind, size_t index) {
@@ -88,8 +88,8 @@ static inline KlCodeVal klcodeval_nil(void) {
   return val;
 }
 
-static inline KlCodeVal klcodeval_jmp(size_t pc) {
-  KlCodeVal val = { .kind = KLVAL_JMP, .jmplist = { .head = pc, .tail = pc } };
+static inline KlCodeVal klcodeval_jmplist(size_t pc) {
+  KlCodeVal val = { .kind = KLVAL_JMPLIST, .jmplist = { .head = pc, .tail = pc } };
   return val;
 }
 

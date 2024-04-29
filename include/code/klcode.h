@@ -5,14 +5,21 @@
 #include "include/code/klsymtbl.h"
 #include "include/value/klref.h"
 #include "include/vm/klinst.h"
-#include "deps/k/include/array/kgarray.h"
 
 
 typedef struct tagKlCode KlCode;
 typedef struct tagKlFilePosition {
-  KlFileOffset begin;
-  KlFileOffset end;
+  unsigned begin;
+  unsigned end;
 } KlFilePosition;
+
+typedef struct tagKlCodeGenConfig {
+  const char* inputname;
+  bool debug;
+  bool posinfo;
+  KlError* klerr;
+  Ki* input;
+} KlCodeGenConfig;
 
 
 struct tagKlCode {
@@ -32,12 +39,15 @@ struct tagKlCode {
 
 
 KlCode* klcode_create(KlRefInfo* refinfo, size_t nref, KlConstant* constants, size_t nconst,
-                      KlInstruction* code, KlFilePosition* lineinfo, size_t codelen,
+                      KlInstruction* code, KlFilePosition* posinfo, size_t codelen,
                       KlCode** nestedfunc, size_t nnested, KlStrTbl* strtbl, size_t nparam,
                       size_t framesize);
 void klcode_delete(KlCode* code);
 
-KlCode* klcode_create_fromcst(KlCst* cst, KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, bool debug);
+KlCode* klcode_create_fromcst(KlCst* cst, KlStrTbl* strtbl, KlCodeGenConfig* config);
+KlCode* klcode_create_fromfile(Ki* file);
+
+void klcode_dump(KlCode* code, Ko* file);
 void klcode_print(KlCode* code, Ko* out);
 
 #endif

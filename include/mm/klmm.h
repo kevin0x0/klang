@@ -94,7 +94,7 @@ static inline void klmm_init(KlMM* klmm, size_t limit) {
 }
 
 static inline void klmm_try_gc(KlMM* klmm) {
-  //if (klmm->mem_used >= klmm->limit)
+  if (klmm->mem_used >= klmm->limit)
     klmm_do_gc(klmm);
 }
 

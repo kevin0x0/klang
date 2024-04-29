@@ -427,9 +427,9 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       size_t stktop = KLINST_ABTX_GETB(inst);
       size_t capacity = KLINST_ABTX_GETX(inst);
       klcode_print_ABTX(out, inst);
-      ko_printf(out, "capacity: %u, stack top: %u, ", klbit(capacity), stktop);
+      ko_printf(out, "capacity: %u, stack top: %u", klbit(capacity), stktop);
       if (KLINST_ABTX_GETT(inst))
-        ko_printf(out, "parent at R%u", stktop);
+        ko_printf(out, ", parent at R%u", stktop);
       return pc;
     }
     case KLOPCODE_INDEXI: {
@@ -881,10 +881,31 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
   }
 }
 
-void klcode_print_function(KlCode* code, Ko* out, size_t idx) {
+static void klcode_print_reftbl(KlCode* code, Ko* out) {
+  ko_printf(out, "%u references:\n", code->nconst);
+  for (size_t i = 0; i < code->nref; ++i)
+    ko_printf(out, "reference %4zu: from %10s, index = %u\n", i, code->refinfo[i].on_stack ? "stack" : "ref table", (unsigned)code->refinfo[i].index);
+}
+
+typedef struct tagKlCodePrintInfo {
+  size_t idx;
+  struct tagKlCodePrintInfo* upper;
+} KlCodePrintInfo;
+
+static void klcode_print_printinfo(KlCodePrintInfo* printinfo, Ko* out) {
+  if (printinfo) {
+    klcode_print_printinfo(printinfo->upper, out);
+    ko_printf(out, ":%zu", printinfo->idx);
+  }
+}
+
+void klcode_print_function(KlCode* code, Ko* out, KlCodePrintInfo* printinfo) {
   KlInstruction* pc = code->code;
   KlInstruction* end = code->code + code->codelen;
-  ko_printf(out, "function(%u), %u instructions:\n", idx, code->codelen);
+  ko_printf(out, "function(top");
+  klcode_print_printinfo(printinfo, out);
+  ko_printf(out, "), %u registers\n", code->framesize);
+  ko_printf(out, "%u instructions:\n", code->codelen);
   while (pc != end) {
     pc = klcode_print_instruction(code, out, pc);
     ko_putc(out, '\n');
@@ -892,12 +913,12 @@ void klcode_print_function(KlCode* code, Ko* out, size_t idx) {
   ko_putc(out, '\n');
   ko_printf(out, "%u constants:\n", code->nconst);
   for (size_t i = 0; i < code->nconst; ++i) {
-    ko_printf(out, "constant %u: ", i);
+    ko_printf(out, "constant %4zu: ", i);
     klcode_print_constant(code, out, &code->constants[i]);
     ko_putc(out, '\n');
   }
   ko_putc(out, '\n');
-  ko_printf(out, "%u registers\n", code->framesize);
+  klcode_print_reftbl(code, out);
   ko_putc(out, '\n');
   if (code->nnested == 0) {
     ko_printf(out, "0 sub-function\n");
@@ -906,11 +927,11 @@ void klcode_print_function(KlCode* code, Ko* out, size_t idx) {
   ko_printf(out, "%u sub-functions:\n", code->nnested);
   for (size_t i = 0; i < code->nnested; ++i) {
     ko_putc(out, '\n');
-    klcode_print_function(code->nestedfunc[i], out, i);
+    KlCodePrintInfo subfunc = { .idx = i, .upper = printinfo };
+    klcode_print_function(code->nestedfunc[i], out, &subfunc);
   }
-  ko_printf(out, "end sub-functions: %u\n", idx);
 }
 
 void klcode_print(KlCode* code, Ko* out) {
-  klcode_print_function(code, out, 0);
+  klcode_print_function(code, out, NULL);
 }

@@ -11,12 +11,13 @@ void fibonacci(KlState* state);
 void concat(KlState* state);
 void arithsum(KlState* state);
 void coroutine(KlState* state);
+void gctest(KlState* state);
 
 int main(void) {
   KlMM klmm;
   klmm_init(&klmm, 1024);
   KlState* state = klapi_new_state(&klmm);
-  fibonacci(state);
+  gctest(state);
   //concat(state);
   size_t narg = 1;
   klapi_pushint(state, 36);
@@ -35,6 +36,32 @@ int main(void) {
   printf("fibonacci(%d) = %zd\n", 35, klapi_getint(state, -1));
   klmm_destroy(&klmm);
   return 0;
+}
+
+void gctest(KlState* state) {
+  KlMM* klmm = klstate_getmm(state);
+  KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
+  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 2, 0, 0, 100, 0);
+  // KlRefInfo* refinfo = klkfunc_refinfo(kfunc);
+  KlValue* constants = klkfunc_constants(kfunc);
+  klapi_pushint(state, 100000000);
+  klvalue_setvalue(&constants[0], klapi_access(state, -1));
+  klapi_setstring(state, -1, "name");
+  klvalue_setvalue(&constants[1], klapi_access(state, -1));
+  code[0] = klinst_adjustargs();
+  code[1] = klinst_loadi(0, 0);
+  code[2] = klinst_loadc(1, 0);
+  code[3] = klinst_loadnil(2, 0);
+  code[4] = klinst_iforprep(0, 2);
+  code[5] = klinst_loadc(3, 1);
+  code[6] = klinst_iforloop(0, -2);
+  code[7] = klinst_return1(0);
+  // klapi_pushnil(state, 1);
+  KlKClosure* kclo = klkclosure_create(klmm, kfunc, klapi_access(state, -1), &state->reflist, NULL);
+  klkfunc_initdone(klmm, kfunc);
+  klapi_setobj(state, -1, kclo, KL_KCLOSURE);
+  // klreflist_close(&state->reflist, klstate_getval(state, -1), klstate_getmm(state));
+  // klapi_storeglobal(state, klstrpool_new_string(state->strpool, "fibonacci"));
 }
 
 void fibonacci(KlState* state) {

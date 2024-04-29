@@ -1,5 +1,4 @@
-function f(n) {
-  return n <= 1 && n || f(n - 1) + f(n - 2);
+for (let i = 0; i < 100000000; ++i) {
+  let a = {};
+  a["name"] = "name";
 }
-
-console.log(f(36))

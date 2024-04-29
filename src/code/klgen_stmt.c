@@ -318,10 +318,10 @@ static bool klgen_stmttryfastjmp_inif(KlGenUnit* gen, KlCstStmtIf* ifcst) {
   KlCodeVal cond = klgen_exprbool(gen, ifcst->cond, true);
   if (klcodeval_isconstant(cond)) {
     if (klcodeval_isfalse(cond)) return true;
-    klgen_mergejmp_maynone(gen, jmplist,
-                           klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(stmtcst))));
+    klgen_mergejmplist_maynone(gen, jmplist,
+                           klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(stmtcst))));
   } else {
-    klgen_mergejmp_maynone(gen, jmplist, cond);
+    klgen_mergejmplist_maynone(gen, jmplist, cond);
   }
   return true;
 }
@@ -354,7 +354,7 @@ static void klgen_stmtif(KlGenUnit* gen, KlCstStmtIf* ifcst) {
       klgen_setinstjmppos(gen, cond, klgen_currcodesize(gen));
       return;
     }
-    KlCodeVal ifout = klcodeval_jmp(klgen_emit(gen,
+    KlCodeVal ifout = klcodeval_jmplist(klgen_emit(gen,
                                                    ifneedclose ? klinst_closejmp(stktop, 0)
                                                              : klinst_jmp(0),
                                                    klgen_cstposition(ifcst->if_block)));
@@ -368,7 +368,7 @@ static void klgen_stmtif(KlGenUnit* gen, KlCstStmtIf* ifcst) {
 
 static void klgen_stmtwhile(KlGenUnit* gen, KlCstStmtWhile* whilecst) {
   KlCodeVal bjmplist = klcodeval_none();
-  KlCodeVal cjmplist = klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(whilecst)));
+  KlCodeVal cjmplist = klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(whilecst)));
   KlCodeVal* prev_bjmp = gen->info.breakjmp;
   KlCodeVal* prev_cjmp = gen->info.continuejmp;
   KlSymTbl* prev_bscope = gen->info.break_scope;
@@ -464,8 +464,8 @@ static void klgen_stmtbreak(KlGenUnit* gen, KlCstStmtBreak* breakcst) {
   } else {
     breakinst = klinst_jmp(0);
   }
-  klgen_mergejmp_maynone(gen, gen->info.breakjmp,
-                         klcodeval_jmp(klgen_emit(gen, breakinst, klgen_cstposition(breakcst))));
+  klgen_mergejmplist_maynone(gen, gen->info.breakjmp,
+                         klcodeval_jmplist(klgen_emit(gen, breakinst, klgen_cstposition(breakcst))));
 }
 
 static void klgen_stmtcontinue(KlGenUnit* gen, KlCstStmtContinue* continuecst) {
@@ -480,21 +480,20 @@ static void klgen_stmtcontinue(KlGenUnit* gen, KlCstStmtContinue* continuecst) {
   } else {
     continueinst = klinst_jmp(0);
   }
-  klgen_mergejmp_maynone(gen, gen->info.continuejmp,
-                         klcodeval_jmp(klgen_emit(gen, continueinst, klgen_cstposition(continuecst))));
+  klgen_mergejmplist_maynone(gen, gen->info.continuejmp,
+                         klcodeval_jmplist(klgen_emit(gen, continueinst, klgen_cstposition(continuecst))));
 }
 
 static void klgen_stmtreturn(KlGenUnit* gen, KlCstStmtReturn* returncst) {
   kl_assert(klcst_kind(returncst->retval) == KLCST_EXPR_TUPLE, "");
   KlCstTuple* res = klcast(KlCstTuple*, returncst->retval);
-  bool needclose = klgen_needclose(gen, gen->reftbl, NULL);
   size_t stktop = klgen_stacktop(gen);
   if (res->nelem == 1) {
     KlCodeVal retval;
     size_t nres = klgen_trytakeall(gen, res->elems[0], &retval);
     kl_assert(retval.kind == KLVAL_STACK, "");
     kl_assert(nres == 1 || nres == KLINST_VARRES, "");
-    if (needclose)
+    if (klgen_needclose(gen, gen->reftbl, NULL))
       klgen_emit(gen, klinst_close(0), klgen_cstposition(returncst));
     KlInstruction returninst = nres == KLINST_VARRES ? klinst_return(retval.index, nres)
                                                      : klinst_return1(retval.index);
@@ -502,7 +501,7 @@ static void klgen_stmtreturn(KlGenUnit* gen, KlCstStmtReturn* returncst) {
   } else {
     size_t argbase = klgen_stacktop(gen);
     size_t nres = klgen_passargs(gen, klcst(res));
-    if (needclose)
+    if (klgen_needclose(gen, gen->reftbl, NULL))
       klgen_emit(gen, klinst_close(0), klgen_cstposition(returncst));
     KlInstruction returninst = nres == 0 ? klinst_return0() :
                                nres == 1 ? klinst_return1(argbase)
@@ -536,8 +535,8 @@ static void klgen_stmtifor(KlGenUnit* gen, KlCstStmtIFor* iforcst) {
   }
   kl_assert(klgen_stacktop(gen) == forbase + 3, "");
 
-  klgen_mergejmp_maynone(gen, gen->info.breakjmp,
-                         klcodeval_jmp(klgen_emit(gen, klinst_iforprep(forbase, 0), klgen_cstposition(iforcst))));
+  klgen_mergejmplist_maynone(gen, gen->info.breakjmp,
+                         klcodeval_jmplist(klgen_emit(gen, klinst_iforprep(forbase, 0), klgen_cstposition(iforcst))));
   klgen_pushsymtbl(gen);  /* enter a new scope here */
   size_t looppos = klgen_currcodesize(gen);
   kl_assert(klcst_kind(iforcst->lval) == KLCST_EXPR_TUPLE && klcast(KlCstTuple*, iforcst->lval)->nelem == 1, "");
@@ -583,8 +582,8 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlCstStmtVFor* vforcst) {
   size_t npattern = klcast(KlCstTuple*, vforcst->lvals)->nelem;
   KlCodeVal step = klcodeval_integer(npattern);
   klgen_putonstktop(gen, &step, klgen_cstposition(vforcst));
-  klgen_mergejmp_maynone(gen, gen->info.breakjmp,
-                         klcodeval_jmp(klgen_emit(gen, klinst_vforprep(forbase, 0), klgen_cstposition(vforcst))));
+  klgen_mergejmplist_maynone(gen, gen->info.breakjmp,
+                         klcodeval_jmplist(klgen_emit(gen, klinst_vforprep(forbase, 0), klgen_cstposition(vforcst))));
   size_t looppos = klgen_currcodesize(gen);
   klgen_stackalloc1(gen); /* forbase + 0: step, forbase + 1: index */
   klgen_pushsymtbl(gen);  /* begin a new scope */
@@ -637,8 +636,8 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlCstStmtGFor* gforcst) {
   KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
   klgen_oomifnull(gen, conent);
   klgen_emitmethod(gen, iterable, conent->index, 0, 3, forbase, klgen_cstposition(gforcst));
-  klgen_mergejmp_maynone(gen, gen->info.continuejmp,
-                         klcodeval_jmp(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(gforcst))));
+  klgen_mergejmplist_maynone(gen, gen->info.continuejmp,
+                         klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(gforcst))));
   size_t looppos = klgen_currcodesize(gen);
   klgen_pushsymtbl(gen);    /* begin a new scope */
   klgen_stackalloc(gen, 3); /* forbase: iteration function, forbase + 1: static state, forbase + 2: index state */

@@ -30,15 +30,15 @@ static inline void klgen_setoffset(KlGenUnit* gen, KlInstruction* jmpinst, int o
   }
 }
 
-static inline KlCodeVal klgen_mergejmp(KlGenUnit* gen, KlCodeVal jmplst1, KlCodeVal jmplst2) {
-  kl_assert(jmplst1.kind == KLVAL_JMP && jmplst2.kind == KLVAL_JMP, "");
+static inline KlCodeVal klgen_mergejmplist(KlGenUnit* gen, KlCodeVal jmplst1, KlCodeVal jmplst2) {
+  kl_assert(jmplst1.kind == KLVAL_JMPLIST && jmplst2.kind == KLVAL_JMPLIST, "");
   KlInstruction* jlst2tail = klinstarr_access(&gen->code, jmplst2.jmplist.tail);
   klgen_setoffset(gen, jlst2tail, jmplst1.jmplist.head - jmplst2.jmplist.tail);
   jmplst2.jmplist.tail = jmplst1.jmplist.tail;
   return jmplst2;
 }
 
-static inline void klgen_mergejmp_maynone(KlGenUnit* gen, KlCodeVal* jmplst1, KlCodeVal jmplst2) {
-  *jmplst1 = jmplst1->kind == KLVAL_NONE ? jmplst2 : klgen_mergejmp(gen, *jmplst1, jmplst2);
+static inline void klgen_mergejmplist_maynone(KlGenUnit* gen, KlCodeVal* jmplst1, KlCodeVal jmplst2) {
+  *jmplst1 = jmplst1->kind == KLVAL_NONE ? jmplst2 : klgen_mergejmplist(gen, *jmplst1, jmplst2);
 }
 #endif

@@ -9,8 +9,8 @@
 #define KLSTRTAB_EXTRA    (4096)
 
 typedef struct tagKlStrDesc {
-  size_t id;
-  size_t length;
+  unsigned id;
+  unsigned length;
 } KlStrDesc;          /* string descriptor */
 
 typedef struct tagKlStrTbl {

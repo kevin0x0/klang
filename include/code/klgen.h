@@ -6,6 +6,7 @@
 #include "include/code/klsymtbl.h"
 #include "include/cst/klstrtbl.h"
 #include "include/vm/klinst.h"
+#include "deps/k/include/array/kgarray.h"
 #include <setjmp.h>
 
 
@@ -63,21 +64,16 @@ struct tagKlGenUnit {
   } info;
   KlGenUnit* prev;
   jmp_buf jmppos;
-  KlError* klerror;
-  Ki* input;
-  struct {
-    const char* inputname;
-    bool debug;
-  } config;
+  KlCodeGenConfig* config;
   KlGUCommonString* strings;
 };
 
-bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* strings, KlStrTbl* strtbl, KlGenUnit* prev, Ki* input, KlError* klerror);
+bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* strings, KlStrTbl* strtbl, KlGenUnit* prev, KlCodeGenConfig* config);
 void klgen_destroy(KlGenUnit* gen);
 
 bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings);
 
-KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, bool debug);
+KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, KlCodeGenConfig* config);
 /* check range */
 void klgen_validate(KlGenUnit* gen);
 /* convert to KlCode and destroy self.
@@ -169,7 +165,7 @@ static inline size_t klgen_currcodesize(KlGenUnit* gen) {
 
 static inline void klgen_popinst(KlGenUnit* gen, size_t npop) {
   klinstarr_pop_back(&gen->code, npop);
-  if (gen->config.debug)
+  if (gen->config->posinfo)
     klfparr_pop_back(&gen->position, npop);
 }
 
@@ -189,7 +185,7 @@ static inline size_t klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePositi
   size_t pc = klinstarr_size(&gen->code);
   if (kl_unlikely(!klinstarr_push_back(&gen->code, inst)))
     klgen_error_fatal(gen, "out of memory");
-  if (gen->config.debug)
+  if (gen->config->posinfo)
     klfparr_push_back(&gen->position, position);
   return pc;
 }
