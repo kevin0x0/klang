@@ -324,7 +324,7 @@ void kllex_next(KlLex* lex) {
       kllex_return(KLTK_ID);
     }
     case KLTK_BOOLVAL: {
-      lex->tok.boolval = buf[0] == 't' ? KL_TRUE : KL_FALSE;
+      lex->tok.boolval = buf[0] == 't' ? KLC_TRUE : KLC_FALSE;
       kllex_return(KLTK_BOOLVAL);
     }
     case KLTK_ERR: {

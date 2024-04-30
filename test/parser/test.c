@@ -1,5 +1,5 @@
-#include "klang/include/parse/klparser.h"
-#include "klang/include/parse/kllex.h"
+#include "include/parse/klparser.h"
+#include "include/parse/kllex.h"
 
 void loop(void);
 

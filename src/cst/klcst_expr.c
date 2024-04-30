@@ -1,6 +1,5 @@
 #include "include/cst/klcst_expr.h"
 #include "include/cst/klcst.h"
-#include "include/value/klvalue.h"
 #include <stdbool.h>
 
 static void klcst_id_destroy(KlCstIdentifier* cstid);
@@ -115,37 +114,37 @@ KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFileOffset begin
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
   cstconstant->con.string = string;
-  cstconstant->con.type = KL_STRING;
+  cstconstant->con.type = KLC_STRING;
   klcst_setposition(cstconstant, begin, end);
   klcst_init(cstconstant, &klcst_constant_vfunc);
   return cstconstant;
 }
 
-KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, KlFileOffset end) {
+KlCstConstant* klcst_constant_create_integer(KlCInt intval, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
   cstconstant->con.intval = intval;
-  cstconstant->con.type = KL_INT;
+  cstconstant->con.type = KLC_INT;
   klcst_setposition(cstconstant, begin, end);
   klcst_init(cstconstant, &klcst_constant_vfunc);
   return cstconstant;
 }
 
-KlCstConstant* klcst_constant_create_float(KlFloat floatval, KlFileOffset begin, KlFileOffset end) {
+KlCstConstant* klcst_constant_create_float(KlCFloat floatval, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
   cstconstant->con.floatval = floatval;
-  cstconstant->con.type = KL_FLOAT;
+  cstconstant->con.type = KLC_FLOAT;
   klcst_setposition(cstconstant, begin, end);
   klcst_init(cstconstant, &klcst_constant_vfunc);
   return cstconstant;
 }
 
-KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, KlFileOffset end) {
+KlCstConstant* klcst_constant_create_boolean(KlCBool boolval, KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
   cstconstant->con.boolval = boolval;
-  cstconstant->con.type = KL_BOOL;
+  cstconstant->con.type = KLC_BOOL;
   klcst_setposition(cstconstant, begin, end);
   klcst_init(cstconstant, &klcst_constant_vfunc);
   return cstconstant;
@@ -154,7 +153,7 @@ KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, 
 KlCstConstant* klcst_constant_create_nil(KlFileOffset begin, KlFileOffset end) {
   KlCstConstant* cstconstant = klcst_alloc(KlCstConstant);
   if (kl_unlikely(!cstconstant)) return NULL;
-  cstconstant->con.type = KL_NIL;
+  cstconstant->con.type = KLC_NIL;
   klcst_setposition(cstconstant, begin, end);
   klcst_init(cstconstant, &klcst_constant_vfunc);
   return cstconstant;

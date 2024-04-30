@@ -6,7 +6,6 @@
 #include "include/cst/klcst_expr.h"
 #include "include/cst/klstrtbl.h"
 #include "include/parse/kltokens.h"
-#include "include/vm/klinst.h"
 #include <strings.h>
 
 
@@ -53,7 +52,7 @@ static inline void klgen_emit_objmatching(KlGenUnit* gen, size_t nres, size_t ta
 
 static inline size_t klgen_emit_genericmatching(KlGenUnit* gen, size_t nres, size_t target, size_t method, size_t obj, size_t narg, KlFilePosition filepos) {
   klgen_emit(gen, klinst_hasfield(obj, method), filepos);
-  size_t pc = klgen_emit(gen, klinst_condjmp(KL_TRUE, 0), filepos);
+  size_t pc = klgen_emit(gen, klinst_condjmp(KLC_TRUE, 0), filepos);
   klgen_emitmethod(gen, obj, method, narg, nres, target, filepos);
   return pc;
 }

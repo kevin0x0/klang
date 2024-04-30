@@ -5,7 +5,6 @@
 #include "include/code/klcontbl.h"
 #include "include/code/klsymtbl.h"
 #include "include/cst/klstrtbl.h"
-#include "include/vm/klinst.h"
 #include "deps/k/include/array/kgarray.h"
 #include <setjmp.h>
 
@@ -86,8 +85,8 @@ void klgen_pushsymtbl(KlGenUnit* gen);
 void klgen_popsymtbl(KlGenUnit* gen);
 
 static inline size_t klgen_newstring(KlGenUnit* gen, KlStrDesc str);
-static inline size_t klgen_newfloat(KlGenUnit* gen, KlFloat val);
-static inline size_t klgen_newinteger(KlGenUnit* gen, KlInt val);
+static inline size_t klgen_newfloat(KlGenUnit* gen, KlCFloat val);
+static inline size_t klgen_newinteger(KlGenUnit* gen, KlCInt val);
 
 
 void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position);
@@ -108,21 +107,21 @@ kl_noreturn static inline void klgen_error_fatal(KlGenUnit* gen, const char* mes
 }
 
 static inline size_t klgen_newstring(KlGenUnit* gen, KlStrDesc str) {
-  KlConstant constant = { .type = KL_STRING, .string = str };
+  KlConstant constant = { .type = KLC_STRING, .string = str };
   KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
   klgen_oomifnull(gen, conent);
   return conent->index;
 }
 
-static inline size_t klgen_newfloat(KlGenUnit* gen, KlFloat val) {
-  KlConstant constant = { .type = KL_FLOAT, .floatval = val };
+static inline size_t klgen_newfloat(KlGenUnit* gen, KlCFloat val) {
+  KlConstant constant = { .type = KLC_FLOAT, .floatval = val };
   KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
   klgen_oomifnull(gen, conent);
   return conent->index;
 }
 
-static inline size_t klgen_newinteger(KlGenUnit* gen, KlInt val) {
-  KlConstant constant = { .type = KL_INT, .intval = val };
+static inline size_t klgen_newinteger(KlGenUnit* gen, KlCInt val) {
+  KlConstant constant = { .type = KLC_INT, .intval = val };
   KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
   klgen_oomifnull(gen, conent);
   return conent->index;

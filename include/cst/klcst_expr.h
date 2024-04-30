@@ -3,9 +3,25 @@
 
 #include "include/cst/klcst.h"
 #include "include/cst/klstrtbl.h"
+#include "include/lang/types.h"
 #include "include/parse/kltokens.h"
-#include "include/value/klvalue.h"
 #include <stddef.h>
+
+typedef KlLangInt KlCInt;
+typedef KlLangFloat KlCFloat;
+typedef KlLangBool KlCBool;
+
+#define KLC_TRUE  (1)
+#define KLC_FALSE (0)
+
+typedef enum tagKlCType {
+  KLC_INT = 0,
+  KLC_FLOAT,
+  KLC_NIL,
+  KLC_BOOL,
+  KLC_STRING,
+} KlCType;
+
 
 typedef struct tagKlCstClassFieldDesc {
   KlStrDesc name;
@@ -45,12 +61,12 @@ typedef struct tagKlCstClass {
 } KlCstClass;
 
 typedef struct tagKlConstant {
-  KlType type;                      /* boolean, integer, string or nil */
+  KlCType type;                      /* boolean, integer, string or nil */
   union {
     KlStrDesc string;               /* literal string */
-    KlInt intval;
-    KlFloat floatval;
-    KlBool boolval;
+    KlCInt intval;
+    KlCFloat floatval;
+    KlCBool boolval;
   };
 } KlConstant;
 
@@ -135,9 +151,9 @@ KlCstArray* klcst_array_create(KlCst* vals, KlFileOffset begin, KlFileOffset end
 KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCst* stmts, KlFileOffset begin, KlFileOffset end);
 KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t nfield, KlCst* base, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_string(KlStrDesc string, KlFileOffset begin, KlFileOffset end);
-KlCstConstant* klcst_constant_create_integer(KlInt intval, KlFileOffset begin, KlFileOffset end);
-KlCstConstant* klcst_constant_create_float(KlFloat floatval, KlFileOffset begin, KlFileOffset end);
-KlCstConstant* klcst_constant_create_boolean(KlInt boolval, KlFileOffset begin, KlFileOffset end);
+KlCstConstant* klcst_constant_create_integer(KlCInt intval, KlFileOffset begin, KlFileOffset end);
+KlCstConstant* klcst_constant_create_float(KlCFloat floatval, KlFileOffset begin, KlFileOffset end);
+KlCstConstant* klcst_constant_create_boolean(KlCBool boolval, KlFileOffset begin, KlFileOffset end);
 KlCstConstant* klcst_constant_create_nil(KlFileOffset begin, KlFileOffset end);
 KlCstVararg* klcst_vararg_create(KlFileOffset begin, KlFileOffset end);
 KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFileOffset begin, KlFileOffset end);

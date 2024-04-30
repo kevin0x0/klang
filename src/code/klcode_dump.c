@@ -1,7 +1,7 @@
 #include "include/code/klcode.h"
 
 struct a {
-  KlRefInfo* refinfo;
+  KlCRefInfo* refinfo;
   size_t nref;
   KlConstant* constants;
   size_t nconst;
@@ -15,8 +15,16 @@ struct a {
   size_t framesize;           /* stack frame size of this klang function */
 };
 
+#define KLCODEDUMP_MAGIC_SZ         (4)
+#define KLCODEDUMP_BIG_ENDIAN       (0)
+#define KLCODEDUMP_SMALL_ENDIAN     (1)
+
+typedef unsigned char uchar;
+
 typedef struct tafKlCodeDumpHeader {
-  char magic[4];
+  char magic[KLCODEDUMP_MAGIC_SZ];
+  uchar endian;
+  uchar 
 } KlCodeDumpHeader;
 
 void klcode_dump(KlCode* code, Ko* file) {

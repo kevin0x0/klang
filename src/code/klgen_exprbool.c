@@ -4,8 +4,6 @@
 #include "include/code/klcontbl.h"
 #include "include/code/klgen.h"
 #include "include/code/klgen_expr.h"
-#include "include/value/klvalue.h"
-#include "include/vm/klinst.h"
 #include <string.h>
 
 
@@ -77,7 +75,7 @@ static KlCodeVal klgen_pushrelinst(KlGenUnit* gen, KlCstBin* relcst, size_t left
   return klcodeval_jmplist(pc);
 }
 
-static KlCodeVal klgen_pushrelinsti(KlGenUnit* gen, KlCstBin* relcst, size_t leftid, KlInt imm, bool jumpcond) {
+static KlCodeVal klgen_pushrelinsti(KlGenUnit* gen, KlCstBin* relcst, size_t leftid, KlCInt imm, bool jumpcond) {
   switch (relcst->op) {
     case KLTK_LT: {
       klgen_emit(gen, klinst_lti(leftid, imm), klgen_cstposition(relcst));
@@ -169,7 +167,7 @@ static KlCodeVal klgen_pushrelinstc(KlGenUnit* gen, KlCstBin* relcst, size_t lef
 
 static KlCodeVal klgen_relcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, KlCodeVal right) {
   if (left.kind == KLVAL_INTEGER && right.kind == KLVAL_INTEGER) {
-    KlBool cond;
+    KlCBool cond;
     switch (bincst->op) {
       case KLTK_LT: cond = left.intval < right.intval; break;
       case KLTK_LE: cond = left.intval <= right.intval; break;
@@ -194,7 +192,7 @@ static KlCodeVal klgen_relcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal l
     } else {
       cmpres = left.string.length > right.string.length ? 1 : -1;
     }
-    KlBool cond;
+    KlCBool cond;
     switch (bincst->op) {
       case KLTK_LT: cond = cmpres < 0; break;
       case KLTK_LE: cond = cmpres <= 0; break;
@@ -211,9 +209,9 @@ static KlCodeVal klgen_relcomptime(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal l
     }
     return klcodeval_bool(cond);
   } else {
-    KlFloat l = left.kind == KLVAL_INTEGER ? (KlFloat)left.intval : left.floatval;
-    KlFloat r = right.kind == KLVAL_INTEGER ? (KlFloat)right.intval : right.floatval;
-    KlBool cond;
+    KlCFloat l = left.kind == KLVAL_INTEGER ? (KlCFloat)left.intval : left.floatval;
+    KlCFloat r = right.kind == KLVAL_INTEGER ? (KlCFloat)right.intval : right.floatval;
+    KlCBool cond;
     switch (bincst->op) {
       case KLTK_LT: cond = l < r; break;
       case KLTK_LE: cond = l <= r; break;

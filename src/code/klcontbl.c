@@ -2,14 +2,13 @@
 #include "include/cst/klcst_expr.h"
 #include "deps/k/include/array/karray.h"
 #include <stdlib.h>
-#include <string.h>
 
 static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
   switch (con->type) {
-    case KL_INT: {
+    case KLC_INT: {
       return (con->intval << 8) + con->intval;
     }
-    case KL_STRING: {
+    case KLC_STRING: {
       char* str = klstrtbl_getstring(strtbl, con->string.id);
       char* end = str + con->string.length;
       size_t hash = 0;
@@ -17,18 +16,18 @@ static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
         hash = (*str++) + (hash << 6) + (hash << 16) - hash;
       return hash;
     }
-    case KL_FLOAT: {
-      kl_assert(sizeof (KlFloat) == sizeof (KlInt), "");
+    case KLC_FLOAT: {
+      kl_static_assert(sizeof (KlCFloat) == sizeof (KlCInt), "");
       union {
         size_t hash;
-        KlFloat floatval;
+        KlCFloat floatval;
       } num;
       num.floatval = con->floatval;
       /* +0.0 and -0.0 is equal but have difference binary representations */
       if (num.floatval == 0.0) return 0;
       return num.hash;
     }
-    case KL_BOOL: {
+    case KLC_BOOL: {
       return con->boolval;
     }
     default: {
@@ -40,13 +39,16 @@ static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
 static inline bool klcontbl_constant_equal(KlStrTbl* strtbl, KlConstant* con1, KlConstant* con2) {
   if (con1->type != con2->type) return false;
   switch (con1->type) {
-    case KL_INT: {
+    case KLC_INT: {
       return con1->intval == con2->intval;
     }
-    case KL_STRING: {
+    case KLC_STRING: {
       return con1->string.length == con2->string.length &&
              0 == strncmp(klstrtbl_getstring(strtbl, con1->string.id),
                           klstrtbl_getstring(strtbl, con2->string.id), con1->string.length);
+    }
+    case KLC_BOOL: {
+      return con1->boolval == con2->boolval;
     }
     default: {
       kl_assert(false, "this type can not be inserted into constant table.");

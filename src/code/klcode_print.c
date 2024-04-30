@@ -1,7 +1,5 @@
 #include "include/code/klcode.h"
 #include "include/misc/klutils.h"
-#include "include/value/klvalue.h"
-#include "include/vm/klinst.h"
 
 static void klcode_print_prefix(KlCode* code, Ko* out, KlInstruction* pc, const char* name) {
   code->posinfo ? ko_printf(out, "(%4u, %4u) [%03u] %-15s", code->posinfo[pc - code->code].begin, code->posinfo[pc - code->code].end, pc - code->code, name)
@@ -171,19 +169,19 @@ static void klcode_print_I(Ko* out, KlInstruction inst) {
 
 static void klcode_print_constant(KlCode* code, Ko* out, KlConstant* constant) {
   switch (constant->type) {
-    case KL_INT: {
+    case KLC_INT: {
       ko_printf(out, "%zd", constant->intval);
       break;
     }
-    case KL_FLOAT: {
+    case KLC_FLOAT: {
       ko_printf(out, "%#lf", constant->floatval);
       break;
     }
-    case KL_STRING: {
+    case KLC_STRING: {
       ko_printf(out, "\"%.*s\"", constant->string.length, klstrtbl_getstring(code->strtbl, constant->string.id));
       break;
     }
-    case KL_BOOL: {
+    case KLC_BOOL: {
       ko_printf(out, "%s", constant->boolval ? "true" : "false");
       break;
     }
@@ -194,7 +192,7 @@ static void klcode_print_constant(KlCode* code, Ko* out, KlConstant* constant) {
 }
 
 static void klcode_print_string_noquote(KlCode* code, Ko* out, KlConstant* constant) {
-  kl_assert(constant->type == KL_STRING, "");
+  kl_assert(constant->type == KLC_STRING, "");
   ko_printf(out, "%.*s", constant->string.length, klstrtbl_getstring(code->strtbl, constant->string.id));
 }
 

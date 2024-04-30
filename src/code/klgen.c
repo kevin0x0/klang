@@ -4,9 +4,6 @@
 #include "include/code/klgen_stmt.h"
 #include "include/code/klsymtbl.h"
 #include "include/cst/klcst_expr.h"
-#include "include/vm/klinst.h"
-#include <string.h>
-#include <unistd.h>
 
 kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
 kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
@@ -120,7 +117,7 @@ KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
   klfparr_shrink(&gen->position);
   klcodearr_shrink(&gen->subfunc);
   KlConstant* constants = (KlConstant*)malloc(klcontbl_size(gen->contbl) * sizeof (KlConstant));
-  KlRefInfo* refinfo = (KlRefInfo*)malloc(klsymtbl_size(gen->reftbl) * sizeof (KlRefInfo));
+  KlCRefInfo* refinfo = (KlCRefInfo*)malloc(klsymtbl_size(gen->reftbl) * sizeof (KlCRefInfo));
   if (kl_unlikely(!constants || !refinfo)) {
     free(constants);
     free(refinfo);
@@ -243,15 +240,12 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
       break;
     }
     case KLVAL_BOOL: {
-      KlInstruction inst = klinst_loadbool(target, val.boolval);
-      klgen_emit(gen, inst, position);
+      klgen_emit(gen, klinst_loadbool(target, val.boolval), position);
       break;
     }
     case KLVAL_STRING: {
-      KlConstant constant = { .type = KL_STRING, .string = val.string };
-      KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
-      klgen_oomifnull(gen, conent);
-      klgen_emit(gen, klinst_loadc(target, conent->index), position);
+      size_t conidx = klgen_newstring(gen, val.string);
+      klgen_emit(gen, klinst_loadc(target, conidx), position);
       break;
     }
     case KLVAL_INTEGER: {
@@ -259,21 +253,15 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
       if (klinst_inrange(val.intval, 16)) {
         inst = klinst_loadi(target, val.intval);
       } else {
-        KlConstant con = { .type = KL_INT, .intval = val.intval };
-        KlConEntry* conent = klcontbl_get(gen->contbl, &con);
-        klgen_oomifnull(gen, conent);
-        inst = klinst_loadc(target, conent->index);
+        size_t conidx = klgen_newinteger(gen, val.intval);
+        inst = klinst_loadc(target, conidx);
       }
       klgen_emit(gen, inst, position);
       break;
     }
     case KLVAL_FLOAT: {
-      KlInstruction inst;
-      KlConstant con = { .type = KL_FLOAT, .floatval = val.floatval };
-      KlConEntry* conent = klcontbl_get(gen->contbl, &con);
-      klgen_oomifnull(gen, conent);
-      inst = klinst_loadc(target, conent->index);
-      klgen_emit(gen, inst, position);
+      size_t conidx = klgen_newfloat(gen, val.floatval);
+      klgen_emit(gen, klinst_loadc(target, conidx), position);
       break;
     }
     default: {
@@ -375,8 +363,11 @@ KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, KlCodeGenConfig* config) {
     /* code generation is done */
     /* convert the 'newgen' to KlCode */
     KlCode* funccode = klgen_tocode_and_destroy(&gen, 0);
-    klgen_oomifnull(&gen, funccode);
     klsymtblpool_destroy(&symtblpool);
+    if (kl_unlikely(!funccode)) {
+      klerror_error(config->klerr, config->input, config->inputname, 0, 0, "out of memory");
+      return NULL;
+    }
     return funccode;
   } else {
     klgen_destroy(&gen);

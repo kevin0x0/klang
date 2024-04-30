@@ -4,8 +4,7 @@
 #include "include/cst/klstrtbl.h"
 #include "include/misc/klutils.h"
 #include "include/code/klcodeval.h"
-#include "include/value/klref.h"
-#include <stdlib.h>
+#include "include/code/klcode.h"
 
 typedef KlValKind KlSymKind;
 
@@ -54,7 +53,7 @@ void klsymtbl_destroy(KlSymTbl* symtbl);
 KlSymTbl* klsymtbl_create(size_t capacity, KlSymbolPool* pool, KlStrTbl* strtbl, KlSymTbl* parent);
 void klsymtbl_delete(KlSymTbl* symtbl);
 
-void klreftbl_setrefinfo(KlSymTbl* reftbl, KlRefInfo* refinfo);
+void klreftbl_setrefinfo(KlSymTbl* reftbl, KlCRefInfo* refinfo);
 
 static inline KlSymbol* klsymtbl_iter_begin(KlSymTbl* symtbl);
 static inline KlSymbol* klsymtbl_iter_next(KlSymTbl* symtbl, KlSymbol* symbol);

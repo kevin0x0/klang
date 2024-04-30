@@ -2,9 +2,7 @@
 #define KEVCC_KLANG_INCLUDE_CODE_KLCODE_H
 
 #include "include/code/klcontbl.h"
-#include "include/code/klsymtbl.h"
-#include "include/value/klref.h"
-#include "include/vm/klinst.h"
+#include "include/lang/klinst.h"
 
 
 typedef struct tagKlCode KlCode;
@@ -21,9 +19,14 @@ typedef struct tagKlCodeGenConfig {
   Ki* input;
 } KlCodeGenConfig;
 
+/* this is the same structure as KlRefInfo used in compiler */
+typedef struct tagKlCRefInfo {
+  bool on_stack;
+  uint8_t index;
+} KlCRefInfo;
 
 struct tagKlCode {
-  KlRefInfo* refinfo;
+  KlCRefInfo* refinfo;
   size_t nref;
   KlConstant* constants;
   size_t nconst;
@@ -38,7 +41,7 @@ struct tagKlCode {
 };
 
 
-KlCode* klcode_create(KlRefInfo* refinfo, size_t nref, KlConstant* constants, size_t nconst,
+KlCode* klcode_create(KlCRefInfo* refinfo, size_t nref, KlConstant* constants, size_t nconst,
                       KlInstruction* code, KlFilePosition* posinfo, size_t codelen,
                       KlCode** nestedfunc, size_t nnested, KlStrTbl* strtbl, size_t nparam,
                       size_t framesize);

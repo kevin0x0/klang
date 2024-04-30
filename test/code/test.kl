@@ -4,4 +4,4 @@
 #   set = n => { a = n; }
 # };
 
-let a, b = f((=> (a, b))() where let a, b = 1, 2);
+let a = [1, 2, 3] + b;

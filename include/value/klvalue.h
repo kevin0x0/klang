@@ -1,6 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_VALUE_KLVALUE_H
 #define KEVCC_KLANG_INCLUDE_VALUE_KLVALUE_H
 
+#include "include/lang/types.h"
 #include "include/mm/klmm.h"
 #include "include/value/klbool.h"
 #include "include/value/klcfunc.h"
@@ -40,8 +41,8 @@ typedef enum tagKlType {
   KL_NTYPE, /* number of types */
 } KlType;
 
-typedef int64_t KlInt;
-typedef double KlFloat;
+typedef KlLangInt KlInt;
+typedef KlLangFloat KlFloat;
 
 typedef struct tagKlValue {
   union {

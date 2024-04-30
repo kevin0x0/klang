@@ -3,7 +3,7 @@
 #include "include/value/klcoroutine.h"
 #include "include/value/klstring.h"
 #include "include/value/klvalue.h"
-#include "include/vm/klinst.h"
+#include "include/lang/klinst.h"
 #include <stdio.h>
 #include <time.h>
 
@@ -17,7 +17,7 @@ int main(void) {
   KlMM klmm;
   klmm_init(&klmm, 1024);
   KlState* state = klapi_new_state(&klmm);
-  gctest(state);
+  fibonacci(state);
   //concat(state);
   size_t narg = 1;
   klapi_pushint(state, 36);
@@ -33,7 +33,7 @@ int main(void) {
   }
   //printf("%s\n", klstring_content(klapi_getstring(state, -1)));
   //printf("\n%c", klstring_content(klapi_getstring(state, -1))[klstring_length(klapi_getstring(state, -1))]);
-  printf("fibonacci(%d) = %zd\n", 35, klapi_getint(state, -1));
+  printf("fibonacci(%d) = %lld\n", 35, klapi_getint(state, -1));
   klmm_destroy(&klmm);
   return 0;
 }

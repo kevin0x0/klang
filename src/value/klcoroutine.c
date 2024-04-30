@@ -4,7 +4,6 @@
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
-#include "include/vm/klinst.h"
 #include "include/vm/klstack.h"
 #include "include/mm/klmm.h"
 #include <stddef.h>

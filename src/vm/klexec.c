@@ -9,8 +9,8 @@
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
-#include "include/vm/klinst.h"
 #include "include/vm/klstack.h"
+#include "include/lang/klinst.h"
 
 
 /* extra stack frame size for calling operator method */

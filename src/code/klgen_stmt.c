@@ -9,7 +9,6 @@
 #include "include/cst/klcst.h"
 #include "include/cst/klcst_expr.h"
 #include "include/cst/klcst_stmt.h"
-#include "include/vm/klinst.h"
 
 
 bool klgen_stmtblock(KlGenUnit *gen, KlCstStmtList *stmtlist) {
@@ -115,10 +114,8 @@ static void klgen_singleassign(KlGenUnit* gen, KlCst* lval, KlCst* rval) {
       size_t stktop = klgen_stacktop(gen);
       KlCodeVal res = klgen_expr(gen, rval);
       klgen_putonstack(gen, &res, klgen_cstposition(rval));
-      KlConstant constant = { .type = KL_STRING, .string = id->id };
-      KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
-      klgen_oomifnull(gen, conent);
-      klgen_emit(gen, klinst_storeglobal(res.index, conent->index), klgen_cstposition(lval));
+      size_t conidx = klgen_newstring(gen, id->id);
+      klgen_emit(gen, klinst_storeglobal(res.index, conidx), klgen_cstposition(lval));
       klgen_stackfree(gen, stktop);
     } else if (symbol->attr.kind == KLVAL_REF) {
       size_t stktop = klgen_stacktop(gen);
@@ -158,19 +155,17 @@ static void klgen_singleassign(KlGenUnit* gen, KlCst* lval, KlCst* rval) {
     KlCodeVal val = klgen_expr(gen, rval);
     klgen_putonstack(gen, &val, klgen_cstposition(rval));
     KlCodeVal obj = klgen_expr(gen, objcst);
-    KlConstant constant = { .type = KL_STRING, .string = dotcst->field };
-    KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
-    klgen_oomifnull(gen, conent);
-    if (klinst_inurange(conent->index, 8)) {
+    size_t conidx = klgen_newstring(gen, dotcst->field);
+    if (klinst_inurange(conidx, 8)) {
       if (obj.kind == KLVAL_REF) {
-        klgen_emit(gen, klinst_refsetfieldc(val.index, obj.index, conent->index), klgen_cstposition(lval));
+        klgen_emit(gen, klinst_refsetfieldc(val.index, obj.index, conidx), klgen_cstposition(lval));
       } else {
         klgen_putonstack(gen, &obj, klgen_cstposition(objcst));
-        klgen_emit(gen, klinst_setfieldc(val.index, obj.index, conent->index), klgen_cstposition(lval));
+        klgen_emit(gen, klinst_setfieldc(val.index, obj.index, conidx), klgen_cstposition(lval));
       }
     } else {
       size_t tmp = klgen_stackalloc1(gen);
-      klgen_emit(gen, klinst_loadc(tmp, conent->index), klgen_cstposition(lval));
+      klgen_emit(gen, klinst_loadc(tmp, conidx), klgen_cstposition(lval));
       if (obj.kind == KLVAL_REF) {
         klgen_emit(gen, klinst_refsetfieldr(val.index, obj.index, tmp), klgen_cstposition(lval));
       } else {
@@ -189,10 +184,8 @@ void klgen_assignfrom(KlGenUnit* gen, KlCst* lval, size_t stkid) {
     KlCstIdentifier* id = klcast(KlCstIdentifier*, lval);
     KlSymbol* symbol = klgen_getsymbol(gen, id->id);
     if (!symbol) {  /* global variable */
-      KlConstant constant = { .type = KL_STRING, .string = id->id };
-      KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
-      klgen_oomifnull(gen, conent);
-      klgen_emit(gen, klinst_storeglobal(stkid, conent->index), klgen_cstposition(lval));
+      size_t conidx = klgen_newstring(gen, id->id);
+      klgen_emit(gen, klinst_storeglobal(stkid, conidx), klgen_cstposition(lval));
     } else if (symbol->attr.kind == KLVAL_REF) {
       klgen_emit(gen, klinst_storeref(stkid, symbol->attr.idx), klgen_cstposition(lval));
     } else {
@@ -222,19 +215,17 @@ void klgen_assignfrom(KlGenUnit* gen, KlCst* lval, size_t stkid) {
     KlCstDot* dotcst = klcast(KlCstDot*, lval);
     KlCst* objcst = dotcst->operand;
     KlCodeVal obj = klgen_expr(gen, objcst);
-    KlConstant constant = { .type = KL_STRING, .string = dotcst->field };
-    KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
-    klgen_oomifnull(gen, conent);
-    if (klinst_inurange(conent->index, 8)) {
+    size_t conidx = klgen_newstring(gen, dotcst->field);
+    if (klinst_inurange(conidx, 8)) {
       if (obj.kind == KLVAL_REF) {
-        klgen_emit(gen, klinst_refsetfieldc(stkid, obj.index, conent->index), klgen_cstposition(lval));
+        klgen_emit(gen, klinst_refsetfieldc(stkid, obj.index, conidx), klgen_cstposition(lval));
       } else {
         klgen_putonstack(gen, &obj, klgen_cstposition(objcst));
-        klgen_emit(gen, klinst_setfieldc(stkid, obj.index, conent->index), klgen_cstposition(lval));
+        klgen_emit(gen, klinst_setfieldc(stkid, obj.index, conidx), klgen_cstposition(lval));
       }
     } else {
       size_t tmp = klgen_stackalloc1(gen);
-      klgen_emit(gen, klinst_loadc(tmp, conent->index), klgen_cstposition(lval));
+      klgen_emit(gen, klinst_loadc(tmp, conidx), klgen_cstposition(lval));
       if (obj.kind == KLVAL_REF) {
         klgen_emit(gen, klinst_refsetfieldr(stkid, obj.index, tmp), klgen_cstposition(lval));
       } else {
@@ -632,10 +623,8 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlCstStmtGFor* gforcst) {
   size_t iterable = forbase;
   klgen_exprtarget_noconst(gen, gforcst->expr, iterable);
   klgen_stackfree(gen, forbase);
-  KlConstant constant = { .type = KL_STRING, .string = gen->strings->itermethod };
-  KlConEntry* conent = klcontbl_get(gen->contbl, &constant);
-  klgen_oomifnull(gen, conent);
-  klgen_emitmethod(gen, iterable, conent->index, 0, 3, forbase, klgen_cstposition(gforcst));
+  size_t conidx = klgen_newstring(gen, gen->strings->itermethod);
+  klgen_emitmethod(gen, iterable, conidx, 0, 3, forbase, klgen_cstposition(gforcst));
   klgen_mergejmplist_maynone(gen, gen->info.continuejmp,
                          klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), klgen_cstposition(gforcst))));
   size_t looppos = klgen_currcodesize(gen);

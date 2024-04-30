@@ -1,7 +1,6 @@
 #include "include/code/klsymtbl.h"
 #include "include/cst/klstrtbl.h"
 #include <stdlib.h>
-#include <string.h>
 
 
 static inline void klsymtbl_node_insert(KlSymbol* insertpos, KlSymbol* elem);
@@ -121,7 +120,7 @@ void klsymtbl_delete(KlSymTbl* symtbl) {
   free(symtbl);
 }
 
-void klreftbl_setrefinfo(KlSymTbl* reftbl, KlRefInfo* refinfo) {
+void klreftbl_setrefinfo(KlSymTbl* reftbl, KlCRefInfo* refinfo) {
   KlSymbol* symbol = klsymtbl_iter_begin(reftbl);
   KlSymbol* end = klsymtbl_iter_end(reftbl);
   while (symbol != end) {

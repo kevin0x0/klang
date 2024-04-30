@@ -1,9 +1,9 @@
 #ifndef KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 #define KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 
+#include "include/cst/klcst_expr.h"
 #include "include/cst/klstrtbl.h"
 #include "include/parse/kltokens.h"
-#include "include/value/klvalue.h"
 #include "include/error/klerror.h"
 #include "deps/k/include/kio/kio.h"
 
@@ -23,9 +23,9 @@ typedef struct tagKlLex {
     KlFileOffset end;       /* end position of this token */
     KlTokenKind kind;
     union {
-      KlInt intval;
-      KlFloat floatval;
-      KlBool boolval;
+      KlCInt intval;
+      KlCFloat floatval;
+      KlCBool boolval;
       KlStrDesc string;
     };
     bool hasleadingblank;   /* whether there is blank before this token */

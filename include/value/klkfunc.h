@@ -2,9 +2,9 @@
 #define KEVCC_KLANG_INCLUDE_VALUE_KLKFUNC_H
 
 #include "include/mm/klmm.h"
-#include "include/vm/klinst.h"
 #include "include/value/klvalue.h"
 #include "include/value/klref.h"
+#include "include/lang/klinst.h"
 #include <stdbool.h>
 
 typedef struct tagKlKFunction KlKFunction;
