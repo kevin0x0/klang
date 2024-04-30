@@ -7,8 +7,6 @@
 #include "include/code/klgen_pattern.h"
 #include "include/code/klsymtbl.h"
 #include "include/cst/klcst.h"
-#include "include/cst/klcst_expr.h"
-#include "include/cst/klcst_stmt.h"
 
 
 bool klgen_stmtblock(KlGenUnit *gen, KlCstStmtList *stmtlist) {
@@ -476,8 +474,8 @@ static void klgen_stmtcontinue(KlGenUnit* gen, KlCstStmtContinue* continuecst) {
 }
 
 static void klgen_stmtreturn(KlGenUnit* gen, KlCstStmtReturn* returncst) {
-  kl_assert(klcst_kind(returncst->retval) == KLCST_EXPR_TUPLE, "");
-  KlCstTuple* res = klcast(KlCstTuple*, returncst->retval);
+  kl_assert(klcst_kind(returncst->retvals) == KLCST_EXPR_TUPLE, "");
+  KlCstTuple* res = klcast(KlCstTuple*, returncst->retvals);
   size_t stktop = klgen_stacktop(gen);
   if (res->nelem == 1) {
     KlCodeVal retval;
@@ -491,7 +489,7 @@ static void klgen_stmtreturn(KlGenUnit* gen, KlCstStmtReturn* returncst) {
     klgen_emit(gen, returninst, klgen_cstposition(returncst));
   } else {
     size_t argbase = klgen_stacktop(gen);
-    size_t nres = klgen_passargs(gen, klcst(res));
+    size_t nres = klgen_passargs(gen, res);
     if (klgen_needclose(gen, gen->reftbl, NULL))
       klgen_emit(gen, klinst_close(0), klgen_cstposition(returncst));
     KlInstruction returninst = nres == 0 ? klinst_return0() :
@@ -676,7 +674,7 @@ void klgen_stmtlist(KlGenUnit* gen, KlCstStmtList* cst) {
         break;
       }
       case KLCST_STMT_EXPR: {
-        klgen_multival(gen, klcast(KlCstStmtExpr*, stmt)->expr, 0, klgen_stacktop(gen));
+        klgen_multival(gen, klcst(klcast(KlCstStmtExpr*, stmt)->exprlist), 0, klgen_stacktop(gen));
         break;
       }
       case KLCST_STMT_BLOCK: {

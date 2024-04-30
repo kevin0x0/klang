@@ -23,7 +23,7 @@ typedef struct tagKlError {
 } KlError;
 
 
-typedef size_t KlFileOffset;
+typedef unsigned KlFileOffset;
 
 void klerror_error(KlError* klerror, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, ...);
 void klerror_errorv(KlError* klerror, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, va_list args);

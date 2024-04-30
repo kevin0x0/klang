@@ -64,6 +64,6 @@ let [a, b], [1, 3, { name = name }] = foo(3);
 
 let class = {
   local name;
-  local age;
+  local age,
   local gender;
 };

@@ -29,13 +29,13 @@ void loop(void) {
   KlLex* lex = kllex_create(input, &klerr, filename, strtbl);
   klparser_init(&parser, lex->strtbl, (char*)filename, &klerr);
   kllex_next(lex);
-  KlCst* expr = klparser_stmtlist(&parser, lex);
+  KlCstStmtList* block = klparser_stmtlist(&parser, lex);
 
   if (klerr.errcount == 0) {
-    printf("root kind : %d\n", klcst_kind(expr));
+    printf("root kind : %d\n", klcst_kind(block));
   }
 
-  if (expr) klcst_delete(expr);
+  if (block) klcst_delete(block);
   kllex_delete(lex);
   klstrtbl_delete(strtbl);
   ki_delete(input);

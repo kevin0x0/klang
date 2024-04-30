@@ -4,7 +4,7 @@
 #include "include/code/klcode.h"
 #include "include/code/klcontbl.h"
 #include "include/code/klsymtbl.h"
-#include "include/cst/klcst_expr.h"
+#include "include/cst/klcst.h"
 #include "include/cst/klstrtbl.h"
 #include "deps/k/include/array/kgarray.h"
 #include <setjmp.h>
@@ -73,7 +73,7 @@ void klgen_destroy(KlGenUnit* gen);
 
 bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings);
 
-KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, KlCodeGenConfig* config);
+KlCode* klgen_file(KlCstStmtList* cst, KlStrTbl* strtbl, KlCodeGenConfig* config);
 /* check range */
 void klgen_validate(KlGenUnit* gen);
 /* convert to KlCode and destroy self.

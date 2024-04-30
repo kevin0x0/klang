@@ -1,5 +1,5 @@
-#include "include/cst/klcst_stmt.h"
 #include "include/cst/klcst.h"
+#include "include/misc/klutils.h"
 #include <stdlib.h>
 
 
@@ -32,11 +32,11 @@ static KlCstInfo klcst_stmtbreak_vfunc = { .destructor = (KlCstDelete)klcst_stmt
 static KlCstInfo klcst_stmtcontinue_vfunc = { .destructor = (KlCstDelete)klcst_stmtcontinue_destroy, .kind = KLCST_STMT_CONTINUE };
 
 
-KlCstStmtLet* klcst_stmtlet_create(KlCst* lvals, KlCst* rvals, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtLet* klcst_stmtlet_create(KlCstTuple* lvals, KlCstTuple* rvals, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtLet* stmtlet = klcst_alloc(KlCstStmtLet);
   if (kl_unlikely(!stmtlet)) {
-    klcst_delete_raw(lvals);
-    klcst_delete_raw(rvals);
+    klcst_delete(lvals);
+    klcst_delete(rvals);
     return NULL;
   }
   stmtlet->lvals = lvals;
@@ -46,11 +46,11 @@ KlCstStmtLet* klcst_stmtlet_create(KlCst* lvals, KlCst* rvals, KlFileOffset begi
   return stmtlet;
 }
 
-KlCstStmtAssign* klcst_stmtassign_create(KlCst* lvals, KlCst* rvals, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtAssign* klcst_stmtassign_create(KlCstTuple* lvals, KlCstTuple* rvals, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtAssign* stmtassign = klcst_alloc(KlCstStmtAssign);
   if (kl_unlikely(!stmtassign)) {
     free(lvals);
-    klcst_delete_raw(rvals);
+    klcst_delete(rvals);
     return NULL;
   }
   stmtassign->lvals = lvals;
@@ -60,39 +60,39 @@ KlCstStmtAssign* klcst_stmtassign_create(KlCst* lvals, KlCst* rvals, KlFileOffse
   return stmtassign;
 }
 
-KlCstStmtExpr* klcst_stmtexpr_create(KlCst* expr, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtExpr* klcst_stmtexpr_create(KlCstTuple* exprlist, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtExpr* stmtexpr = klcst_alloc(KlCstStmtExpr);
   if (kl_unlikely(!stmtexpr)) {
-    klcst_delete_raw(expr);
+    klcst_delete(exprlist);
     return NULL;
   }
-  stmtexpr->expr = expr;
+  stmtexpr->exprlist = exprlist;
   klcst_setposition(stmtexpr, begin, end);
   klcst_init(stmtexpr, &klcst_stmtexpr_vfunc);
   return stmtexpr;
 }
 
-KlCstStmtIf* klcst_stmtif_create(KlCst* cond, KlCst* if_block, KlCst* else_block, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtIf* klcst_stmtif_create(KlCst* cond, KlCstStmtList* then_block, KlCstStmtList* else_block, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtIf* stmtif = klcst_alloc(KlCstStmtIf);
   if (kl_unlikely(!stmtif)) {
-    klcst_delete_raw(cond);
-    klcst_delete_raw(if_block);
-    klcst_delete_raw(else_block);
+    klcst_delete(cond);
+    klcst_delete(then_block);
+    if (else_block) klcst_delete(else_block);
     return NULL;
   }
   stmtif->cond = cond;
-  stmtif->if_block = if_block;
+  stmtif->if_block = then_block;
   stmtif->else_block = else_block;
   klcst_setposition(stmtif, begin, end);
   klcst_init(stmtif, &klcst_stmtif_vfunc);
   return stmtif;
 }
 
-KlCstStmtVFor* klcst_stmtvfor_create(KlCst* lvals, KlCst* block, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtVFor* klcst_stmtvfor_create(KlCstTuple* lvals, KlCstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtVFor* stmtvfor = klcst_alloc(KlCstStmtVFor);
   if (kl_unlikely(!stmtvfor)) {
-    klcst_delete_raw(block);
-    klcst_delete_raw(lvals);
+    klcst_delete(block);
+    klcst_delete(lvals);
     return NULL;
   }
   stmtvfor->block = block;
@@ -102,14 +102,14 @@ KlCstStmtVFor* klcst_stmtvfor_create(KlCst* lvals, KlCst* block, KlFileOffset be
   return stmtvfor;
 }
 
-KlCstStmtIFor* klcst_stmtifor_create(KlCst* lval, KlCst* ibegin, KlCst* iend, KlCst* istep, KlCst* block, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtIFor* klcst_stmtifor_create(KlCst* lval, KlCst* ibegin, KlCst* iend, KlCst* istep, KlCstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtIFor* stmtifor = klcst_alloc(KlCstStmtIFor);
   if (kl_unlikely(!stmtifor)) {
-    klcst_delete_raw(lval);
-    klcst_delete_raw(block);
-    klcst_delete_raw(ibegin);
-    klcst_delete_raw(iend);
-    klcst_delete_raw(istep);
+    klcst_delete(lval);
+    klcst_delete(block);
+    klcst_delete(ibegin);
+    klcst_delete(iend);
+    if (istep) klcst_delete(istep);
     return NULL;
   }
   stmtifor->lval = lval;
@@ -122,12 +122,12 @@ KlCstStmtIFor* klcst_stmtifor_create(KlCst* lval, KlCst* ibegin, KlCst* iend, Kl
   return stmtifor;
 }
 
-KlCstStmtGFor* klcst_stmtgfor_create(KlCst* lvals, KlCst* expr, KlCst* block, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtGFor* klcst_stmtgfor_create(KlCstTuple* lvals, KlCst* expr, KlCstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtGFor* stmtgfor = klcst_alloc(KlCstStmtGFor);
   if (kl_unlikely(!stmtgfor)) {
-    klcst_delete_raw(block);
-    klcst_delete_raw(expr);
-    klcst_delete_raw(lvals);
+    klcst_delete(block);
+    klcst_delete(expr);
+    klcst_delete(lvals);
     return NULL;
   }
   stmtgfor->lvals = lvals;
@@ -138,11 +138,11 @@ KlCstStmtGFor* klcst_stmtgfor_create(KlCst* lvals, KlCst* expr, KlCst* block, Kl
   return stmtgfor;
 }
 
-KlCstStmtWhile* klcst_stmtwhile_create(KlCst* cond, KlCst* block, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtWhile* klcst_stmtwhile_create(KlCst* cond, KlCstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtWhile* stmtwhile = klcst_alloc(KlCstStmtWhile);
   if (kl_unlikely(!stmtwhile)) {
-    klcst_delete_raw(block);
-    klcst_delete_raw(cond);
+    klcst_delete(block);
+    klcst_delete(cond);
     return NULL;
   }
   stmtwhile->cond = cond;
@@ -156,7 +156,7 @@ KlCstStmtList* klcst_stmtlist_create(KlCst** stmts, size_t nstmt, KlFileOffset b
   KlCstStmtList* stmtlist = klcst_alloc(KlCstStmtList);
   if (kl_unlikely(!stmtlist)) {
     for (size_t i = 0; i < nstmt; ++i) {
-      klcst_delete_raw(stmts[i]);
+      klcst_delete(stmts[i]);
     }
     free(stmts);
     return NULL;
@@ -168,11 +168,11 @@ KlCstStmtList* klcst_stmtlist_create(KlCst** stmts, size_t nstmt, KlFileOffset b
   return stmtlist;
 }
 
-KlCstStmtRepeat* klcst_stmtrepeat_create(KlCst* block, KlCst* cond, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtRepeat* klcst_stmtrepeat_create(KlCstStmtList* block, KlCst* cond, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtRepeat* stmtrepeat = klcst_alloc(KlCstStmtRepeat);
   if (kl_unlikely(!stmtrepeat)) {
-    klcst_delete_raw(block);
-    klcst_delete_raw(cond);
+    klcst_delete(block);
+    klcst_delete(cond);
     return NULL;
   }
   stmtrepeat->cond = cond;
@@ -182,13 +182,13 @@ KlCstStmtRepeat* klcst_stmtrepeat_create(KlCst* block, KlCst* cond, KlFileOffset
   return stmtrepeat;
 }
 
-KlCstStmtReturn* klcst_stmtreturn_create(KlCst* retval, KlFileOffset begin, KlFileOffset end) {
+KlCstStmtReturn* klcst_stmtreturn_create(KlCstTuple* retvals, KlFileOffset begin, KlFileOffset end) {
   KlCstStmtReturn* stmtreturn = klcst_alloc(KlCstStmtReturn);
   if (kl_unlikely(!stmtreturn)) {
-    klcst_delete_raw(retval);
+    klcst_delete(retvals);
     return NULL;
   }
-  stmtreturn->retval = retval;
+  stmtreturn->retvals = retvals;
   klcst_setposition(stmtreturn, begin, end);
   klcst_init(stmtreturn, &klcst_stmtreturn_vfunc);
   return stmtreturn;
@@ -213,73 +213,73 @@ KlCstStmtContinue* klcst_stmtcontinue_create(KlFileOffset begin, KlFileOffset en
 
 
 static void klcst_stmtlet_destroy(KlCstStmtLet* stmtlet) {
-  klcst_delete_raw(stmtlet->rvals);
-  klcst_delete_raw(stmtlet->lvals);
+  klcst_delete(stmtlet->rvals);
+  klcst_delete(stmtlet->lvals);
 }
 
 static void klcst_stmtassign_destroy(KlCstStmtAssign* stmtassign) {
-  klcst_delete_raw(stmtassign->lvals);
-  klcst_delete_raw(stmtassign->rvals);
+  klcst_delete(stmtassign->lvals);
+  klcst_delete(stmtassign->rvals);
 }
 
 static void klcst_stmtexpr_destroy(KlCstStmtExpr* stmtexpr) {
-  klcst_delete_raw(stmtexpr->expr);
+  klcst_delete(stmtexpr->exprlist);
 }
 
 static void klcst_stmtif_destroy(KlCstStmtIf* stmtif) {
-  klcst_delete_raw(stmtif->cond);
-  klcst_delete_raw(stmtif->if_block);
+  klcst_delete(stmtif->cond);
+  klcst_delete(stmtif->if_block);
   if (stmtif->else_block)
-    klcst_delete_raw(stmtif->else_block);
+    klcst_delete(stmtif->else_block);
 }
 
 static void klcst_stmtvfor_destroy(KlCstStmtVFor* stmtvfor) {
-  klcst_delete_raw(stmtvfor->block);
-  klcst_delete_raw(stmtvfor->lvals);
+  klcst_delete(stmtvfor->block);
+  klcst_delete(stmtvfor->lvals);
 }
 
 static void klcst_stmtifor_destroy(KlCstStmtIFor* stmtifor) {
-  klcst_delete_raw(stmtifor->lval);
-  klcst_delete_raw(stmtifor->begin);
-  klcst_delete_raw(stmtifor->end);
-  if (stmtifor->step) klcst_delete_raw(stmtifor->step);
-  klcst_delete_raw(stmtifor->block);
+  klcst_delete(stmtifor->lval);
+  klcst_delete(stmtifor->begin);
+  klcst_delete(stmtifor->end);
+  if (stmtifor->step) klcst_delete(stmtifor->step);
+  klcst_delete(stmtifor->block);
 }
 
 static void klcst_stmtgfor_destroy(KlCstStmtGFor* stmtgfor) {
-  klcst_delete_raw(stmtgfor->block);
-  klcst_delete_raw(stmtgfor->expr);
-  klcst_delete_raw(stmtgfor->lvals);
+  klcst_delete(stmtgfor->block);
+  klcst_delete(stmtgfor->expr);
+  klcst_delete(stmtgfor->lvals);
 }
 
 static void klcst_stmtwhile_destroy(KlCstStmtWhile* stmtwhile) {
-  klcst_delete_raw(stmtwhile->cond);
-  klcst_delete_raw(stmtwhile->block);
+  klcst_delete(stmtwhile->cond);
+  klcst_delete(stmtwhile->block);
 }
 
 static void klcst_stmtlist_destroy(KlCstStmtList* stmtblock) {
   size_t nstmt = stmtblock->nstmt;
   KlCst** stmts = stmtblock->stmts;
   for (size_t i = 0; i < nstmt; ++i)
-    klcst_delete_raw(stmts[i]);
+    klcst_delete(stmts[i]);
   free(stmts);
 }
 
 static void klcst_stmtrepeat_destroy(KlCstStmtRepeat* stmtrepeat) {
-  klcst_delete_raw(stmtrepeat->block);
-  klcst_delete_raw(stmtrepeat->cond);
+  klcst_delete(stmtrepeat->block);
+  klcst_delete(stmtrepeat->cond);
 }
 
 static void klcst_stmtreturn_destroy(KlCstStmtReturn* stmtreturn) {
-  klcst_delete_raw(stmtreturn->retval);
+  klcst_delete(stmtreturn->retvals);
 }
 
 static void klcst_stmtbreak_destroy(KlCstStmtBreak* stmtbreak) {
-  (void)stmtbreak;
+  kl_unused(stmtbreak);
 }
 
 static void klcst_stmtcontinue_destroy(KlCstStmtContinue* stmtcontinue) {
-  (void)stmtcontinue;
+  kl_unused(stmtcontinue);
 }
 
 

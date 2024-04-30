@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 #define KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
 
-#include "include/cst/klcst_expr.h"
+#include "include/cst/klcst.h"
 #include "include/cst/klstrtbl.h"
 #include "include/parse/kltokens.h"
 #include "include/error/klerror.h"

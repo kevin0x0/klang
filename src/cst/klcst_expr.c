@@ -1,4 +1,3 @@
-#include "include/cst/klcst_expr.h"
 #include "include/cst/klcst.h"
 #include <stdbool.h>
 
@@ -51,8 +50,8 @@ KlCstMap* klcst_map_create(KlCst** keys, KlCst** vals, size_t npair, KlFileOffse
   KlCstMap* cstmap = klcst_alloc(KlCstMap);
   if (kl_unlikely(!cstmap)) {
     for (size_t i = 0; i < npair; ++i) {
-      klcst_delete_raw(keys[i]);
-      klcst_delete_raw(vals[i]);
+      klcst_delete(keys[i]);
+      klcst_delete(vals[i]);
     }
     free(keys);
     free(vals);
@@ -66,22 +65,22 @@ KlCstMap* klcst_map_create(KlCst** keys, KlCst** vals, size_t npair, KlFileOffse
   return cstmap;
 }
 
-KlCstArray* klcst_array_create(KlCst* vals, KlFileOffset begin, KlFileOffset end) {
+KlCstArray* klcst_array_create(KlCstTuple* exprlist, KlFileOffset begin, KlFileOffset end) {
   KlCstArray* cstarray = klcst_alloc(KlCstArray);
   if (kl_unlikely(!cstarray)) {
-      klcst_delete_raw(vals);
+      klcst_delete(exprlist);
     return NULL;
   }
-  cstarray->vals = vals;
+  cstarray->exprlist = exprlist;
   klcst_setposition(cstarray, begin, end);
   klcst_init(cstarray, &klcst_array_vfunc);
   return cstarray;
 }
 
-KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCst* block, KlFileOffset begin, KlFileOffset end) {
+KlCstArrayGenerator* klcst_arraygenerator_create(KlStrDesc arrid, KlCstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlCstArrayGenerator* cstarraygenerator = klcst_alloc(KlCstArrayGenerator);
   if (kl_unlikely(!cstarraygenerator)) {
-      klcst_delete_raw(block);
+      klcst_delete(block);
     return NULL;
   }
   cstarraygenerator->arrid = arrid;
@@ -95,7 +94,7 @@ KlCstClass* klcst_class_create(KlCstClassFieldDesc* fields, KlCst** vals, size_t
   KlCstClass* cstclass = klcst_alloc(KlCstClass);
   if (kl_unlikely(!cstclass)) {
     for (size_t i = 0; i < nfield; ++i) {
-      klcst_delete_raw(vals[i]);
+      klcst_delete(vals[i]);
     }
     free(fields);
     free(vals);
@@ -171,7 +170,7 @@ KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFileOffset begin, 
   KlCstTuple* csttuple = klcst_alloc(KlCstTuple);
   if (kl_unlikely(!csttuple)) {
     for (size_t i = 0; i < nelem; ++i) {
-      klcst_delete_raw(elems[i]);
+      klcst_delete(elems[i]);
     }
     free(elems);
     return NULL;
@@ -186,8 +185,8 @@ KlCstTuple* klcst_tuple_create(KlCst** elems, size_t nelem, KlFileOffset begin, 
 KlCstBin* klcst_bin_create(KlTokenKind op, KlCst* loperand, KlCst* roperand, KlFileOffset begin, KlFileOffset end) {
   KlCstBin* cstbin = klcst_alloc(KlCstBin);
   if (kl_unlikely(!cstbin)) {
-    klcst_delete_raw(loperand);
-    klcst_delete_raw(roperand);
+    klcst_delete(loperand);
+    klcst_delete(roperand);
     return NULL;
   }
   cstbin->loperand = loperand;
@@ -201,7 +200,7 @@ KlCstBin* klcst_bin_create(KlTokenKind op, KlCst* loperand, KlCst* roperand, KlF
 KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFileOffset begin, KlFileOffset end) {
   KlCstPre* cstpre = klcst_alloc(KlCstPre);
   if (kl_unlikely(!cstpre)) {
-    klcst_delete_raw(operand);
+    klcst_delete(operand);
     return NULL;
   }
   cstpre->op = op;
@@ -211,11 +210,11 @@ KlCstPre* klcst_pre_create(KlTokenKind op, KlCst* operand, KlFileOffset begin, K
   return cstpre;
 }
 
-KlCstNew* klcst_new_create(KlCst* klclass, KlCst* args, KlFileOffset begin, KlFileOffset end) {
+KlCstNew* klcst_new_create(KlCst* klclass, KlCstTuple* args, KlFileOffset begin, KlFileOffset end) {
   KlCstNew* cstnew = klcst_alloc(KlCstNew);
   if (kl_unlikely(!cstnew)) {
-    klcst_delete_raw(klclass);
-    klcst_delete_raw(args);
+    klcst_delete(klclass);
+    klcst_delete(args);
     return NULL;
   }
   cstnew->klclass = klclass;
@@ -225,10 +224,10 @@ KlCstNew* klcst_new_create(KlCst* klclass, KlCst* args, KlFileOffset begin, KlFi
   return cstnew;
 }
 
-KlCstYield* klcst_yield_create(KlCst* vals, KlFileOffset begin, KlFileOffset end) {
+KlCstYield* klcst_yield_create(KlCstTuple* vals, KlFileOffset begin, KlFileOffset end) {
   KlCstYield* cstyield = klcst_alloc(KlCstYield);
   if (kl_unlikely(!cstyield)) {
-    klcst_delete_raw(vals);
+    klcst_delete(vals);
     return NULL;
   }
   cstyield->vals = vals;
@@ -240,8 +239,8 @@ KlCstYield* klcst_yield_create(KlCst* vals, KlFileOffset begin, KlFileOffset end
 KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFileOffset begin, KlFileOffset end) {
   KlCstPost* cstpost = klcst_alloc(KlCstPost);
   if (kl_unlikely(!cstpost)) {
-    klcst_delete_raw(operand);
-    klcst_delete_raw(post);
+    klcst_delete(operand);
+    klcst_delete(post);
     return NULL;
   }
   cstpost->operand = operand;
@@ -252,11 +251,11 @@ KlCstPost* klcst_post_create(KlTokenKind op, KlCst* operand, KlCst* post, KlFile
   return cstpost;
 }
 
-KlCstCall* klcst_call_create(KlCst* callable, KlCst* args, KlFileOffset begin, KlFileOffset end) {
+KlCstCall* klcst_call_create(KlCst* callable, KlCstTuple* args, KlFileOffset begin, KlFileOffset end) {
   KlCstCall* cstcall = klcst_alloc(KlCstCall);
   if (kl_unlikely(!cstcall)) {
-    klcst_delete_raw(callable);
-    klcst_delete_raw(args);
+    klcst_delete(callable);
+    klcst_delete(args);
     return NULL;
   }
   cstcall->callable = callable;
@@ -266,10 +265,10 @@ KlCstCall* klcst_call_create(KlCst* callable, KlCst* args, KlFileOffset begin, K
   return cstcall;
 }
 
-KlCstFunc* klcst_func_create(KlCst* block, KlCst* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end) {
+KlCstFunc* klcst_func_create(KlCstStmtList* block, KlCstTuple* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end) {
   KlCstFunc* cstfunc = klcst_alloc(KlCstFunc);
   if (kl_unlikely(!cstfunc)) {
-    klcst_delete_raw(block);
+    klcst_delete(block);
     free(params);
     return NULL;
   }
@@ -285,7 +284,7 @@ KlCstFunc* klcst_func_create(KlCst* block, KlCst* params, bool vararg, bool is_m
 KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end) {
   KlCstDot* cstdot = klcst_alloc(KlCstDot);
   if (kl_unlikely(!cstdot)) {
-    klcst_delete_raw(operand);
+    klcst_delete(operand);
     return NULL;
   }
   cstdot->operand = operand;
@@ -295,16 +294,15 @@ KlCstDot* klcst_dot_create(KlCst* operand, KlStrDesc field, KlFileOffset begin, 
   return cstdot;
 }
 
-KlCstWhere* klcst_where_create(KlCst* expr, KlCst* block, KlStrDesc tmpid, KlFileOffset begin, KlFileOffset end) {
+KlCstWhere* klcst_where_create(KlCst* expr, KlCstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlCstWhere* cstwhere = klcst_alloc(KlCstWhere);
   if (kl_unlikely(!cstwhere)) {
-    klcst_delete_raw(expr);
-    klcst_delete_raw(block);
+    klcst_delete(expr);
+    klcst_delete(block);
     return NULL;
   }
   cstwhere->expr = expr;
   cstwhere->block = block;
-  cstwhere->tmpid = tmpid;
   klcst_setposition(cstwhere, begin, end);
   klcst_init(cstwhere, &klcst_where_vfunc);
   return cstwhere;
@@ -321,29 +319,29 @@ static void klcst_map_destroy(KlCstMap* cstmap) {
   KlCst** vals = cstmap->vals;
   size_t npair = cstmap->npair;
   for (size_t i = 0; i < npair; ++i) {
-    klcst_delete_raw(keys[i]);
-    klcst_delete_raw(vals[i]);
+    klcst_delete(keys[i]);
+    klcst_delete(vals[i]);
   }
   free(keys);
   free(vals);
 }
 
 static void klcst_array_destroy(KlCstArray* cstarray) {
-  klcst_delete_raw(cstarray->vals);
+  klcst_delete(cstarray->exprlist);
 }
 
 static void klcst_arraygenerator_destroy(KlCstArrayGenerator* cstarraygenerator) {
-  klcst_delete_raw(cstarraygenerator->block);
+  klcst_delete(cstarraygenerator->block);
 }
 
 static void klcst_class_destroy(KlCstClass* cstclass) {
   KlCst** vals = cstclass->vals;
   size_t nfield = cstclass->nfield;
   for (size_t i = 0; i < nfield; ++i) {
-    if (vals[i]) klcst_delete_raw(vals[i]);
+    if (vals[i]) klcst_delete(vals[i]);
   }
   if (cstclass->baseclass)
-    klcst_delete_raw(cstclass->baseclass);
+    klcst_delete(cstclass->baseclass);
   free(vals);
   free(cstclass->fields);
 }
@@ -360,49 +358,49 @@ static void klcst_tuple_destroy(KlCstTuple* csttuple) {
   KlCst** elems = csttuple->elems;
   size_t nelem = csttuple->nelem;
   for (size_t i = 0; i < nelem; ++i) {
-    klcst_delete_raw(elems[i]);
+    klcst_delete(elems[i]);
   }
   free(elems);
 }
 
 static void klcst_bin_destroy(KlCstBin* cstbin) {
-  klcst_delete_raw(cstbin->loperand);
-  klcst_delete_raw(cstbin->roperand);
+  klcst_delete(cstbin->loperand);
+  klcst_delete(cstbin->roperand);
 }
 
 static void klcst_pre_destroy(KlCstPre* cstpre) {
-  klcst_delete_raw(cstpre->operand);
+  klcst_delete(cstpre->operand);
 }
 
 static void klcst_new_destroy(KlCstNew* cstnew) {
-  klcst_delete_raw(cstnew->args);
-  klcst_delete_raw(cstnew->klclass);
+  klcst_delete(cstnew->args);
+  klcst_delete(cstnew->klclass);
 }
 
 static void klcst_yield_destroy(KlCstYield* cstyield) {
-  klcst_delete_raw(cstyield->vals);
+  klcst_delete(cstyield->vals);
 }
 
 static void klcst_post_destroy(KlCstPost* cstpost) {
-  klcst_delete_raw(cstpost->operand);
-  klcst_delete_raw(cstpost->post);
+  klcst_delete(cstpost->operand);
+  klcst_delete(cstpost->post);
 }
 
 static void klcst_call_destroy(KlCstCall* cstcall) {
-  klcst_delete_raw(cstcall->callable);
-  klcst_delete_raw(cstcall->args);
+  klcst_delete(cstcall->callable);
+  klcst_delete(cstcall->args);
 }
 
 static void klcst_dot_destroy(KlCstDot* cstdot) {
-  klcst_delete_raw(cstdot->operand);
+  klcst_delete(cstdot->operand);
 }
 
 static void klcst_func_destroy(KlCstFunc* cstfunc) {
-  klcst_delete_raw(cstfunc->params);
-  klcst_delete_raw(cstfunc->block);
+  klcst_delete(cstfunc->params);
+  klcst_delete(cstfunc->block);
 }
 
 static void klcst_where_destroy(KlCstWhere* cstwhere) {
-  klcst_delete_raw(cstwhere->expr);
-  klcst_delete_raw(cstwhere->block);
+  klcst_delete(cstwhere->expr);
+  klcst_delete(cstwhere->block);
 }

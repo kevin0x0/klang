@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_CODE_KLCONTBL_H
 #define KEVCC_KLANG_INCLUDE_CODE_KLCONTBL_H
 
-#include "include/cst/klcst_expr.h"
+#include "include/cst/klcst.h"
 #include "deps/k/include/array/karray.h"
 
 typedef struct tagKlConEntry KlConEntry;

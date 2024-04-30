@@ -27,7 +27,7 @@ void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target);
 size_t klgen_trytakeall(KlGenUnit* gen, KlCst* cst, KlCodeVal* val);
 /* try to generate code for expressions that can have variable number of results */
 size_t klgen_takeall(KlGenUnit* gen, KlCst* cst, size_t target);
-size_t klgen_passargs(KlGenUnit* gen, KlCst* args);
+size_t klgen_passargs(KlGenUnit* gen, KlCstTuple* args);
 KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target);
 KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst, size_t target);
 KlCodeVal klgen_exprbin(KlGenUnit* gen, KlCstBin* bincst, size_t target);

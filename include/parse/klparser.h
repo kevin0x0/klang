@@ -2,7 +2,7 @@
 #define KEVCC_KLANG_INCLUDE_PARSE_KLPARSER_H
 
 #include "include/cst/klcst.h"
-#include "include/cst/klcst_stmt.h"
+#include "include/cst/klcst.h"
 #include "include/parse/kllex.h"
 
 typedef struct tagKlParser {
@@ -38,13 +38,13 @@ KlCst* klparser_stmt(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtlet(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtassign(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtexpr(KlParser* parser, KlLex* lex);
-KlCst* klparser_stmtif(KlParser* parser, KlLex* lex);
+KlCstStmtIf* klparser_stmtif(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtfor(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtwhile(KlParser* parser, KlLex* lex);
 /* do not set file position */
-KlCst* klparser_stmtblock(KlParser* parser, KlLex* lex);
+KlCstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex);
 /* do not set file position */
-KlCst* klparser_stmtlist(KlParser* parser, KlLex* lex);
+KlCstStmtList* klparser_stmtlist(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtrepeat(KlParser* parser, KlLex* lex);
 KlCst* klparser_stmtreturn(KlParser* parser, KlLex* lex);
 static inline KlCst* klparser_stmtbreak(KlParser* parser, KlLex* lex);
@@ -54,7 +54,7 @@ static inline KlCst* klparser_stmtcontinue(KlParser* parser, KlLex* lex);
 
 
 void klparser_error(KlParser* parser, Ki* input, KlFileOffset begin, KlFileOffset end, const char* format, ...);
-static KlCst* klparser_error_oom(KlParser* parser, KlLex* lex);
+static void* klparser_error_oom(KlParser* parser, KlLex* lex);
 
 static inline bool klparser_match(KlParser* parser, KlLex* lex, KlTokenKind kind) {
   if (kl_unlikely(lex->tok.kind != kind)) {
@@ -96,7 +96,7 @@ static inline KlCst* klparser_stmtcontinue(KlParser* parser, KlLex* lex) {
   return klcast(KlCst*, stmtcontinue);
 }
 
-static KlCst* klparser_error_oom(KlParser* parser, KlLex* lex) {
+static void* klparser_error_oom(KlParser* parser, KlLex* lex) {
   klparser_error(parser, kllex_inputstream(lex), lex->tok.begin, lex->tok.end, "out of memory");
   return NULL;
 }

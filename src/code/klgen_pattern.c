@@ -3,7 +3,6 @@
 #include "include/code/klgen.h"
 #include "include/code/klgen_stmt.h"
 #include "include/cst/klcst.h"
-#include "include/cst/klcst_expr.h"
 #include "include/cst/klstrtbl.h"
 #include "include/parse/kltokens.h"
 #include <strings.h>
@@ -182,7 +181,7 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
     }
     case KLCST_EXPR_ARR: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->vals);
+      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
       KlCst** elems = tuple->elems;
       size_t nfront;
@@ -370,7 +369,7 @@ static bool klgen_pattern_fastbinding_check(KlGenUnit* gen, KlCst* pattern) {
       return klgen_pattern_fastbinding_check(gen, elems[nelem - 1]);
     }
     case KLCST_EXPR_ARR: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->vals);
+      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
       if (nelem == 0) return true;
       KlCst** elems = tuple->elems;
@@ -426,7 +425,7 @@ static bool klgen_pattern_fastbinding_check(KlGenUnit* gen, KlCst* pattern) {
     }
     case KLCST_EXPR_CALL: {
       KlCstCall* call = klcast(KlCstCall*, pattern);
-      return klgen_pattern_fastbinding_check(gen, call->args);
+      return klgen_pattern_fastbinding_check(gen, klcst(call->args));
     }
     case KLCST_EXPR_POST: {
       KlCstPost* post = klcast(KlCstPost*, pattern);
@@ -466,7 +465,7 @@ static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
     }
     case KLCST_EXPR_ARR: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->vals);
+      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
       KlCst** elems = tuple->elems;
       size_t nfront;
@@ -622,7 +621,7 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern) {
       return count;
     }
     case KLCST_EXPR_ARR: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->vals);
+      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
       KlCst** elems = tuple->elems;
       size_t count = 0;
@@ -661,7 +660,7 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern) {
     }
     case KLCST_EXPR_CALL: {
       KlCstCall* call = klcast(KlCstCall*, pattern);
-      return klgen_pattern_count_result(gen, call->args);
+      return klgen_pattern_count_result(gen, klcst(call->args));
     }
     case KLCST_EXPR_POST: {
       KlCstPost* post = klcast(KlCstPost*, pattern);
@@ -703,7 +702,7 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlCst* pattern) {
       break;
     }
     case KLCST_EXPR_ARR: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->vals);
+      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
       KlCst** elems = tuple->elems;
       for (size_t i = nelem; i-- > 0;)
@@ -741,7 +740,7 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlCst* pattern) {
     }
     case KLCST_EXPR_CALL: {
       KlCstCall* call = klcast(KlCstCall*, pattern);
-      klgen_pattern_do_assignment(gen, call->args);
+      klgen_pattern_do_assignment(gen, klcst(call->args));
       break;
     }
     case KLCST_EXPR_POST: {
@@ -783,7 +782,7 @@ size_t klgen_pattern_newsymbol(KlGenUnit* gen, KlCst* pattern, size_t base) {
       return base;
     }
     case KLCST_EXPR_ARR: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->vals);
+      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
       KlCst** elems = tuple->elems;
       for (size_t i = 0; i < nelem; ++i)
@@ -819,7 +818,7 @@ size_t klgen_pattern_newsymbol(KlGenUnit* gen, KlCst* pattern, size_t base) {
     }
     case KLCST_EXPR_CALL: {
       KlCstCall* call = klcast(KlCstCall*, pattern);
-      return klgen_pattern_newsymbol(gen, call->args, base);
+      return klgen_pattern_newsymbol(gen, klcst(call->args), base);
     }
     case KLCST_EXPR_POST: {
       KlCstPost* post = klcast(KlCstPost*, pattern);

@@ -5,7 +5,7 @@
 #include "include/code/klgen_pattern.h"
 #include "include/code/klgen_exprbool.h"
 #include "include/code/klgen_stmt.h"
-#include "include/cst/klcst_expr.h"
+#include "include/cst/klcst.h"
 #include "include/cst/klstrtbl.h"
 #include "include/lang/klinst.h"
 #include <setjmp.h>
@@ -15,7 +15,7 @@ static KlCodeVal klgen_exprbinrightnonstk(KlGenUnit* gen, KlCstBin* bincst, KlCo
 
 void klgen_exprarr(KlGenUnit* gen, KlCstArray* arrcst, size_t target) {
   size_t argbase = klgen_stacktop(gen);
-  size_t nval = klgen_passargs(gen, arrcst->vals);
+  size_t nval = klgen_passargs(gen, arrcst->exprlist);
   klgen_emit(gen, klinst_mkarray(target, argbase, nval), klgen_cstposition(arrcst));
   klgen_stackfree(gen, target == argbase ? target + 1 : argbase);
 }
@@ -306,7 +306,7 @@ static KlCodeVal klgen_identifier(KlGenUnit* gen, KlCstIdentifier* idcst) {
   }
 }
 
-void klgen_method(KlGenUnit* gen, KlCst* objcst, KlStrDesc method, KlCst* args, KlFilePosition position, size_t nret, size_t target) {
+static void klgen_method(KlGenUnit* gen, KlCst* objcst, KlStrDesc method, KlCstTuple* args, KlFilePosition position, size_t nret, size_t target) {
   size_t base = klgen_stacktop(gen);
   klgen_exprtarget_noconst(gen, objcst, base);
   size_t narg = klgen_passargs(gen, args);
@@ -479,7 +479,7 @@ void klgen_exprlist_raw(KlGenUnit* gen, KlCst** csts, size_t ncst, size_t nwante
     klgen_multival(gen, csts[i], 0, stktop);
 }
 
-size_t klgen_passargs(KlGenUnit* gen, KlCst* args) {
+size_t klgen_passargs(KlGenUnit* gen, KlCstTuple* args) {
   kl_assert(klcst_kind(args) == KLCST_EXPR_TUPLE, "");
   KlCstTuple* tuple = klcast(KlCstTuple*, args);
   if (tuple->nelem == 0) return 0;
@@ -838,7 +838,7 @@ static KlCodeVal klgen_exprappend(KlGenUnit* gen, KlCstPost* postcst) {
     klgen_emit(gen, klinst_append(appendable.index, val.index, 1), klgen_cstposition(postcst));
   } else {
     size_t base = klgen_stacktop(gen);
-    size_t narg = klgen_passargs(gen, klcst(tuple));
+    size_t narg = klgen_passargs(gen, tuple);
     klgen_emit(gen, klinst_append(appendable.index, base, narg), klgen_cstposition(postcst));
   }
   klgen_stackfree(gen, stktop);

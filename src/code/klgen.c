@@ -3,7 +3,7 @@
 #include "include/code/klcontbl.h"
 #include "include/code/klgen_stmt.h"
 #include "include/code/klsymtbl.h"
-#include "include/cst/klcst_expr.h"
+#include "include/cst/klcst.h"
 
 kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
 kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
@@ -325,7 +325,7 @@ void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, Kl
   }
 }
 
-KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, KlCodeGenConfig* config) {
+KlCode* klgen_file(KlCstStmtList* cst, KlStrTbl* strtbl, KlCodeGenConfig* config) {
   /* create genunit */
   KlGUCommonString strings;
   if (kl_unlikely(!klgen_init_commonstrings(strtbl, &strings))) {
@@ -349,7 +349,7 @@ KlCode* klgen_file(KlCst* cst, KlStrTbl* strtbl, KlCodeGenConfig* config) {
 
     /* generate code for function body */
     kl_assert(klcst_kind(cst) == KLCST_STMT_BLOCK, "");
-    klgen_stmtlist(&gen, klcast(KlCstStmtList*, cst));
+    klgen_stmtlist(&gen, cst);
     /* add a return statement if 'return' is missing */
     if (!klcst_mustreturn(klcast(KlCstStmtList*, cst))) {
       if (gen.symtbl->info.referenced)
