@@ -18,13 +18,15 @@ struct a {
 #define KLCODEDUMP_MAGIC_SZ         (4)
 #define KLCODEDUMP_BIG_ENDIAN       (0)
 #define KLCODEDUMP_SMALL_ENDIAN     (1)
+#define KLCODEDUMP_VERSION          (0)
 
 typedef unsigned char uchar;
 
 typedef struct tafKlCodeDumpHeader {
   char magic[KLCODEDUMP_MAGIC_SZ];
   uchar endian;
-  uchar 
+  uchar version;
+
 } KlCodeDumpHeader;
 
 void klcode_dump(KlCode* code, Ko* file) {

@@ -1,3 +1,4 @@
+#include "include/code/klcontbl.h"
 #include "include/code/klgen.h"
 #include "include/code/klcodeval.h"
 #include "include/code/klgen_expr.h"
@@ -6,6 +7,7 @@
 #include "include/code/klgen_stmt.h"
 #include "include/cst/klcst_expr.h"
 #include "include/cst/klstrtbl.h"
+#include "include/lang/klinst.h"
 #include <setjmp.h>
 
 static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlCstBin* bincst, KlCodeVal left, size_t target);
@@ -720,25 +722,39 @@ static KlCodeVal klgen_exprbinrightnonstk(KlGenUnit* gen, KlCstBin* bincst, KlCo
       if (bincst->op == KLTK_CONCAT) {
         klgen_putonstack(gen, &right, klgen_cstposition(bincst->roperand));
         klgen_emit(gen, klgen_bininst(bincst, target, left.index, right.index), klgen_cstposition(bincst));
-      } else if (klinst_inrange(right.intval, 8) && bincst->op != KLTK_DIV) {
-        klgen_emit(gen, klgen_bininsti(bincst, target, left.index, right.intval), klgen_cstposition(bincst));
-      } else {
-        size_t nextidx = klcontbl_nextindex(gen->contbl);
-        if (klinst_inurange(nextidx, 8)) {
-          size_t conidx = klgen_newinteger(gen, right.intval);
-          kl_assert(conidx == nextidx, "");
-          klgen_emit(gen, klgen_bininstc(bincst, target, left.index, conidx), klgen_cstposition(bincst));
-        } else if (klinst_inrange(right.intval, 16)) {
-          size_t stktop = klgen_stackalloc1(gen);
-          klgen_emit(gen, klinst_loadi(stktop, right.intval), klgen_cstposition(bincst->roperand));
-          klgen_emit(gen, klgen_bininst(bincst, target, left.index, stktop), klgen_cstposition(bincst));
-        } else {
-          size_t stktop = klgen_stackalloc1(gen);
-          size_t conidx = klgen_newinteger(gen, right.intval);
-          klgen_emit(gen, klinst_loadc(stktop, conidx), klgen_cstposition(bincst->roperand));
-          klgen_emit(gen, klgen_bininst(bincst, target, left.index, stktop), klgen_cstposition(bincst));
-        }
+        klgen_stackfree(gen, finstktop);
+        return klcodeval_stack(target);
       }
+      /* first try OPI */
+      if (klinst_inrange(right.intval, 8)) {
+        klgen_emit(gen, klgen_bininsti(bincst, target, left.index, right.intval), klgen_cstposition(bincst));
+        klgen_stackfree(gen, finstktop);
+        return klcodeval_stack(target);
+      }
+      /* then try OPC */
+      KlConEntry* conent = klgen_searchinteger(gen, right.intval);
+      if (!conent && klinst_inurange(klcontbl_nextindex(gen->contbl), 8)) {
+        conent = klcontbl_insert(gen->contbl, &(KlConstant) { .type = KLC_INT, .intval = right.intval });
+        klgen_oomifnull(gen, conent);
+      }
+      if (conent && klinst_inurange(conent->index, 8)) {
+        klgen_emit(gen, klgen_bininstc(bincst, target, left.index, conent->index), klgen_cstposition(bincst));
+        klgen_stackfree(gen, finstktop);
+        return klcodeval_stack(target);
+      }
+      /* then try LOADI, OP */
+      if (klinst_inrange(right.intval, 16)) {
+        size_t stktop = klgen_stackalloc1(gen);
+        klgen_emit(gen, klinst_loadi(stktop, right.intval), klgen_cstposition(bincst->roperand));
+        klgen_emit(gen, klgen_bininst(bincst, target, left.index, stktop), klgen_cstposition(bincst));
+        klgen_stackfree(gen, finstktop);
+        return klcodeval_stack(target);
+      }
+      /* finally try LOADC, OP */
+      size_t conidx = conent ? conent->index : klgen_newinteger(gen, right.intval);
+      size_t stktop = klgen_stackalloc1(gen);
+      klgen_emit(gen, klinst_loadc(stktop, conidx), klgen_cstposition(bincst->roperand));
+      klgen_emit(gen, klgen_bininst(bincst, target, left.index, stktop), klgen_cstposition(bincst));
       klgen_stackfree(gen, finstktop);
       return klcodeval_stack(target);
     }
