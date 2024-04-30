@@ -48,9 +48,9 @@ KlCode* klcode_create(KlCRefInfo* refinfo, size_t nref, KlConstant* constants, s
 void klcode_delete(KlCode* code);
 
 KlCode* klcode_create_fromcst(KlCstStmtList* cst, KlStrTbl* strtbl, KlCodeGenConfig* config);
-KlCode* klcode_create_fromfile(Ki* file);
 
 bool klcode_dump(KlCode* code, Ko* file);
+KlCode* klcode_undump(Ki* file);
 void klcode_print(KlCode* code, Ko* out);
 
 #endif

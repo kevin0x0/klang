@@ -16,6 +16,7 @@ static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
       return hash;
     }
     case KLC_FLOAT: {
+      /* NOT PORTABLE */
       kl_static_assert(sizeof (KlCFloat) == sizeof (KlCInt), "");
       union {
         size_t hash;
@@ -27,6 +28,9 @@ static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
       return num.hash;
     }
     case KLC_BOOL: {
+      return con->boolval;
+    }
+    case KLC_NIL: {
       return con->boolval;
     }
     default: {

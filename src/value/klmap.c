@@ -32,6 +32,7 @@ static inline size_t klmap_gethash(KlValue* key) {
       return klvalue_getbool(key);
     }
     case KL_FLOAT: {
+      /* NOT PORTABLE */
       kl_static_assert(sizeof (KlFloat) == sizeof (KlInt), "");
       union {
         size_t hash;
