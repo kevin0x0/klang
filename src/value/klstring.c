@@ -5,8 +5,8 @@
 static void klstrpool_string_on_delete(KlString* klstr, KlMM* klmm);
 static void klstrpool_delete(KlStrPool* strpool, KlMM* klmm);
 
-static KlGCVirtualFunc klstring_gcvfunc = { .destructor = (KlGCDestructor)klstrpool_string_on_delete, .propagate = NULL };
-static KlGCVirtualFunc klstrpool_gcvfunc = { .destructor = (KlGCDestructor)klstrpool_delete, .propagate = NULL };
+static KlGCVirtualFunc klstring_gcvfunc = { .destructor = (KlGCDestructor)klstrpool_string_on_delete, .propagate = NULL, .post = NULL };
+static KlGCVirtualFunc klstrpool_gcvfunc = { .destructor = (KlGCDestructor)klstrpool_delete, .propagate = NULL, .post = NULL };
 
 static inline void klstrpool_node_insert(KlString* insertpos, KlString* node);
 static inline void klstrpool_init_head_tail(KlString* head, KlString* tail);
@@ -158,7 +158,7 @@ static KlString* klstrpool_search(KlStrPool* strpool, const char* str, size_t ha
 }
 
 static KlString* klstrpool_insert(KlStrPool* strpool, KlString* str) {
-  if (kl_unlikely(strpool->size >= strpool->capacity && klstrpool_expand(strpool)))
+  if (kl_unlikely(strpool->size >= strpool->capacity && !klstrpool_expand(strpool)))
     return NULL;
 
   size_t index = (strpool->capacity - 1) & klstring_hash(str);

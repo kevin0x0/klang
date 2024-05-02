@@ -114,7 +114,7 @@ struct tagKlObjectInstance {
 static inline KlValue* klobject_getfield(KlObject* object, KlString* key);
 static inline KlClass* klobject_class(KlObject* object);
 static inline size_t klobject_size(KlObject* object);
-KlGCObject* klobject_propagate(KlObject* object, KlGCObject* gclist);
+static inline KlGCObject* klobject_propagate_nomm(KlObject* object, KlGCObject* gclist);
 static inline void klobject_free(KlObject* object, KlMM* klmm);
 
 static inline KlValue* klobject_getfield(KlObject* object, KlString* key) {
@@ -134,6 +134,17 @@ static inline KlClass* klobject_class(KlObject* object) {
 
 static inline size_t klobject_size(KlObject* object) {
   return object->size;
+}
+
+static inline KlGCObject* klobject_propagate_nomm(KlObject* object, KlGCObject* gclist) {
+  klmm_gcobj_mark_accessible(klmm_to_gcobj(object->klclass), gclist);
+  KlValue* attrs = klobject_attrs(object);
+  size_t nlocal = object->klclass->nlocal;
+  for (size_t i = 0; i < nlocal; ++i) {
+    if (klvalue_collectable(&attrs[i]))
+        klmm_gcobj_mark_accessible(klvalue_getgcobj(&attrs[i]), gclist);
+  }
+  return gclist;
 }
 
 static inline void klobject_free(KlObject* object, KlMM* klmm) {

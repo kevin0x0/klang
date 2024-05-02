@@ -1,16 +1,18 @@
 #include "include/value/klmap.h"
 #include "include/misc/klutils.h"
 #include "include/mm/klmm.h"
+#include "include/value/klclass.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-static KlGCObject* klmap_propagate(KlMap* map, KlGCObject* gclist);
+static KlGCObject* klmap_propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist);
 static void klmap_delete(KlMap* map, KlMM* klmm);
+static void klmap_post(KlMap* map, KlMM* klmm);
 
-static KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_propagate, .destructor = (KlGCDestructor)klmap_delete };
+static KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_propagate, .destructor = (KlGCDestructor)klmap_delete, .post = (KlGCPost)klmap_post };
 
 
 static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* elem);
@@ -120,6 +122,7 @@ KlMap* klmap_create(KlClass* mapclass, size_t capacity, KlMapNodePool* nodepool)
   map->capacity = capacity;
   map->size = 0;
   map->nodepool = nodepool;
+  map->option = 0;
   klmapnodepool_pin(nodepool);
   klmm_gcobj_enable(klmm, klmm_to_gcobj(map), &klmap_gcvfunc);
   return map;
@@ -132,6 +135,20 @@ static void klmap_delete(KlMap* map, KlMM* klmm) {
   klmapnodepool_unpin(map->nodepool);
   klmm_free(klmm, map->array, map->capacity * sizeof (KlMapNode*));
   klobject_free(klcast(KlObject*, map), klmm);
+}
+
+static void klmap_post(KlMap* map, KlMM* klmm) {
+  kl_unused(klmm);
+  KlMapIter end = klmap_iter_end(map);
+  KlMapIter begin = klmap_iter_begin(map);
+  for (KlMapIter itr = begin; itr != end;) {
+    if ((klvalue_collectable(&itr->key) && klmm_gcobj_isdead(klvalue_getgcobj(&itr->key))) ||
+        (klvalue_collectable(&itr->value) && klmm_gcobj_isdead(klvalue_getgcobj(&itr->value)))) {
+      itr = klmap_erase(map, itr);
+    } else {
+      itr = klmap_iter_next(itr);
+    }
+  }
 }
 
 KlMapIter klmap_insert(KlMap* map, KlValue* key, KlValue* value) {
@@ -236,16 +253,60 @@ KlClass* klmap_class(KlMM* klmm, KlMapNodePool* mapnodepool) {
   return mapclass;
 }
 
-static KlGCObject* klmap_propagate(KlMap* map, KlGCObject* gclist) {
+static KlGCObject* klmap_propagate_nonweak(KlMap* map, KlGCObject* gclist) {
   KlMapIter end = klmap_iter_end(map);
   KlMapIter begin = klmap_iter_begin(map);
   for (KlMapIter itr = begin; itr != end; itr = klmap_iter_next(itr)) {
-    if (klvalue_collectable(&itr->value))
+    if (klvalue_collectable(&itr->key))
       klmm_gcobj_mark_accessible(klvalue_getgcobj(&itr->key), gclist);
     if (klvalue_collectable(&itr->value))
       klmm_gcobj_mark_accessible(klvalue_getgcobj(&itr->value), gclist);
   }
-  return klobject_propagate(klcast(KlObject*, map), gclist);
+  return klobject_propagate_nomm(klcast(KlObject*, map), gclist);
+}
+
+static KlGCObject* klmap_propagate_keyweak(KlMap* map, KlGCObject* gclist) {
+  KlMapIter end = klmap_iter_end(map);
+  KlMapIter begin = klmap_iter_begin(map);
+  for (KlMapIter itr = begin; itr != end; itr = klmap_iter_next(itr)) {
+    if (klvalue_collectable(&itr->value))
+      klmm_gcobj_mark_accessible(klvalue_getgcobj(&itr->value), gclist);
+  }
+  return klobject_propagate_nomm(klcast(KlObject*, map), gclist);
+}
+
+static KlGCObject* klmap_propagate_valweak(KlMap* map, KlGCObject* gclist) {
+  KlMapIter end = klmap_iter_end(map);
+  KlMapIter begin = klmap_iter_begin(map);
+  for (KlMapIter itr = begin; itr != end; itr = klmap_iter_next(itr)) {
+    if (klvalue_collectable(&itr->key))
+      klmm_gcobj_mark_accessible(klvalue_getgcobj(&itr->key), gclist);
+  }
+  return klobject_propagate_nomm(klcast(KlObject*, map), gclist);
+}
+
+static KlGCObject* klmap_propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist) {
+  switch (map->option & (KLMAP_OPT_WEAKKEY | KLMAP_OPT_WEAKVAL)) {
+    case 0: { /* not a week map */
+      return klmap_propagate_nonweak(map, gclist);
+    }
+    case KLMAP_OPT_WEAKKEY | KLMAP_OPT_WEAKVAL: { /* bother keys and values are weak */
+      klmm_gcobj_postproc(klmm, klmm_to_gcobj(map));
+      return klobject_propagate_nomm(klcast(KlObject*, map), gclist);
+    }
+    case KLMAP_OPT_WEAKKEY: { /* only the keys are weak */
+      klmm_gcobj_postproc(klmm, klmm_to_gcobj(map));
+      return klmap_propagate_keyweak(map, gclist);
+    }
+    case KLMAP_OPT_WEAKVAL: {  /* only the values are week */
+      klmm_gcobj_postproc(klmm, klmm_to_gcobj(map));
+      return klmap_propagate_valweak(map, gclist);
+    }
+    default: {
+      kl_assert(false, "unreachable");
+      return gclist;
+    }
+  }
 }
 
 

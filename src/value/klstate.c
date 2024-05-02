@@ -1,13 +1,14 @@
 #include "include/value/klstate.h"
+#include "include/misc/klutils.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klstack.h"
 #include <stdarg.h>
 
 
-static KlGCObject* klstate_propagate(KlState* state, KlGCObject* gclist);
+static KlGCObject* klstate_propagate(KlState* state, KlMM* klmm, KlGCObject* gclist);
 static void klstate_delete(KlState* state, KlMM* klmm);
 
-static KlGCVirtualFunc klstate_gcvfunc = { .propagate = (KlGCProp)klstate_propagate, .destructor = (KlGCDestructor)klstate_delete };
+static KlGCVirtualFunc klstate_gcvfunc = { .propagate = (KlGCProp)klstate_propagate, .destructor = (KlGCDestructor)klstate_delete, .post = NULL};
 
 static void klstate_correct_callinfo(KlState* state, ptrdiff_t diff);
 
@@ -61,7 +62,8 @@ static void klstate_delete(KlState* state, KlMM* klmm) {
   klmm_free(klmm, state, sizeof (KlState));
 }
 
-static KlGCObject* klstate_propagate(KlState* state, KlGCObject* gclist) {
+static KlGCObject* klstate_propagate(KlState* state, KlMM* klmm, KlGCObject* gclist) {
+  kl_unused(klmm);
   gclist = klstack_propagate(klstate_stack(state), gclist);
   gclist = klcommon_propagate(state->common, gclist);
   gclist = klthrow_propagate(&state->throwinfo, gclist);
@@ -98,7 +100,7 @@ KlException klstate_growstack(KlState* state, size_t framesize) {
       exception = KL_E_OOM;
       break;
     }
-  } while (klstack_capacity(klstate_stack(state)) < expected_cap);
+  } while (klstack_capacity(klstate_stack(state)) <= expected_cap);
   KlValue* newstk = klstack_raw(klstate_stack(state));
   ptrdiff_t diff = newstk - oristk;
   klreflist_correct(state->reflist, diff);

@@ -5,10 +5,10 @@
 #include <stddef.h>
 #include <string.h>
 
-static KlGCObject* klclass_propagate(KlClass* klclass, KlGCObject* gclist);
+static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist);
 static void klclass_delete(KlClass* klclass, KlMM* klmm);
 
-static KlGCVirtualFunc klclass_gcvfunc = { .destructor = (KlGCDestructor)klclass_delete, .propagate = (KlGCProp)klclass_propagate };
+static KlGCVirtualFunc klclass_gcvfunc = { .destructor = (KlGCDestructor)klclass_delete, .propagate = (KlGCProp)klclass_propagate, .post = NULL };
 
 static KlClassSlot* klclass_getfreeslot(KlClass* klclass);
 static bool klclass_rehash(KlClass* klclass, KlMM* klmm);
@@ -291,7 +291,8 @@ KlClassSlot* klclass_find(KlClass* klclass, struct tagKlString* key) {
   return NULL;
 }
 
-static KlGCObject* klclass_propagate(KlClass* klclass, KlGCObject* gclist) {
+static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist) {
+  kl_unused(klmm);
   KlClassSlot* slots = klclass->slots;
   KlClassSlot* end = slots + klclass->capacity;
   for (KlClassSlot* itr = slots; itr != end; ++itr) {
@@ -318,6 +319,7 @@ static void klclass_delete(KlClass* klclass, KlMM* klmm) {
 
 
 static void klobject_delete(KlObject* object, KlMM* klmm);
+static KlGCObject* klobject_propagate(KlObject* object, KlMM* klmm, KlGCObject* gclist);
 
 static KlGCVirtualFunc klobject_gcvfunc = { .destructor = (KlGCDestructor)klobject_delete, .propagate = (KlGCProp)klobject_propagate };
 
@@ -344,7 +346,8 @@ KlObject* klclass_objalloc(KlClass* klclass, KlMM* klmm) {
   return obj;
 }
 
-KlGCObject* klobject_propagate(KlObject* object, KlGCObject* gclist) {
+static KlGCObject* klobject_propagate(KlObject* object, KlMM* klmm, KlGCObject* gclist) {
+  kl_unused(klmm);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(object->klclass), gclist);
   KlValue* attrs = klobject_attrs(object);
   size_t nlocal = object->klclass->nlocal;

@@ -1,10 +1,11 @@
 #include "include/value/klkfunc.h"
+#include "include/misc/klutils.h"
 #include "include/value/klvalue.h"
 
-static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlGCObject* gclist);
+static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject* gclist);
 static void klkfunc_delete(KlKFunction* kfunc, KlMM* klmm);
 
-static KlGCVirtualFunc klkfunc_gcvfunc = { .destructor = (KlGCDestructor)klkfunc_delete, .propagate = (KlGCProp)klkfunc_propagate };
+static KlGCVirtualFunc klkfunc_gcvfunc = { .destructor = (KlGCDestructor)klkfunc_delete, .propagate = (KlGCProp)klkfunc_propagate, .post = NULL };
 
 
 KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, size_t codelen, size_t nconst, size_t nref, size_t nsubfunc, size_t framesize, size_t nparam) {
@@ -35,7 +36,8 @@ void klkfunc_initdone(KlMM* klmm, KlKFunction* kfunc) {
   klmm_gcobj_enable(klmm, klmm_to_gcobj(kfunc), &klkfunc_gcvfunc);
 }
 
-static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlGCObject* gclist) {
+static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject* gclist) {
+  kl_unused(klmm);
   for (KlValue* constant = kfunc->constants;
        constant != kfunc->constants + kfunc->nconst;
        ++constant) {

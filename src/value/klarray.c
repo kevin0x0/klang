@@ -1,11 +1,12 @@
 #include "include/value/klarray.h"
+#include "include/misc/klutils.h"
 #include "include/vm/klexception.h"
 
 #include <stdlib.h>
 
 #define KLARRAY_DEFAULT_SIZE      (8)
 
-static KlGCObject* klarray_propagate(KlArray* array, KlGCObject* gclist);
+static KlGCObject* klarray_propagate(KlArray* array, KlMM* klmm, KlGCObject* gclist);
 static void klarray_delete(KlArray* array, KlMM* klmm);
 
 static KlGCVirtualFunc klarray_gcvfunc = { .destructor = (KlGCDestructor)klarray_delete, .propagate = (KlGCProp)klarray_propagate };
@@ -54,12 +55,13 @@ bool klarray_check_capacity(KlArray* array, KlMM* klmm, size_t new_capacity) {
 }
 
 
-static KlGCObject* klarray_propagate(KlArray* array, KlGCObject* gclist) {
+static KlGCObject* klarray_propagate(KlArray* array, KlMM* klmm, KlGCObject* gclist) {
+  kl_unused(klmm);
   KlArrayIter end = klarray_iter_end(array);
   KlArrayIter begin = klarray_iter_begin(array);
   for (KlArrayIter itr = begin; itr != end; itr = klarray_iter_next(itr)) {
     if (klvalue_collectable(itr))
       klmm_gcobj_mark_accessible(klvalue_getgcobj(itr), gclist);
   }
-  return klobject_propagate(klcast(KlObject*, array), gclist);
+  return klobject_propagate_nomm(klcast(KlObject*, array), gclist);
 }

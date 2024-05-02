@@ -17,14 +17,14 @@ int main(void) {
   KlMM klmm;
   klmm_init(&klmm, 1024);
   KlState* state = klapi_new_state(&klmm);
-  fibonacci(state);
+  gctest(state);
   //concat(state);
   size_t narg = 1;
+  clock_t t = clock();
   klapi_pushint(state, 36);
   //klapi_pushstring(state, "hello,");
   //klapi_pushstring(state, " ");
   //klapi_pushstring(state, "world!");
-  clock_t t = clock();
   KlException exception = klapi_call(state, klapi_access(state, -1 - narg), narg, 1);
   printf("%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
   if (exception) {
@@ -40,6 +40,19 @@ int main(void) {
 
 void gctest(KlState* state) {
   KlMM* klmm = klstate_getmm(state);
+  for (size_t i = 0; i < 90000; ++i) {
+    char key[20];
+    sprintf(key, "key%zu", i);
+    klapi_pushstring(state, key);
+    KlString* str = klapi_getstring(state, -1);
+    klapi_storeglobal(state, str);
+    klapi_pop(state, 1);
+  }
+  //clock_t t = clock();
+  //for (size_t i = 0; i < 1; ++i) {
+  //  klmm_do_gc(klmm);
+  //}
+  //fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
   KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
   KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 2, 0, 0, 100, 0);
   // KlRefInfo* refinfo = klkfunc_refinfo(kfunc);
@@ -52,14 +65,17 @@ void gctest(KlState* state) {
   code[1] = klinst_loadi(0, 0);
   code[2] = klinst_loadc(1, 0);
   code[3] = klinst_loadnil(2, 0);
-  code[4] = klinst_iforprep(0, 2);
-  code[5] = klinst_loadc(3, 1);
-  code[6] = klinst_iforloop(0, -2);
-  code[7] = klinst_return1(0);
+  code[4] = klinst_iforprep(0, 4);
+  code[5] = klinst_mkmap(3, 3, 0);
+  code[6] = klinst_loadc(4, 1);
+  code[7] = klinst_indexas(4, 3, 4);
+  code[8] = klinst_iforloop(0, -4);
+  code[9] = klinst_return1(0);
   // klapi_pushnil(state, 1);
   KlKClosure* kclo = klkclosure_create(klmm, kfunc, klapi_access(state, -1), &state->reflist, NULL);
   klkfunc_initdone(klmm, kfunc);
   klapi_setobj(state, -1, kclo, KL_KCLOSURE);
+  //fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
   // klreflist_close(&state->reflist, klstate_getval(state, -1), klstate_getmm(state));
   // klapi_storeglobal(state, klstrpool_new_string(state->strpool, "fibonacci"));
 }

@@ -1,48 +1,131 @@
-#include "klang/include/mm/klgcobject.h"
-#include "klang/include/mm/klmm.h"
-#include "klang/include/value/klmap.h"
-#include "klang/include/value/klarray.h"
+#include "include/klapi.h"
+#include "include/mm/klmm.h"
+#include "include/value/klcfunc.h"
+#include "include/value/klclass.h"
+#include "include/value/klclosure.h"
+#include "include/value/klcoroutine.h"
+#include "include/value/klmap.h"
+#include "include/value/klstring.h"
+#include "include/value/klvalue.h"
+#include "include/lang/klinst.h"
 #include <stdio.h>
+#include <time.h>
+
+void gctest(KlState* state);
+void gctest0(KlState* state);
+void gctest1(KlState* state);
 
 
-int main(void) {
-  while (true) {
-    KlMM klmm;
-    klmm_init(&klmm, 1024 * 1024 * 1024);
-    KlArray* array = klarray_create(&klmm, 32);
-    klmm_register_root(&klmm, (KlGCObject*)array);
-    char buf[100] = "hello";
-    
-    for (size_t cnt = 0; cnt < 100000; ++cnt) {
-      klarray_make_empty(array);
-      KlMap* map = klmap_create(&klmm, 4);
-      KlValue tmp;
-      tmp.type = KL_MAP;
-      tmp.value.gcobj = (KlGCObject*)map;
-      klarray_push_back(array, &tmp);
-      for (size_t i = 0; i < 16; ++i) {
-        sprintf(buf, "hello %d", i);
-        tmp.type = KL_STRING;
-        tmp.value.gcobj = (KlGCObject*)klstring_create(&klmm, buf);
-        klarray_push_back(array, &tmp);
-      }
-      for (size_t i = 0; i < 14; i += 2) {
-        tmp.type = KL_STRING;
-        tmp.value.gcobj = klarray_access(array, i + 2)->value.gcobj;
-        klmap_insert(map, klarray_access(array, i + 1)->value.gcobj, &tmp);
-      }
-      // for (KlMapIter itr = klmap_iter_begin(map); itr != klmap_iter_end(map); itr = klmap_iter_next(itr)) {
-      //   klstring_print((KlString*)itr->key, buf);
-      //   printf("%s : ", buf);
-      //   klstring_print((KlString*)itr->value.value.gcobj, buf);
-      //   printf("%s\n", buf);
-      // }
-    }
-    // for (KlMapIter itr = klmap_iter_begin(map); itr != klmap_iter_end(map); itr = klmap_iter_next(itr))
-    //   printf("%s %d\n", kstring_get_content(itr->key), itr->value.value.intval);
-
-
-    klmm_destroy(&klmm);
-  }
+int a = 0;
+size_t r = 0;
+int main(int argc, char** argv) {
+  if (argv[1] == NULL) return 1;
+  r = atoi(argv[1]);
+  KlMM klmm;
+  klmm_init(&klmm, 1024);
+  KlState* state = klapi_new_state(&klmm);
+  gctest1(state);
+  a = 0;
+  gctest0(state);
+  klmm_destroy(&klmm);
   return 0;
 }
+
+void gctest1(KlState* state) {
+  clock_t t = clock();
+  KlMM* klmm = klstate_getmm(state);
+  klapi_pushnil(state, 1);
+  KlClass* klclass = klclass_create(klmm, 10, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
+  klapi_setobj(state, -1, klclass, KL_CLASS);
+  //klmm->root = NULL;
+  for (size_t i = 0; i < 9 * r; ++i) {
+    char key[40];
+    sprintf(key, "key%zu", i);
+    klapi_pushstring(state, key);
+    KlString* str = klapi_getstring(state, -1);
+    klapi_storeglobal(state, str);
+    //klclass_newshared(klclass, klmm, str, klapi_access(state, -1));
+    klapi_pop(state, 1);
+  }
+  fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
+  fprintf(stderr, "memory used: %zu\n", klmm->mem_used);
+  t = clock();
+  klmm->root = klmm_to_gcobj(state);
+  //KlMapIter end = klmap_iter_end(state->global);
+  //int a = 0;
+  //for (KlMapIter itr = klmap_iter_begin(state->global); itr != end; itr = itr->next) {
+  //  a++;
+  //}
+  for (size_t i = 0; i < 1; ++i) {
+    klmm_do_gc(klmm);
+  }
+  fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
+  fprintf(stderr, "gc %d times\n", a);
+}
+
+void gctest(KlState* state) {
+  clock_t t = clock();
+  KlMM* klmm = klstate_getmm(state);
+  //klmm->root = NULL;
+  for (size_t i = 0; i < 10000000; ++i) {
+    char key[40];
+    sprintf(key, "key%zu", i);
+    klapi_pushstring(state, key);
+    klapi_pop(state, 1);
+    //KlString* str = klapi_getstring(state, -1);
+    //klapi_storeglobal(state, str);
+  }
+  fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
+  fprintf(stderr, "memory used: %zu\n", klmm->mem_used);
+  t = clock();
+  klmm->root = klmm_to_gcobj(state);
+  for (size_t i = 0; i < 1; ++i) {
+    klmm_do_gc(klmm);
+  }
+  fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
+  fprintf(stderr, "gc %d times\n", a);
+}
+
+size_t map_count = 0;
+void gctest0(KlState* state) {
+  clock_t t = clock();
+  KlMM* klmm = klstate_getmm(state);
+  //klmm->root = NULL;
+  KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, 100 * sizeof (KlInstruction));
+  KlKFunction* kfunc = klkfunc_alloc(klmm, code, 100, 2, 0, 0, 100, 0);
+  // KlRefInfo* refinfo = klkfunc_refinfo(kfunc);
+  KlValue* constants = klkfunc_constants(kfunc);
+  klapi_pushint(state, 10000 * r);
+  klvalue_setvalue(&constants[0], klapi_access(state, -1));
+  klapi_setstring(state, -1, "name");
+  klvalue_setvalue(&constants[1], klapi_access(state, -1));
+  code[0] = klinst_adjustargs();
+  code[1] = klinst_loadi(0, 0);
+  code[2] = klinst_loadc(1, 0);
+  code[3] = klinst_loadnil(2, 0);
+  code[4] = klinst_iforprep(0, 4);
+  code[5] = klinst_mkmap(3, 3, 0);
+  code[6] = klinst_loadc(4, 1);
+  code[7] = klinst_indexas(4, 3, 4);
+  code[8] = klinst_iforloop(0, -4);
+  code[9] = klinst_return1(0);
+  // klapi_pushnil(state, 1);
+  KlKClosure* kclo = klkclosure_create(klmm, kfunc, klapi_access(state, -1), &state->reflist, NULL);
+  klkfunc_initdone(klmm, kfunc);
+  klapi_setobj(state, -1, kclo, KL_KCLOSURE);
+  //fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
+  // klreflist_close(&state->reflist, klstate_getval(state, -1), klstate_getmm(state));
+  // klapi_storeglobal(state, klstrpool_new_string(state->strpool, "fibonacci"));
+  KlException exception = klapi_call(state, klapi_access(state, -1), 1, 1);
+  fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
+  fprintf(stderr, "memory used: %zu\n", klmm->mem_used);
+  if (exception) {
+    fprintf(stderr, "%s\n", state->throwinfo.exception.message);
+  }
+  klmm->root = klmm_to_gcobj(state);
+  t = clock();
+  klmm_do_gc(klmm);
+  fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
+  fprintf(stderr, "gc %d times\n", a);
+}
+

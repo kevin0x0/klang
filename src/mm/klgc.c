@@ -7,7 +7,8 @@
 #define klmm_gc_pop(list) { list = list->created.next_reachable; }
 
 static KlGCObject* klmm_gc_start(KlGCObject* root, KlGCObject* list);
-static void klmm_gc_mark_accessible(KlGCObject* gclist);
+static void klmm_gc_mark_accessible(KlMM* klmm, KlGCObject* gclist);
+static void klmm_gc_dopostproc(KlMM* klmm);
 void klmm_gc_clean(KlMM* klmm, KlGCObject* allgc);
 
 
@@ -19,8 +20,12 @@ static inline void klmm_gc_set_stat(KlGCObject* obj, KlGCStat gc_state) {
   obj->created.gc_state = gc_state;
 }
 
-static inline KlGCObject* klmm_gc_propagate(KlGCObject* gcobj, KlGCObject* gclist) {
-  return gcobj->created.virtualfunc->propagate(gcobj, gclist);
+static inline KlGCObject* klmm_gc_propagate(KlMM* klmm, KlGCObject* gcobj, KlGCObject* gclist) {
+  return gcobj->created.virtualfunc->propagate(gcobj, klmm, gclist);
+}
+
+static inline void klmm_gc_callpostproc(KlMM* klmm, KlGCObject* gcobj) {
+  gcobj->created.virtualfunc->post(gcobj, klmm);
 }
 
 static inline bool klmm_gc_propagable(KlGCObject* gcobj) {
@@ -37,11 +42,13 @@ static inline void klmm_gc_clean_one(KlMM* klmm, KlGCObject* gcobj) {
   //klmm_free(klmm, gcobj, freesize);
 }
 
-
 void klmm_do_gc(KlMM* klmm) {
+  extern int a;
   if (!klmm->root) return;
+  a++;
   KlGCObject* gclist = klmm_gc_start(klmm->root, klmm->allgc.next);
-  klmm_gc_mark_accessible(gclist);
+  klmm_gc_mark_accessible(klmm, gclist);
+  klmm_gc_dopostproc(klmm);
   klmm_gc_clean(klmm, &klmm->allgc);
   klmm->limit = klmm->mem_used * 2;
 }
@@ -54,13 +61,23 @@ KlGCObject* klmm_gc_start(KlGCObject* root, KlGCObject* list) {
   return gclist;
 }
 
-void klmm_gc_mark_accessible(KlGCObject* gclist) {
+static void klmm_gc_mark_accessible(KlMM* klmm, KlGCObject* gclist) {
   while (gclist) {
     KlGCObject* gcobj = gclist;
     klmm_gc_pop(gclist);
     if (klmm_gc_propagable(gcobj))
-      gclist = klmm_gc_propagate(gcobj, gclist);
+      gclist = klmm_gc_propagate(klmm, gcobj, gclist);
   }
+}
+
+static void klmm_gc_dopostproc(KlMM* klmm) {
+  KlGCObject* obj = klmm->postproclist;
+  while (obj) {
+    KlGCObject* next = obj->created.next_post;
+    klmm_gc_callpostproc(klmm, obj);
+    obj = next;
+  }
+  klmm->postproclist = NULL;
 }
 
 void klmm_gc_clean(KlMM* klmm, KlGCObject* allgc) {
@@ -89,32 +106,3 @@ void klmm_gc_clean_all(KlMM* klmm, KlGCObject* allgc) {
     gcobj = tmp;
   }
 }
-
-// static KlGCObject* klmm_gc_traverse_map(KlGCObject* gclist, KlMap* map) {
-//   KlMapIter end = klmap_iter_end(map);
-//   KlMapIter begin = klmap_iter_begin(map);
-//   for (KlMapIter itr = begin; itr != end; itr = klmap_iter_next(itr)) {
-//     KlValue* val = &itr->value;
-//     if (collectable(val) && val->value.gcobj->gc_state != KL_GC_REACHABLE) {
-//       KlGCObject* gcobj = val->value.gcobj;
-//       gcobj->gc_state = KL_GC_REACHABLE;
-//       gclink(gclist, gcobj);
-//     }
-//   }
-//   return gclist;
-// }
-// 
-// static KlGCObject* klmm_gc_traverse_array(KlGCObject* gclist, KlArray* array) {
-//   KlArrayIter end = klarray_iter_end(array);
-//   KlArrayIter begin = klarray_iter_begin(array);
-//   for (KlArrayIter itr = begin; itr != end; itr = klarray_iter_next(itr)) {
-//     KlValue* val = itr;
-//     if (collectable(val) && val->value.gcobj->gc_state != KL_GC_REACHABLE) {
-//       KlGCObject* gcobj = val->value.gcobj;
-//       gcobj->gc_state = KL_GC_REACHABLE;
-//       gclink(gclist, gcobj);
-//     }
-//   }
-//   return gclist;
-// }
-// 
