@@ -17,6 +17,9 @@
 #define kl_static_assert(expr, info)    _Static_assert((expr), info)
 #define kl_unused(param)                ((void)(param))
 
+
+#define KL_DERIVE_FROM(base, prefix)    KL_DERIVE_FROM_##base(prefix)
+
 #ifdef NDEBUG
 #define kl_assert(expr, info)   ((void)0)
 #define kltodo(message)         ((void)0)

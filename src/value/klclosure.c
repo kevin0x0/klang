@@ -1,5 +1,6 @@
 #include "include/value/klclosure.h"
 #include "include/misc/klutils.h"
+#include "include/mm/klmm.h"
 #include "include/value/klmap.h"
 #include <string.h>
 
@@ -16,7 +17,6 @@ static KlGCVirtualFunc klcclo_gcvfunc = { .destructor = (KlGCDestructor)klcclosu
 KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, KlRef** openreflist, KlRef** refs) {
   KlKClosure* kclo = (KlKClosure*)klmm_alloc(klmm, sizeof (KlKClosure) + sizeof (KlRef*) * kfunc->nref);
   if (kl_unlikely(!kclo)) return NULL;
-  klmm_newlevel(klmm, klmm_to_gcobj(kclo));
   kclo->kfunc = kfunc;
   size_t nref = kfunc->nref;
   kclo->nref = nref;
@@ -31,7 +31,6 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
     }
     KlRef* newref = klref_get(openreflist, klmm, stkbase + refinfo->index);
     if (kl_unlikely(!newref)) {
-      klmm_newlevel_abort(klmm);
       klmm_free(klmm, kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kfunc->nref);
       return NULL;
     }
@@ -40,7 +39,7 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
   }
 
   kclo->status = KLCLO_STATUS_NORM;
-  klmm_newlevel_done(klmm, &klkclo_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(kclo), &klkclo_gcvfunc);
   return kclo;
 }
 
@@ -65,7 +64,6 @@ static KlGCObject* klkclosure_propagate(KlKClosure* kclo, KlMM* klmm, KlGCObject
 KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, KlRef** openreflist, size_t nref) {
   KlCClosure* cclo = (KlCClosure*)klmm_alloc(klmm, sizeof (KlKClosure) + sizeof (KlRef*) * nref);
   if (kl_unlikely(!cclo)) return NULL;
-  klmm_newlevel(klmm, klmm_to_gcobj(cclo));
   cclo->cfunc = cfunc;
   cclo->nref = nref;
   KlRef** ref = cclo->refs;
@@ -73,7 +71,6 @@ KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, 
   for (; ref != end; ++ref) {
     KlRef* newref = klref_get(openreflist, klmm, stkbase++);
     if (kl_unlikely(!newref)) {
-      klmm_newlevel_abort(klmm);
       klmm_free(klmm, cclo, sizeof (KlCClosure) + sizeof (KlRef*) * cclo->nref);
       return NULL;
     }
@@ -82,7 +79,7 @@ KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, 
   }
 
   cclo->status = KLCLO_STATUS_NORM;
-  klmm_newlevel_done(klmm, &klcclo_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(cclo), &klcclo_gcvfunc);
   return cclo;
 }
 

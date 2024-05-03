@@ -1,6 +1,8 @@
 #ifndef KEVCC_KLANG_INCLUDE_VALUE_KLSTRING_H
 #define KEVCC_KLANG_INCLUDE_VALUE_KLSTRING_H
 
+#include "include/lang/kltypes.h"
+#include "include/misc/klutils.h"
 #include "include/mm/klmm.h"
 
 #include <stdbool.h>
@@ -9,21 +11,20 @@
 typedef struct tagKlStrPool KlStrPool;
 typedef struct tagKlString KlString;
 
+#define KLSTRING_STATUS_TAIL  (klbit(0))
+#define KLSTRING_STATUS_END   (klbit(0))
+
 struct tagKlString {
-  KlGCObject gcbase;
-  KlStrPool* strpool;
-  KlString* prev;
+  KL_DERIVE_FROM(KlGCObjectNotInList, _klgcbase_);
   KlString* next;
   size_t length;
   size_t hash;
-  char strhead[1];
+  char strhead[];
 };
 
 struct tagKlStrPool {
-  KlGCObject gcbase;
+  KL_DERIVE_FROM(KlGCObject, _klgcbase_);
   KlMM* klmm;
-  KlString head;
-  KlString tail;
   KlString** array;
   size_t capacity;
   size_t size;
@@ -43,30 +44,12 @@ static inline KlMM* klstrpool_getmm(KlStrPool* strpool) {
   return strpool->klmm;
 }
 
-static inline KlString* klstrpool_iter_begin(KlStrPool* strpool);
-static inline KlString* klstrpool_iter_end(KlStrPool* strpool);
-static inline KlString* klstrpool_iter_next(KlString* str);
-
 static inline size_t klstring_hash(KlString* klstr);
 static inline const char* klstring_content(KlString* klstr);
 static inline size_t klstring_size(KlString* klstr);
 static inline size_t klstring_length(KlString* klstr);
 
 static inline int klstring_compare(KlString* str1, KlString* str2);
-
-
-static inline KlString* klstrpool_iter_begin(KlStrPool* strpool) {
-  return strpool->head.next;
-}
-
-static inline KlString* klstrpool_iter_end(KlStrPool* strpool) {
-  return &strpool->tail;
-}
-
-static inline KlString* klstrpool_iter_next(KlString* str) {
-  return str->next;
-}
-
 
 
 static inline size_t klstring_hash(KlString* klstr) {
@@ -78,7 +61,7 @@ static inline const char* klstring_content(KlString* klstr) {
 }
 
 static inline size_t klstring_size(KlString* klstr) {
-  return sizeof (KlString) + klstring_length(klstr);
+  return sizeof (KlString) + 1 + klstring_length(klstr);
 }
 
 static inline size_t klstring_length(KlString* klstr) {

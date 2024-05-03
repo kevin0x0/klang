@@ -5,26 +5,25 @@
 #include "include/value/klref.h"
 
 KlState* klapi_new_state(KlMM* klmm) {
-  KlGCObject* original_root = klmm_get_root(klmm);
-  klmm_register_root(klmm, NULL); /* disable gc */
+  klmm_stopgc(klmm);  /* disable gc */
 
   KlMapNodePool* mapnodepool = klmapnodepool_create(klmm);
   if (!mapnodepool) {
-    klmm_register_root(klmm, original_root);
+    klmm_restartgc(klmm);
     return NULL;
   }
   klmapnodepool_pin(mapnodepool);
 
   KlStrPool* strpool = klstrpool_create(klmm, 32);
   if (!strpool) {
-    klmm_register_root(klmm, original_root);
+    klmm_restartgc(klmm);
     klmapnodepool_unpin(mapnodepool);
     return NULL;
   }
 
   KlCommon* common = klcommon_create(klmm, strpool, mapnodepool);
   if (!common) {
-    klmm_register_root(klmm, original_root);
+    klmm_restartgc(klmm);
     klmapnodepool_unpin(mapnodepool);
     return NULL;
   }
@@ -32,7 +31,7 @@ KlState* klapi_new_state(KlMM* klmm) {
 
   KlMap* global = klmap_create(common->klclass.map, 5, mapnodepool);
   if (!global) {
-    klmm_register_root(klmm, original_root);
+    klmm_restartgc(klmm);
     klmapnodepool_unpin(mapnodepool);
     klcommon_unpin(common, klmm);
     return NULL;
@@ -40,7 +39,7 @@ KlState* klapi_new_state(KlMM* klmm) {
 
   KlState* state = klstate_create(klmm, global, common, strpool, mapnodepool, NULL);
   if (!state) {
-    klmm_register_root(klmm, original_root);
+    klmm_restartgc(klmm);
     klmapnodepool_unpin(mapnodepool);
     klcommon_unpin(common, klmm);
     return NULL;

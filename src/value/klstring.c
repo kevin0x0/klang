@@ -1,26 +1,24 @@
 #include "include/value/klstring.h"
+#include "include/mm/klmm.h"
 #include <string.h>
 
 
-static void klstrpool_string_on_delete(KlString* klstr, KlMM* klmm);
+static KlGCObject* klstrpool_propagate(KlStrPool* strpool, KlMM* klmm, KlGCObject* gclist);
 static void klstrpool_delete(KlStrPool* strpool, KlMM* klmm);
+static void klstrpool_post(KlStrPool* strpool, KlMM* klmm);
 
-static KlGCVirtualFunc klstring_gcvfunc = { .destructor = (KlGCDestructor)klstrpool_string_on_delete, .propagate = NULL, .post = NULL };
-static KlGCVirtualFunc klstrpool_gcvfunc = { .destructor = (KlGCDestructor)klstrpool_delete, .propagate = NULL, .post = NULL };
+static KlGCVirtualFunc klstrpool_gcvfunc = { .destructor = (KlGCDestructor)klstrpool_delete, .propagate = (KlGCProp)klstrpool_propagate, .post = (KlGCPost)klstrpool_post };
 
-static inline void klstrpool_node_insert(KlString* insertpos, KlString* node);
-static inline void klstrpool_init_head_tail(KlString* head, KlString* tail);
 
 static KlString* klstrpool_search(KlStrPool* strpool, const char* str, size_t hash);
 static KlString* klstrpool_insert(KlStrPool* strpool, KlString* klstr);
-static void klstrpool_remove(KlString* klstr);
 
 static KlString* klstring_create(KlMM* klmm, const char* str);
 static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len1, const char* str2, size_t len2);
 
 static KlString* klstring_create(KlMM* klmm, const char* str) {
   size_t len = strlen(str);
-  KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len);
+  KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len + 1);
   if (!klstr) return NULL;
 
   memcpy(klstr->strhead, str, len + 1);
@@ -29,29 +27,15 @@ static KlString* klstring_create(KlMM* klmm, const char* str) {
 }
 
 static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len1, const char* str2, size_t len2) {
-  KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len1 + len2);
+  KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len1 + len2 + 1);
   if (!klstr) return NULL;
 
   memcpy(klstr->strhead, str1, len1);
   memcpy(klstr->strhead + len1, str2, len2 + 1);
-  klstr->length = len1 + len2;
+  klstr->length = len1 + len2 + 1;
   return klstr;
 }
 
-
-static inline void klstrpool_init_head_tail(KlString* head, KlString* tail) {
-  head->next = tail;
-  tail->prev = head;
-  head->prev = NULL;
-  tail->next = NULL;
-}
-
-static inline void klstrpool_node_insert(KlString* insertpos, KlString* node) {
-  node->prev = insertpos->prev;
-  insertpos->prev->next = node;
-  node->next = insertpos;
-  insertpos->prev = node;
-}
 
 static inline size_t klstring_calculate_hash(const char* str) {
   size_t hash = 0;
@@ -64,31 +48,17 @@ static inline size_t klstring_calculate_hash(const char* str) {
 
 static void klstrpool_rehash(KlStrPool* strpool, KlString** new_array, size_t new_capacity) {
   size_t mask = new_capacity - 1;
-  KlString* str = strpool->head.next;
-  KlString* end = &strpool->tail;
-
-  KlString tmphead;
-  KlString tmptail;
-  klstrpool_init_head_tail(&tmphead, &tmptail);
-
-  while (str != end) {
-    KlString* tmp = str->next;
-    size_t index = str->hash & mask;
-    if (!new_array[index]) {
-      /* this means 'node' is the first element that put in this bucket,
-       * so this bucket has not added to bucket list yet. */
+  KlString** bucketend = strpool->array + strpool->capacity;
+  for (KlString** bucket = strpool->array; bucket != bucketend; ++bucket) {
+    KlString* str = *bucket;
+    while (str) {
+      KlString* next = str->next;
+      size_t index = str->hash & mask;
+      str->next = new_array[index];
       new_array[index] = str;
-      klstrpool_node_insert(tmphead.next, str);
-    } else {
-      klstrpool_node_insert(new_array[index]->next, str);
+      str = next;
     }
-    str = tmp;
   }
-
-  tmphead.next->prev = &strpool->head;
-  strpool->head.next = tmphead.next;
-  tmptail.prev->next = &strpool->tail;
-  strpool->tail.prev = tmptail.prev;
 
   klmm_free(klstrpool_getmm(strpool), strpool->array, strpool->capacity * sizeof (KlString*));
   strpool->array = new_array;
@@ -120,17 +90,24 @@ KlStrPool* klstrpool_create(KlMM* klmm, size_t capacity) {
   strpool->capacity = capacity;
   strpool->size = 0;
   strpool->klmm = klmm;
-  klstrpool_init_head_tail(&strpool->head, &strpool->tail);
   klmm_gcobj_enable(klmm, klmm_to_gcobj(strpool), &klstrpool_gcvfunc);
   return strpool;
 }
 
+static KlGCObject* klstrpool_propagate(KlStrPool* strpool, KlMM* klmm, KlGCObject* gclist) {
+  klmm_gcobj_postproc(klmm, klmm_to_gcobj(strpool));
+  return gclist;
+}
+
 static void klstrpool_delete(KlStrPool* strpool, KlMM* klmm) {
-  KlString* str = strpool->head.next;
-  KlString* end = &strpool->tail;
-  while (str != end) {
-    str->strpool = NULL;
-    str = str->next;
+  KlString** bucketend = strpool->array + strpool->capacity;
+  for (KlString** bucket = strpool->array; bucket != bucketend; ++bucket) {
+    KlString* str = *bucket;
+    while (str) {
+      KlString* next = str->next;
+      klmm_free(klmm, str, klstring_size(str));
+      str = next;
+    }
   }
   klmm_free(klmm, strpool->array, strpool->capacity * sizeof (KlString*));
   klmm_free(klmm, strpool, sizeof (KlStrPool));
@@ -140,14 +117,13 @@ static KlString* klstrpool_search(KlStrPool* strpool, const char* str, size_t ha
   size_t mask = strpool->capacity - 1;
   size_t index = hash & mask;
   KlString* node = strpool->array[index];
-  if (!node) return klstrpool_iter_end(strpool);
-  do {
+  while (node) {
     if (hash == node->hash &&
         strcmp(str, node->strhead) == 0)
       return node;
     node = node->next;
-  } while (node != &strpool->tail && (node->hash & mask) == index);
-  return klstrpool_iter_end(strpool);
+  }
+  return NULL;
 }
 
 static KlString* klstrpool_insert(KlStrPool* strpool, KlString* str) {
@@ -155,27 +131,21 @@ static KlString* klstrpool_insert(KlStrPool* strpool, KlString* str) {
     return NULL;
 
   size_t index = (strpool->capacity - 1) & klstring_hash(str);
-  if (!strpool->array[index]) {
-    strpool->array[index] = str;
-    klstrpool_node_insert(strpool->head.next, str);
-  } else {
-    klstrpool_node_insert(strpool->array[index]->next, str);
-  }
+  str->next = strpool->array[index];
+  strpool->array[index] = str;
   strpool->size++;
-  klmm_gcobj_enable(klstrpool_getmm(strpool), klmm_to_gcobj(str), &klstring_gcvfunc);
+  klmm_gcobj_enable_notinlist(klstrpool_getmm(strpool), klmm_to_gcobjnotinlist(str));
   return str;
 }
 
 KlString* klstrpool_new_string(KlStrPool* strpool, const char* str) {
   size_t hash = klstring_calculate_hash(str);
   KlString* res = klstrpool_search(strpool, str, hash);
-  if (res != klstrpool_iter_end(strpool))
-    return res;
+  if (res) return res;
   KlMM* klmm = klstrpool_getmm(strpool);
   KlString* klstr = klstring_create(klmm, str);
   if (!klstr) return NULL;
   klstr->hash = hash;
-  klstr->strpool = strpool;
   return klstrpool_insert(strpool, klstr);
 }
 
@@ -186,12 +156,11 @@ KlString* klstrpool_string_concat_cstyle(KlStrPool* strpool, const char* str1, c
   const char* conc = klstring_content(klstr);
   size_t hash = klstring_calculate_hash(conc);
   KlString* res = klstrpool_search(strpool, conc, hash);
-  if (res != klstrpool_iter_end(strpool)) {
+  if (res) {
     klmm_free(klmm, klstr, klstring_size(klstr));
     return res;
   }
   klstr->hash = hash;
-  klstr->strpool = strpool;
   return klstrpool_insert(strpool, klstr);
 }
 
@@ -202,33 +171,30 @@ KlString* klstrpool_string_concat(KlStrPool* strpool, KlString* str1, KlString* 
   const char* conc = klstring_content(klstr);
   size_t hash = klstring_calculate_hash(conc);
   KlString* res = klstrpool_search(strpool, conc, hash);
-  if (res != klstrpool_iter_end(strpool)) {
+  if (res) {
     klmm_free(klmm, klstr, klstring_size(klstr));
     return res;
   }
   klstr->hash = hash;
-  klstr->strpool = strpool;
   return klstrpool_insert(strpool, klstr);
 }
 
-static void klstrpool_string_on_delete(KlString* klstr, KlMM* klmm) {
-  klstrpool_remove(klstr);
-  klmm_free(klmm, klstr, klstring_size(klstr));
-}
-
-static void klstrpool_remove(KlString* klstr) {
-  KlStrPool* strpool = klstr->strpool;
-  if (kl_unlikely(!strpool)) return;
-  klstr->prev->next = klstr->next;
-  klstr->next->prev = klstr->prev;
-  --strpool->size;
-  size_t index = (strpool->capacity - 1) & klstr->hash;
-  if (strpool->array[index] != klstr)
-    return;
-  KlString* next = klstr->next;
-  if (next == &strpool->tail || (next->hash & (strpool->capacity - 1)) != index) {
-    strpool->array[index] = NULL;
-  } else {
-    strpool->array[index] = next;
+static void klstrpool_post(KlStrPool* strpool, KlMM* klmm) {
+  KlString** bucketend = strpool->array + strpool->capacity;
+  size_t freecount = 0;
+  for (KlString** bucket = strpool->array; bucket != bucketend; ++bucket) {
+    KlString** pstr = bucket;
+    KlString* str;
+    while ((str = *pstr)) {
+      if (klmm_gcobj_isalive(str)) {
+        klmm_gcobj_clearalive(str);
+        pstr = &str->next;
+      } else {
+        *pstr = str->next;
+        klmm_free(klmm, str, klstring_size(str));
+        ++freecount;
+      }
+    }
   }
+  strpool->size -= freecount;
 }
