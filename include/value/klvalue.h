@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_VALUE_KLVALUE_H
 #define KEVCC_KLANG_INCLUDE_VALUE_KLVALUE_H
 
-#include "include/lang/types.h"
+#include "include/lang/kltypes.h"
 #include "include/mm/klmm.h"
 #include "include/value/klbool.h"
 #include "include/value/klcfunc.h"
@@ -13,6 +13,8 @@
 #define klvalue_callable(value)             (((value)->type >= KL_CALLABLEOBJ && (value)->type <= KL_CALLABLEOBJ_END) || (value)->type == KL_CFUNCTION)
 #define klvalue_canrawequal(value)          ((value)->type <= KL_RAWEQUAL)
 #define klvalue_checktype(value, valtype)   ((value)->type == (valtype))
+#define klvalue_isnumber(value)             ((value)->type < KL_NUMBER)
+#define klvalue_isstrornumber(value)        (klvalue_checktype((value), KL_STRING) || klvalue_isnumber((value)))
 #define klvalue_gettype(value)              ((value)->type)
 #define klvalue_sametype(val1, val2)        (klvalue_gettype(val1) == klvalue_gettype(val2))
 

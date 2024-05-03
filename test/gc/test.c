@@ -43,8 +43,8 @@ void gctest1(KlState* state) {
     sprintf(key, "key%zu", i);
     klapi_pushstring(state, key);
     KlString* str = klapi_getstring(state, -1);
-    klapi_storeglobal(state, str);
-    //klclass_newshared(klclass, klmm, str, klapi_access(state, -1));
+    //klapi_storeglobal(state, str);
+    klclass_newshared(klclass, klmm, str, klapi_access(state, -1));
     klapi_pop(state, 1);
   }
   fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);

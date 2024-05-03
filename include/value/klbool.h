@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_VALUE_KLBOOL_H
 #define KEVCC_KLANG_INCLUDE_VALUE_KLBOOL_H
 
-#include "include/lang/types.h"
+#include "include/lang/kltypes.h"
 #include <stdint.h>
 
 #define KL_TRUE   KLLANG_TRUE

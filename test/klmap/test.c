@@ -1,54 +1,98 @@
-#include "klang/include/value/klmap.h"
-#include "klang/include/value/value.h"
+#include "include/klapi.h"
+#include "include/mm/klmm.h"
+#include "include/value/klcfunc.h"
+#include "include/value/klclass.h"
+#include "include/value/klclosure.h"
+#include "include/value/klcoroutine.h"
+#include "include/value/klmap.h"
+#include "include/value/klstring.h"
+#include "include/value/klvalue.h"
+#include "include/lang/klinst.h"
 #include <stdio.h>
+#include <time.h>
 
-int main(void) {
-  while (true) {
-    KlMap* map = klmap_create(8);
-    KlValue* val0 = klvalue_create_int(0);
-    KlValue* val1 = klvalue_create_int(1);
-    KlValue* val2 = klvalue_create_int(2);
-    KlValue* val3 = klvalue_create_int(3);
-    KlValue* val4 = klvalue_create_int(4);
-    KlValue* val5 = klvalue_create_int(5);
-    KlValue* val6 = klvalue_create_int(6);
-    KlValue* val7 = klvalue_create_int(7);
-    KlValue* val8 = klvalue_create_int(8);
-    KlValue* val9 = klvalue_create_int(9);
-    KlValue* val10 = klvalue_create_int(10);
-    KlValue* val11 = klvalue_create_int(11);
-    KlValue* val12 = klvalue_create_int(12);
-    klmap_insert_move(map, kstring_create("0"), val0);
-    for (KlMapIter iter = klmap_iter_begin(map); iter != klmap_iter_end(map); /* iter = klmap_iter_next(iter) */) {
-      iter = klmap_erase(map, iter);
-    }
-    klmap_insert_move(map, kstring_create("1"), val1);
-    klmap_insert_move(map, kstring_create("2"), val2);
-    klmap_insert_move(map, kstring_create("3"), val3);
-    klmap_insert_move(map, kstring_create("4"), val4);
-    klmap_insert_move(map, kstring_create("5"), val5);
-    klmap_insert_move(map, kstring_create("6"), val6);
-    klmap_insert_move(map, kstring_create("7"), val7);
-    klmap_insert_move(map, kstring_create("8"), val8);
-    klmap_insert_move(map, kstring_create("9"), val9);
-    klmap_insert_move(map, kstring_create("10"), val10);
-    klmap_insert_move(map, kstring_create("11"), val11);
-    klmap_insert_move(map, kstring_create("12"), val12);
+void gctest(KlState* state);
+void gctestmap(KlState* state);
 
-    klmap_delete(map);
-    klvalue_delete(val0);
-    klvalue_delete(val1);
-    klvalue_delete(val2);
-    klvalue_delete(val3);
-    klvalue_delete(val4);
-    klvalue_delete(val5);
-    klvalue_delete(val6);
-    klvalue_delete(val7);
-    klvalue_delete(val8);
-    klvalue_delete(val9);
-    klvalue_delete(val10);
-    klvalue_delete(val11);
-    klvalue_delete(val12);
-  }
+
+int main(int argc, char** argv) {
+  KlMM klmm;
+  klmm_init(&klmm, 1024);
+  KlState* state = klapi_new_state(&klmm);
+  gctest(state);
+  klmm_destroy(&klmm);
   return 0;
+}
+
+void gctest(KlState* state) {
+  KlMM* klmm = klstate_getmm(state);
+  klapi_pushnil(state, 1);
+  KlClass* klclass = klclass_create(klmm, 10, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
+  klapi_setobj(state, -1, klclass, KL_CLASS);
+  klmm->root = NULL;
+  klapi_pushnil(state, 1);
+  clock_t t = clock();
+  for (size_t i = 0; i < 10000000; ++i) {
+    KlValue val;
+    klvalue_setint(&val, i);
+    char keystr[40];
+    sprintf(keystr, "%zu", i);
+    klapi_setstring(state, -1, keystr);
+    KlString* key = klapi_getstring(state, -1);
+    klclass_newshared(klclass, klmm, key, &val);
+  }
+  int a = 0;
+  // for (size_t i = 0; i < 1000000; ++i) {
+  //   KlValue val;
+  //   klvalue_setint(&val, i);
+  //   char keystr[40];
+  //   sprintf(keystr, "%zu", i);
+  //   klapi_setstring(state, -1, keystr);
+  //   KlString* key = klapi_getstring(state, -1);
+  //   a += klclass_find(klclass, key) ? 1 : 0;
+  // }
+  fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
+  fprintf(stderr, "memory used: %zu\n", klmm->mem_used);
+  klmm->root = klmm_to_gcobj(state);
+  fprintf(stderr, "gc %d times\n", a);
+  // FILE* file = fopen("hash.txt", "w");
+  // for (KlClassSlot* slot = klclass->slots; slot != klclass->slots + klclass->capacity; ++slot) {
+  //   if (slot->key)
+  //     fprintf(file, "%zu\n", klstring_hash(slot->key));
+  // }
+  // fclose(file);
+}
+
+void gctestmap(KlState* state) {
+  KlMM* klmm = klstate_getmm(state);
+  klapi_pushnil(state, 1);
+  KlClass* klclass = klclass_create(klmm, 10, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
+  klapi_setobj(state, -1, klclass, KL_CLASS);
+  klmm->root = NULL;
+  klapi_pushnil(state, 1);
+  KlMap* map = state->global;
+  for (size_t i = 0; i < 1000000; ++i) {
+    KlValue val;
+    klvalue_setint(&val, i);
+    char keystr[40];
+    sprintf(keystr, "%zu", i);
+    klapi_setstring(state, -1, keystr);
+    KlString* key = klapi_getstring(state, -1);
+    klmap_insertstring(map, key, &val);
+  }
+  clock_t t = clock();
+  int a = 0;
+  for (size_t i = 0; i < 1000000; ++i) {
+    KlValue val;
+    klvalue_setint(&val, i);
+    char keystr[40];
+    sprintf(keystr, "%zu", i);
+    klapi_setstring(state, -1, keystr);
+    KlString* key = klapi_getstring(state, -1);
+    a += klmap_searchstring(map, key) ? 1 : 0;
+  }
+  fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
+  fprintf(stderr, "memory used: %zu\n", klmm->mem_used);
+  klmm->root = klmm_to_gcobj(state);
+  fprintf(stderr, "gc %d times\n", a);
 }

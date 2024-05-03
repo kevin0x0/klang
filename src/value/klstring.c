@@ -16,7 +16,7 @@ static KlString* klstrpool_insert(KlStrPool* strpool, KlString* klstr);
 static void klstrpool_remove(KlString* klstr);
 
 static KlString* klstring_create(KlMM* klmm, const char* str);
-static KlString* klstring_create_concat(KlMM* klmm, const char* str1, const char* str2);
+static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len1, const char* str2, size_t len2);
 
 static KlString* klstring_create(KlMM* klmm, const char* str) {
   size_t len = strlen(str);
@@ -28,9 +28,7 @@ static KlString* klstring_create(KlMM* klmm, const char* str) {
   return klstr;
 }
 
-static KlString* klstring_create_concat(KlMM* klmm, const char* str1, const char* str2) {
-  size_t len1 = strlen(str1);
-  size_t len2 = strlen(str2);
+static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len1, const char* str2, size_t len2) {
   KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len1 + len2);
   if (!klstr) return NULL;
 
@@ -57,13 +55,8 @@ static inline void klstrpool_node_insert(KlString* insertpos, KlString* node) {
 
 static inline size_t klstring_calculate_hash(const char* str) {
   size_t hash = 0;
-  size_t shift = 16;
-  const char* p = str;
-  while (*p != '\0') {
-    hash += *p++ << shift;
-    shift += 4;
-    shift %= 32;
-  }
+  while (*str)
+    hash = (*str++) + (hash << 6) + (hash << 16) - hash;
   return hash;
 }
 
@@ -186,9 +179,25 @@ KlString* klstrpool_new_string(KlStrPool* strpool, const char* str) {
   return klstrpool_insert(strpool, klstr);
 }
 
+KlString* klstrpool_string_concat_cstyle(KlStrPool* strpool, const char* str1, const char* str2) {
+  KlMM* klmm = klstrpool_getmm(strpool);
+  KlString* klstr = klstring_create_concat(klmm, str1, strlen(str1), str2, strlen(str2));
+  if (!klstr) return NULL;
+  const char* conc = klstring_content(klstr);
+  size_t hash = klstring_calculate_hash(conc);
+  KlString* res = klstrpool_search(strpool, conc, hash);
+  if (res != klstrpool_iter_end(strpool)) {
+    klmm_free(klmm, klstr, klstring_size(klstr));
+    return res;
+  }
+  klstr->hash = hash;
+  klstr->strpool = strpool;
+  return klstrpool_insert(strpool, klstr);
+}
+
 KlString* klstrpool_string_concat(KlStrPool* strpool, KlString* str1, KlString* str2) {
   KlMM* klmm = klstrpool_getmm(strpool);
-  KlString* klstr = klstring_create_concat(klmm, klstring_content(str1), klstring_content(str2));
+  KlString* klstr = klstring_create_concat(klmm, klstring_content(str1), str1->length, klstring_content(str2), str2->length);
   if (!klstr) return NULL;
   const char* conc = klstring_content(klstr);
   size_t hash = klstring_calculate_hash(conc);

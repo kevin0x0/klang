@@ -151,6 +151,16 @@ static void klmap_post(KlMap* map, KlMM* klmm) {
   }
 }
 
+void klmap_makeempty(KlMap* map) {
+  klmapnodepool_freelist(map->nodepool, map->head.next, map->tail.prev, map->size);
+  size_t capacity = map->capacity;
+  KlMapNode** array = map->array;
+  for (size_t i = 0; i < capacity; ++i)
+    array[i] = NULL;
+  klmap_init_head_tail(&map->head, &map->tail);
+  map->size = 0;
+}
+
 KlMapIter klmap_insert(KlMap* map, KlValue* key, KlValue* value) {
   if (kl_unlikely(map->size >= map->capacity && !klmap_expand(map)))
     return NULL;

@@ -1,3 +1,4 @@
+#include "include/lang/klconvert.h"
 #include "include/misc/klutils.h"
 #include "include/value/klarray.h"
 #include "include/value/klcfunc.h"
@@ -11,6 +12,7 @@
 #include "include/vm/klexec.h"
 #include "include/vm/klstack.h"
 #include "include/lang/klinst.h"
+#include <limits.h>
 
 
 /* extra stack frame size for calling operator method */
@@ -338,6 +340,34 @@ static KlException klexec_doge(KlState* state, KlValue* a, KlValue* b, KlValue* 
     return KL_E_NONE;
   }
   return klexec_dobinopmethod(state, a, b, c, state->common->string.lt);
+}
+
+
+static KlString* klexec_doconcat(KlState* state, KlValue* b, KlValue* c) {
+#define KLEXEC_STRING_BUFSIZE ((sizeof (KlInt) > sizeof (KlFloat) ? sizeof (KlInt) : sizeof (KlFloat)) * CHAR_BIT + 1)
+  char buf1[KLEXEC_STRING_BUFSIZE];
+  char buf2[KLEXEC_STRING_BUFSIZE];
+  const char* p1;
+  const char* p2;
+  if (klvalue_checktype(b, KL_INT)) {
+   kllang_int2str(buf1, KLEXEC_STRING_BUFSIZE, klvalue_getint(b));
+   p1 = buf1;
+  } else if (klvalue_checktype(b, KL_FLOAT)) {
+   kllang_float2str(buf1, KLEXEC_STRING_BUFSIZE, klvalue_getfloat(b));
+   p1 = buf1;
+  } else {
+    p1 = klstring_content(klvalue_getobj(b, KlString*));
+  }
+  if (klvalue_checktype(c, KL_INT)) {
+   kllang_int2str(buf2, KLEXEC_STRING_BUFSIZE, klvalue_getint(c));
+   p2 = buf2;
+  } else if (klvalue_checktype(c, KL_FLOAT)) {
+   kllang_float2str(buf2, KLEXEC_STRING_BUFSIZE, klvalue_getfloat(c));
+   p2 = buf2;
+  } else {
+    p2 = klstring_content(klvalue_getobj(c, KlString*));
+  }
+  return klstrpool_string_concat_cstyle(state->strpool, p1, p2);
 }
 
 static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset) {
@@ -846,8 +876,13 @@ KlException klexec_execute(KlState* state) {
         KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         KlValue* c = stkbase + KLINST_ABC_GETC(inst);
         klexec_savestate(callinfo->top);
-        if (kl_likely(klvalue_checktype((b), KL_STRING) && klvalue_checktype((c), KL_STRING))) {
+        if (kl_likely(klvalue_checktype(b, KL_STRING) && klvalue_checktype(c, KL_STRING))) {
           KlString* res = klstrpool_string_concat(state->strpool, klvalue_getobj(b, KlString*), klvalue_getobj(c, KlString*));
+          if (kl_unlikely(!res))
+            return klstate_throw(state, KL_E_OOM, "out of memory when do concat");
+          klvalue_setobj(a, res, KL_STRING);
+        } else if (kl_likely(klvalue_isstrornumber(b) && klvalue_isstrornumber(c))) {
+          KlString* res = klexec_doconcat(state, b, c);
           if (kl_unlikely(!res))
             return klstate_throw(state, KL_E_OOM, "out of memory when do concat");
           klvalue_setobj(a, res, KL_STRING);

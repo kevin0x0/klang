@@ -43,9 +43,7 @@ static inline void klmm_gc_clean_one(KlMM* klmm, KlGCObject* gcobj) {
 }
 
 void klmm_do_gc(KlMM* klmm) {
-  extern int a;
   if (!klmm->root) return;
-  a++;
   KlGCObject* gclist = klmm_gc_start(klmm->root, klmm->allgc.next);
   klmm_gc_mark_accessible(klmm, gclist);
   klmm_gc_dopostproc(klmm);

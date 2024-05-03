@@ -35,6 +35,7 @@ void klstrpool_destroy(KlStrPool* strpool);
 
 KlString* klstrpool_new_string(KlStrPool* strpool, const char* str);
 
+KlString* klstrpool_string_concat_cstyle(KlStrPool* strpool, const char* str1, const char* str2);
 KlString* klstrpool_string_concat(KlStrPool* strpool, KlString* str1, KlString* str2);
 
 

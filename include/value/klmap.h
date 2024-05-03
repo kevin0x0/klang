@@ -48,6 +48,7 @@ KlMapIter klmap_erase(KlMap* map, KlMapIter iter);
 KlMapIter klmap_search(KlMap* map, KlValue* key);
 KlMapIter klmap_searchstring(KlMap* map, KlString* str);
 KlMapIter klmap_insertstring(KlMap* map, KlString* str, KlValue* val);
+void klmap_makeempty(KlMap* map);
 static inline void klmap_index(KlMap* map, KlValue* key, KlValue* val);
 static inline bool klmap_indexas(KlMap* map, KlValue* key, KlValue* val);
 
