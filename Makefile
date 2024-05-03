@@ -10,7 +10,11 @@ DEPS_K_DIR = $(ROOT_DIR)deps/k/
 AR = ar rcs
 CC = gcc
 OPTIMIZE = -O2
-CFLAGS = $(OPTIMIZE) -I $(ROOT_DIR) -I $(DEPS_K_DIR) -Wall -Wextra -Winline
+MEMORY_CHECK =
+WARNING = -Wall -Wextra -Winline
+DEBUG = -DNDEBUG
+
+CFLAGS = $(OPTIMIZE) $(MEMORY_CHECK) $(WARNING) $(DEBUG) -I $(ROOT_DIR) -I $(DEPS_K_DIR)
 
 KLANG_OBJS = $(LIB_DIR)klapi.o $(LIB_DIR)klutils.o $(LIB_DIR)klgc.o $(LIB_DIR)klmm.o $(LIB_DIR)klarray.o $(LIB_DIR)klmap.o $(LIB_DIR)klclass.o $(LIB_DIR)klclosure.o \
        $(LIB_DIR)klkfunc.o $(LIB_DIR)klref.o $(LIB_DIR)klstring.o $(LIB_DIR)klvalue.o $(LIB_DIR)klcommon.o $(LIB_DIR)klexec.o $(LIB_DIR)klstack.o \
@@ -31,7 +35,7 @@ $(LIB_DIR)libklangc.a : $(KLANGC_OBJS) $(DEPS_K_DIR)lib/libk.a | create_lib_dir
 	$(AR) $@ $^
 
 $(DEPS_K_DIR)lib/libk.a :
-	$(MAKE) -C $(DEPS_K_DIR) "CFLAGS=$(CFLAGS)" "CC=$(CC)"
+	$(MAKE) -C $(DEPS_K_DIR) "CFLAGS=$(CFLAGS)" "CC=$(CC)" "AR=$(AR)"
 
 
 # klang/klapi
@@ -57,6 +61,9 @@ $(LIB_DIR)klmap.o : $(SRC_DIR)value/klmap.c | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(LIB_DIR)klclass.o : $(SRC_DIR)value/klclass.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(LIB_DIR)klcoroutine.o : $(SRC_DIR)value/klcoroutine.c | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(LIB_DIR)klclosure.o : $(SRC_DIR)value/klclosure.c | create_lib_dir
@@ -92,6 +99,9 @@ $(LIB_DIR)klthrow.o : $(SRC_DIR)vm/klthrow.c | create_lib_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 
+# klang/lang/
+$(LIB_DIR)klconvert.o : $(SRC_DIR)lang/klconvert.c | create_lib_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 
 
