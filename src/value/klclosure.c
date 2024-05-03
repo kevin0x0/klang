@@ -10,8 +10,8 @@ static KlGCObject* klcclosure_propagate(KlCClosure* cclo, KlMM* klmm, KlGCObject
 static void klkclosure_delete(KlKClosure* kclo, KlMM* klmm);
 static void klcclosure_delete(KlCClosure* cclo, KlMM* klmm);
 
-static KlGCVirtualFunc klkclo_gcvfunc = { .destructor = (KlGCDestructor)klkclosure_delete, .propagate = (KlGCProp)klkclosure_propagate, .post = NULL };
-static KlGCVirtualFunc klcclo_gcvfunc = { .destructor = (KlGCDestructor)klcclosure_delete, .propagate = (KlGCProp)klcclosure_propagate, .post = NULL };
+static KlGCVirtualFunc klkclo_gcvfunc = { .destructor = (KlGCDestructor)klkclosure_delete, .propagate = (KlGCProp)klkclosure_propagate, .after = NULL };
+static KlGCVirtualFunc klcclo_gcvfunc = { .destructor = (KlGCDestructor)klcclosure_delete, .propagate = (KlGCProp)klcclosure_propagate, .after = NULL };
 
 
 KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, KlRef** openreflist, KlRef** refs) {

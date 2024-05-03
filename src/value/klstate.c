@@ -8,7 +8,7 @@
 static KlGCObject* klstate_propagate(KlState* state, KlMM* klmm, KlGCObject* gclist);
 static void klstate_delete(KlState* state, KlMM* klmm);
 
-static KlGCVirtualFunc klstate_gcvfunc = { .propagate = (KlGCProp)klstate_propagate, .destructor = (KlGCDestructor)klstate_delete, .post = NULL};
+static KlGCVirtualFunc klstate_gcvfunc = { .propagate = (KlGCProp)klstate_propagate, .destructor = (KlGCDestructor)klstate_delete, .after = NULL};
 
 static void klstate_correct_callinfo(KlState* state, ptrdiff_t diff);
 

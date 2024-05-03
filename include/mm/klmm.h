@@ -42,14 +42,14 @@ typedef struct tagKlMM KlMM;
 
 typedef void (*KlGCDestructor)(KlGCObject* gcobj, KlMM* klmm);
 typedef struct tagKlGCObject* (*KlGCProp)(KlGCObject* gcobj, KlMM* klmm, KlGCObject* gclist);
-typedef void (*KlGCPost)(KlGCObject* gcobj, KlMM* klmm);
+typedef void (*KlGCAfter)(KlGCObject* gcobj, KlMM* klmm);
 
 typedef unsigned KlGCStat;
 
 typedef struct tagKlGCVirtualFunc {
   KlGCDestructor destructor;
   KlGCProp propagate;
-  KlGCPost post;
+  KlGCAfter after;
 } KlGCVirtualFunc;
 
 
@@ -62,7 +62,7 @@ typedef struct tagKlGCVirtualFunc {
   KlGCVirtualFunc* prefix##virtualfunc;                                                     \
   union {                                                                                   \
     KlGCObject* prefix##next_reachable; /* link all accessible object in the same level */  \
-    KlGCObject* prefix##next_post;      /* next object in postproclist */                   \
+    KlGCObject* prefix##next_after;     /* next object in after list */                     \
   }
 
 
@@ -86,7 +86,8 @@ struct tagKlMM {
   KlGCObject* allgc;                        /* gc objects */
   size_t gcstop_rcs_count;                  /* gc can be stoped recursively */
   KlGCObject* root;
-  KlGCObject* postproclist;                 /* objects that need to do something after propagate and before clean */
+  KlGCObject* aftermark;                    /* objects that need to do something after propagate mark */
+  KlGCObject* aftersweep;                   /* objects that need to do something after sweeping */
   size_t mem_used;
   /* if mem_used exceeds this limit, the garbage collection will start.
    * the value of limit will dynamically change. */
@@ -104,7 +105,8 @@ static inline void* klmm_alloc(KlMM* klmm, size_t size);
 static inline void* klmm_realloc(KlMM* klmm, void* blk, size_t new_size, size_t old_size);
 static inline void klmm_free(KlMM* klmm, void* blk, size_t size);
 
-static inline void klmm_gcobj_postproc(KlMM* klmm, KlGCObject* obj);
+static inline void klmm_gcobj_aftermark(KlMM* klmm, KlGCObject* obj);
+static inline void klmm_gcobj_aftersweep(KlMM* klmm, KlGCObject* obj);
 static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, KlGCVirtualFunc* vfunc);
 static inline void klmm_gcobj_enable_notinlist(KlMM* klmm, KlGCObjectNotInList* gcobj);
 static inline void klmm_stopgc(KlMM* klmm);
@@ -118,7 +120,7 @@ static inline void klmm_try_gc(KlMM* klmm);
 
 static inline void klmm_init(KlMM* klmm, size_t limit) {
   klmm->allgc = NULL;
-  klmm->postproclist = NULL;
+  klmm->aftermark = NULL;
   klmm->gcstop_rcs_count = 0;
   klmm->mem_used = 0;
   klmm->limit = limit;
@@ -177,9 +179,14 @@ static inline void klmm_free(KlMM* klmm, void* blk, size_t size) {
   klmm->mem_used -= size;
 }
 
-static inline void klmm_gcobj_postproc(KlMM* klmm, KlGCObject* obj) {
-  obj->next_post = klmm->postproclist;
-  klmm->postproclist = obj;
+static inline void klmm_gcobj_aftermark(KlMM* klmm, KlGCObject* obj) {
+  obj->next_after = klmm->aftermark;
+  klmm->aftermark = obj;
+}
+
+static inline void klmm_gcobj_aftersweep(KlMM* klmm, KlGCObject* obj) {
+  obj->next_after = klmm->aftersweep;
+  klmm->aftersweep = obj;
 }
 
 static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, KlGCVirtualFunc* vfunc) {

@@ -51,7 +51,7 @@ struct tagKlCallInfo {
 };
 
 typedef struct tagKlState {
-  KlGCObject gcbase;
+  KL_DERIVE_FROM(KlGCObject, _gcbase_);
   KlMM* klmm;                   /* mamemory manager */
   KlStack stack;                /* stack */
   KlThrowInfo throwinfo;        /* store the throwed but not handled exception */

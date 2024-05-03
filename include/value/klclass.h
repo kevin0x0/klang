@@ -1,6 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_VALUE_KLCLASS_H
 #define KEVCC_KLANG_INCLUDE_VALUE_KLCLASS_H
 
+#include "include/misc/klutils.h"
 #include "include/value/klstring.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
@@ -24,7 +25,7 @@ struct tagKlClassSlot {
 };
 
 struct tagKlClass {
-  KlGCObject gcbase;
+  KL_DERIVE_FROM(KlGCObject, _gcbase_);
   KlClassSlot* slots;
   KlObjectConstructor constructor;
   void* constructor_data; /* used by constructor */
@@ -35,12 +36,17 @@ struct tagKlClass {
   bool is_final;
 };
 
+#define KL_DERIVE_FROM_KlObject(prefix)   \
+  KL_DERIVE_FROM_KlGCObject(prefix);      \
+  KlClass* prefix##klclass;               \
+  KlValue* prefix##attrs;                 \
+  size_t prefix##size                     \
+
+#define KLOBJECT_TAIL                         KlValue _klobject_valarray
 
 struct tagKlObject {
-  KlGCObject gcbase;
-  KlClass* klclass;
-  KlValue* attrs;
-  size_t size;
+  KL_DERIVE_FROM(KlObject, );
+  KLOBJECT_TAIL;
 };
 
 
@@ -97,17 +103,11 @@ static inline KlException klclass_newshared(KlClass* klclass, KlMM* klmm, KlStri
 
 
 #define klobject_attrarrayoffset(type)        (offsetof (type, _klobject_valarray))
-#define klobject_tail                         KlValue _klobject_valarray
 
 #define klobject_attrs_by_class(obj, klclass) (klcast(KlValue*, klcast(char*, (obj)) + (klclass)->attroffset))
 #define klobject_attrs(obj)                   ((obj)->attrs)
 
-struct tagKlObjectInstance {
-  KlObject objbase;
-  klobject_tail;
-};
-
-#define KLOBJECT_DEFAULT_ATTROFF              (klobject_attrarrayoffset(struct tagKlObjectInstance))
+#define KLOBJECT_DEFAULT_ATTROFF              (klobject_attrarrayoffset(struct tagKlObject))
 
 
 

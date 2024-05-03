@@ -8,7 +8,7 @@
 
 static KlGCObject* klmm_gc_start(KlGCObject* root, KlGCObject* list);
 static void klmm_gc_markall(KlMM* klmm, KlGCObject* gclist);
-static void klmm_gc_dopostproc(KlMM* klmm);
+static KlGCObject* klmm_gc_doafter(KlMM* klmm, KlGCObject* afterlist);
 static KlGCObject* klmm_gc_clean(KlMM* klmm, KlGCObject* allgc);
 
 
@@ -22,7 +22,7 @@ static inline KlGCObject* klmm_gc_propagate(KlMM* klmm, KlGCObject* gcobj, KlGCO
 }
 
 static inline void klmm_gc_callpostproc(KlMM* klmm, KlGCObject* gcobj) {
-  gcobj->virtualfunc->post(gcobj, klmm);
+  gcobj->virtualfunc->after(gcobj, klmm);
 }
 
 static inline bool klmm_gc_cleanable(KlGCObject* gcobj) {
@@ -43,8 +43,9 @@ void klmm_do_gc(KlMM* klmm) {
   }
   KlGCObject* gclist = klmm_gc_start(klmm->root, klmm->allgc);
   klmm_gc_markall(klmm, gclist);
-  klmm_gc_dopostproc(klmm);
+  klmm->aftermark = klmm_gc_doafter(klmm, klmm->aftermark);
   klmm->allgc = klmm_gc_clean(klmm, klmm->allgc);
+  klmm->aftersweep = klmm_gc_doafter(klmm, klmm->aftersweep);
   klmm->limit = klmm->mem_used * 2;
 }
 
@@ -64,14 +65,14 @@ static void klmm_gc_markall(KlMM* klmm, KlGCObject* gclist) {
   }
 }
 
-static void klmm_gc_dopostproc(KlMM* klmm) {
-  KlGCObject* obj = klmm->postproclist;
+static KlGCObject* klmm_gc_doafter(KlMM* klmm, KlGCObject* afterlist) {
+  KlGCObject* obj = afterlist;
   while (obj) {
-    KlGCObject* next = obj->next_post;
+    KlGCObject* next = obj->next_after;
     klmm_gc_callpostproc(klmm, obj);
     obj = next;
   }
-  klmm->postproclist = NULL;
+  return NULL;
 }
 
 static KlGCObject* klmm_gc_clean(KlMM* klmm, KlGCObject* list) {

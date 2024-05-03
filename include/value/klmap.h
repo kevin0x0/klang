@@ -25,7 +25,7 @@ struct tagKlMapNode {
 };
 
 typedef struct tagKlMap {
-  KlObject objbase;
+  KL_DERIVE_FROM(KlObject, _objectbase_);
   KlMapNode** array;
   KlMapNode head;
   KlMapNode tail;
@@ -33,7 +33,7 @@ typedef struct tagKlMap {
   size_t capacity;
   size_t size;
   unsigned option;
-  klobject_tail;
+  KLOBJECT_TAIL;
 } KlMap;
 
 

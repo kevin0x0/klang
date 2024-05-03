@@ -15,7 +15,7 @@ typedef struct tagKlString KlString;
 #define KLSTRING_STATUS_END   (klbit(0))
 
 struct tagKlString {
-  KL_DERIVE_FROM(KlGCObjectNotInList, _klgcbase_);
+  KL_DERIVE_FROM(KlGCObjectNotInList, _gcbase_);
   KlString* next;
   size_t length;
   size_t hash;
@@ -23,7 +23,7 @@ struct tagKlString {
 };
 
 struct tagKlStrPool {
-  KL_DERIVE_FROM(KlGCObject, _klgcbase_);
+  KL_DERIVE_FROM(KlGCObject, _gcbase_);
   KlMM* klmm;
   KlString** array;
   size_t capacity;

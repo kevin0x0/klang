@@ -9,11 +9,11 @@
 #include <stddef.h>
 
 typedef struct tagKlArray {
-  KlObject objbase;
+  KL_DERIVE_FROM(KlObject, _objectbase_);
   KlValue* begin;
   KlValue* end;
   KlValue* current;
-  klobject_tail;
+  KLOBJECT_TAIL;
 } KlArray;
 
 typedef KlValue* KlArrayIter;

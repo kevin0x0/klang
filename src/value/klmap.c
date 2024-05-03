@@ -12,7 +12,7 @@ static KlGCObject* klmap_propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist);
 static void klmap_delete(KlMap* map, KlMM* klmm);
 static void klmap_post(KlMap* map, KlMM* klmm);
 
-static KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_propagate, .destructor = (KlGCDestructor)klmap_delete, .post = (KlGCPost)klmap_post };
+static KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_propagate, .destructor = (KlGCDestructor)klmap_delete, .after = (KlGCAfter)klmap_post };
 
 
 static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* elem);
@@ -301,15 +301,15 @@ static KlGCObject* klmap_propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist) {
       return klmap_propagate_nonweak(map, gclist);
     }
     case KLMAP_OPT_WEAKKEY | KLMAP_OPT_WEAKVAL: { /* bother keys and values are weak */
-      klmm_gcobj_postproc(klmm, klmm_to_gcobj(map));
+      klmm_gcobj_aftermark(klmm, klmm_to_gcobj(map));
       return klobject_propagate_nomm(klcast(KlObject*, map), gclist);
     }
     case KLMAP_OPT_WEAKKEY: { /* only the keys are weak */
-      klmm_gcobj_postproc(klmm, klmm_to_gcobj(map));
+      klmm_gcobj_aftermark(klmm, klmm_to_gcobj(map));
       return klmap_propagate_keyweak(map, gclist);
     }
     case KLMAP_OPT_WEAKVAL: {  /* only the values are week */
-      klmm_gcobj_postproc(klmm, klmm_to_gcobj(map));
+      klmm_gcobj_aftermark(klmm, klmm_to_gcobj(map));
       return klmap_propagate_valweak(map, gclist);
     }
     default: {

@@ -9,7 +9,7 @@
 
 typedef struct tagKlKFunction KlKFunction;
 struct tagKlKFunction {
-  KlGCObject gcbase;
+  KL_DERIVE_FROM(KlGCObject, _gcbase_);
   KlInstruction* code;    /* code executed by klang virtual machine */
   KlValue* constants;     /* constants table */
   KlRefInfo* refinfo;     /* reference information */
