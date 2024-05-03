@@ -14,6 +14,7 @@
 void gctest(KlState* state);
 void gctest0(KlState* state);
 void gctest1(KlState* state);
+void gctest2(KlState* state);
 
 
 int a = 0;
@@ -25,8 +26,9 @@ int main(int argc, char** argv) {
   klmm_init(&klmm, 1024);
   KlState* state = klapi_new_state(&klmm);
   gctest1(state);
-  a = 0;
   gctest0(state);
+  a = 0;
+  //gctest2(state);
   klmm_destroy(&klmm);
   return 0;
 }
@@ -43,8 +45,8 @@ void gctest1(KlState* state) {
     sprintf(key, "key%zu", i);
     klapi_pushstring(state, key);
     KlString* str = klapi_getstring(state, -1);
-    //klapi_storeglobal(state, str);
-    klclass_newshared(klclass, klmm, str, klapi_access(state, -1));
+    klapi_storeglobal(state, str);
+    //klclass_newshared(klclass, klmm, str, klapi_access(state, -1));
     klapi_pop(state, 1);
   }
   fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
@@ -67,7 +69,7 @@ void gctest(KlState* state) {
   clock_t t = clock();
   KlMM* klmm = klstate_getmm(state);
   //klmm->root = NULL;
-  for (size_t i = 0; i < 10000000; ++i) {
+  for (size_t i = 0; i < 100000000; ++i) {
     char key[40];
     sprintf(key, "key%zu", i);
     klapi_pushstring(state, key);
@@ -86,7 +88,6 @@ void gctest(KlState* state) {
   fprintf(stderr, "gc %d times\n", a);
 }
 
-size_t map_count = 0;
 void gctest0(KlState* state) {
   clock_t t = clock();
   KlMM* klmm = klstate_getmm(state);
@@ -104,9 +105,9 @@ void gctest0(KlState* state) {
   code[2] = klinst_loadc(1, 0);
   code[3] = klinst_loadnil(2, 0);
   code[4] = klinst_iforprep(0, 4);
-  code[5] = klinst_mkmap(3, 3, 0);
-  code[6] = klinst_loadc(4, 1);
-  code[7] = klinst_indexas(4, 3, 4);
+  code[5] = klinst_loadc(3, 1);
+  code[6] = klinst_move(4, 0);
+  code[7] = klinst_concat(3, 3, 4);
   code[8] = klinst_iforloop(0, -4);
   code[9] = klinst_return1(0);
   // klapi_pushnil(state, 1);
@@ -127,5 +128,17 @@ void gctest0(KlState* state) {
   klmm_do_gc(klmm);
   fprintf(stderr, "%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
   fprintf(stderr, "gc %d times\n", a);
+}
+
+void gctest2(KlState* state) {
+  clock_t t = clock();
+  KlMM* klmm = klstate_getmm(state);
+  klapi_pushstring(state, "name");
+  KlString* name = klapi_getstring(state, -1);
+  for (size_t i = 0; i < 100000000; ++i) {
+    char key[100];
+    sprintf(key, "%zu", i);
+    KlString* res = klstrpool_string_concat_cstyle(state->strpool, klstring_content(name), key);
+  }
 }
 

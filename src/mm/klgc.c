@@ -36,6 +36,7 @@ static inline void klmm_gc_clean_one(KlMM* klmm, KlGCObject* gcobj) {
 }
 
 void klmm_do_gc(KlMM* klmm) {
+  if (!klmm->root) return;
   if (klmm->gcstop_rcs_count) {
     klmm->limit = klmm->mem_used + klmm->mem_used / 2;
     return;
@@ -43,7 +44,7 @@ void klmm_do_gc(KlMM* klmm) {
   KlGCObject* gclist = klmm_gc_start(klmm->root, klmm->allgc);
   klmm_gc_markall(klmm, gclist);
   klmm_gc_dopostproc(klmm);
-  klmm_gc_clean(klmm, klmm->allgc);
+  klmm->allgc = klmm_gc_clean(klmm, klmm->allgc);
   klmm->limit = klmm->mem_used * 2;
 }
 
@@ -51,7 +52,7 @@ KlGCObject* klmm_gc_start(KlGCObject* root, KlGCObject* list) {
   (void)list;
   KlGCObject* gclist = NULL;
   klmm_gc_link(gclist, root);
-  klmm_gcobj_mark_accessible(root, gclist);
+  root->gc_state |= KLGC_MARKED;
   return gclist;
 }
 
@@ -80,6 +81,7 @@ static KlGCObject* klmm_gc_clean(KlMM* klmm, KlGCObject* list) {
     if (klmm_gc_cleanable(gcobj)) {
       klmm_gc_clean_one(klmm, gcobj);
     } else {
+      klmm_gcobj_clearalive(gcobj);
       gcobj->next = survivors;
       survivors = gcobj;
     }
@@ -89,7 +91,7 @@ static KlGCObject* klmm_gc_clean(KlMM* klmm, KlGCObject* list) {
 }
 
 void klmm_gc_clean_all(KlMM* klmm, KlGCObject* list) {
-  for (KlGCObject* gcobj = list->next; gcobj;) {
+  for (KlGCObject* gcobj = list; gcobj;) {
     KlGCObject* tmp = klmm_gc_nextobj(gcobj);
     klmm_gc_clean_one(klmm, gcobj);
     gcobj = tmp;

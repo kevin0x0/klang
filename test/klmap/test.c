@@ -29,7 +29,8 @@ void gctest(KlState* state) {
   klapi_pushnil(state, 1);
   KlClass* klclass = klclass_create(klmm, 10, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
   klapi_setobj(state, -1, klclass, KL_CLASS);
-  klmm->root = NULL;
+  //klmm->root = NULL;
+  //klmm_stopgc(klmm);
   klapi_pushnil(state, 1);
   clock_t t = clock();
   for (size_t i = 0; i < 10000000; ++i) {
@@ -61,6 +62,7 @@ void gctest(KlState* state) {
   //     fprintf(file, "%zu\n", klstring_hash(slot->key));
   // }
   // fclose(file);
+  //klmm_restartgc(klmm);
 }
 
 void gctestmap(KlState* state) {

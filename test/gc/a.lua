@@ -1,16 +1,16 @@
-collectgarbage('incremental')
+-- collectgarbage('incremental')
 
 local t = os.clock()
 
---collectgarbage('stop')
-local b = {}
+local _G = _G
 for i = 1, 90000 do
-  local key = "key" .. i
-  b[key] = key
+  local v = "key" .. i
+  _G[v] = v
 end
-b = nil
-for _ = 1, 100000000 do
-  local a = { name = 'name' }
+
+for i = 1, 100000000 do
+  local a = {}
+  a[1] = i;
 end
 
 print(os.clock() - t)

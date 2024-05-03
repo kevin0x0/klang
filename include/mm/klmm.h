@@ -11,10 +11,10 @@
 
 /* if a gcobject is not in list, then it must be leaf */
 
-#define KLGC_NORM         (0)
-#define KLGC_MARKED       (klbit(0))
-#define KLGC_ISLEAF       (klbit(1))
-#define KLGC_INLIST       (klbit(2))
+#define KLGC_NORM         (klcast(KlGCStat, 0))
+#define KLGC_MARKED       (klcast(KlGCStat, klbit(0)))
+#define KLGC_ISLEAF       (klcast(KlGCStat, klbit(1)))
+#define KLGC_INLIST       (klcast(KlGCStat, klbit(2)))
 
 #define klmm_to_gcobj(obj)            (klcast(KlGCObject*, (obj)))
 #define klmm_to_gcobjgeneric(obj)     (klcast(KlGCObjectGeneric*, (obj)))
@@ -23,16 +23,17 @@
 #define klmm_gcobj_isleaf(obj)        (klmm_to_gcobjgeneric((obj))->gc_state & KLGC_ISLEAF)
 #define klmm_gcobj_isalive(obj)       klmm_gcobj_marked(obj)
 #define klmm_gcobj_isdead(obj)        ((klmm_to_gcobjgeneric((obj))->gc_state & KLGC_MARKED) == 0)
-#define klmm_gcobj_clearalive(obj)    (klmm_to_gcobjgeneric((obj))->gc_state &= ~KLGC_MARKED)
+#define klmm_gcobj_clearalive(obj)    (klmm_to_gcobjgeneric((obj))->gc_state &= (~KLGC_MARKED))
+#define klmm_gcobj_shouldprop(obj)    (!(klmm_to_gcobjgeneric((obj))->gc_state & (KLGC_MARKED | KLGC_ISLEAF)))
 
 /* Mark a object accessible and link it to gclist. */
 #define klmm_gcobj_mark_accessible(obj, gclist) {               \
   KlGCObject* gcobj = (obj);                                    \
-  gcobj->gc_state |= KLGC_MARKED;                               \
-  if (!klmm_gcobj_isleaf(gcobj)) {                              \
+  if (klmm_gcobj_shouldprop(gcobj)) {                           \
     gcobj->next_reachable = (gclist);                           \
     (gclist) = gcobj;                                           \
   }                                                             \
+  gcobj->gc_state |= KLGC_MARKED;                               \
 }
 
 
@@ -82,7 +83,7 @@ struct tagKlGCObject {
 
 
 struct tagKlMM {
-  KlGCObject* allgc;                        /* top level */
+  KlGCObject* allgc;                        /* gc objects */
   size_t gcstop_rcs_count;                  /* gc can be stoped recursively */
   KlGCObject* root;
   KlGCObject* postproclist;                 /* objects that need to do something after propagate and before clean */
@@ -183,7 +184,7 @@ static inline void klmm_gcobj_postproc(KlMM* klmm, KlGCObject* obj) {
 
 static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, KlGCVirtualFunc* vfunc) {
   gcobj->virtualfunc = vfunc;
-  gcobj->gc_state = KLGC_NORM;
+  gcobj->gc_state = KLGC_NORM | KLGC_INLIST;
   gcobj->next = klmm->allgc;
   klmm->allgc = gcobj;
 }

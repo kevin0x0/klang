@@ -32,7 +32,7 @@ static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len
 
   memcpy(klstr->strhead, str1, len1);
   memcpy(klstr->strhead + len1, str2, len2 + 1);
-  klstr->length = len1 + len2 + 1;
+  klstr->length = len1 + len2;
   return klstr;
 }
 

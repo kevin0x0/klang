@@ -45,6 +45,7 @@ KlState* klapi_new_state(KlMM* klmm) {
     return NULL;
   }
   klmm_register_root(klmm, klmm_to_gcobj(state));
+  klmm_restartgc(klmm);
   klmapnodepool_unpin(mapnodepool);
   klcommon_unpin(common, klmm);
   return state;
