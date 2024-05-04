@@ -11,9 +11,6 @@
 typedef struct tagKlStrPool KlStrPool;
 typedef struct tagKlString KlString;
 
-#define KLSTRING_STATUS_TAIL  (klbit(0))
-#define KLSTRING_STATUS_END   (klbit(0))
-
 struct tagKlString {
   KL_DERIVE_FROM(KlGCObjectNotInList, _gcbase_);
   KlUnsigned length;
