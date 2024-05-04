@@ -16,9 +16,9 @@ typedef struct tagKlString KlString;
 
 struct tagKlString {
   KL_DERIVE_FROM(KlGCObjectNotInList, _gcbase_);
-  KlString* next;
-  size_t length;
+  KlUnsigned length;
   size_t hash;
+  KlString* next;
   char strhead[];
 };
 

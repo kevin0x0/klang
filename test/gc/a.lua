@@ -1,12 +1,12 @@
--- collectgarbage('incremental')
+collectgarbage('incremental')
 
 local t = os.clock()
 
-local _G = _G
-for i = 1, 90000 do
-  local v = "key" .. i
-  _G[v] = v
-end
+-- local _G = _G
+-- for i = 1, 90000 do
+--   local v = "key" .. i
+--   _G[v] = v
+-- end
 
 for i = 1, 100000000 do
   local a = {}

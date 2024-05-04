@@ -1,4 +1,5 @@
 #include "include/value/klstring.h"
+#include "include/lang/kltypes.h"
 #include "include/mm/klmm.h"
 #include <string.h>
 
@@ -18,8 +19,9 @@ static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len
 
 static KlString* klstring_create(KlMM* klmm, const char* str) {
   size_t len = strlen(str);
+  if (kl_unlikely(len > KLUINT_MAX)) return NULL;
   KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len + 1);
-  if (!klstr) return NULL;
+  if (kl_unlikely(!klstr)) return NULL;
 
   memcpy(klstr->strhead, str, len + 1);
   klstr->length = len;
@@ -27,8 +29,9 @@ static KlString* klstring_create(KlMM* klmm, const char* str) {
 }
 
 static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len1, const char* str2, size_t len2) {
+  if (kl_unlikely(len1 + len2 > KLUINT_MAX)) return NULL;
   KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len1 + len2 + 1);
-  if (!klstr) return NULL;
+  if (kl_unlikely(!klstr)) return NULL;
 
   memcpy(klstr->strhead, str1, len1);
   memcpy(klstr->strhead + len1, str2, len2 + 1);

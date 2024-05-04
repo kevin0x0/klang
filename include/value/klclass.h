@@ -1,6 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_VALUE_KLCLASS_H
 #define KEVCC_KLANG_INCLUDE_VALUE_KLCLASS_H
 
+#include "include/lang/kltypes.h"
 #include "include/misc/klutils.h"
 #include "include/value/klstring.h"
 #include "include/value/klvalue.h"
@@ -32,15 +33,15 @@ struct tagKlClass {
   size_t capacity;
   size_t lastfree;
   size_t attroffset;
-  size_t nlocal;
+  KlUnsigned nlocal;
   bool is_final;
 };
 
-#define KL_DERIVE_FROM_KlObject(prefix)   \
-  KL_DERIVE_FROM_KlGCObject(prefix);      \
-  KlClass* prefix##klclass;               \
-  KlValue* prefix##attrs;                 \
-  size_t prefix##size                     \
+#define KL_DERIVE_FROM_KlObject(prefix)         \
+  KL_DERIVE_FROM_KlGCObject(prefix##_gcbase_);  \
+  KlClass* prefix##klclass;                     \
+  KlValue* prefix##attrs;                       \
+  size_t prefix##size                           \
 
 #define KLOBJECT_TAIL                         KlValue _klobject_valarray
 

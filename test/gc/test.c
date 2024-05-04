@@ -105,9 +105,9 @@ void gctest0(KlState* state) {
   code[2] = klinst_loadc(1, 0);
   code[3] = klinst_loadnil(2, 0);
   code[4] = klinst_iforprep(0, 4);
-  code[5] = klinst_loadc(3, 1);
-  code[6] = klinst_move(4, 0);
-  code[7] = klinst_concat(3, 3, 4);
+  code[5] = klinst_loadc(3, 0);
+  code[6] = klinst_mkarray(4, 4, 0);
+  code[7] = klinst_append(4, 3, 1);
   code[8] = klinst_iforloop(0, -4);
   code[9] = klinst_return1(0);
   // klapi_pushnil(state, 1);

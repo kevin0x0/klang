@@ -44,7 +44,7 @@ typedef void (*KlGCDestructor)(KlGCObject* gcobj, KlMM* klmm);
 typedef struct tagKlGCObject* (*KlGCProp)(KlGCObject* gcobj, KlMM* klmm, KlGCObject* gclist);
 typedef void (*KlGCAfter)(KlGCObject* gcobj, KlMM* klmm);
 
-typedef unsigned KlGCStat;
+typedef KlUnsigned KlGCStat;
 
 typedef struct tagKlGCVirtualFunc {
   KlGCDestructor destructor;

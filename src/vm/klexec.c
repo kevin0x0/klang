@@ -1338,7 +1338,7 @@ KlException klexec_execute(KlState* state) {
             break;
           }
           klexec_savestate(callinfo->top);
-          KlException exception = klexec_doindexasmethod(state, val, indexable, &key);
+          KlException exception = klexec_doindexasmethod(state, indexable, &key, val);
           if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
             KlValue* newbase = state->callinfo->base;
             klexec_updateglobal(newbase);
@@ -1418,7 +1418,7 @@ KlException klexec_execute(KlState* state) {
             } /* else fall through. try operator method */
           }
           klexec_savestate(callinfo->top);
-          KlException exception = klexec_doindexasmethod(state, val, indexable, key);
+          KlException exception = klexec_doindexasmethod(state, indexable, key, val);
           if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
             KlValue* newbase = state->callinfo->base;
             klexec_updateglobal(newbase);
