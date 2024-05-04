@@ -23,11 +23,11 @@ typedef enum tagKlCoJmpStatus {
 
 typedef struct tagKlCoroutine {
   KlKClosure* kclo;                 /* to be executed function */
-  volatile KlCoStatus status;       /* state of this coroutine */
+  ptrdiff_t respos_save;            /* save the offset of to be returned values */
   KlValue* volatile yieldvals;      /* stack position of first yield value */
   volatile size_t nyield;           /* number of yielded value */
   volatile size_t nwanted;          /* number of wanted arguments when resuming */
-  ptrdiff_t respos_save;            /* save the offset of to be returned values */
+  volatile KlCoStatus status;       /* state of this coroutine */
   bool allow_yield;
   jmp_buf yieldpos;
 } KlCoroutine;
@@ -39,6 +39,8 @@ static inline KlGCObject* klco_propagate(KlCoroutine* co, KlGCObject* gclist);
 static inline KlCoStatus klco_status(KlCoroutine* co);
 static inline void klco_setstatus(KlCoroutine* co, KlCoStatus status);
 static inline bool klco_ismethod(KlCoroutine* co);
+static inline void klco_allow_yield(KlCoroutine* co, bool allow);
+static inline bool klco_yield_allowed(KlCoroutine* co);
 static inline bool klco_valid(KlCoroutine* co);
 static inline void klco_yield(KlCoroutine* co, KlValue* yieldvals, size_t nyield, size_t nwanted);
 
@@ -57,6 +59,14 @@ static inline void klco_setstatus(KlCoroutine* co, KlCoStatus status) {
 
 static inline bool klco_ismethod(KlCoroutine* co) {
   return klclosure_ismethod(co->kclo);
+}
+
+static inline void klco_allow_yield(KlCoroutine* co, bool allow) {
+  co->allow_yield = allow;
+}
+
+static inline bool klco_yield_allowed(KlCoroutine* co) {
+  return co->allow_yield;
 }
 
 static inline bool klco_valid(KlCoroutine* co) {

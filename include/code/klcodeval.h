@@ -1,8 +1,8 @@
 #ifndef KEVCC_KLANG_INCLUDE_CODE_KLCODEVAL_H
 #define KEVCC_KLANG_INCLUDE_CODE_KLCODEVAL_H
 
-#include "include/cst/klcst.h"
-#include "include/cst/klstrtbl.h"
+#include "include/ast/klast.h"
+#include "include/ast/klstrtbl.h"
 #include <stddef.h>
 
 typedef enum tagKlValKind {

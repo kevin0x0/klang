@@ -874,7 +874,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     }
     default: {
       kl_assert(false, "control flow should not reach here");
-      break;
+      return pc;
     }
   }
 }

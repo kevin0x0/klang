@@ -4,8 +4,8 @@
 #include "include/code/klcode.h"
 #include "include/code/klcontbl.h"
 #include "include/code/klsymtbl.h"
-#include "include/cst/klcst.h"
-#include "include/cst/klstrtbl.h"
+#include "include/ast/klast.h"
+#include "include/ast/klstrtbl.h"
 #include "deps/k/include/array/kgarray.h"
 #include <setjmp.h>
 
@@ -16,16 +16,12 @@ kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val,)
 
 
 typedef struct tagKlGenJumpInfo KlGenJumpInfo;
+/* this struct used for evaluating boolean expression as a value. */
 struct tagKlGenJumpInfo {
   KlCodeVal terminatelist;
   KlCodeVal truelist;
   KlCodeVal falselist;
   KlGenJumpInfo* prev;
-};
-
-typedef struct tagKlGenBlockInfo KlGenBlockInfo;
-struct tagKlGenBlockInfo {
-  KlGenBlockInfo* prev;
 };
 
 typedef struct tagKlGUCommonString {
@@ -57,11 +53,11 @@ struct tagKlGenUnit {
   bool vararg;                /* has variable arguments */
   struct {
     KlGenJumpInfo* jumpinfo;  /* information needed by code generator that evaluates boolean expression as a single value */
-    KlCodeVal* continuejmp;
-    KlSymTbl* continue_scope;
-    KlCodeVal* breakjmp;
-    KlSymTbl* break_scope;
-  } info;
+    KlCodeVal* continuejmp;   /* continue jmplist. continue is not allowed if NULL */
+    KlSymTbl* continue_scope; /* the scope that start a scope that allows continue */
+    KlCodeVal* breakjmp;      /* break jmplist. break is not allowed if NULL */
+    KlSymTbl* break_scope;    /* the scope that start a scope that allows break */
+  } jmpinfo;
   KlGenUnit* prev;
   jmp_buf jmppos;
   KlCodeGenConfig* config;
@@ -73,7 +69,7 @@ void klgen_destroy(KlGenUnit* gen);
 
 bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings);
 
-KlCode* klgen_file(KlCstStmtList* cst, KlStrTbl* strtbl, KlCodeGenConfig* config);
+KlCode* klgen_file(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config);
 /* check range */
 void klgen_validate(KlGenUnit* gen);
 /* convert to KlCode and destroy self.
@@ -95,14 +91,14 @@ static inline KlConEntry* klgen_searchinteger(KlGenUnit* gen, KlCInt val);
 void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position);
 static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
 static inline void klgen_putonstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
+static inline size_t klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position);
 void klgen_emitloadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition position);
 void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nval, KlFilePosition position);
+void klgen_emitmethod(KlGenUnit* gen, size_t obj, size_t method, size_t narg, size_t nret, size_t retpos, KlFilePosition position);
+void klgen_emitcall(KlGenUnit* gen, size_t callable, size_t narg, size_t nret, size_t retpos, KlFilePosition position);
 
 
-kl_noreturn static inline void klgen_error_fatal(KlGenUnit* gen, const char* message) {
-  klgen_error(gen, 0, 0, message);
-  longjmp(gen->jmppos, 1);
-}
+kl_noreturn void klgen_error_fatal(KlGenUnit* gen, const char* message);
 
 #define klgen_oomifnull(gen, expr)  {                                           \
   if (kl_unlikely(!expr))                                                       \
@@ -175,7 +171,7 @@ static inline KlFilePosition klgen_position(KlFileOffset begin, KlFileOffset end
   return position;
 }
 
-#define klgen_cstposition(cst) klgen_position(klcst_begin(cst), klcst_end(cst))
+#define klgen_astposition(ast) klgen_position(klast_begin(ast), klast_end(ast))
 
 
 static inline size_t klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position) {
@@ -185,16 +181,6 @@ static inline size_t klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePositi
   if (gen->config->posinfo)
     klfparr_push_back(&gen->position, position);
   return pc;
-}
-
-static inline void klgen_emitmethod(KlGenUnit* gen, size_t obj, size_t method, size_t narg, size_t nret, size_t retpos, KlFilePosition position) {
-  klgen_emit(gen, klinst_method(obj, method), position);
-  klgen_emit(gen, klinst_methodextra(narg, nret, retpos), position);
-}
-
-static inline void klgen_emitcall(KlGenUnit* gen, size_t callable, size_t narg, size_t nret, size_t retpos, KlFilePosition position) {
-  klgen_emit(gen, klinst_call(callable), position);
-  klgen_emit(gen, klinst_callextra(narg, nret, retpos), position);
 }
 
 static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position) {

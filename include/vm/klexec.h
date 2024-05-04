@@ -1,11 +1,13 @@
 #ifndef KEVCC_KLANG_INCLUDE_VM_KLEXEC_H
 #define KEVCC_KLANG_INCLUDE_VM_KLEXEC_H
 
+#include "include/vm/klexception.h"
 #include "include/value/klcfunc.h"
 #include "include/value/klcoroutine.h"
 #include "include/value/klvalue.h"
-#include "include/vm/klexception.h"
 #include "include/value/klstate.h"
+
+#define KLEXEC_VARIABLE_RESULTS     (KLINST_VARRES)
 
 
 #define klexec_savestack(state, stkptr)     ((stkptr) - klstack_raw(klstate_stack((state))))
@@ -15,11 +17,10 @@
 
 typedef KlException (*KlCallPrepCallBack)(KlState* state, KlValue* callable, size_t narg);
 
-KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field);
-KlException klexec_callc(KlState* state, KlCFunction* cfunc, size_t narg, size_t nret);
-KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback);
-KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret);
 KlException klexec_execute(KlState* state);
+KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback);
+KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
+KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field);
 static inline void klexec_pop_callinfo(KlState* state);
 static inline void klexec_push_callinfo(KlState* state);
 static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff);

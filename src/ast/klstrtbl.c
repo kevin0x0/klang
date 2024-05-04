@@ -1,4 +1,4 @@
-#include "include/cst/klstrtbl.h"
+#include "include/ast/klstrtbl.h"
 #include <stdlib.h>
 #include <string.h>
 

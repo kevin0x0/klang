@@ -1,5 +1,5 @@
 #include "include/code/klsymtbl.h"
-#include "include/cst/klstrtbl.h"
+#include "include/ast/klstrtbl.h"
 #include <stdlib.h>
 
 

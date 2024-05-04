@@ -46,7 +46,7 @@ KlException klco_start(KlState* costate, KlState* caller, size_t narg, size_t nr
   klvalue_setobj(&kclo, costate->coinfo.kclo, KL_KCLOSURE);
   klco_setstatus(&costate->coinfo, KLCO_RUNNING); /* now we run this coroutine */
   if (setjmp(costate->coinfo.yieldpos) == KLCOJMP_NORMAL) {
-    KlException exception = klexec_call(costate, &kclo, narg, KLINST_VARRES);
+    KlException exception = klexec_call(costate, &kclo, narg, KLINST_VARRES, argbase);
     if (kl_unlikely(exception)) {
       klco_setstatus(&costate->coinfo, KLCO_DEAD);
       return exception;

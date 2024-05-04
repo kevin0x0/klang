@@ -8,14 +8,14 @@
 
 
 
-KlCodeVal klgen_expr(KlGenUnit* gen, KlCst* cst);
-KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlCst* cst, size_t target);
-void klgen_exprlist_raw(KlGenUnit* gen, KlCst** csts, size_t ncst, size_t nwanted, KlFilePosition filepos);
-static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlCst* cst, size_t target);
-static inline KlCodeVal klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst);
-static inline KlCodeVal klgen_tuple_target(KlGenUnit* gen, KlCstTuple* tuplecst, size_t target);
-static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t nwanted);
-void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target);
+KlCodeVal klgen_expr(KlGenUnit* gen, KlAst* ast);
+KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlAst* ast, size_t target);
+void klgen_exprlist_raw(KlGenUnit* gen, KlAst** asts, size_t nast, size_t nwanted, KlFilePosition filepos);
+static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlAst* ast, size_t target);
+static inline KlCodeVal klgen_tuple(KlGenUnit* gen, KlAstTuple* tupleast);
+static inline KlCodeVal klgen_tuple_target(KlGenUnit* gen, KlAstTuple* tupleast, size_t target);
+static inline void klgen_expryield(KlGenUnit* gen, KlAstYield* yieldast, size_t nwanted);
+void klgen_multival(KlGenUnit* gen, KlAst* ast, size_t nval, size_t target);
 /* try to generate code for expressions that can have variable number of results.
  * the results may not on the top of stack.
  * for example:
@@ -24,39 +24,39 @@ void klgen_multival(KlGenUnit* gen, KlCst* cst, size_t nval, size_t target);
  *  return a;
  * in this case, this function does not generate code that moves 'a' to top of stack.
  * */
-size_t klgen_trytakeall(KlGenUnit* gen, KlCst* cst, KlCodeVal* val);
+size_t klgen_trytakeall(KlGenUnit* gen, KlAst* ast, KlCodeVal* val);
 /* try to generate code for expressions that can have variable number of results */
-size_t klgen_takeall(KlGenUnit* gen, KlCst* cst, size_t target);
-size_t klgen_passargs(KlGenUnit* gen, KlCstTuple* args);
-KlCodeVal klgen_exprpost(KlGenUnit* gen, KlCstPost* postcst, size_t target, bool append_target);
-KlCodeVal klgen_exprpre(KlGenUnit* gen, KlCstPre* precst, size_t target);
-KlCodeVal klgen_exprbin(KlGenUnit* gen, KlCstBin* bincst, size_t target);
-void klgen_exprarr(KlGenUnit* gen, KlCstArray* arrcst, size_t target);
-void klgen_exprarrgen(KlGenUnit* gen, KlCstArrayGenerator* arrgencst, size_t target);
-void klgen_exprmap(KlGenUnit* gen, KlCstMap* mapcst, size_t target);
-void klgen_exprclass(KlGenUnit* gen, KlCstClass* classcst, size_t target);
+size_t klgen_takeall(KlGenUnit* gen, KlAst* ast, size_t target);
+size_t klgen_passargs(KlGenUnit* gen, KlAstTuple* args);
+KlCodeVal klgen_exprpost(KlGenUnit* gen, KlAstPost* postast, size_t target, bool append_target);
+KlCodeVal klgen_exprpre(KlGenUnit* gen, KlAstPre* preast, size_t target);
+KlCodeVal klgen_exprbin(KlGenUnit* gen, KlAstBin* binast, size_t target);
+void klgen_exprarr(KlGenUnit* gen, KlAstArray* arrast, size_t target);
+void klgen_exprarrgen(KlGenUnit* gen, KlAstArrayGenerator* arrgenast, size_t target);
+void klgen_exprmap(KlGenUnit* gen, KlAstMap* mapast, size_t target);
+void klgen_exprclass(KlGenUnit* gen, KlAstClass* classast, size_t target);
 
 
-static inline KlCodeVal klgen_expr_onstack(KlGenUnit* gen, KlCst* cst) {
-  KlCodeVal res = klgen_expr(gen, cst);
-  klgen_putonstack(gen, &res, klgen_cstposition(cst));
+static inline KlCodeVal klgen_expr_onstack(KlGenUnit* gen, KlAst* ast) {
+  KlCodeVal res = klgen_expr(gen, ast);
+  klgen_putonstack(gen, &res, klgen_astposition(ast));
   return res;
 }
 
-static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlCst* cst, size_t target) {
-  KlCodeVal res = klgen_exprtarget(gen, cst, target);
+static inline void klgen_exprtarget_noconst(KlGenUnit* gen, KlAst* ast, size_t target) {
+  KlCodeVal res = klgen_exprtarget(gen, ast, target);
   if (klcodeval_isconstant(res))
-    klgen_loadval(gen, target, res, klgen_cstposition(cst));
+    klgen_loadval(gen, target, res, klgen_astposition(ast));
   if (klgen_stacktop(gen) <= target)
     klgen_stackfree(gen, target + 1);
 }
 
-static inline KlCodeVal klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst) {
-  if (tuplecst->nelem == 0)
+static inline KlCodeVal klgen_tuple(KlGenUnit* gen, KlAstTuple* tupleast) {
+  if (tupleast->nelem == 0)
     return klcodeval_nil();
 
-  KlCst** expr = tuplecst->elems;
-  KlCst** end = expr + tuplecst->nelem - 1;
+  KlAst** expr = tupleast->elems;
+  KlAst** end = expr + tupleast->nelem - 1;
   size_t oristktop = klgen_stacktop(gen);
   while (expr != end) {
     klgen_expr(gen, *expr++);
@@ -65,12 +65,12 @@ static inline KlCodeVal klgen_tuple(KlGenUnit* gen, KlCstTuple* tuplecst) {
   return klgen_expr(gen, *expr);
 }
 
-static inline KlCodeVal klgen_tuple_target(KlGenUnit* gen, KlCstTuple* tuplecst, size_t target) {
-  if (tuplecst->nelem == 0)
+static inline KlCodeVal klgen_tuple_target(KlGenUnit* gen, KlAstTuple* tupleast, size_t target) {
+  if (tupleast->nelem == 0)
     return klcodeval_nil();
 
-  KlCst** expr = tuplecst->elems;
-  KlCst** end = expr + tuplecst->nelem - 1;
+  KlAst** expr = tupleast->elems;
+  KlAst** end = expr + tupleast->nelem - 1;
   size_t oristktop = klgen_stacktop(gen);
   while (expr != end) {
     klgen_expr(gen, *expr++);
@@ -79,10 +79,10 @@ static inline KlCodeVal klgen_tuple_target(KlGenUnit* gen, KlCstTuple* tuplecst,
   return klgen_exprtarget(gen, *expr, target);
 }
 
-static inline void klgen_expryield(KlGenUnit* gen, KlCstYield* yieldcst, size_t nwanted) {
+static inline void klgen_expryield(KlGenUnit* gen, KlAstYield* yieldast, size_t nwanted) {
   size_t base = klgen_stacktop(gen);
-  size_t nres = klgen_passargs(gen, yieldcst->vals);
-  klgen_emit(gen, klinst_yield(base, nres, nwanted), klgen_cstposition(yieldcst));
+  size_t nres = klgen_passargs(gen, yieldast->vals);
+  klgen_emit(gen, klinst_yield(base, nres, nwanted), klgen_astposition(yieldast));
   if (nwanted != KLINST_VARRES)
     klgen_stackfree(gen, base + nwanted);
 }

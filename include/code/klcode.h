@@ -3,6 +3,7 @@
 
 #include "include/code/klcontbl.h"
 #include "include/lang/klinst.h"
+#include "include/lang/kltypes.h"
 
 
 typedef struct tagKlCode KlCode;
@@ -13,10 +14,10 @@ typedef struct tagKlFilePosition {
 
 typedef struct tagKlCodeGenConfig {
   const char* inputname;
-  bool debug;
-  bool posinfo;
   KlError* klerr;
   Ki* input;
+  bool debug;
+  bool posinfo;
 } KlCodeGenConfig;
 
 /* this is the same structure as KlRefInfo used in compiler */
@@ -40,17 +41,27 @@ struct tagKlCode {
   unsigned framesize;         /* stack frame size of this klang function */
 };
 
-
 KlCode* klcode_create(KlCRefInfo* refinfo, size_t nref, KlConstant* constants, size_t nconst,
                       KlInstruction* code, KlFilePosition* posinfo, size_t codelen,
                       KlCode** nestedfunc, size_t nnested, KlStrTbl* strtbl, size_t nparam,
                       size_t framesize);
 void klcode_delete(KlCode* code);
 
-KlCode* klcode_create_fromcst(KlCstStmtList* cst, KlStrTbl* strtbl, KlCodeGenConfig* config);
+KlCode* klcode_create_fromast(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config);
+
+
+typedef enum tagKlUnDumpError {
+  KLUNDUMP_SUCCESS = 0,
+  KLUNDUMP_ERROR_MAGIC,
+  KLUNDUMP_ERROR_ENDIAN,
+  KLUNDUMP_ERROR_VERSION,
+  KLUNDUMP_ERROR_SIZE,
+  KLUNDUMP_ERROR_BAD,
+  KLUNDUMP_ERROR_OOM,
+} KlUnDumpError;
 
 bool klcode_dump(KlCode* code, Ko* file);
-KlCode* klcode_undump(Ki* file);
+KlCode* klcode_undump(Ki* file, KlStrTbl* strtbl, KlUnDumpError* error);
 void klcode_print(KlCode* code, Ko* out);
 
 #endif

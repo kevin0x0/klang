@@ -1,4 +1,5 @@
 #include "include/parse/kllex.h"
+#include "include/lang/kltypes.h"
 #include "include/parse/kltokens.h"
 #include "deps/k/include/kio/ki.h"
 
@@ -14,7 +15,7 @@
 
 
 static KlTokenKind tokenkind[150];
-static uint8_t transition[150][256];
+static KlUByte transition[150][256];
 static size_t start;
 
 
@@ -289,15 +290,15 @@ void kllex_next(KlLex* lex) {
     kllex_return(KLTK_END);
   }
   lex->tok.begin = curroff - 1;
-  uint8_t state = start;
-  uint8_t nextstate;
+  KlUByte state = start;
+  KlUByte nextstate;
   char* buf = klstrtbl_allocstring(lex->strtbl, KLLEX_STRLIMIT);
   if (kl_unlikely(!buf)) {
     kllex_error(lex, "out of memory in kllex_next(). pretend to reach end of file");
     kllex_return(KLTK_END);
   }
   size_t strlength = 0;
-  while (ch != KOF && (nextstate = transition[state][(uint8_t)ch]) != KLLEX_DEADSTATE && strlength < KLLEX_STRLIMIT) {
+  while (ch != KOF && (nextstate = transition[state][(KlUByte)ch]) != KLLEX_DEADSTATE && strlength < KLLEX_STRLIMIT) {
     state = nextstate;
     buf[strlength++] = ch;
     ch = ki_getc(input);
@@ -345,7 +346,7 @@ void kllex_next(KlLex* lex) {
 
 
 /* DFA */
-static uint8_t transition[150][256] = {
+static KlUByte transition[150][256] = {
   /* 0 */
   {
      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,

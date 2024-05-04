@@ -3,7 +3,7 @@
 #include "include/parse/klparser.h"
 #include <time.h>
 
-void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, KlCstStmtList* cst);
+void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, KlAstStmtList* ast);
 
 int main(void) {
   const char* filename = "test.kl";
@@ -23,14 +23,14 @@ int main(void) {
   KlLex* lex = kllex_create(input, &klerr, filename, strtbl);
   klparser_init(&parser, lex->strtbl, (char*)filename, &klerr);
   kllex_next(lex);
-  KlCstStmtList* file = klparser_stmtlist(&parser, lex);
-  if (file) klcst_setposition(file, 0, lex->tok.begin);
+  KlAstStmtList* file = klparser_stmtlist(&parser, lex);
+  if (file) klast_setposition(file, 0, lex->tok.begin);
 
   if (klerr.errcount == 0) {
     codegen_test(strtbl, input, filename, &klerr, file);
   }
 
-  if (file) klcst_delete(file);
+  if (file) klast_delete(file);
   kllex_delete(lex);
   klstrtbl_delete(strtbl);
   ki_delete(input);
@@ -38,9 +38,9 @@ int main(void) {
   return 0;
 }
 
-void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, KlCstStmtList* cst) {
+void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, KlAstStmtList* ast) {
   KlCodeGenConfig config = { .posinfo = true, .klerr = klerr, .inputname = inputname, .input = input, .debug = false };
-  KlCode* code = klcode_create_fromcst(cst, strtbl, &config);
+  KlCode* code = klcode_create_fromast(ast, strtbl, &config);
   if (kl_unlikely(!code)) return;
   Ko* ko = kofile_attach(stdout);
   klcode_print(code, ko);

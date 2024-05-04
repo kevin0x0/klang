@@ -3,7 +3,7 @@
 #include "include/code/klcontbl.h"
 #include "include/code/klgen_stmt.h"
 #include "include/code/klsymtbl.h"
-#include "include/cst/klcst.h"
+#include "include/ast/klast.h"
 
 kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
 kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
@@ -85,11 +85,11 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* stri
   gen->strings = strings;
   gen->stksize = 0;
   gen->framesize = 0;
-  gen->info.jumpinfo = NULL;
-  gen->info.breakjmp = NULL;
-  gen->info.continuejmp = NULL;
-  gen->info.break_scope = NULL;
-  gen->info.continue_scope = NULL;
+  gen->jmpinfo.jumpinfo = NULL;
+  gen->jmpinfo.breakjmp = NULL;
+  gen->jmpinfo.continuejmp = NULL;
+  gen->jmpinfo.break_scope = NULL;
+  gen->jmpinfo.continue_scope = NULL;
   gen->prev = prev;
   gen->config = config;
   return true;
@@ -325,7 +325,7 @@ void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, Kl
   }
 }
 
-KlCode* klgen_file(KlCstStmtList* cst, KlStrTbl* strtbl, KlCodeGenConfig* config) {
+KlCode* klgen_file(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config) {
   /* create genunit */
   KlGUCommonString strings;
   if (kl_unlikely(!klgen_init_commonstrings(strtbl, &strings))) {
@@ -345,16 +345,16 @@ KlCode* klgen_file(KlCstStmtList* cst, KlStrTbl* strtbl, KlCodeGenConfig* config
     /* begin a new scope */
     klgen_pushsymtbl(&gen);
     /* handle variable arguments */
-    klgen_emit(&gen, klinst_adjustargs(), klgen_position(klcst_begin(cst), klcst_begin(cst)));
+    klgen_emit(&gen, klinst_adjustargs(), klgen_position(klast_begin(ast), klast_begin(ast)));
 
     /* generate code for function body */
-    kl_assert(klcst_kind(cst) == KLCST_STMT_BLOCK, "");
-    klgen_stmtlist(&gen, cst);
+    kl_assert(klast_kind(ast) == KLCST_STMT_BLOCK, "");
+    klgen_stmtlist(&gen, ast);
     /* add a return statement if 'return' is missing */
-    if (!klcst_mustreturn(klcast(KlCstStmtList*, cst))) {
+    if (!klast_mustreturn(klcast(KlAstStmtList*, ast))) {
       if (gen.symtbl->info.referenced)
-        klgen_emit(&gen, klinst_close(0), klgen_position(klcst_end(cst), klcst_end(cst)));
-      klgen_emit(&gen, klinst_return0(), klgen_position(klcst_end(cst), klcst_end(cst)));
+        klgen_emit(&gen, klinst_close(0), klgen_position(klast_end(ast), klast_end(ast)));
+      klgen_emit(&gen, klinst_return0(), klgen_position(klast_end(ast), klast_end(ast)));
     }
     /* close the scope */
     klgen_popsymtbl(&gen);
@@ -376,9 +376,25 @@ KlCode* klgen_file(KlCstStmtList* cst, KlStrTbl* strtbl, KlCodeGenConfig* config
   }
 }
 
+void klgen_emitmethod(KlGenUnit* gen, size_t obj, size_t method, size_t narg, size_t nret, size_t retpos, KlFilePosition position) {
+  klgen_emit(gen, klinst_method(obj, method), position);
+  klgen_emit(gen, klinst_methodextra(narg, nret, retpos), position);
+}
+
+void klgen_emitcall(KlGenUnit* gen, size_t callable, size_t narg, size_t nret, size_t retpos, KlFilePosition position) {
+  klgen_emit(gen, klinst_call(callable), position);
+  klgen_emit(gen, klinst_callextra(narg, nret, retpos), position);
+}
+
+
 void klgen_error(KlGenUnit* gen, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
   va_list args;
   va_start(args, format);
   klerror_errorv(gen->config->klerr, gen->config->input, gen->config->inputname, begin, end, format, args);
   va_end(args);
+}
+
+kl_noreturn void klgen_error_fatal(KlGenUnit* gen, const char* message) {
+  klgen_error(gen, 0, 0, message);
+  longjmp(gen->jmppos, 1);
 }

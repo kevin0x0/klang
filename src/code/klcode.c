@@ -40,6 +40,6 @@ void klcode_delete(KlCode* code) {
   free(code);
 }
 
-KlCode* klcode_create_fromcst(KlCstStmtList* cst, KlStrTbl* strtbl, KlCodeGenConfig* config) {
-  return klgen_file(cst, strtbl, config);
+KlCode* klcode_create_fromast(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config) {
+  return klgen_file(ast, strtbl, config);
 }

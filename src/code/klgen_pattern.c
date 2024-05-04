@@ -2,22 +2,22 @@
 #include "include/code/klcode.h"
 #include "include/code/klgen.h"
 #include "include/code/klgen_stmt.h"
-#include "include/cst/klcst.h"
-#include "include/cst/klstrtbl.h"
+#include "include/ast/klast.h"
+#include "include/ast/klstrtbl.h"
+#include "include/misc/klutils.h"
 #include "include/parse/kltokens.h"
-#include <strings.h>
 
 
 static inline void klgen_emit_exactarraybinding(KlGenUnit* gen, size_t nres, size_t target, size_t val, KlFilePosition filepos) {
   klgen_emit(gen, klinst_pbtup(target, val, nres), filepos);
 }
 
-static inline void klgen_emit_arraybinding(KlGenUnit* gen, size_t nfront, size_t nback, size_t target, size_t val, KlFilePosition filepos) {
+static void klgen_emit_arraybinding(KlGenUnit* gen, size_t nfront, size_t nback, size_t target, size_t val, KlFilePosition filepos) {
   klgen_emit(gen, klinst_pbarr(target, val, nfront), filepos);
   klgen_emit(gen, klinst_parrextra(nback, 0), filepos);
 }
 
-static inline void klgen_emit_mapbinding(KlGenUnit* gen, size_t nres, size_t target, size_t val, KlFilePosition filepos) {
+static void klgen_emit_mapbinding(KlGenUnit* gen, size_t nres, size_t target, size_t val, KlFilePosition filepos) {
   klgen_emit(gen, klinst_pbmap(target, val, nres), filepos);
   klgen_emit(gen, klinst_pmappost(0), filepos);
 }
@@ -30,17 +30,17 @@ static inline void klgen_emit_genericbinding(KlGenUnit* gen, size_t nres, size_t
   klgen_emitmethod(gen, obj, method, narg, nres, target, filepos);
 }
 
-static inline size_t klgen_emit_exactarraymatching(KlGenUnit* gen, size_t nres, size_t target, size_t val, KlFilePosition filepos) {
+static size_t klgen_emit_exactarraymatching(KlGenUnit* gen, size_t nres, size_t target, size_t val, KlFilePosition filepos) {
   klgen_emit(gen, klinst_pmtup(target, val, nres), filepos);
   return klgen_emit(gen, klinst_extra_xi(0, 0), filepos);
 }
 
-static inline size_t klgen_emit_arraymatching(KlGenUnit* gen, size_t nfront, size_t nback, size_t target, size_t val, KlFilePosition filepos) {
+static size_t klgen_emit_arraymatching(KlGenUnit* gen, size_t nfront, size_t nback, size_t target, size_t val, KlFilePosition filepos) {
   klgen_emit(gen, klinst_pmarr(target, val, nfront), filepos);
   return klgen_emit(gen, klinst_parrextra(nback, 0), filepos);
 }
 
-static inline size_t klgen_emit_mapmatching(KlGenUnit* gen, size_t nres, size_t target, size_t val, KlFilePosition filepos) {
+static size_t klgen_emit_mapmatching(KlGenUnit* gen, size_t nres, size_t target, size_t val, KlFilePosition filepos) {
   klgen_emit(gen, klinst_pmmap(target, val, nres), filepos);
   return klgen_emit(gen, klinst_pmappost(0), filepos);
 }
@@ -59,16 +59,16 @@ static inline size_t klgen_emit_genericmatching(KlGenUnit* gen, size_t nres, siz
 
 /* if is an array with exact number of elements return false.
  * else return true and set pnfront and pnback. */
-static bool klgen_pattern_array_get_nfront_and_nback(KlGenUnit* gen, KlCst** elems, size_t nelem, size_t* pnfront, size_t* pnback) {
+static bool klgen_pattern_array_get_nfront_and_nback(KlGenUnit* gen, KlAst** elems, size_t nelem, size_t* pnfront, size_t* pnback) {
   size_t nfront = 0;
   for (; nfront < nelem; ++nfront) {
-    if (klcst_kind(elems[nfront]) == KLCST_EXPR_VARARG)
+    if (klast_kind(elems[nfront]) == KLCST_EXPR_VARARG)
       break;
   }
   if (nfront == nelem) return false;
   for (size_t i = nfront + 1; i < nelem; ++i) {
-    if (klcst_kind(elems[i]) == KLCST_EXPR_VARARG) {
-      klgen_error(gen, klcst_begin(elems[i]), klcst_end(elems[i]), "duplicated '...' appeared in an array pattern");
+    if (klast_kind(elems[i]) == KLCST_EXPR_VARARG) {
+      klgen_error(gen, klast_begin(elems[i]), klast_end(elems[i]), "duplicated '...' appeared in an array pattern");
       continue;
     }
   }
@@ -78,17 +78,17 @@ static bool klgen_pattern_array_get_nfront_and_nback(KlGenUnit* gen, KlCst** ele
   return true;
 }
 
-static KlStrDesc klgen_pattern_methodname(KlGenUnit* gen, KlCst* cst) {
-  if (klcst_kind(cst) == KLCST_EXPR_PRE) {
-    KlTokenKind op = klcast(KlCstPre*, cst)->op;
+static KlStrDesc klgen_pattern_methodname(KlGenUnit* gen, KlAst* ast) {
+  if (klast_kind(ast) == KLCST_EXPR_PRE) {
+    KlTokenKind op = klcast(KlAstPre*, ast)->op;
     if (op == KLTK_MINUS) {
       return gen->strings->pattern_neg;
     } else {
-      klgen_error(gen, klcst_begin(cst), klcst_end(cst), "unsupported pattern: '%s'", kltoken_desc(op));
+      klgen_error(gen, klast_begin(ast), klast_end(ast), "unsupported pattern: '%s'", kltoken_desc(op));
       return gen->strings->pattern;
     }
-  } else if (klcst_kind(cst) == KLCST_EXPR_BIN) {
-    KlTokenKind op = klcast(KlCstBin*, cst)->op;
+  } else if (klast_kind(ast) == KLCST_EXPR_BIN) {
+    KlTokenKind op = klcast(KlAstBin*, ast)->op;
     switch (op) {
       case KLTK_ADD: return gen->strings->pattern_add;
       case KLTK_MINUS: return gen->strings->pattern_sub;
@@ -98,35 +98,35 @@ static KlStrDesc klgen_pattern_methodname(KlGenUnit* gen, KlCst* cst) {
       case KLTK_MOD: return gen->strings->pattern_mod;
       case KLTK_CONCAT: return gen->strings->pattern_concat;
       default: {
-        klgen_error(gen, klcst_begin(cst), klcst_end(cst), "unsupported pattern: '%s'", kltoken_desc(op));
+        klgen_error(gen, klast_begin(ast), klast_end(ast), "unsupported pattern: '%s'", kltoken_desc(op));
         return gen->strings->pattern;
       }
     }
-  } else if (klcst_kind(cst) == KLCST_EXPR_CALL) {
-    KlCstCall* call = klcast(KlCstCall*, cst);
-    if (klcst_kind(call->callable) != KLCST_EXPR_ID) {
-      klgen_error(gen, klcst_begin(call->callable), klcst_end(call->callable), "should be an identifier in pattern binding and pattern matching");
+  } else if (klast_kind(ast) == KLCST_EXPR_CALL) {
+    KlAstCall* call = klcast(KlAstCall*, ast);
+    if (klast_kind(call->callable) != KLCST_EXPR_ID) {
+      klgen_error(gen, klast_begin(call->callable), klast_end(call->callable), "should be an identifier in pattern binding and pattern matching");
       return gen->strings->pattern;
     }
-    KlStrDesc callableid = klcast(KlCstIdentifier*, call->callable)->id;
+    KlStrDesc callableid = klcast(KlAstIdentifier*, call->callable)->id;
     char* concat = klstrtbl_concat(gen->strtbl, gen->strings->pattern, callableid);
     klgen_oomifnull(gen, concat);
     KlStrDesc ret = { .id = klstrtbl_stringid(gen->strtbl, concat), .length = callableid.length + gen->strings->pattern.length };
     return ret;
   } else {
-    klgen_error(gen, klcst_begin(cst), klcst_end(cst), "unsupported pattern");
+    klgen_error(gen, klast_begin(ast), klast_end(ast), "unsupported pattern");
     return gen->strings->pattern;
   }
 }
 
-static inline bool klgen_pattern_islval(KlCst* lval) {
-  return (klcst_kind(lval) == KLCST_EXPR_ID   ||
-          klcst_kind(lval) == KLCST_EXPR_DOT  ||
-          (klcst_kind(lval) == KLCST_EXPR_POST &&
-           klcast(KlCstPost*, lval)->op == KLTK_INDEX));
+static inline bool klgen_pattern_islval(KlAst* lval) {
+  return (klast_kind(lval) == KLCST_EXPR_ID   ||
+          klast_kind(lval) == KLCST_EXPR_DOT  ||
+          (klast_kind(lval) == KLCST_EXPR_POST &&
+           klcast(KlAstPost*, lval)->op == KLTK_INDEX));
 }
 
-static inline bool klgen_pattern_allislval(KlCst** lvals, size_t nlval) {
+static inline bool klgen_pattern_allislval(KlAst** lvals, size_t nlval) {
   for (size_t i = 0; i < nlval; ++i) {
     if (!klgen_pattern_islval(lvals[i]))
       return false;
@@ -134,7 +134,7 @@ static inline bool klgen_pattern_allislval(KlCst** lvals, size_t nlval) {
   return true;
 }
 
-static inline bool klgen_pattern_allislval_maynull(KlCst** lvals, size_t nlval) {
+static inline bool klgen_pattern_allislval_maynull(KlAst** lvals, size_t nlval) {
   for (size_t i = 0; i < nlval; ++i) {
     if (lvals[i] && !klgen_pattern_islval(lvals[i]))
       return false;
@@ -142,38 +142,32 @@ static inline bool klgen_pattern_allislval_maynull(KlCst** lvals, size_t nlval) 
   return true;
 }
 
-static inline bool klgen_pattern_allislvalorvararg(KlCst** lvals, size_t nlval) {
-  for (size_t i = 0; i < nlval; ++i) {
-    if (!klgen_pattern_islval(lvals[i]) && klcst_kind(lvals[i]) != KLCST_EXPR_VARARG)
-      return false;
-  }
-  return true;
+static void klgen_pattern_constant_matchjmp(KlGenUnit* gen, KlAstConstant* constant) {
+  kl_unused(gen); kl_unused(constant);
+  kltodo("implement this");
+
 }
 
-static void klgen_pattern_constant_match(KlGenUnit* gen, KlCstConstant* constant) {
-  (void)klgen_pattern_constant_match;
-}
-
-static void klgen_pattern_constant_mustmatch(KlGenUnit* gen, KlCstConstant* constant) {
+static void klgen_pattern_constant_match(KlGenUnit* gen, KlAstConstant* constant) {
   size_t conidx = klgen_newconstant(gen, &constant->con);
-  klgen_emit(gen, klinst_match(klgen_stacktop(gen) - 1, conidx), klgen_cstposition(constant));
+  klgen_emit(gen, klinst_match(klgen_stacktop(gen) - 1, conidx), klgen_astposition(constant));
 }
 
-size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
-  switch (klcst_kind(pattern)) {
+size_t klgen_pattern_binding(KlGenUnit* gen, KlAst* pattern, size_t target) {
+  switch (klast_kind(pattern)) {
     case KLCST_EXPR_TUPLE: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstTuple* tuple = klcast(KlCstTuple*, pattern);
+      KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       size_t obj = klgen_stacktop(gen) - 1;
       if (klgen_pattern_allislval(elems, nelem)) {
-        klgen_emit_exactarraybinding(gen, nelem, target - nelem, obj, klgen_cstposition(tuple));
+        klgen_emit_exactarraybinding(gen, nelem, target - nelem, obj, klgen_astposition(tuple));
         klgen_stackfree(gen, obj);
         return target - nelem;
       }
       /* else put on stack top */
-      klgen_emit_exactarraybinding(gen, nelem, obj, obj, klgen_cstposition(tuple));
+      klgen_emit_exactarraybinding(gen, nelem, obj, obj, klgen_astposition(tuple));
       klgen_stackfree(gen, obj + nelem);
       for (size_t i = nelem; i--;)
         target = klgen_pattern_binding(gen, elems[i], target);
@@ -181,20 +175,20 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
     }
     case KLCST_EXPR_ARR: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
+      KlAstTuple* tuple = klcast(KlAstTuple*, klcast(KlAstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       size_t nfront;
       size_t nback;
       size_t obj = klgen_stacktop(gen) - 1;
       if (klgen_pattern_array_get_nfront_and_nback(gen, elems, nelem, &nfront, &nback)) {
         if (klgen_pattern_allislval(elems, nfront) && klgen_pattern_allislval(elems + nfront + 1, nback)) {
-          klgen_emit_arraybinding(gen, nfront, nback, target - (nfront + nback), obj, klgen_cstposition(tuple));
+          klgen_emit_arraybinding(gen, nfront, nback, target - (nfront + nback), obj, klgen_astposition(tuple));
           klgen_stackfree(gen, obj);
           return target - (nfront + nback);
         }
         /* else put on stack top */
-        klgen_emit_arraybinding(gen, nfront, nback, obj, obj, klgen_cstposition(pattern));
+        klgen_emit_arraybinding(gen, nfront, nback, obj, obj, klgen_astposition(pattern));
         klgen_stackfree(gen, obj + nfront + nback);
         for (size_t i = nelem; i-- != nfront + 1;)
           target = klgen_pattern_binding(gen, elems[i], target);
@@ -203,12 +197,12 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
         return  target;
       } else {
         if (klgen_pattern_allislval(elems, nelem)) {
-          klgen_emit_exactarraybinding(gen, nelem, target - nelem, obj, klgen_cstposition(tuple));
+          klgen_emit_exactarraybinding(gen, nelem, target - nelem, obj, klgen_astposition(tuple));
           klgen_stackfree(gen, obj);
           return target - nelem;
         }
         /* else put on stack top */
-        klgen_emit_exactarraybinding(gen, nelem, obj, obj, klgen_cstposition(tuple));
+        klgen_emit_exactarraybinding(gen, nelem, obj, obj, klgen_astposition(tuple));
         klgen_stackfree(gen, obj + nelem);
         for (size_t i = nelem; i--;)
           target = klgen_pattern_binding(gen, elems[i], target);
@@ -217,28 +211,28 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
     }
     case KLCST_EXPR_CLASS: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstClass* klclass = klcast(KlCstClass*, pattern);
+      KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
-      KlCstClassFieldDesc* fields = klclass->fields;
+      KlAstClassFieldDesc* fields = klclass->fields;
       size_t obj = klgen_stacktop(gen) - 1;
       size_t nshared = 0;
       for (size_t i = 0; i < nval; ++i) {
         if (!fields[i].shared) {
-          klgen_error(gen, klcst_begin(pattern), klcst_end(pattern), "'local' can not appear in object pattern");
+          klgen_error(gen, klast_begin(pattern), klast_end(pattern), "'local' can not appear in object pattern");
           continue;
         }
         ++nshared;
         size_t name = klgen_newstring(gen, fields[i].name);
-        klgen_emit(gen, klinst_loadc(klgen_stacktop(gen), name), klgen_cstposition(pattern));
+        klgen_emit(gen, klinst_loadc(klgen_stacktop(gen), name), klgen_astposition(pattern));
         klgen_stackalloc1(gen);
       }
-      KlCst** vals = klclass->vals;
+      KlAst** vals = klclass->vals;
       if (klgen_pattern_allislval_maynull(vals, nval)) {
-        klgen_emit_objbinding(gen, nshared, target - nshared, obj, klgen_cstposition(pattern));
+        klgen_emit_objbinding(gen, nshared, target - nshared, obj, klgen_astposition(pattern));
         klgen_stackfree(gen, obj);
         return target - nshared;
       }
-      klgen_emit_objbinding(gen, nshared, obj, obj, klgen_cstposition(pattern));
+      klgen_emit_objbinding(gen, nshared, obj, obj, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + nshared);
       for (size_t i = nval; i--;) {
         if (!fields[i].shared) continue;
@@ -248,9 +242,9 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
     }
     case KLCST_EXPR_MAP: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstMap* map = klcast(KlCstMap*, pattern);
-      KlCst** vals = map->vals;
-      KlCst** keys = map->keys;
+      KlAstMap* map = klcast(KlAstMap*, pattern);
+      KlAst** vals = map->vals;
+      KlAst** keys = map->keys;
       size_t npair = map->npair;
       size_t obj = klgen_stacktop(gen) - 1;
       for (size_t i = 0; i < npair; ++i)
@@ -258,11 +252,11 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
       klgen_stackalloc(gen, 2); /* need extra stack space in runtime */
       klgen_stackfree(gen, klgen_stacktop(gen) - 2);
       if (klgen_pattern_allislval(vals, npair)) {
-        klgen_emit_mapbinding(gen, npair, target - npair, obj, klgen_cstposition(pattern));
+        klgen_emit_mapbinding(gen, npair, target - npair, obj, klgen_astposition(pattern));
         klgen_stackfree(gen, obj);
         return target - npair;
       }
-      klgen_emit_mapbinding(gen, npair, obj, obj, klgen_cstposition(pattern));
+      klgen_emit_mapbinding(gen, npair, obj, obj, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + npair);
       for (size_t i = npair; i--;)
         target = klgen_pattern_binding(gen, vals[i], target);
@@ -273,13 +267,13 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
       KlStrDesc methodname = klgen_pattern_methodname(gen, pattern);
       size_t method = klgen_newstring(gen, methodname);
       size_t obj = klgen_stacktop(gen) - 1;
-      KlCstBin* bin = klcast(KlCstBin*, pattern);
+      KlAstBin* bin = klcast(KlAstBin*, pattern);
       if (klgen_pattern_islval(bin->loperand) && klgen_pattern_islval(bin->roperand)) {
-        klgen_emit_genericbinding(gen, 2, target - 2, method, obj, 0, klgen_cstposition(pattern));
+        klgen_emit_genericbinding(gen, 2, target - 2, method, obj, 0, klgen_astposition(pattern));
         klgen_stackfree(gen, obj);
         return target - 2;
       }
-      klgen_emit_genericbinding(gen, 2, obj, method, obj, 0, klgen_cstposition(pattern));
+      klgen_emit_genericbinding(gen, 2, obj, method, obj, 0, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + 2);
       target = klgen_pattern_binding(gen, bin->roperand, target);
       return klgen_pattern_binding(gen, bin->loperand, target);
@@ -289,30 +283,30 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
       KlStrDesc methodname = klgen_pattern_methodname(gen, pattern);
       size_t method = klgen_newstring(gen, methodname);
       size_t obj = klgen_stacktop(gen) - 1;
-      KlCstPre* pre = klcast(KlCstPre*, pattern);
+      KlAstPre* pre = klcast(KlAstPre*, pattern);
       if (klgen_pattern_islval(pre->operand)) {
-        klgen_emit_genericbinding(gen, 2, target - 1, method, obj, 0, klgen_cstposition(pattern));
+        klgen_emit_genericbinding(gen, 2, target - 1, method, obj, 0, klgen_astposition(pattern));
         klgen_stackfree(gen, obj);
         return target - 1;
       }
-      klgen_emit_genericbinding(gen, 1, obj, method, obj, 0, klgen_cstposition(pattern));
+      klgen_emit_genericbinding(gen, 1, obj, method, obj, 0, klgen_astposition(pattern));
       return klgen_pattern_binding(gen, pre->operand, target);
     }
     case KLCST_EXPR_CALL: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlStrDesc methodname = klgen_pattern_methodname(gen, pattern);
       size_t method = klgen_newstring(gen, methodname);
-      KlCstCall* call = klcast(KlCstCall*, pattern);
-      KlCstTuple* args = klcast(KlCstTuple*, call->args);
+      KlAstCall* call = klcast(KlAstCall*, pattern);
+      KlAstTuple* args = klcast(KlAstTuple*, call->args);
       size_t obj = klgen_stacktop(gen) - 1;
       size_t nelem = args->nelem;
-      KlCst** elems = args->elems;
+      KlAst** elems = args->elems;
       if (klgen_pattern_allislval(elems, nelem)) {
-        klgen_emit_genericbinding(gen, args->nelem, target - nelem, method, obj, 0, klgen_cstposition(pattern));
+        klgen_emit_genericbinding(gen, args->nelem, target - nelem, method, obj, 0, klgen_astposition(pattern));
         klgen_stackfree(gen, obj);
         return target - nelem;
       }
-      klgen_emit_genericbinding(gen, args->nelem, obj, method, obj, 0, klgen_cstposition(pattern));
+      klgen_emit_genericbinding(gen, args->nelem, obj, method, obj, 0, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + nelem);
       for (size_t i = nelem; i--;)
         target = klgen_pattern_binding(gen, elems[i], target);
@@ -320,14 +314,14 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
     }
     case KLCST_EXPR_POST: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstPost* post = klcast(KlCstPost*, pattern);
+      KlAstPost* post = klcast(KlAstPost*, pattern);
       if (post->op != KLTK_INDEX) {
         klgen_stackfree(gen, klgen_stacktop(gen) - 1);
-        klgen_error(gen, klcst_begin(pattern), klcst_end(pattern), "unsupported pattern");
+        klgen_error(gen, klast_begin(pattern), klast_end(pattern), "unsupported pattern");
         return target;
       }
       size_t obj = klgen_stacktop(gen) - 1;
-      klgen_emitmove(gen, target - 1, obj, 1, klgen_cstposition(pattern));
+      klgen_emitmove(gen, target - 1, obj, 1, klgen_astposition(pattern));
       klgen_stackfree(gen, obj);
       return target - 1;
     }
@@ -335,33 +329,33 @@ size_t klgen_pattern_binding(KlGenUnit* gen, KlCst* pattern, size_t target) {
     case KLCST_EXPR_ID: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       size_t obj = klgen_stacktop(gen) - 1;
-      klgen_emitmove(gen, target - 1, obj, 1, klgen_cstposition(pattern));
+      klgen_emitmove(gen, target - 1, obj, 1, klgen_astposition(pattern));
       klgen_stackfree(gen, obj);
       return target - 1;
     }
     case KLCST_EXPR_CONSTANT: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      klgen_pattern_constant_mustmatch(gen, klcast(KlCstConstant*, pattern));
+      klgen_pattern_constant_match(gen, klcast(KlAstConstant*, pattern));
       klgen_stackfree(gen, klgen_stacktop(gen) - 1);
       return target;
     }
     case KLCST_EXPR_VARARG:
     default: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      klgen_error(gen, klcst_begin(pattern), klcst_end(pattern), "unsupported pattern '...'");
+      klgen_error(gen, klast_begin(pattern), klast_end(pattern), "unsupported pattern '...'");
       klgen_stackfree(gen, klgen_stacktop(gen) - 1);
       return target;
     }
   }
 }
 
-static bool klgen_pattern_fastbinding_check(KlGenUnit* gen, KlCst* pattern) {
-  switch (klcst_kind(pattern)) {
+static bool klgen_pattern_fastbinding_check(KlGenUnit* gen, KlAst* pattern) {
+  switch (klast_kind(pattern)) {
     case KLCST_EXPR_TUPLE: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, pattern);
+      KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
       size_t nelem = tuple->nelem;
       if (nelem == 0) return true;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       for (size_t i = 0; i < nelem - 1; ++i) {
         if (!klgen_pattern_islval(elems[i]))
           return false;
@@ -369,17 +363,17 @@ static bool klgen_pattern_fastbinding_check(KlGenUnit* gen, KlCst* pattern) {
       return klgen_pattern_fastbinding_check(gen, elems[nelem - 1]);
     }
     case KLCST_EXPR_ARR: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
+      KlAstTuple* tuple = klcast(KlAstTuple*, klcast(KlAstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
       if (nelem == 0) return true;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       size_t i = 0;
       for (; i < nelem; ++i) {
         if (!klgen_pattern_islval(elems[i]))
           break;
       }
       if (i == nelem) return true;
-      if (klcst_kind(elems[i]) == KLCST_EXPR_VARARG) {
+      if (klast_kind(elems[i]) == KLCST_EXPR_VARARG) {
         for (++i; i < nelem; ++i) {
           if (!klgen_pattern_islval(elems[i]))
             break;
@@ -390,10 +384,10 @@ static bool klgen_pattern_fastbinding_check(KlGenUnit* gen, KlCst* pattern) {
       return klgen_pattern_fastbinding_check(gen, elems[i]);
     }
     case KLCST_EXPR_CLASS: {
-      KlCstClass* klclass = klcast(KlCstClass*, pattern);
+      KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
       if (nval == 0) return true;
-      KlCst** vals = klclass->vals;
+      KlAst** vals = klclass->vals;
       for (size_t i = 0; i < nval - 1; ++i) {
         if (!vals[i]) continue;
         if (!klgen_pattern_islval(vals[i]))
@@ -403,10 +397,10 @@ static bool klgen_pattern_fastbinding_check(KlGenUnit* gen, KlCst* pattern) {
       return klgen_pattern_fastbinding_check(gen, vals[nval - 1]);
     }
     case KLCST_EXPR_MAP: {
-      KlCstMap* map = klcast(KlCstMap*, pattern);
+      KlAstMap* map = klcast(KlAstMap*, pattern);
       size_t nval = map->npair;
       if (nval == 0) return true;
-      KlCst** vals = map->vals;
+      KlAst** vals = map->vals;
       for (size_t i = 0; i < nval - 1; ++i) {
         if (!klgen_pattern_islval(vals[i]))
           return false;
@@ -414,21 +408,21 @@ static bool klgen_pattern_fastbinding_check(KlGenUnit* gen, KlCst* pattern) {
       return klgen_pattern_fastbinding_check(gen, vals[nval - 1]);
     }
     case KLCST_EXPR_BIN: {
-      KlCstBin* bin = klcast(KlCstBin*, pattern);
+      KlAstBin* bin = klcast(KlAstBin*, pattern);
       if (!klgen_pattern_islval(bin->loperand))
         return false;
       return klgen_pattern_fastbinding_check(gen, bin->roperand);
     }
     case KLCST_EXPR_PRE: {
-      KlCstPre* pre = klcast(KlCstPre*, pattern);
+      KlAstPre* pre = klcast(KlAstPre*, pattern);
       return klgen_pattern_fastbinding_check(gen, pre->operand);
     }
     case KLCST_EXPR_CALL: {
-      KlCstCall* call = klcast(KlCstCall*, pattern);
-      return klgen_pattern_fastbinding_check(gen, klcst(call->args));
+      KlAstCall* call = klcast(KlAstCall*, pattern);
+      return klgen_pattern_fastbinding_check(gen, klast(call->args));
     }
     case KLCST_EXPR_POST: {
-      KlCstPost* post = klcast(KlCstPost*, pattern);
+      KlAstPost* post = klcast(KlAstPost*, pattern);
       return post->op == KLTK_INDEX;
     }
     case KLCST_EXPR_DOT: {
@@ -449,15 +443,15 @@ static bool klgen_pattern_fastbinding_check(KlGenUnit* gen, KlCst* pattern) {
   }
 }
 
-static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
-  switch (klcst_kind(pattern)) {
+static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlAst* pattern) {
+  switch (klast_kind(pattern)) {
     case KLCST_EXPR_TUPLE: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstTuple* tuple = klcast(KlCstTuple*, pattern);
+      KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       size_t obj = klgen_stacktop(gen) - 1;
-      klgen_emit_exactarraybinding(gen, nelem, obj, obj, klgen_cstposition(tuple));
+      klgen_emit_exactarraybinding(gen, nelem, obj, obj, klgen_astposition(tuple));
       klgen_stackfree(gen, obj + nelem);
       if (nelem == 0) return;
       klgen_pattern_do_fastbinding(gen, elems[nelem - 1]);
@@ -465,23 +459,23 @@ static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
     }
     case KLCST_EXPR_ARR: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
+      KlAstTuple* tuple = klcast(KlAstTuple*, klcast(KlAstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       size_t nfront;
       size_t nback;
       size_t obj = klgen_stacktop(gen) - 1;
       if (klgen_pattern_array_get_nfront_and_nback(gen, elems, nelem, &nfront, &nback)) {
-        klgen_emit_arraybinding(gen, nfront, nback, obj, obj, klgen_cstposition(pattern));
+        klgen_emit_arraybinding(gen, nfront, nback, obj, obj, klgen_astposition(pattern));
         klgen_stackfree(gen, obj + nfront + nback);
         for (size_t i = nelem; i--;) {
-          if (klcst_kind(elems[i]) != KLCST_EXPR_VARARG) {
+          if (klast_kind(elems[i]) != KLCST_EXPR_VARARG) {
             klgen_pattern_do_fastbinding(gen, elems[i]);
             return;
           }
         }
       } else {
-        klgen_emit_exactarraybinding(gen, nelem, obj, obj, klgen_cstposition(pattern));
+        klgen_emit_exactarraybinding(gen, nelem, obj, obj, klgen_astposition(pattern));
         klgen_stackfree(gen, obj + nelem);
         if (nelem == 0) return;
         klgen_pattern_do_fastbinding(gen, elems[nelem - 1]);
@@ -490,25 +484,25 @@ static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
     }
     case KLCST_EXPR_CLASS: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstClass* klclass = klcast(KlCstClass*, pattern);
+      KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
-      KlCst** vals = klclass->vals;
-      KlCstClassFieldDesc* fields = klclass->fields;
+      KlAst** vals = klclass->vals;
+      KlAstClassFieldDesc* fields = klclass->fields;
       size_t obj = klgen_stacktop(gen) - 1;
       size_t nshared = 0;
-      KlCst* lastshared = NULL;
+      KlAst* lastshared = NULL;
       for (size_t i = 0; i < nval; ++i) {
         if (!fields[i].shared) {
-          klgen_error(gen, klcst_begin(pattern), klcst_end(pattern), "'local' can not appeared in object pattern");
+          klgen_error(gen, klast_begin(pattern), klast_end(pattern), "'local' can not appeared in object pattern");
           continue;
         }
         ++nshared;
         size_t name = klgen_newstring(gen, fields[i].name);
-        klgen_emit(gen, klinst_loadc(klgen_stacktop(gen), name), klgen_cstposition(pattern));
+        klgen_emit(gen, klinst_loadc(klgen_stacktop(gen), name), klgen_astposition(pattern));
         klgen_stackalloc1(gen);
         lastshared = vals[i];
       }
-      klgen_emit_objbinding(gen, nshared, obj, obj, klgen_cstposition(pattern));
+      klgen_emit_objbinding(gen, nshared, obj, obj, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + nshared);
       if (nshared == 0) return;
       klgen_pattern_do_fastbinding(gen, lastshared);
@@ -516,16 +510,16 @@ static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
     }
     case KLCST_EXPR_MAP: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCstMap* map = klcast(KlCstMap*, pattern);
-      KlCst** vals = map->vals;
-      KlCst** keys = map->keys;
+      KlAstMap* map = klcast(KlAstMap*, pattern);
+      KlAst** vals = map->vals;
+      KlAst** keys = map->keys;
       size_t npair = map->npair;
       size_t obj = klgen_stacktop(gen) - 1;
       for (size_t i = 0; i < npair; ++i)
         klgen_exprtarget_noconst(gen, keys[i], klgen_stacktop(gen));
       klgen_stackalloc(gen, 2); /* need extra stack space in runtime */
       klgen_stackfree(gen, klgen_stacktop(gen) - 2);
-      klgen_emit_mapbinding(gen, npair, obj, obj, klgen_cstposition(pattern));
+      klgen_emit_mapbinding(gen, npair, obj, obj, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + npair);
       if (npair == 0) return;
       klgen_pattern_do_fastbinding(gen, vals[npair - 1]);
@@ -536,9 +530,9 @@ static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
       KlStrDesc methodname = klgen_pattern_methodname(gen, pattern);
       size_t method = klgen_newstring(gen, methodname);
       size_t obj = klgen_stacktop(gen) - 1;
-      klgen_emit_genericbinding(gen, 2, obj, method, obj, 0, klgen_cstposition(pattern));
+      klgen_emit_genericbinding(gen, 2, obj, method, obj, 0, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + 2);
-      KlCstBin* bin = klcast(KlCstBin*, pattern);
+      KlAstBin* bin = klcast(KlAstBin*, pattern);
       klgen_pattern_do_fastbinding(gen, bin->roperand);
       return;
     }
@@ -547,8 +541,8 @@ static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
       KlStrDesc methodname = klgen_pattern_methodname(gen, pattern);
       size_t method = klgen_newstring(gen, methodname);
       size_t obj = klgen_stacktop(gen) - 1;
-      klgen_emit_genericbinding(gen, 1, obj, method, obj, 0, klgen_cstposition(pattern));
-      KlCstPre* pre = klcast(KlCstPre*, pattern);
+      klgen_emit_genericbinding(gen, 1, obj, method, obj, 0, klgen_astposition(pattern));
+      KlAstPre* pre = klcast(KlAstPre*, pattern);
       klgen_pattern_do_fastbinding(gen, pre->operand);
       return;
     }
@@ -556,18 +550,18 @@ static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlStrDesc methodname = klgen_pattern_methodname(gen, pattern);
       size_t method = klgen_newstring(gen, methodname);
-      KlCstCall* call = klcast(KlCstCall*, pattern);
-      KlCstTuple* args = klcast(KlCstTuple*, call->args);
+      KlAstCall* call = klcast(KlAstCall*, pattern);
+      KlAstTuple* args = klcast(KlAstTuple*, call->args);
       size_t obj = klgen_stacktop(gen) - 1;
       size_t nelem = args->nelem;
-      klgen_emit_genericbinding(gen, args->nelem, obj, method, obj, 0, klgen_cstposition(pattern));
+      klgen_emit_genericbinding(gen, args->nelem, obj, method, obj, 0, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + nelem);
       if (nelem == 0) return;
       klgen_pattern_do_fastbinding(gen, args->elems[nelem - 1]);
       return;
     }
     case KLCST_EXPR_POST: {
-      kl_assert(klcast(KlCstPost*, pattern)->op == KLTK_INDEX, "");
+      kl_assert(klcast(KlAstPost*, pattern)->op == KLTK_INDEX, "");
       return;
     }
     case KLCST_EXPR_DOT: {
@@ -578,13 +572,13 @@ static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
     }
     case KLCST_EXPR_VARARG: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      klgen_error(gen, klcst_begin(pattern), klcst_end(pattern), "unsupported pattern '...'");
+      klgen_error(gen, klast_begin(pattern), klast_end(pattern), "unsupported pattern '...'");
       klgen_stackfree(gen, klgen_stacktop(gen) - 1);
       return;
     }
     case KLCST_EXPR_CONSTANT: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      klgen_pattern_constant_mustmatch(gen, klcast(KlCstConstant*, pattern));
+      klgen_pattern_constant_match(gen, klcast(KlAstConstant*, pattern));
       klgen_stackfree(gen, klgen_stacktop(gen) - 1);
       return;
     }
@@ -595,44 +589,44 @@ static void klgen_pattern_do_fastbinding(KlGenUnit* gen, KlCst* pattern) {
   }
 }
 
-void klgen_pattern_binding_tostktop(KlGenUnit* gen, KlCst* pattern, size_t val) {
+void klgen_pattern_binding_tostktop(KlGenUnit* gen, KlAst* pattern, size_t val) {
   size_t stktop = klgen_stacktop(gen);
   if (klgen_pattern_fastbinding_check(gen, pattern)) {
-    klgen_emitmove(gen, stktop, val, 1, klgen_cstposition(gen));
+    klgen_emitmove(gen, stktop, val, 1, klgen_astposition(gen));
     klgen_stackalloc1(gen);
     klgen_pattern_do_fastbinding(gen, pattern);
   } else {
     size_t nres = klgen_pattern_count_result(gen, pattern);
-    klgen_emitmove(gen, stktop + nres, val, 1, klgen_cstposition(gen));
+    klgen_emitmove(gen, stktop + nres, val, 1, klgen_astposition(gen));
     klgen_stackalloc(gen, nres + 1);
     klgen_pattern_binding(gen, pattern, stktop + nres);
   }
 }
 
-size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern) {
-  switch (klcst_kind(pattern)) {
+size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
+  switch (klast_kind(pattern)) {
     case KLCST_EXPR_TUPLE: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, pattern);
+      KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       size_t count = 0;
       for (size_t i = 0; i < nelem; ++i)
         count += klgen_pattern_count_result(gen, elems[i]);
       return count;
     }
     case KLCST_EXPR_ARR: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
+      KlAstTuple* tuple = klcast(KlAstTuple*, klcast(KlAstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       size_t count = 0;
       for (size_t i = 0; i < nelem; ++i)
         count += klgen_pattern_count_result(gen, elems[i]);
       return count;
     }
     case KLCST_EXPR_CLASS: {
-      KlCstClass* klclass = klcast(KlCstClass*, pattern);
+      KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
-      KlCst** vals = klclass->vals;
+      KlAst** vals = klclass->vals;
       size_t count = 0;
       for (size_t i = 0; i < nval; ++i) {
         if (!vals[i]) continue;
@@ -641,8 +635,8 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern) {
       return count;
     }
     case KLCST_EXPR_MAP: {
-      KlCstMap* map = klcast(KlCstMap*, pattern);
-      KlCst** vals = map->vals;
+      KlAstMap* map = klcast(KlAstMap*, pattern);
+      KlAst** vals = map->vals;
       size_t nval = map->npair;
       size_t count = 0;
       for (size_t i = 0; i < nval; ++i)
@@ -650,20 +644,20 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern) {
       return count;
     }
     case KLCST_EXPR_BIN: {
-      KlCstBin* bin = klcast(KlCstBin*, pattern);
+      KlAstBin* bin = klcast(KlAstBin*, pattern);
       return klgen_pattern_count_result(gen, bin->loperand) +
              klgen_pattern_count_result(gen, bin->roperand);
     }
     case KLCST_EXPR_PRE: {
-      KlCstPre* pre = klcast(KlCstPre*, pattern);
+      KlAstPre* pre = klcast(KlAstPre*, pattern);
       return klgen_pattern_count_result(gen, pre->operand);
     }
     case KLCST_EXPR_CALL: {
-      KlCstCall* call = klcast(KlCstCall*, pattern);
-      return klgen_pattern_count_result(gen, klcst(call->args));
+      KlAstCall* call = klcast(KlAstCall*, pattern);
+      return klgen_pattern_count_result(gen, klast(call->args));
     }
     case KLCST_EXPR_POST: {
-      KlCstPost* post = klcast(KlCstPost*, pattern);
+      KlAstPost* post = klcast(KlAstPost*, pattern);
       if (post->op == KLTK_INDEX)
         return 1;
       return 0;
@@ -684,35 +678,35 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlCst* pattern) {
   }
 }
 
-bool klgen_pattern_fastbinding(KlGenUnit* gen, KlCst* pattern) {
+bool klgen_pattern_fastbinding(KlGenUnit* gen, KlAst* pattern) {
   if (!klgen_pattern_fastbinding_check(gen, pattern))
     return false;
   klgen_pattern_do_fastbinding(gen, pattern);
   return true;
 }
 
-void klgen_pattern_do_assignment(KlGenUnit* gen, KlCst* pattern) {
-  switch (klcst_kind(pattern)) {
+void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
+  switch (klast_kind(pattern)) {
     case KLCST_EXPR_TUPLE: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, pattern);
+      KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       for (size_t i = nelem; i-- > 0;)
         klgen_pattern_do_assignment(gen, elems[i]);
       break;
     }
     case KLCST_EXPR_ARR: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
+      KlAstTuple* tuple = klcast(KlAstTuple*, klcast(KlAstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       for (size_t i = nelem; i-- > 0;)
         klgen_pattern_do_assignment(gen, elems[i]);
       break;
     }
     case KLCST_EXPR_CLASS: {
-      KlCstClass* klclass = klcast(KlCstClass*, pattern);
+      KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
-      KlCst** vals = klclass->vals;
+      KlAst** vals = klclass->vals;
       for (size_t i = nval; i-- > 0;) {
         if (!vals[i]) continue;
         klgen_pattern_do_assignment(gen, vals[i]);
@@ -720,35 +714,35 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlCst* pattern) {
       break;
     }
     case KLCST_EXPR_MAP: {
-      KlCstMap* map = klcast(KlCstMap*, pattern);
-      KlCst** vals = map->vals;
+      KlAstMap* map = klcast(KlAstMap*, pattern);
+      KlAst** vals = map->vals;
       size_t nval = map->npair;
       for (size_t i = nval; i-- > 0;)
         klgen_pattern_do_assignment(gen, vals[i]);
       break;
     }
     case KLCST_EXPR_BIN: {
-      KlCstBin* bin = klcast(KlCstBin*, pattern);
+      KlAstBin* bin = klcast(KlAstBin*, pattern);
       klgen_pattern_do_assignment(gen, bin->roperand);
       klgen_pattern_do_assignment(gen, bin->loperand);
       break;
     }
     case KLCST_EXPR_PRE: {
-      KlCstPre* pre = klcast(KlCstPre*, pattern);
+      KlAstPre* pre = klcast(KlAstPre*, pattern);
       klgen_pattern_do_assignment(gen, pre->operand);
       break;
     }
     case KLCST_EXPR_CALL: {
-      KlCstCall* call = klcast(KlCstCall*, pattern);
-      klgen_pattern_do_assignment(gen, klcst(call->args));
+      KlAstCall* call = klcast(KlAstCall*, pattern);
+      klgen_pattern_do_assignment(gen, klast(call->args));
       break;
     }
     case KLCST_EXPR_POST: {
-      KlCstPost* post = klcast(KlCstPost*, pattern);
+      KlAstPost* post = klcast(KlAstPost*, pattern);
       if (post->op == KLTK_INDEX) {
         kl_assert(klgen_stacktop(gen) > 0, "");
         size_t back = klgen_stacktop(gen) - 1;
-        klgen_assignfrom(gen, klcst(post), back);
+        klgen_assignfrom(gen, klast(post), back);
         klgen_stackfree(gen, back);
       }
       break;
@@ -771,28 +765,28 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlCst* pattern) {
   }
 }
 
-size_t klgen_pattern_newsymbol(KlGenUnit* gen, KlCst* pattern, size_t base) {
-  switch (klcst_kind(pattern)) {
+size_t klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, size_t base) {
+  switch (klast_kind(pattern)) {
     case KLCST_EXPR_TUPLE: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, pattern);
+      KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       for (size_t i = 0; i < nelem; ++i)
         base = klgen_pattern_newsymbol(gen, elems[i], base);
       return base;
     }
     case KLCST_EXPR_ARR: {
-      KlCstTuple* tuple = klcast(KlCstTuple*, klcast(KlCstArray*, pattern)->exprlist);
+      KlAstTuple* tuple = klcast(KlAstTuple*, klcast(KlAstArray*, pattern)->exprlist);
       size_t nelem = tuple->nelem;
-      KlCst** elems = tuple->elems;
+      KlAst** elems = tuple->elems;
       for (size_t i = 0; i < nelem; ++i)
         base = klgen_pattern_newsymbol(gen, elems[i], base);
       return base;
     }
     case KLCST_EXPR_CLASS: {
-      KlCstClass* klclass = klcast(KlCstClass*, pattern);
+      KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
-      KlCst** vals = klclass->vals;
+      KlAst** vals = klclass->vals;
       for (size_t i = 0; i < nval; ++i) {
         if (!vals[i]) continue;
         base = klgen_pattern_newsymbol(gen, vals[i], base);
@@ -800,40 +794,40 @@ size_t klgen_pattern_newsymbol(KlGenUnit* gen, KlCst* pattern, size_t base) {
       return base;
     }
     case KLCST_EXPR_MAP: {
-      KlCstMap* map = klcast(KlCstMap*, pattern);
-      KlCst** vals = map->vals;
+      KlAstMap* map = klcast(KlAstMap*, pattern);
+      KlAst** vals = map->vals;
       size_t nval = map->npair;
       for (size_t i = 0; i < nval; ++i)
         base = klgen_pattern_newsymbol(gen, vals[i], base);
       return base;
     }
     case KLCST_EXPR_BIN: {
-      KlCstBin* bin = klcast(KlCstBin*, pattern);
+      KlAstBin* bin = klcast(KlAstBin*, pattern);
       base = klgen_pattern_newsymbol(gen, bin->loperand, base);
       return klgen_pattern_newsymbol(gen, bin->roperand, base);
     }
     case KLCST_EXPR_PRE: {
-      KlCstPre* pre = klcast(KlCstPre*, pattern);
+      KlAstPre* pre = klcast(KlAstPre*, pattern);
       return klgen_pattern_newsymbol(gen, pre->operand, base);
     }
     case KLCST_EXPR_CALL: {
-      KlCstCall* call = klcast(KlCstCall*, pattern);
-      return klgen_pattern_newsymbol(gen, klcst(call->args), base);
+      KlAstCall* call = klcast(KlAstCall*, pattern);
+      return klgen_pattern_newsymbol(gen, klast(call->args), base);
     }
     case KLCST_EXPR_POST: {
-      KlCstPost* post = klcast(KlCstPost*, pattern);
+      KlAstPost* post = klcast(KlAstPost*, pattern);
       if (post->op == KLTK_INDEX) {
-        klgen_error(gen, klcst_begin(pattern), klcst_end(pattern), "expected an identifier");
+        klgen_error(gen, klast_begin(pattern), klast_end(pattern), "expected an identifier");
         return base + 1;
       }
       return base;
     }
     case KLCST_EXPR_DOT: {
-      klgen_error(gen, klcst_begin(pattern), klcst_end(pattern), "expected an identifier");
+      klgen_error(gen, klast_begin(pattern), klast_end(pattern), "expected an identifier");
       return base + 1;
     }
     case KLCST_EXPR_ID: {
-      klgen_newsymbol(gen, klcast(KlCstIdentifier*, pattern)->id, base, klgen_cstposition(pattern));
+      klgen_newsymbol(gen, klcast(KlAstIdentifier*, pattern)->id, base, klgen_astposition(pattern));
       return base + 1;
     }
     case KLCST_EXPR_VARARG:
@@ -844,4 +838,14 @@ size_t klgen_pattern_newsymbol(KlGenUnit* gen, KlCst* pattern, size_t base) {
       return base;
     }
   }
+}
+
+void klgen_pattern_fastmatching(KlGenUnit* gen, KlAst* pattern) {
+  kl_unused(gen); kl_unused(pattern);
+  kltodo("implement pattern-matching");
+}
+
+void klgen_pattern_matching(KlGenUnit* gen, KlAst* pattern, size_t target) {
+  kl_unused(gen); kl_unused(pattern); kl_unused(target);
+  kltodo("implement pattern-matching");
 }

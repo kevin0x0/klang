@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 typedef struct tagKlRefInfo {
-  uint8_t index;
+  KlUByte index;
   bool on_stack;
 } KlRefInfo;
 

@@ -3,16 +3,16 @@
 
 #include "include/code/klgen.h"
 #include "include/code/klcodeval.h"
-#include "include/cst/klcst.h"
-#include "include/cst/klcst.h"
+#include "include/ast/klast.h"
+#include "include/ast/klast.h"
 
 
-KlCodeVal klgen_exprbool(KlGenUnit* gen, KlCst* cst, bool jumpcond);
-KlCodeVal klgen_exprnot(KlGenUnit* gen, KlCstPre* notcst, bool jumpcond);
-KlCodeVal klgen_expror(KlGenUnit* gen, KlCstBin* orcst, bool jumpcond);
-KlCodeVal klgen_exprand(KlGenUnit* gen, KlCstBin* andcst, bool jumpcond);
+KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAst* ast, bool jumpcond);
+KlCodeVal klgen_exprnot(KlGenUnit* gen, KlAstPre* notast, bool jumpcond);
+KlCodeVal klgen_expror(KlGenUnit* gen, KlAstBin* orast, bool jumpcond);
+KlCodeVal klgen_exprand(KlGenUnit* gen, KlAstBin* andast, bool jumpcond);
 
-KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlCst* cst, size_t target);
+KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlAst* ast, size_t target);
 void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, size_t jmppos);
 
 

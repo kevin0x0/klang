@@ -1,6 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_VM_KLSTATE_H
 #define KEVCC_KLANG_INCLUDE_VM_KLSTATE_H
 
+#include "include/lang/kltypes.h"
 #include "include/mm/klmm.h"
 #include "include/value/klcoroutine.h"
 #include "include/vm/klstack.h"
@@ -44,10 +45,10 @@ struct tagKlCallInfo {
     KlInstruction* savedpc;     /* pointed to current klang instruction */
     KlCIUD resume_ud;           /* userdata for C call when coroutine resuming */
   };
-  int32_t retoff;               /* the offset of position relative to stkbase where returned values place. */
-  uint32_t narg;                 /* actual number of received arguments */
-  uint8_t nret;                 /* expected number of returned value */
-  uint8_t status;
+  int retoff;                   /* the offset of position relative to stkbase where returned values place. */
+  KlUnsigned narg;              /* actual number of received arguments */
+  KlUByte nret;                 /* expected number of returned value */
+  KlUByte status;
 };
 
 typedef struct tagKlState {

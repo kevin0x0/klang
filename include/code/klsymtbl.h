@@ -1,7 +1,7 @@
 #ifndef KEVCC_KLANG_INCLUDE_CODE_KLSYMTBL_H
 #define KEVCC_KLANG_INCLUDE_CODE_KLSYMTBL_H
 
-#include "include/cst/klstrtbl.h"
+#include "include/ast/klstrtbl.h"
 #include "include/misc/klutils.h"
 #include "include/code/klcodeval.h"
 #include "include/code/klcode.h"

@@ -21,8 +21,8 @@
 typedef struct tagKlClosure {
   KL_DERIVE_FROM(KlGCObject, _gcbase_);
   void* func;
-  size_t nref;
   int status;
+  unsigned short nref;
   KlRef* refs[];
 } KlClosure;
 
@@ -30,16 +30,16 @@ typedef struct tagKlClosure {
 typedef struct tagKlKClosure {
   KL_DERIVE_FROM(KlGCObject, _gcbase_);
   KlKFunction* kfunc;
-  size_t nref;
   int status;
+  unsigned short nref;
   KlRef* refs[];
 } KlKClosure;
 
 typedef struct tagKlCClosure {
   KL_DERIVE_FROM(KlGCObject, _gcbase_);
   KlCFunction* cfunc;
-  size_t nref;
   int status;
+  unsigned short nref;
   KlRef* refs[];
 } KlCClosure;
 

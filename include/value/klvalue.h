@@ -3,7 +3,6 @@
 
 #include "include/lang/kltypes.h"
 #include "include/mm/klmm.h"
-#include "include/value/klbool.h"
 #include "include/value/klcfunc.h"
 
 #include <stdbool.h>
@@ -45,6 +44,11 @@ typedef enum tagKlType {
 
 typedef KlLangInt KlInt;
 typedef KlLangFloat KlFloat;
+typedef KlLangBool KlBool;
+
+#define KL_TRUE   KLLANG_TRUE
+#define KL_FALSE  KLLANG_FALSE
+
 
 typedef struct tagKlValue {
   union {
