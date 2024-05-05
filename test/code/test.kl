@@ -1,1 +1,1 @@
-let [1, 2, a] = [3, 4, 4];
+let {: "hello" : "hello", "mama" : mama :} = {::};
