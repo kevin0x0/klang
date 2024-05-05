@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_VALUE_KLCOROUTINE_H
-#define KEVCC_KLANG_INCLUDE_VALUE_KLCOROUTINE_H
+#ifndef _KLANG_INCLUDE_VALUE_KLCOROUTINE_H_
+#define _KLANG_INCLUDE_VALUE_KLCOROUTINE_H_
 
 #include "include/misc/klutils.h"
 #include "include/mm/klmm.h"

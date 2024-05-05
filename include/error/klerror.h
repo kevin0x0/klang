@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_ERROR_KLERROR_H
-#define KEVCC_KLANG_INCLUDE_ERROR_KLERROR_H
+#ifndef __INCLUDE_ERROR_KLERROR_H__
+#define __INCLUDE_ERROR_KLERROR_H__
 
 #include "deps/k/include/kio/ki.h"
 #include "deps/k/include/kio/ko.h"

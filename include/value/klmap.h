@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_KLMAP_H
-#define KEVCC_KLANG_INCLUDE_KLMAP_H
+#ifndef _KLANG_INCLUDE_KLMAP_H_
+#define _KLANG_INCLUDE_KLMAP_H_
 
 #include "include/mm/klmm.h"
 #include "include/value/klclass.h"

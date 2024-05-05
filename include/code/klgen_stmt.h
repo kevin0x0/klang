@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_CODE_KLGEN_STMT_H
-#define KEVCC_KLANG_INCLUDE_CODE_KLGEN_STMT_H
+#ifndef _KLANG_INCLUDE_CODE_KLGEN_STMT_H_
+#define _KLANG_INCLUDE_CODE_KLGEN_STMT_H_
 
 #include "include/code/klgen.h"
 #include "include/code/klgen_expr.h"

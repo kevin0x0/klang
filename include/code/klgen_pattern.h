@@ -1,17 +1,15 @@
-/* code generator for pattern matching and pattern binding */
-
-#ifndef KEVCC_KLANG_INCLUDE_CODE_KLGEN_PATTERN_H
-#define KEVCC_KLANG_INCLUDE_CODE_KLGEN_PATTERN_H
+#ifndef _KLANG_INCLUDE_CODE_KLGEN_PATTERN_H_
+#define _KLANG_INCLUDE_CODE_KLGEN_PATTERN_H_
 #include "include/code/klgen.h"
 
 
 size_t klgen_pattern_binding(KlGenUnit* gen, KlAst* pattern, size_t target);
-void klgen_pattern_fastmatching(KlGenUnit* gen, KlAst* pattern);
-void klgen_pattern_matching(KlGenUnit* gen, KlAst* pattern, size_t target);
+size_t klgen_pattern_matching(KlGenUnit* gen, KlAst* pattern, size_t target);
 /* deconstruct a val to top of stack. */
 void klgen_pattern_binding_tostktop(KlGenUnit* gen, KlAst* pattern, size_t val);
 size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern);
 bool klgen_pattern_fastbinding(KlGenUnit* gen, KlAst* pattern);
+bool klgen_pattern_fastmatching(KlGenUnit* gen, KlAst* pattern);
 
 size_t klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, size_t base);
 void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern);

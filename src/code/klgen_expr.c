@@ -47,16 +47,16 @@ void klgen_exprvararg(KlGenUnit* gen, KlAstVararg* varargast, size_t nwanted, si
 
 static bool klgen_exprhasverres(KlGenUnit* gen, KlAst* expr) {
   switch (klast_kind(expr)) {
-    case KLCST_EXPR_YIELD: {
+    case KLAST_EXPR_YIELD: {
       return true;
     }
-    case KLCST_EXPR_CALL: {
+    case KLAST_EXPR_CALL: {
       return true;
     }
-    case KLCST_EXPR_WHERE: {
+    case KLAST_EXPR_WHERE: {
       return klgen_exprhasverres(gen, klcast(KlAstWhere*, expr)->expr);
     }
-    case KLCST_EXPR_VARARG: {
+    case KLAST_EXPR_VARARG: {
       return true;
     }
     default: {
@@ -113,7 +113,7 @@ static void klgen_exprfunc_deconstruct_params(KlGenUnit* gen, KlAstTuple* funcpa
   klgen_stackalloc(gen, npattern);
   for (size_t i = 0; i < npattern; ++i) {
     KlAst* pattern = patterns[i];
-    if (klast_kind(pattern) != KLCST_EXPR_ID) {
+    if (klast_kind(pattern) != KLAST_EXPR_ID) {
       if (i + 1 != npattern || !klgen_pattern_fastbinding(gen, pattern)) {
         /* is not last named parameter, or can not do fast deconstruction */
         /* move the to be deconstructed parameters to the top of stack */
@@ -319,7 +319,7 @@ static void klgen_method(KlGenUnit* gen, KlAst* objast, KlStrDesc method, KlAstT
 }
 
 void klgen_exprcall(KlGenUnit* gen, KlAstCall* callast, size_t nret, size_t target) {
-  if (klast_kind(callast->callable) == KLCST_EXPR_DOT) {
+  if (klast_kind(callast->callable) == KLAST_EXPR_DOT) {
     KlAstDot* dotast = klcast(KlAstDot*, callast->callable);
     klgen_method(gen, dotast->operand, dotast->field, callast->args, klgen_astposition(callast), nret, target);
     return;
@@ -341,7 +341,7 @@ void klgen_exprcall(KlGenUnit* gen, KlAstCall* callast, size_t nret, size_t targ
 void klgen_multival(KlGenUnit* gen, KlAst* ast, size_t nval, size_t target) {
   kl_assert(nval != KLINST_VARRES, "");
   switch (klast_kind(ast)) {
-    case KLCST_EXPR_YIELD: {
+    case KLAST_EXPR_YIELD: {
       size_t stktop = klgen_stacktop(gen);
       klgen_expryield(gen, klcast(KlAstYield*, ast), nval);
       if (stktop != target && nval != 0) {
@@ -350,19 +350,19 @@ void klgen_multival(KlGenUnit* gen, KlAst* ast, size_t nval, size_t target) {
       klgen_stackfree(gen, target + nval > stktop ? target + nval : stktop);
       break;
     }
-    case KLCST_EXPR_CALL: {
+    case KLAST_EXPR_CALL: {
       klgen_exprcall(gen, klcast(KlAstCall*, ast), nval, target);
       break;
     }
-    case KLCST_EXPR_WHERE: {
+    case KLAST_EXPR_WHERE: {
       klgen_exprwhere(gen, klcast(KlAstWhere*, ast), nval, target);
       break;
     }
-    case KLCST_EXPR_VARARG: {
+    case KLAST_EXPR_VARARG: {
       klgen_exprvararg(gen, klcast(KlAstVararg*, ast), nval, target);
       break;
     }
-    case KLCST_EXPR_TUPLE: {
+    case KLAST_EXPR_TUPLE: {
       size_t stktop = klgen_stacktop(gen);
       KlAst** elems = klcast(KlAstTuple*, ast)->elems;
       size_t nelem = klcast(KlAstTuple*, ast)->nelem;
@@ -398,25 +398,25 @@ void klgen_multival(KlGenUnit* gen, KlAst* ast, size_t nval, size_t target) {
 
 size_t klgen_trytakeall(KlGenUnit* gen, KlAst* ast, KlCodeVal* val) {
   switch (klast_kind(ast)) {
-    case KLCST_EXPR_YIELD: {
+    case KLAST_EXPR_YIELD: {
       size_t stktop = klgen_stacktop(gen);
       klgen_expryield(gen, klcast(KlAstYield*, ast), KLINST_VARRES);
       *val = klcodeval_stack(stktop);
       return KLINST_VARRES;
     }
-    case KLCST_EXPR_CALL: {
+    case KLAST_EXPR_CALL: {
       size_t stktop = klgen_stacktop(gen);
       klgen_exprcall(gen, klcast(KlAstCall*, ast), KLINST_VARRES, stktop);
       *val = klcodeval_stack(stktop);
       return KLINST_VARRES;
     }
-    case KLCST_EXPR_WHERE: {
+    case KLAST_EXPR_WHERE: {
       size_t stktop = klgen_stacktop(gen);
       size_t nres = klgen_exprwhere(gen, klcast(KlAstWhere*, ast), KLINST_VARRES, stktop);
       *val = klcodeval_stack(stktop);
       return nres;
     }
-    case KLCST_EXPR_VARARG: {
+    case KLAST_EXPR_VARARG: {
       size_t stktop = klgen_stacktop(gen);
       klgen_exprvararg(gen, klcast(KlAstVararg*, ast), KLINST_VARRES, stktop);
       *val = klcodeval_stack(stktop);
@@ -431,21 +431,21 @@ size_t klgen_trytakeall(KlGenUnit* gen, KlAst* ast, KlCodeVal* val) {
 
 size_t klgen_takeall(KlGenUnit* gen, KlAst* ast, size_t target) {
   switch (klast_kind(ast)) {
-    case KLCST_EXPR_YIELD: {
+    case KLAST_EXPR_YIELD: {
       size_t stktop = klgen_stacktop(gen);
       klgen_expryield(gen, klcast(KlAstYield*, ast), KLINST_VARRES);
       if (stktop != target)
         klgen_emitmove(gen, target, stktop, KLINST_VARRES, klgen_astposition(ast));
       return KLINST_VARRES;
     }
-    case KLCST_EXPR_CALL: {
+    case KLAST_EXPR_CALL: {
       klgen_exprcall(gen, klcast(KlAstCall*, ast), KLINST_VARRES, target);
       return KLINST_VARRES;
     }
-    case KLCST_EXPR_WHERE: {
+    case KLAST_EXPR_WHERE: {
       return klgen_exprwhere(gen, klcast(KlAstWhere*, ast), KLINST_VARRES, target);
     }
-    case KLCST_EXPR_VARARG: {
+    case KLAST_EXPR_VARARG: {
       klgen_exprvararg(gen, klcast(KlAstVararg*, ast), KLINST_VARRES, target);
       return KLINST_VARRES;
     }
@@ -480,7 +480,7 @@ void klgen_exprlist_raw(KlGenUnit* gen, KlAst** asts, size_t nast, size_t nwante
 }
 
 size_t klgen_passargs(KlGenUnit* gen, KlAstTuple* args) {
-  kl_assert(klast_kind(args) == KLCST_EXPR_TUPLE, "");
+  kl_assert(klast_kind(args) == KLAST_EXPR_TUPLE, "");
   KlAstTuple* tuple = klcast(KlAstTuple*, args);
   if (tuple->nelem == 0) return 0;
   /* evaluate the first tuple->nelem - 1 expressions */
@@ -833,7 +833,7 @@ static KlCodeVal klgen_exprappend(KlGenUnit* gen, KlAstPost* postast) {
   KlCodeVal appendable = klgen_expr(gen, postast->operand);
   klgen_putonstack(gen, &appendable, klgen_astposition(postast->operand));
   KlAstTuple* tuple = klcast(KlAstTuple*, postast->post);
-  if (tuple->nelem == 1 && klast_kind(tuple->elems[0]) == KLCST_EXPR_ID) {
+  if (tuple->nelem == 1 && klast_kind(tuple->elems[0]) == KLAST_EXPR_ID) {
     KlCodeVal val = klgen_expr(gen, tuple->elems[0]);
     klgen_emit(gen, klinst_append(appendable.index, val.index, 1), klgen_astposition(postast));
   } else {
@@ -919,79 +919,79 @@ static void klgen_exprdot(KlGenUnit* gen, KlAstDot* dotast, size_t target) {
 
 KlCodeVal klgen_expr(KlGenUnit* gen, KlAst* ast) {
   switch (klast_kind(ast)) {
-    case KLCST_EXPR_ARR: {
+    case KLAST_EXPR_ARR: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprarr(gen, klcast(KlAstArray*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_ARRGEN: {
+    case KLAST_EXPR_ARRGEN: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprarrgen(gen, klcast(KlAstArrayGenerator*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_WHERE: {
+    case KLAST_EXPR_WHERE: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprwhere(gen, klcast(KlAstWhere*, ast), 1, target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_MAP: {
+    case KLAST_EXPR_MAP: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprmap(gen, klcast(KlAstMap*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_CLASS: {
+    case KLAST_EXPR_CLASS: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprclass(gen, klcast(KlAstClass*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_CONSTANT: {
+    case KLAST_EXPR_CONSTANT: {
       return klgen_constant(gen, klcast(KlAstConstant*, ast));
     }
-    case KLCST_EXPR_ID: {
+    case KLAST_EXPR_ID: {
       return klgen_identifier(gen, klcast(KlAstIdentifier*, ast));
     }
-    case KLCST_EXPR_VARARG: {
+    case KLAST_EXPR_VARARG: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprvararg(gen, klcast(KlAstVararg*, ast), 1, target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_TUPLE: {
+    case KLAST_EXPR_TUPLE: {
       return klgen_tuple(gen, klcast(KlAstTuple*, ast));
     }
-    case KLCST_EXPR_PRE: {
+    case KLAST_EXPR_PRE: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       return klgen_exprpre(gen, klcast(KlAstPre*, ast), target);
     }
-    case KLCST_EXPR_NEW: {
+    case KLAST_EXPR_NEW: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprnew(gen, klcast(KlAstNew*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_YIELD: {
+    case KLAST_EXPR_YIELD: {
       size_t stkid = klgen_stacktop(gen);
       klgen_expryield(gen, klcast(KlAstYield*, ast), 1);
       return klcodeval_stack(stkid);
     }
-    case KLCST_EXPR_POST: {
+    case KLAST_EXPR_POST: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       return klgen_exprpost(gen, klcast(KlAstPost*, ast), target, false);
     }
-    case KLCST_EXPR_CALL: {
+    case KLAST_EXPR_CALL: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprcall(gen, klcast(KlAstCall*, ast), 1, target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_DOT: {
+    case KLAST_EXPR_DOT: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprdot(gen, klcast(KlAstDot*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_FUNC: {
+    case KLAST_EXPR_FUNC: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprfunc(gen, klcast(KlAstFunc*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_BIN: {
+    case KLAST_EXPR_BIN: {
       size_t target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       return klgen_exprbin(gen, klcast(KlAstBin*, ast), target);
     }
@@ -1004,30 +1004,30 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlAst* ast) {
 
 KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlAst* ast, size_t target) {
   switch (klast_kind(ast)) {
-    case KLCST_EXPR_ARR: {
+    case KLAST_EXPR_ARR: {
       klgen_exprarr(gen, klcast(KlAstArray*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_ARRGEN: {
+    case KLAST_EXPR_ARRGEN: {
       klgen_exprarrgen(gen, klcast(KlAstArrayGenerator*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_WHERE: {
+    case KLAST_EXPR_WHERE: {
       klgen_exprwhere(gen, klcast(KlAstWhere*, ast), 1, target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_MAP: {
+    case KLAST_EXPR_MAP: {
       klgen_exprmap(gen, klcast(KlAstMap*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_CLASS: {
+    case KLAST_EXPR_CLASS: {
       klgen_exprclass(gen, klcast(KlAstClass*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_CONSTANT: {
+    case KLAST_EXPR_CONSTANT: {
       return klgen_constant(gen, klcast(KlAstConstant*, ast));
     }
-    case KLCST_EXPR_ID: {
+    case KLAST_EXPR_ID: {
       size_t stktop = klgen_stacktop(gen);
       KlAstIdentifier* idast = klcast(KlAstIdentifier*, ast);
       KlSymbol* symbol = klgen_getsymbol(gen, idast->id);
@@ -1041,43 +1041,43 @@ KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlAst* ast, size_t target) {
       klgen_stackfree(gen, stktop == target ? target + 1 : stktop);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_VARARG: {
+    case KLAST_EXPR_VARARG: {
       klgen_exprvararg(gen, klcast(KlAstVararg*, ast), 1, target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_TUPLE: {
+    case KLAST_EXPR_TUPLE: {
       return klgen_tuple_target(gen, klcast(KlAstTuple*, ast), target);
     }
-    case KLCST_EXPR_PRE: {
+    case KLAST_EXPR_PRE: {
       return klgen_exprpre(gen, klcast(KlAstPre*, ast), target);
     }
-    case KLCST_EXPR_NEW: {
+    case KLAST_EXPR_NEW: {
       klgen_exprnew(gen, klcast(KlAstNew*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_YIELD: {
+    case KLAST_EXPR_YIELD: {
       size_t stktop = klgen_stacktop(gen);
       klgen_expryield(gen, klcast(KlAstYield*, ast), 1);
       if (target != stktop)
         klgen_emitmove(gen, target, stktop, 1, klgen_astposition(ast));
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_POST: {
+    case KLAST_EXPR_POST: {
       return klgen_exprpost(gen, klcast(KlAstPost*, ast), target, true);
     }
-    case KLCST_EXPR_CALL: {
+    case KLAST_EXPR_CALL: {
       klgen_exprcall(gen, klcast(KlAstCall*, ast), 1, target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_DOT: {
+    case KLAST_EXPR_DOT: {
       klgen_exprdot(gen, klcast(KlAstDot*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_FUNC: {
+    case KLAST_EXPR_FUNC: {
       klgen_exprfunc(gen, klcast(KlAstFunc*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLCST_EXPR_BIN: {
+    case KLAST_EXPR_BIN: {
       return klgen_exprbin(gen, klcast(KlAstBin*, ast), target);
     }
     default: {

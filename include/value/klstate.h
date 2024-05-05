@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_VM_KLSTATE_H
-#define KEVCC_KLANG_INCLUDE_VM_KLSTATE_H
+#ifndef _KLANG_INCLUDE_VM_KLSTATE_H_
+#define _KLANG_INCLUDE_VM_KLSTATE_H_
 
 #include "include/lang/kltypes.h"
 #include "include/mm/klmm.h"

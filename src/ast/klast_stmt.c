@@ -17,19 +17,19 @@ static void klast_stmtreturn_destroy(KlAstStmtReturn* stmtreturn);
 static void klast_stmtbreak_destroy(KlAstStmtBreak* stmtbreak);
 static void klast_stmtcontinue_destroy(KlAstStmtContinue* stmtcontinue);
 
-static KlAstInfo klast_stmtlet_vfunc = { .destructor = (KlAstDelete)klast_stmtlet_destroy, .kind = KLCST_STMT_LET };
-static KlAstInfo klast_stmtassign_vfunc = { .destructor = (KlAstDelete)klast_stmtassign_destroy, .kind = KLCST_STMT_ASSIGN };
-static KlAstInfo klast_stmtexpr_vfunc = { .destructor = (KlAstDelete)klast_stmtexpr_destroy, .kind = KLCST_STMT_EXPR };
-static KlAstInfo klast_stmtif_vfunc = { .destructor = (KlAstDelete)klast_stmtif_destroy, .kind = KLCST_STMT_IF };
-static KlAstInfo klast_stmtvfor_vfunc = { .destructor = (KlAstDelete)klast_stmtvfor_destroy, .kind = KLCST_STMT_VFOR };
-static KlAstInfo klast_stmtifor_vfunc = { .destructor = (KlAstDelete)klast_stmtifor_destroy, .kind = KLCST_STMT_IFOR };
-static KlAstInfo klast_stmtgfor_vfunc = { .destructor = (KlAstDelete)klast_stmtgfor_destroy, .kind = KLCST_STMT_GFOR };
-static KlAstInfo klast_stmtwhile_vfunc = { .destructor = (KlAstDelete)klast_stmtwhile_destroy, .kind = KLCST_STMT_WHILE };
-static KlAstInfo klast_stmtlist_vfunc = { .destructor = (KlAstDelete)klast_stmtlist_destroy, .kind = KLCST_STMT_BLOCK };
-static KlAstInfo klast_stmtrepeat_vfunc = { .destructor = (KlAstDelete)klast_stmtrepeat_destroy, .kind = KLCST_STMT_REPEAT };
-static KlAstInfo klast_stmtreturn_vfunc = { .destructor = (KlAstDelete)klast_stmtreturn_destroy, .kind = KLCST_STMT_RETURN };
-static KlAstInfo klast_stmtbreak_vfunc = { .destructor = (KlAstDelete)klast_stmtbreak_destroy, .kind = KLCST_STMT_BREAK };
-static KlAstInfo klast_stmtcontinue_vfunc = { .destructor = (KlAstDelete)klast_stmtcontinue_destroy, .kind = KLCST_STMT_CONTINUE };
+static KlAstInfo klast_stmtlet_vfunc = { .destructor = (KlAstDelete)klast_stmtlet_destroy, .kind = KLAST_STMT_LET };
+static KlAstInfo klast_stmtassign_vfunc = { .destructor = (KlAstDelete)klast_stmtassign_destroy, .kind = KLAST_STMT_ASSIGN };
+static KlAstInfo klast_stmtexpr_vfunc = { .destructor = (KlAstDelete)klast_stmtexpr_destroy, .kind = KLAST_STMT_EXPR };
+static KlAstInfo klast_stmtif_vfunc = { .destructor = (KlAstDelete)klast_stmtif_destroy, .kind = KLAST_STMT_IF };
+static KlAstInfo klast_stmtvfor_vfunc = { .destructor = (KlAstDelete)klast_stmtvfor_destroy, .kind = KLAST_STMT_VFOR };
+static KlAstInfo klast_stmtifor_vfunc = { .destructor = (KlAstDelete)klast_stmtifor_destroy, .kind = KLAST_STMT_IFOR };
+static KlAstInfo klast_stmtgfor_vfunc = { .destructor = (KlAstDelete)klast_stmtgfor_destroy, .kind = KLAST_STMT_GFOR };
+static KlAstInfo klast_stmtwhile_vfunc = { .destructor = (KlAstDelete)klast_stmtwhile_destroy, .kind = KLAST_STMT_WHILE };
+static KlAstInfo klast_stmtlist_vfunc = { .destructor = (KlAstDelete)klast_stmtlist_destroy, .kind = KLAST_STMT_BLOCK };
+static KlAstInfo klast_stmtrepeat_vfunc = { .destructor = (KlAstDelete)klast_stmtrepeat_destroy, .kind = KLAST_STMT_REPEAT };
+static KlAstInfo klast_stmtreturn_vfunc = { .destructor = (KlAstDelete)klast_stmtreturn_destroy, .kind = KLAST_STMT_RETURN };
+static KlAstInfo klast_stmtbreak_vfunc = { .destructor = (KlAstDelete)klast_stmtbreak_destroy, .kind = KLAST_STMT_BREAK };
+static KlAstInfo klast_stmtcontinue_vfunc = { .destructor = (KlAstDelete)klast_stmtcontinue_destroy, .kind = KLAST_STMT_CONTINUE };
 
 
 KlAstStmtLet* klast_stmtlet_create(KlAstTuple* lvals, KlAstTuple* rvals, KlFileOffset begin, KlFileOffset end) {
@@ -286,9 +286,9 @@ static void klast_stmtcontinue_destroy(KlAstStmtContinue* stmtcontinue) {
 bool klast_mustreturn(KlAstStmtList* stmtlist) {
   if (stmtlist->nstmt == 0) return false;
   KlAst* laststmt = stmtlist->stmts[stmtlist->nstmt - 1];
-  if (klast_kind(laststmt) == KLCST_STMT_RETURN)
+  if (klast_kind(laststmt) == KLAST_STMT_RETURN)
     return true;
-  if (klast_kind(laststmt) == KLCST_STMT_IF) {
+  if (klast_kind(laststmt) == KLAST_STMT_IF) {
     KlAstStmtIf* stmtif = klcast(KlAstStmtIf*, laststmt);
     return klast_mustreturn(klcast(KlAstStmtList*, stmtif->if_block)) &&
            (!stmtif->else_block || klast_mustreturn(klcast(KlAstStmtList*, stmtif->else_block)));

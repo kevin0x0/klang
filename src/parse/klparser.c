@@ -436,7 +436,7 @@ static KlAst* klparser_generatorclass(KlParser* parser, KlLex* lex) {
   }
   if (kllex_trymatch(lex, KLTK_ASSIGN)) { /* a class? */
     if (kl_unlikely(exprlist->nelem != 1                            ||
-                    klast_kind(exprlist->elems[0]) != KLCST_EXPR_ID)) {
+                    klast_kind(exprlist->elems[0]) != KLAST_EXPR_ID)) {
       klparser_error(parser, kllex_inputstream(lex),
                      klast_begin(exprlist), klast_end(exprlist),
                      "should be a single identifier in class definition");
@@ -612,7 +612,7 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
         klast_delete(base);
         return NULL;
       }
-      if (kl_unlikely(klast_kind(ast) != KLCST_EXPR_CLASS)) {
+      if (kl_unlikely(klast_kind(ast) != KLAST_EXPR_CLASS)) {
         klparser_error(parser, kllex_inputstream(lex), ast->begin, ast->end,
                        "must be a class definition");
         klast_delete(base);
@@ -629,7 +629,7 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       kllex_next(lex);
       KlAst* expr = klparser_exprpre(parser, lex);
       klparser_returnifnull(expr);
-      if (kl_unlikely(klast_kind(expr) != KLCST_EXPR_FUNC)) {
+      if (kl_unlikely(klast_kind(expr) != KLAST_EXPR_FUNC)) {
         klparser_error(parser, kllex_inputstream(lex), expr->begin, expr->end,
                        "'method' must be followed by a function construction");
         return expr;
@@ -670,12 +670,12 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
 
 static KlAstTuple* klparser_correctfuncparams(KlParser* parser, KlLex* lex, KlAst* expr, bool* vararg) {
   *vararg = false;
-  if (klast_kind(expr) == KLCST_EXPR_TUPLE) {
+  if (klast_kind(expr) == KLAST_EXPR_TUPLE) {
     KlAstTuple* params = klcast(KlAstTuple*, expr);
     KlAst** exprs = params->elems;
     size_t nexpr = params->nelem;
     for (size_t i = 0; i < nexpr; ++i) {
-      if (klast_kind(exprs[i]) == KLCST_EXPR_VARARG) {
+      if (klast_kind(exprs[i]) == KLAST_EXPR_VARARG) {
         if (kl_unlikely(i != nexpr - 1))
           klparser_error(parser, kllex_inputstream(lex), exprs[i]->begin, exprs[i]->end, "'...' can only appear at the end of the parameter list");
         *vararg = true;
@@ -687,7 +687,7 @@ static KlAstTuple* klparser_correctfuncparams(KlParser* parser, KlLex* lex, KlAs
       --params->nelem;
     }
     return params;
-  } else if (klast_kind(expr) == KLCST_EXPR_VARARG) {
+  } else if (klast_kind(expr) == KLAST_EXPR_VARARG) {
     *vararg = true;
     size_t begin = klast_begin(expr);
     size_t end = klast_end(expr);
@@ -1172,7 +1172,7 @@ static KlAst* klparser_stmtinfor(KlParser* parser, KlLex* lex) {
     return NULL;
   }
   kl_assert(klcast(KlAstTuple*, lvals)->nelem != 0, "");
-  if (klast_kind(iterable) == KLCST_EXPR_VARARG) {
+  if (klast_kind(iterable) == KLAST_EXPR_VARARG) {
     /* is variable argument for loop : stmtfor -> for a, b, ... in ... */
     klast_delete(iterable); /* 'iterable' is no longer needed */
     KlAstStmtVFor* vfor = klast_stmtvfor_create(lvals, block, ph_filepos, klast_end(block));
@@ -1386,7 +1386,7 @@ static KlAst* klparser_generatorfor(KlParser* parser, KlLex* lex, KlAstTuple* tu
     klast_delete(iterable);
     return NULL;
   }
-  if (klast_kind(iterable) == KLCST_EXPR_VARARG) {  /* a, b, ... in ... */
+  if (klast_kind(iterable) == KLAST_EXPR_VARARG) {  /* a, b, ... in ... */
     klast_delete(iterable); /* 'iterable' is no longer needed */
     KlAstStmtVFor* vfor = klast_stmtvfor_create(lvals, block, klast_begin(lvals), klast_end(block));
     klparser_oomifnull(vfor);

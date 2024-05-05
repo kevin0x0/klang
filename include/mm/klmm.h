@@ -1,7 +1,7 @@
 /* klang memory manager and garbage collector */
 
-#ifndef KEVCC_INCLUDE_MM_KLMM_H
-#define KEVCC_INCLUDE_MM_KLMM_H
+#ifndef _INCLUDE_MM_KLMM_H_
+#define _INCLUDE_MM_KLMM_H_
 
 #include "include/lang/kltypes.h"
 #include "include/misc/klutils.h"

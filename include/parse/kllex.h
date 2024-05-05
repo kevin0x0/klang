@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
-#define KEVCC_KLANG_INCLUDE_PARSE_KLLEX_H
+#ifndef _KLANG_INCLUDE_PARSE_KLLEX_H_
+#define _KLANG_INCLUDE_PARSE_KLLEX_H_
 
 #include "include/ast/klast.h"
 #include "include/ast/klstrtbl.h"

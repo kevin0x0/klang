@@ -348,7 +348,7 @@ KlCode* klgen_file(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config
     klgen_emit(&gen, klinst_adjustargs(), klgen_position(klast_begin(ast), klast_begin(ast)));
 
     /* generate code for function body */
-    kl_assert(klast_kind(ast) == KLCST_STMT_BLOCK, "");
+    kl_assert(klast_kind(ast) == KLAST_STMT_BLOCK, "");
     klgen_stmtlist(&gen, ast);
     /* add a return statement if 'return' is missing */
     if (!klast_mustreturn(klcast(KlAstStmtList*, ast))) {

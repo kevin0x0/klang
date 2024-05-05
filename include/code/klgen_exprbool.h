@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_CODE_KLGEN_EXPRBOOL_H
-#define KEVCC_KLANG_INCLUDE_CODE_KLGEN_EXPRBOOL_H
+#ifndef _KLANG_INCLUDE_CODE_KLGEN_EXPRBOOL_H_
+#define _KLANG_INCLUDE_CODE_KLGEN_EXPRBOOL_H_
 
 #include "include/code/klgen.h"
 #include "include/code/klcodeval.h"

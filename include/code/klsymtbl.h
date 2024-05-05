@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_CODE_KLSYMTBL_H
-#define KEVCC_KLANG_INCLUDE_CODE_KLSYMTBL_H
+#ifndef _KLANG_INCLUDE_CODE_KLSYMTBL_H_
+#define _KLANG_INCLUDE_CODE_KLSYMTBL_H_
 
 #include "include/ast/klstrtbl.h"
 #include "include/misc/klutils.h"

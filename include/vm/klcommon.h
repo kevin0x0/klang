@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_VM_KLSTRS_H
-#define KEVCC_KLANG_INCLUDE_VM_KLSTRS_H
+#ifndef _KLANG_INCLUDE_VM_KLSTRS_H_
+#define _KLANG_INCLUDE_VM_KLSTRS_H_
 
 #include "include/value/klclass.h"
 #include "include/value/klmap.h"

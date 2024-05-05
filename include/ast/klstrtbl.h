@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_PARSE_KLSTRTAB_H
-#define KEVCC_KLANG_INCLUDE_PARSE_KLSTRTAB_H
+#ifndef _KLANG_INCLUDE_PARSE_KLSTRTAB_H_
+#define _KLANG_INCLUDE_PARSE_KLSTRTAB_H_
 
 #include "include/misc/klutils.h"
 #include <stdbool.h>

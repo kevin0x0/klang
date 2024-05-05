@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_VALUE_KLREF_H
-#define KEVCC_KLANG_INCLUDE_VALUE_KLREF_H
+#ifndef _KLANG_INCLUDE_VALUE_KLREF_H_
+#define _KLANG_INCLUDE_VALUE_KLREF_H_
 
 #include "include/mm/klmm.h"
 #include "include/value/klvalue.h"

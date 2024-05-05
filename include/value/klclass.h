@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_VALUE_KLCLASS_H
-#define KEVCC_KLANG_INCLUDE_VALUE_KLCLASS_H
+#ifndef _KLANG_INCLUDE_VALUE_KLCLASS_H_
+#define _KLANG_INCLUDE_VALUE_KLCLASS_H_
 
 #include "include/lang/kltypes.h"
 #include "include/misc/klutils.h"

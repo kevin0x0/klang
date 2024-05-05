@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_CODE_KLCODE_H
-#define KEVCC_KLANG_INCLUDE_CODE_KLCODE_H
+#ifndef _KLANG_INCLUDE_CODE_KLCODE_H_
+#define _KLANG_INCLUDE_CODE_KLCODE_H_
 
 #include "include/code/klcontbl.h"
 #include "include/lang/klinst.h"

@@ -1,7 +1,7 @@
 /* this file defines basic types used in klang */
 
-#ifndef KEVCC_KLANG_INCLUDE_LANG_KLTYPES_H
-#define KEVCC_KLANG_INCLUDE_LANG_KLTYPES_H
+#ifndef _KLANG_INCLUDE_LANG_KLTYPES_H_
+#define _KLANG_INCLUDE_LANG_KLTYPES_H_
 
 #include <limits.h>
 typedef long long KlLangInt;

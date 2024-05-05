@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_VALUE_KLCLOSURE_H
-#define KEVCC_KLANG_INCLUDE_VALUE_KLCLOSURE_H
+#ifndef _KLANG_INCLUDE_VALUE_KLCLOSURE_H_
+#define _KLANG_INCLUDE_VALUE_KLCLOSURE_H_
 
 #include "include/value/klcfunc.h"
 #include "include/value/klkfunc.h"

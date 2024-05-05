@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_LANG_KLINST_H
-#define KEVCC_KLANG_INCLUDE_LANG_KLINST_H
+#ifndef _KLANG_INCLUDE_LANG_KLINST_H_
+#define _KLANG_INCLUDE_LANG_KLINST_H_
 
 #include "include/misc/klutils.h"
 #include <stdint.h>

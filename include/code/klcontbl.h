@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_CODE_KLCONTBL_H
-#define KEVCC_KLANG_INCLUDE_CODE_KLCONTBL_H
+#ifndef _KLANG_INCLUDE_CODE_KLCONTBL_H_
+#define _KLANG_INCLUDE_CODE_KLCONTBL_H_
 
 #include "include/ast/klast.h"
 #include "deps/k/include/array/karray.h"

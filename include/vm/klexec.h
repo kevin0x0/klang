@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_VM_KLEXEC_H
-#define KEVCC_KLANG_INCLUDE_VM_KLEXEC_H
+#ifndef _KLANG_INCLUDE_VM_KLEXEC_H_
+#define _KLANG_INCLUDE_VM_KLEXEC_H_
 
 #include "include/vm/klexception.h"
 #include "include/value/klcfunc.h"

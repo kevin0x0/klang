@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_AST_KLCST_H
-#define KEVCC_KLANG_INCLUDE_AST_KLCST_H
+#ifndef _KLANG_INCLUDE_AST_KLAST_H_
+#define _KLANG_INCLUDE_AST_KLAST_H_
 
 
 #include "include/ast/klstrtbl.h"
@@ -21,41 +21,41 @@
 
 
 typedef enum tagKlAstKind {
-  KLCST_EXPR_ARR, KLCST_EXPR_UNIT = KLCST_EXPR_ARR, KLCST_EXPR = KLCST_EXPR_ARR,
-  KLCST_EXPR_ARRGEN,
-  KLCST_EXPR_MAP,
-  KLCST_EXPR_CLASS,
-  KLCST_EXPR_CONSTANT,
-  KLCST_EXPR_ID,
-  KLCST_EXPR_VARARG,
-  KLCST_EXPR_TUPLE, KLCST_EXPR_UNIT_END = KLCST_EXPR_TUPLE,
+  KLAST_EXPR_ARR, KLAST_EXPR_UNIT = KLAST_EXPR_ARR, KLAST_EXPR = KLAST_EXPR_ARR,
+  KLAST_EXPR_ARRGEN,
+  KLAST_EXPR_MAP,
+  KLAST_EXPR_CLASS,
+  KLAST_EXPR_CONSTANT,
+  KLAST_EXPR_ID,
+  KLAST_EXPR_VARARG,
+  KLAST_EXPR_TUPLE, KLAST_EXPR_UNIT_END = KLAST_EXPR_TUPLE,
 
-  KLCST_EXPR_PRE,
-  KLCST_EXPR_NEW,
-  KLCST_EXPR_YIELD,
+  KLAST_EXPR_PRE,
+  KLAST_EXPR_NEW,
+  KLAST_EXPR_YIELD,
 
-  KLCST_EXPR_POST,
-  KLCST_EXPR_CALL,
-  KLCST_EXPR_DOT,
-  KLCST_EXPR_FUNC,
+  KLAST_EXPR_POST,
+  KLAST_EXPR_CALL,
+  KLAST_EXPR_DOT,
+  KLAST_EXPR_FUNC,
 
-  KLCST_EXPR_BIN,
+  KLAST_EXPR_BIN,
 
-  KLCST_EXPR_WHERE, KLCST_EXPR_END = KLCST_EXPR_WHERE,
+  KLAST_EXPR_WHERE, KLAST_EXPR_END = KLAST_EXPR_WHERE,
 
-  KLCST_STMT_LET, KLCST_STMT = KLCST_STMT_LET,
-  KLCST_STMT_ASSIGN,
-  KLCST_STMT_EXPR,
-  KLCST_STMT_IF,
-  KLCST_STMT_VFOR,
-  KLCST_STMT_IFOR,
-  KLCST_STMT_GFOR,
-  KLCST_STMT_WHILE,
-  KLCST_STMT_BLOCK,
-  KLCST_STMT_REPEAT,
-  KLCST_STMT_RETURN,
-  KLCST_STMT_BREAK,
-  KLCST_STMT_CONTINUE, KLCST_STMT_END = KLCST_STMT_CONTINUE,
+  KLAST_STMT_LET, KLAST_STMT = KLAST_STMT_LET,
+  KLAST_STMT_ASSIGN,
+  KLAST_STMT_EXPR,
+  KLAST_STMT_IF,
+  KLAST_STMT_VFOR,
+  KLAST_STMT_IFOR,
+  KLAST_STMT_GFOR,
+  KLAST_STMT_WHILE,
+  KLAST_STMT_BLOCK,
+  KLAST_STMT_REPEAT,
+  KLAST_STMT_RETURN,
+  KLAST_STMT_BREAK,
+  KLAST_STMT_CONTINUE, KLAST_STMT_END = KLAST_STMT_CONTINUE,
 } KlAstKind;
 
 typedef KlLangInt KlCInt;
@@ -74,14 +74,14 @@ typedef enum tagKlCType {
 } KlCType;
 
 
-#define klast_is_exprunit(type)     (type >= KLCST_EXPR_UNIT && type <= KLCST_EXPR_UNIT_END)
-#define klast_is_exprpre(type)      (type >= KLCST_EXPR_PRE && type <= KLCST_EXPR_PRE_END)
-#define klast_is_exprpost(type)     (type >= KLCST_EXPR_POST && type <= KLCST_EXPR_POST_END)
-#define klast_is_exprbin(type)      (type == KLCST_EXPR_BIN)
-#define klast_is_exprcompare(type)  (type >= KLCST_EXPR_COMPARE && type <= KLCST_EXPR_COMPARE_END)
-#define klast_is_exprter(type)      (type == KLCST_EXPR_TER)
-#define klast_is_stmt(type)         (type >= KLCST_STMT && type <= KLCST_STMT_END)
-#define klast_is_expr(type)         (type >= KLCST_EXPR && type <= KLCST_EXPR_END)
+#define klast_is_exprunit(type)     (type >= KLAST_EXPR_UNIT && type <= KLAST_EXPR_UNIT_END)
+#define klast_is_exprpre(type)      (type >= KLAST_EXPR_PRE && type <= KLAST_EXPR_PRE_END)
+#define klast_is_exprpost(type)     (type >= KLAST_EXPR_POST && type <= KLAST_EXPR_POST_END)
+#define klast_is_exprbin(type)      (type == KLAST_EXPR_BIN)
+#define klast_is_exprcompare(type)  (type >= KLAST_EXPR_COMPARE && type <= KLAST_EXPR_COMPARE_END)
+#define klast_is_exprter(type)      (type == KLAST_EXPR_TER)
+#define klast_is_stmt(type)         (type >= KLAST_STMT && type <= KLAST_STMT_END)
+#define klast_is_expr(type)         (type >= KLAST_EXPR && type <= KLAST_EXPR_END)
 
 
 typedef struct tagKlAstInfo KlAstInfo;
@@ -363,9 +363,9 @@ KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, 
 KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
 
 static inline bool klast_isboolexpr(KlAst* ast) {
-  if (klast_kind(ast) == KLCST_EXPR_PRE) {
+  if (klast_kind(ast) == KLAST_EXPR_PRE) {
     return klcast(KlAstPre*, ast)->op == KLTK_NOT;
-  } else if (klast_kind(ast) == KLCST_EXPR_BIN) {
+  } else if (klast_kind(ast) == KLAST_EXPR_BIN) {
     return klcast(KlAstBin*, ast)->op == KLTK_AND ||
            klcast(KlAstBin*, ast)->op == KLTK_OR  ||
            kltoken_isrelation(klcast(KlAstBin*, ast)->op);

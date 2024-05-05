@@ -1,5 +1,5 @@
-#ifndef KEVCC_KLANG_INCLUDE_MISC_KLUTILS_H
-#define KEVCC_KLANG_INCLUDE_MISC_KLUTILS_H
+#ifndef _KLANG_INCLUDE_MISC_KLUTILS_H_
+#define _KLANG_INCLUDE_MISC_KLUTILS_H_
 
 #define kl_likely(expr)       (__builtin_expect(!!(expr), 1))
 #define kl_unlikely(expr)     (__builtin_expect(!!(expr), 0))
