@@ -5,6 +5,7 @@
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -45,10 +46,10 @@ static inline size_t klmap_gethash(KlValue* key) {
       return num.floatval == 0.0 ? 0 : num.hash;
     }
     case KL_CFUNCTION: {
-      return ((size_t)klvalue_getcfunc(key) >> 3);
+      return ((uintptr_t)klvalue_getcfunc(key) >> 3);
     }
     default: {
-      return ((size_t)klvalue_getgcobj(key) >> 3);
+      return ((uintptr_t)klvalue_getgcobj(key) >> 3);
     }
   }
 }
