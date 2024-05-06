@@ -1,6 +1,7 @@
 #ifndef _KLANG_INCLUDE_VALUE_KLKFUNC_H_
 #define _KLANG_INCLUDE_VALUE_KLKFUNC_H_
 
+#include "include/lang/kltypes.h"
 #include "include/mm/klmm.h"
 #include "include/value/klvalue.h"
 #include "include/value/klref.h"
@@ -10,22 +11,23 @@
 typedef struct tagKlKFunction KlKFunction;
 struct tagKlKFunction {
   KL_DERIVE_FROM(KlGCObject, _gcbase_);
-  KlInstruction* code;    /* code executed by klang virtual machine */
-  KlValue* constants;     /* constants table */
-  KlRefInfo* refinfo;     /* reference information */
-  KlKFunction** subfunc;  /* sub-functions, functions defined in this function */
-  uint32_t codelen;       /* code length */
-  uint16_t nconst;        /* number of constants */
-  uint16_t nref;          /* number of references */
-  uint16_t nsubfunc;      /* number of sub-functions */
-  size_t framesize;       /* stack size needed by this klang function. (including parameters) */
-  uint8_t nparam;         /* number of parameters (including 'this' if it is method) */
+  KlInstruction* code;      /* code executed by klang virtual machine */
+  KlValue* constants;       /* constants table */
+  KlRefInfo* refinfo;       /* reference information */
+  KlKFunction** subfunc;    /* sub-functions, functions defined in this function */
+  unsigned codelen;         /* code length */
+  unsigned short nconst;    /* number of constants */
+  unsigned short nref;      /* number of references */
+  unsigned short nsubfunc;  /* number of sub-functions */
+  KlUByte framesize;        /* stack size needed by this klang function. (including parameters) */
+  KlUByte nparam;           /* number of parameters (including 'this' if it is method) */
 };
 
 /* allocate memory and initialize some fields, but do not initialize the constants and refinfo.
  * the constants and refinfo should be initialized by caller.
  */
-KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, size_t codelen, size_t nconst, size_t nref, size_t nsubfunc, size_t framesize, size_t nparam);
+KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, unsigned codelen, unsigned short nconst,
+                           unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam);
 /* assume the initialization is done, enable gc for 'kfunc'. */
 void klkfunc_initdone(KlMM* klmm, KlKFunction* kfunc);
 

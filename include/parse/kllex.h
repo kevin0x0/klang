@@ -5,7 +5,7 @@
 #include "include/ast/klstrtbl.h"
 #include "include/parse/kltokens.h"
 #include "include/error/klerror.h"
-#include "deps/k/include/kio/kio.h"
+#include "deps/k/include/kio/ki.h"
 
 #include <stdint.h>
 

@@ -65,7 +65,7 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlAst** patterns, size_t
         return;
       size_t nreserved = klgen_pattern_count_result(gen, patterns[npattern - 1]);
       kl_assert(klgen_stacktop(gen) > 0, "");
-      size_t lastval = klgen_stacktop(gen) - 1;
+      KlCStkId lastval = klgen_stacktop(gen) - 1;
       if (nreserved != 0) {
         klgen_emitmove(gen, lastval + nreserved, lastval, 1, filepos);
         klgen_stackalloc(gen, nreserved);
@@ -75,20 +75,20 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlAst** patterns, size_t
       klgen_exprlist_raw(gen, rvals, nfastassign, nfastassign, filepos);
       size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
       klgen_stackalloc(gen, nreserved);
-      size_t target = klgen_stacktop(gen);
+      KlCStkId target = klgen_stacktop(gen);
       klgen_exprlist_raw(gen, rvals + nfastassign, nrval - nfastassign, npattern - nfastassign, filepos);
       size_t count = npattern;
       while (count-- > nfastassign)
         target = klgen_pattern_binding(gen, patterns[count], target);
     } else {
-      size_t oristktop = klgen_stacktop(gen);
+      KlCStkId oristktop = klgen_stacktop(gen);
       klgen_exprlist_raw(gen, rvals, nrval, npattern, filepos);
       size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
       if (nreserved != 0) {
         klgen_stackalloc(gen, nreserved);
         klgen_emitmove(gen, oristktop + nfastassign + nreserved, oristktop + nfastassign, npattern - nfastassign, filepos);
       }
-      size_t target = oristktop + nfastassign + nreserved;
+      KlCStkId target = oristktop + nfastassign + nreserved;
       size_t count = npattern;
       while (count-- > nfastassign)
         target = klgen_pattern_binding(gen, patterns[count], target);
@@ -99,7 +99,7 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlAst** patterns, size_t
 static void klgen_stmtlet(KlGenUnit* gen, KlAstStmtLet* letast) {
   KlAstTuple* lvals = klcast(KlAstTuple*, letast->lvals);
   KlAstTuple* rvals = klcast(KlAstTuple*, letast->rvals);
-  size_t newsymbol_base = klgen_stacktop(gen);
+  KlCStkId newsymbol_base = klgen_stacktop(gen);
   klgen_deconstruct_to_stktop(gen, lvals->elems, lvals->nelem, rvals->elems, rvals->nelem, klgen_astposition(rvals));
   klgen_patterns_newsymbol(gen, lvals->elems, lvals->nelem, newsymbol_base);
 }
@@ -109,14 +109,14 @@ static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
     KlAstIdentifier* id = klcast(KlAstIdentifier*, lval);
     KlSymbol* symbol = klgen_getsymbol(gen, id->id);
     if (!symbol) {  /* global variable */
-      size_t stktop = klgen_stacktop(gen);
+      KlCStkId stktop = klgen_stacktop(gen);
       KlCodeVal res = klgen_expr(gen, rval);
       klgen_putonstack(gen, &res, klgen_astposition(rval));
-      size_t conidx = klgen_newstring(gen, id->id);
+      KlCIdx conidx = klgen_newstring(gen, id->id);
       klgen_emit(gen, klinst_storeglobal(res.index, conidx), klgen_astposition(lval));
       klgen_stackfree(gen, stktop);
     } else if (symbol->attr.kind == KLVAL_REF) {
-      size_t stktop = klgen_stacktop(gen);
+      KlCStkId stktop = klgen_stacktop(gen);
       KlCodeVal res = klgen_expr(gen, rval);
       klgen_putonstack(gen, &res, klgen_astposition(rval));
       klgen_emit(gen, klinst_storeref(res.index, symbol->attr.idx), klgen_astposition(lval));
@@ -129,7 +129,7 @@ static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
         klgen_loadval(gen, symbol->attr.idx, res, klgen_astposition(lval));
     }
   } else if (klast_kind(lval) == KLAST_EXPR_POST && klcast(KlAstPost*, lval)->op == KLTK_INDEX) {
-    size_t stktop = klgen_stacktop(gen);
+    KlCStkId stktop = klgen_stacktop(gen);
     KlAstPost* indexast = klcast(KlAstPost*, lval);
     KlAst* indexableast = indexast->operand;
     KlAst* keyast = indexast->post;
@@ -147,13 +147,13 @@ static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
     }
     klgen_stackfree(gen, stktop);
   } else if (klast_kind(lval) == KLAST_EXPR_DOT) {
-    size_t stktop = klgen_stacktop(gen);
+    KlCStkId stktop = klgen_stacktop(gen);
     KlAstDot* dotast = klcast(KlAstDot*, lval);
     KlAst* objast = dotast->operand;
     KlCodeVal val = klgen_expr(gen, rval);
     klgen_putonstack(gen, &val, klgen_astposition(rval));
     KlCodeVal obj = klgen_expr(gen, objast);
-    size_t conidx = klgen_newstring(gen, dotast->field);
+    KlCIdx conidx = klgen_newstring(gen, dotast->field);
     if (klinst_inurange(conidx, 8)) {
       if (obj.kind == KLVAL_REF) {
         klgen_emit(gen, klinst_refsetfieldc(val.index, obj.index, conidx), klgen_astposition(lval));
@@ -162,7 +162,7 @@ static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
         klgen_emit(gen, klinst_setfieldc(val.index, obj.index, conidx), klgen_astposition(lval));
       }
     } else {
-      size_t tmp = klgen_stackalloc1(gen);
+      KlCStkId tmp = klgen_stackalloc1(gen);
       klgen_emit(gen, klinst_loadc(tmp, conidx), klgen_astposition(lval));
       if (obj.kind == KLVAL_REF) {
         klgen_emit(gen, klinst_refsetfieldr(val.index, obj.index, tmp), klgen_astposition(lval));
@@ -177,12 +177,12 @@ static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
   }
 }
 
-void klgen_assignfrom(KlGenUnit* gen, KlAst* lval, size_t stkid) {
+void klgen_assignfrom(KlGenUnit* gen, KlAst* lval, KlCStkId stkid) {
   if (klast_kind(lval) == KLAST_EXPR_ID) {
     KlAstIdentifier* id = klcast(KlAstIdentifier*, lval);
     KlSymbol* symbol = klgen_getsymbol(gen, id->id);
     if (!symbol) {  /* global variable */
-      size_t conidx = klgen_newstring(gen, id->id);
+      KlCIdx conidx = klgen_newstring(gen, id->id);
       klgen_emit(gen, klinst_storeglobal(stkid, conidx), klgen_astposition(lval));
     } else if (symbol->attr.kind == KLVAL_REF) {
       klgen_emit(gen, klinst_storeref(stkid, symbol->attr.idx), klgen_astposition(lval));
@@ -193,7 +193,7 @@ void klgen_assignfrom(KlGenUnit* gen, KlAst* lval, size_t stkid) {
       klgen_emitmove(gen, symbol->attr.idx, stkid, 1, klgen_astposition(lval));
     }
   } else if (klast_kind(lval) == KLAST_EXPR_POST && klcast(KlAstPost*, lval)->op == KLTK_INDEX) {
-    size_t stktop = klgen_stacktop(gen);
+    KlCStkId stktop = klgen_stacktop(gen);
     KlAstPost* indexast = klcast(KlAstPost*, lval);
     KlAst* indexableast = indexast->operand;
     KlAst* keyast = indexast->post;
@@ -209,11 +209,11 @@ void klgen_assignfrom(KlGenUnit* gen, KlAst* lval, size_t stkid) {
     }
     klgen_stackfree(gen, stktop);
   } else if (klast_kind(lval) == KLAST_EXPR_DOT) {
-    size_t stktop = klgen_stacktop(gen);
+    KlCStkId stktop = klgen_stacktop(gen);
     KlAstDot* dotast = klcast(KlAstDot*, lval);
     KlAst* objast = dotast->operand;
     KlCodeVal obj = klgen_expr(gen, objast);
-    size_t conidx = klgen_newstring(gen, dotast->field);
+    KlCIdx conidx = klgen_newstring(gen, dotast->field);
     if (klinst_inurange(conidx, 8)) {
       if (obj.kind == KLVAL_REF) {
         klgen_emit(gen, klinst_refsetfieldc(stkid, obj.index, conidx), klgen_astposition(lval));
@@ -222,7 +222,7 @@ void klgen_assignfrom(KlGenUnit* gen, KlAst* lval, size_t stkid) {
         klgen_emit(gen, klinst_setfieldc(stkid, obj.index, conidx), klgen_astposition(lval));
       }
     } else {
-      size_t tmp = klgen_stackalloc1(gen);
+      KlCStkId tmp = klgen_stackalloc1(gen);
       klgen_emit(gen, klinst_loadc(tmp, conidx), klgen_astposition(lval));
       if (obj.kind == KLVAL_REF) {
         klgen_emit(gen, klinst_refsetfieldr(stkid, obj.index, tmp), klgen_astposition(lval));
@@ -251,7 +251,7 @@ static void klgen_stmtassign(KlGenUnit* gen, KlAstStmtAssign* assignast) {
   size_t nrval = klcast(KlAstTuple*, assignast->rvals)->nelem;
   kl_assert(npattern != 0, "");
   kl_assert(nrval != 0, "");
-  size_t base = klgen_stacktop(gen);
+  KlCStkId base = klgen_stacktop(gen);
   KlFilePosition rvals_pos = klgen_astposition(assignast->rvals);
   if (nrval != npattern) {
     klgen_deconstruct_to_stktop(gen, patterns, npattern, rvals, nrval, rvals_pos);
@@ -274,7 +274,7 @@ static void klgen_stmtassign(KlGenUnit* gen, KlAstStmtAssign* assignast) {
   }
 }
 
-static bool klgen_needclose(KlGenUnit* gen, KlSymTbl* endtbl, size_t* closebase) {
+static bool klgen_needclose(KlGenUnit* gen, KlSymTbl* endtbl, KlCStkId* closebase) {
   KlSymTbl* symtbl = gen->symtbl;
   bool needclose = false;
   while (symtbl != endtbl) {
@@ -321,21 +321,21 @@ static void klgen_stmtif(KlGenUnit* gen, KlAstStmtIf* ifast) {
   KlCodeVal cond = klgen_exprbool(gen, ifast->cond, false);
   if (klcodeval_isconstant(cond)) {
     if (klcodeval_istrue(cond)) {
-      size_t stktop = klgen_stacktop(gen);
+      KlCStkId stktop = klgen_stacktop(gen);
       bool needclose = klgen_stmtblock(gen, klcast(KlAstStmtList*, ifast->if_block));
       if (needclose)
         klgen_emit(gen, klinst_close(stktop), klgen_astposition(ifast->if_block));
       return;
     } else {
       if (!ifast->else_block) return;
-      size_t stktop = klgen_stacktop(gen);
+      KlCStkId stktop = klgen_stacktop(gen);
       bool needclose = klgen_stmtblock(gen, klcast(KlAstStmtList*, ifast->else_block));
       if (needclose)
         klgen_emit(gen, klinst_close(stktop), klgen_astposition(ifast->else_block));
       return;
     }
   } else {
-    size_t stktop = klgen_stacktop(gen);
+    KlCStkId stktop = klgen_stacktop(gen);
     bool ifneedclose = klgen_stmtblock(gen, klcast(KlAstStmtList*, ifast->if_block));
     if (!ifast->else_block) {
       if (ifneedclose)
@@ -367,12 +367,12 @@ static void klgen_stmtwhile(KlGenUnit* gen, KlAstStmtWhile* whileast) {
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
-  size_t stktop = klgen_stacktop(gen);
-  size_t loopbeginpos = klgen_currcodesize(gen);
+  KlCStkId stktop = klgen_stacktop(gen);
+  KlCPC loopbeginpos = klgen_currcodesize(gen);
   bool needclose = klgen_stmtblock(gen, klcast(KlAstStmtList*, whileast->block));
   if (needclose)
       klgen_emit(gen, klinst_close(stktop), klgen_astposition(whileast));
-  size_t continuepos = klgen_currcodesize(gen);
+  KlCPC continuepos = klgen_currcodesize(gen);
   KlCodeVal cond = klgen_exprbool(gen, whileast->cond, true);
   if (klcodeval_isconstant(cond)) {
     if (klcodeval_istrue(cond)) {
@@ -410,12 +410,12 @@ static void klgen_stmtrepeat(KlGenUnit* gen, KlAstStmtRepeat* repeatast) {
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
-  size_t stktop = klgen_stacktop(gen);
-  size_t loopbeginpos = klgen_currcodesize(gen);
+  KlCStkId stktop = klgen_stacktop(gen);
+  KlCPC loopbeginpos = klgen_currcodesize(gen);
   bool needclose = klgen_stmtblock(gen, klcast(KlAstStmtList*, repeatast->block));
   if (needclose)
       klgen_emit(gen, klinst_close(stktop), klgen_astposition(repeatast));
-  size_t continuepos = klgen_currcodesize(gen);
+  KlCPC continuepos = klgen_currcodesize(gen);
   KlCodeVal cond = klgen_exprbool(gen, repeatast->cond, false);
   if (klcodeval_isconstant(cond)) {
     if (klcodeval_istrue(cond)) {
@@ -446,7 +446,7 @@ static void klgen_stmtbreak(KlGenUnit* gen, KlAstStmtBreak* breakast) {
     klgen_error(gen, klast_begin(breakast), klast_end(breakast), "break statement is not allowed here");
     return;
   }
-  size_t closebase;
+  KlCPC closebase;
   KlInstruction breakinst;
   if (klgen_needclose(gen, gen->jmpinfo.break_scope, &closebase)) {
     breakinst = klinst_closejmp(closebase, 0);
@@ -462,7 +462,7 @@ static void klgen_stmtcontinue(KlGenUnit* gen, KlAstStmtContinue* continueast) {
     klgen_error(gen, klast_begin(continueast), klast_end(continueast), "continue statement is not allowed here");
     return;
   }
-  size_t closebase;
+  KlCPC closebase;
   KlInstruction continueinst;
   if (klgen_needclose(gen, gen->jmpinfo.continue_scope, &closebase)) {
     continueinst = klinst_closejmp(closebase, 0);
@@ -476,7 +476,7 @@ static void klgen_stmtcontinue(KlGenUnit* gen, KlAstStmtContinue* continueast) {
 static void klgen_stmtreturn(KlGenUnit* gen, KlAstStmtReturn* returnast) {
   kl_assert(klast_kind(returnast->retvals) == KLAST_EXPR_TUPLE, "");
   KlAstTuple* res = klcast(KlAstTuple*, returnast->retvals);
-  size_t stktop = klgen_stacktop(gen);
+  KlCStkId stktop = klgen_stacktop(gen);
   if (res->nelem == 1) {
     KlCodeVal retval;
     size_t nres = klgen_trytakeall(gen, res->elems[0], &retval);
@@ -488,7 +488,7 @@ static void klgen_stmtreturn(KlGenUnit* gen, KlAstStmtReturn* returnast) {
                                                      : klinst_return1(retval.index);
     klgen_emit(gen, returninst, klgen_astposition(returnast));
   } else {
-    size_t argbase = klgen_stacktop(gen);
+    KlCStkId argbase = klgen_stacktop(gen);
     size_t nres = klgen_passargs(gen, res);
     if (klgen_needclose(gen, gen->reftbl, NULL))
       klgen_emit(gen, klinst_close(0), klgen_astposition(returnast));
@@ -512,7 +512,7 @@ static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
-  size_t forbase = klgen_stacktop(gen);
+  KlCStkId forbase = klgen_stacktop(gen);
   klgen_exprtarget_noconst(gen, iforast->begin, forbase);
   // KlCodeVal begin = klcodeval_stack(forbase);
   klgen_exprtarget_noconst(gen, iforast->end, forbase + 1);
@@ -527,7 +527,7 @@ static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
   klgen_mergejmplist_maynone(gen, gen->jmpinfo.breakjmp,
                          klcodeval_jmplist(klgen_emit(gen, klinst_iforprep(forbase, 0), klgen_astposition(iforast))));
   klgen_pushsymtbl(gen);  /* enter a new scope here */
-  size_t looppos = klgen_currcodesize(gen);
+  KlCPC looppos = klgen_currcodesize(gen);
   kl_assert(klast_kind(iforast->lval) == KLAST_EXPR_TUPLE && klcast(KlAstTuple*, iforast->lval)->nelem == 1, "");
 
   KlAst* pattern = klcast(KlAstTuple*, iforast->lval)->elems[0];
@@ -566,25 +566,25 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
-  size_t forbase = klgen_stacktop(gen);
+  KlCStkId forbase = klgen_stacktop(gen);
   KlAst** patterns = klcast(KlAstTuple*, vforast->lvals)->elems;
   size_t npattern = klcast(KlAstTuple*, vforast->lvals)->nelem;
   KlCodeVal step = klcodeval_integer(npattern);
   klgen_putonstktop(gen, &step, klgen_astposition(vforast));
   klgen_mergejmplist_maynone(gen, gen->jmpinfo.breakjmp,
                          klcodeval_jmplist(klgen_emit(gen, klinst_vforprep(forbase, 0), klgen_astposition(vforast))));
-  size_t looppos = klgen_currcodesize(gen);
+  KlCPC looppos = klgen_currcodesize(gen);
   klgen_stackalloc1(gen); /* forbase + 0: step, forbase + 1: index */
   klgen_pushsymtbl(gen);  /* begin a new scope */
 
   klgen_stackalloc(gen, npattern);
   for (size_t i = npattern; i--;) {
     KlAst* pattern = patterns[i];
-    size_t valstkid = forbase + 2 + i;
+    KlCStkId valstkid = forbase + 2 + i;
     if (klast_kind(pattern) == KLAST_EXPR_ID) {
       klgen_newsymbol(gen, klcast(KlAstIdentifier*, pattern)->id, valstkid, klgen_astposition(pattern));
     } else {
-      size_t newsymbol_base = klgen_stacktop(gen);
+      KlCStkId newsymbol_base = klgen_stacktop(gen);
       klgen_pattern_binding_tostktop(gen, pattern, valstkid);
       klgen_pattern_newsymbol(gen, pattern, newsymbol_base);
     }
@@ -617,15 +617,15 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
-  size_t forbase = klgen_stacktop(gen);
-  size_t iterable = forbase;
+  KlCStkId forbase = klgen_stacktop(gen);
+  KlCStkId iterable = forbase;
   klgen_exprtarget_noconst(gen, gforast->expr, iterable);
   klgen_stackfree(gen, forbase);
-  size_t conidx = klgen_newstring(gen, gen->strings->itermethod);
+  KlCIdx conidx = klgen_newstring(gen, gen->strings->itermethod);
   klgen_emitmethod(gen, iterable, conidx, 0, 3, forbase, klgen_astposition(gforast));
   klgen_mergejmplist_maynone(gen, gen->jmpinfo.continuejmp,
                          klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), klgen_astposition(gforast))));
-  size_t looppos = klgen_currcodesize(gen);
+  KlCPC looppos = klgen_currcodesize(gen);
   klgen_pushsymtbl(gen);    /* begin a new scope */
   klgen_stackalloc(gen, 3); /* forbase: iteration function, forbase + 1: static state, forbase + 2: index state */
 
@@ -634,11 +634,11 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   klgen_stackalloc(gen, npattern);
   for (size_t i = npattern; i--;) {
     KlAst* pattern = patterns[i];
-    size_t valstkid = forbase + 3 + i;
+    KlCStkId valstkid = forbase + 3 + i;
     if (klast_kind(pattern) == KLAST_EXPR_ID) {
       klgen_newsymbol(gen, klcast(KlAstIdentifier*, pattern)->id, valstkid, klgen_astposition(pattern));
     } else {
-      size_t newsymbol_base = klgen_stacktop(gen);
+      KlCStkId newsymbol_base = klgen_stacktop(gen);
       klgen_pattern_binding_tostktop(gen, pattern, valstkid);
       klgen_pattern_newsymbol(gen, pattern, newsymbol_base);
     }

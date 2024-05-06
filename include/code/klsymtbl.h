@@ -12,7 +12,7 @@ typedef struct tagKlSymbol KlSymbol;
 
 typedef struct tagKlSymbolAttr {
   KlSymKind kind;
-  size_t idx;
+  unsigned idx;
   KlSymbol* refto;  /* if reference, this points to the referenced symbol */
 } KlSymbolAttr;
 
@@ -42,7 +42,7 @@ struct tagKlSymTbl {
   KlSymbolPool* symbolpool;
   KlStrTbl* strtbl;
   struct {
-    size_t stkbase;
+    KlCStkId stkbase;
     bool referenced;
   } info;
 };

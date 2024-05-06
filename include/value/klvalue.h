@@ -1,9 +1,9 @@
 #ifndef _KLANG_INCLUDE_VALUE_KLVALUE_H_
 #define _KLANG_INCLUDE_VALUE_KLVALUE_H_
 
+#include "include/value/klcfunc.h"
 #include "include/lang/kltypes.h"
 #include "include/mm/klmm.h"
-#include "include/value/klcfunc.h"
 
 #include <stdbool.h>
 
@@ -43,6 +43,7 @@ typedef enum tagKlType {
 } KlType;
 
 typedef KlLangInt KlInt;
+typedef KlLangInt KlUInt;
 typedef KlLangFloat KlFloat;
 typedef KlLangBool KlBool;
 
@@ -58,7 +59,7 @@ typedef struct tagKlValue {
     KlBool boolval;
     KlCFunction* cfunc;
     KlGCObject* gcobj;
-    size_t id;
+    KlUInt id;
   } value;
   KlType type;
 } KlValue;
@@ -86,7 +87,7 @@ static inline KlBool klvalue_getbool(KlValue* val) {
   return val->value.boolval;
 }
 
-static inline size_t klvalue_getid(KlValue* val) {
+static inline KlUInt klvalue_getid(KlValue* val) {
   return val->value.id;
 }
 
@@ -113,7 +114,7 @@ static inline void klvalue_setbool(KlValue *val, KlBool boolval) {
   val->type = KL_BOOL;
 }
 
-static inline void klvalue_setid(KlValue *val, size_t id) {
+static inline void klvalue_setid(KlValue *val, KlUInt id) {
   val->value.id = id;
   val->type = KL_ID;
 }

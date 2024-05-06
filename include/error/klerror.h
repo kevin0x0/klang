@@ -18,8 +18,8 @@ typedef struct tagKlErrorConfig {
 
 typedef struct tagKlError {
   KlErrorConfig config;
-  size_t errcount;
   Ko* err;
+  unsigned errcount;
 } KlError;
 
 

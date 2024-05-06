@@ -44,13 +44,13 @@ typedef struct tagKlCClosure {
 } KlCClosure;
 
 KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, KlRef** openreflist, KlRef** refs);
-KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, KlRef** openreflist, size_t ref_no);
+KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, KlRef** openreflist, unsigned short ref_no);
 
-static inline KlRef* klkclosure_getref(KlKClosure* kclo, size_t ref_no) {
+static inline KlRef* klkclosure_getref(KlKClosure* kclo, unsigned short ref_no) {
   return kclo->refs[ref_no];
 }
 
-static inline KlRef* klcclosure_getref(KlCClosure* cclo, size_t ref_no) {
+static inline KlRef* klcclosure_getref(KlCClosure* cclo, unsigned short ref_no) {
   return cclo->refs[ref_no];
 }
 #endif

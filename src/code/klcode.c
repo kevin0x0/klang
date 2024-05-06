@@ -1,14 +1,15 @@
 #include "include/code/klcode.h"
 #include "include/code/klgen.h"
 #include "include/code/klsymtbl.h"
+#include "include/lang/kltypes.h"
 #include "include/misc/klutils.h"
 
 
 
-KlCode* klcode_create(KlCRefInfo* refinfo, size_t nref, KlConstant* constants, size_t nconst,
-                      KlInstruction* code, KlFilePosition* posinfo, size_t codelen,
-                      KlCode** nestedfunc, size_t nnested, KlStrTbl* strtbl, size_t nparam,
-                      size_t framesize) {
+KlCode* klcode_create(KlCRefInfo* refinfo, unsigned nref, KlConstant* constants, unsigned nconst,
+                      KlInstruction* code, KlFilePosition* posinfo, unsigned codelen,
+                      KlCode** nestedfunc, unsigned nnested, KlStrTbl* strtbl, unsigned nparam,
+                      unsigned framesize) {
   KlCode* klcode = (KlCode*)malloc(sizeof (KlCode));
   if (kl_unlikely(!klcode)) return NULL;
   klcode->refinfo = refinfo;

@@ -41,10 +41,10 @@ struct tagKlCode {
   unsigned framesize;         /* stack frame size of this klang function */
 };
 
-KlCode* klcode_create(KlCRefInfo* refinfo, size_t nref, KlConstant* constants, size_t nconst,
-                      KlInstruction* code, KlFilePosition* posinfo, size_t codelen,
-                      KlCode** nestedfunc, size_t nnested, KlStrTbl* strtbl, size_t nparam,
-                      size_t framesize);
+KlCode* klcode_create(KlCRefInfo* refinfo, unsigned nref, KlConstant* constants, unsigned nconst,
+                      KlInstruction* code, KlFilePosition* posinfo, unsigned codelen,
+                      KlCode** nestedfunc, unsigned nnested, KlStrTbl* strtbl, unsigned nparam,
+                      unsigned framesize);
 void klcode_delete(KlCode* code);
 
 KlCode* klcode_create_fromast(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config);

@@ -17,13 +17,17 @@ typedef enum tagKlValKind {
   KLVAL_NONE,   /* currently only used for boolean expression */
 } KlValKind;
 
+typedef unsigned KlCStkId;
+typedef unsigned KlCIdx;
+typedef unsigned KlCPC;
+
 typedef struct tagKlCodeVal {
   KlValKind kind;
   union {
-    size_t index;
+    KlCIdx index;
     struct {
-      unsigned tail;
-      unsigned head;
+      KlCPC tail;
+      KlCPC head;
     } jmplist;
     KlCInt intval;
     KlCFloat floatval;
@@ -37,60 +41,51 @@ typedef struct tagKlCodeVal {
 #define klcodeval_isfalse(v)    (((v).kind == KLVAL_BOOL && (v).boolval == KLC_FALSE) || (v).kind == KLVAL_NIL)
 #define klcodeval_istrue(v)     (klcodeval_isconstant((v)) && !klcodeval_isfalse((v)))
 
-static inline KlCodeVal klcodeval_index(KlValKind kind, size_t index);
-static inline KlCodeVal klcodeval_stack(size_t index);
-static inline KlCodeVal klcodeval_ref(size_t index);
+static inline KlCodeVal klcodeval_index(KlValKind kind, KlCIdx index);
+static inline KlCodeVal klcodeval_stack(KlCStkId index);
+static inline KlCodeVal klcodeval_ref(KlCIdx index);
 static inline KlCodeVal klcodeval_string(KlStrDesc str);
 static inline KlCodeVal klcodeval_integer(KlCInt intval);
 static inline KlCodeVal klcodeval_float(KlCFloat floatval);
 static inline KlCodeVal klcodeval_bool(KlCBool boolval);
 static inline KlCodeVal klcodeval_nil(void);
-static inline KlCodeVal klcodeval_jmplist(size_t pc);
+static inline KlCodeVal klcodeval_jmplist(KlCPC pc);
 static inline KlCodeVal klcodeval_none(void);
 
-static inline KlCodeVal klcodeval_index(KlValKind kind, size_t index) {
-  KlCodeVal val = { .kind = kind, .index = index };
-  return val;
+static inline KlCodeVal klcodeval_index(KlValKind kind, KlCIdx index) {
+  return (KlCodeVal) { .kind = kind, .index = index };
 }
 
-static inline KlCodeVal klcodeval_stack(size_t index) {
-  KlCodeVal val = { .kind = KLVAL_STACK, .index = index };
-  return val;
+static inline KlCodeVal klcodeval_stack(KlCStkId index) {
+  return (KlCodeVal) { .kind = KLVAL_STACK, .index = index };
 }
 
-static inline KlCodeVal klcodeval_ref(size_t index) {
-  KlCodeVal val = { .kind = KLVAL_REF, .index = index };
-  return val;
+static inline KlCodeVal klcodeval_ref(KlCIdx index) {
+  return (KlCodeVal) { .kind = KLVAL_REF, .index = index };
 }
 
 static inline KlCodeVal klcodeval_string(KlStrDesc str) {
-  KlCodeVal val = { .kind = KLVAL_STRING, .string = str };
-  return val;
+  return (KlCodeVal) { .kind = KLVAL_STRING, .string = str };
 }
 
 static inline KlCodeVal klcodeval_integer(KlCInt intval) {
-  KlCodeVal val = { .kind = KLVAL_INTEGER, .intval = intval };
-  return val;
+  return (KlCodeVal) { .kind = KLVAL_INTEGER, .intval = intval };
 }
 
 static inline KlCodeVal klcodeval_float(KlCFloat floatval) {
-  KlCodeVal val = { .kind = KLVAL_FLOAT, .floatval = floatval };
-  return val;
+  return (KlCodeVal) { .kind = KLVAL_FLOAT, .floatval = floatval };
 }
 
 static inline KlCodeVal klcodeval_bool(KlCBool boolval) {
-  KlCodeVal val = { .kind = KLVAL_BOOL, .boolval = boolval };
-  return val;
+  return (KlCodeVal) { .kind = KLVAL_BOOL, .boolval = boolval };
 }
 
 static inline KlCodeVal klcodeval_nil(void) {
-  KlCodeVal val = { .kind = KLVAL_NIL };
-  return val;
+  return (KlCodeVal) { .kind = KLVAL_NIL };
 }
 
-static inline KlCodeVal klcodeval_jmplist(size_t pc) {
-  KlCodeVal val = { .kind = KLVAL_JMPLIST, .jmplist = { .head = pc, .tail = pc } };
-  return val;
+static inline KlCodeVal klcodeval_jmplist(KlCPC pc) {
+  return (KlCodeVal) { .kind = KLVAL_JMPLIST, .jmplist = { .head = pc, .tail = pc } };
 }
 
 static inline KlCodeVal klcodeval_none(void) {

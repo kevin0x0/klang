@@ -84,7 +84,6 @@ struct tagKlGCObject {
 
 struct tagKlMM {
   KlGCObject* allgc;                        /* gc objects */
-  size_t gcstop_rcs_count;                  /* gc can be stoped recursively */
   KlGCObject* root;
   KlGCObject* aftermark;                    /* objects that need to do something after propagate mark */
   KlGCObject* aftersweep;                   /* objects that need to do something after sweeping */
@@ -92,6 +91,7 @@ struct tagKlMM {
   /* if mem_used exceeds this limit, the garbage collection will start.
    * the value of limit will dynamically change. */
   size_t limit; 
+  unsigned gcstop_rcs_count;                /* gc can be stoped recursively */
 };
 
 static inline void klmm_init(KlMM* klmm, size_t limit);

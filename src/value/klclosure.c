@@ -18,7 +18,7 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
   KlKClosure* kclo = (KlKClosure*)klmm_alloc(klmm, sizeof (KlKClosure) + sizeof (KlRef*) * kfunc->nref);
   if (kl_unlikely(!kclo)) return NULL;
   kclo->kfunc = kfunc;
-  size_t nref = kfunc->nref;
+  unsigned short nref = kfunc->nref;
   kclo->nref = nref;
   KlRefInfo* refinfo = kfunc->refinfo;
   KlRef** ref = kclo->refs;
@@ -45,7 +45,7 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
 
 static void klkclosure_delete(KlKClosure* kclo, KlMM* klmm) {
   KlRef** refs = kclo->refs;
-  size_t nref = kclo->nref;
+  unsigned short nref = kclo->nref;
   for (size_t i = 0; i < nref; ++i)
     klref_unpin(refs[i], klmm);
   klmm_free(klmm, kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kclo->nref);
@@ -61,7 +61,7 @@ static KlGCObject* klkclosure_propagate(KlKClosure* kclo, KlMM* klmm, KlGCObject
   return gclist;
 }
 
-KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, KlRef** openreflist, size_t nref) {
+KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, KlRef** openreflist, unsigned short nref) {
   KlCClosure* cclo = (KlCClosure*)klmm_alloc(klmm, sizeof (KlKClosure) + sizeof (KlRef*) * nref);
   if (kl_unlikely(!cclo)) return NULL;
   cclo->cfunc = cfunc;

@@ -787,7 +787,7 @@ KlException klexec_execute(KlState* state) {
 
   while (true) {
     KlInstruction inst = *pc++;
-    uint8_t opcode = KLINST_GET_OPCODE(inst);
+    KlOpcode opcode = KLINST_GET_OPCODE(inst);
     switch (opcode) {
       case KLOPCODE_MOVE: {
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);

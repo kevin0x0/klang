@@ -48,7 +48,7 @@ KlClass* klclass_inherit(KlMM* klmm, KlClass* parent) {
 
   KlClassSlot* slots = parent->slots;
   memcpy(array, slots, parent->capacity * sizeof (KlClassSlot));
-  size_t offset = array - slots;
+  ptrdiff_t offset = array - slots;
   KlClassSlot* end = array + parent->capacity;
   for (KlClassSlot* itr = array; itr != end; ++itr) {
     if (itr->next) itr->next += offset;
@@ -333,12 +333,12 @@ KlException klclass_default_constructor(KlClass* klclass, KlMM* klmm, KlValue* v
 }
 
 KlObject* klclass_objalloc(KlClass* klclass, KlMM* klmm) {
-  size_t nlocal = klclass->nlocal;
+  KlUnsigned nlocal = klclass->nlocal;
   size_t allocsize = klclass->attroffset + sizeof (KlValue) * nlocal;
   KlObject* obj = (KlObject*)klmm_alloc(klmm, allocsize);
   if (!obj) return NULL;
   KlValue* attrs = klobject_attrs_by_class(obj, klclass);
-  for (size_t i = 0; i < nlocal; ++i)
+  for (KlUnsigned i = 0; i < nlocal; ++i)
     klvalue_setnil(&attrs[i]);
   obj->klclass = klclass;
   obj->attrs = attrs;
@@ -350,8 +350,8 @@ static KlGCObject* klobject_propagate(KlObject* object, KlMM* klmm, KlGCObject* 
   kl_unused(klmm);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(object->klclass), gclist);
   KlValue* attrs = klobject_attrs(object);
-  size_t nlocal = object->klclass->nlocal;
-  for (size_t i = 0; i < nlocal; ++i) {
+  KlUnsigned nlocal = object->klclass->nlocal;
+  for (KlUnsigned i = 0; i < nlocal; ++i) {
     if (klvalue_collectable(&attrs[i]))
         klmm_gcobj_mark_accessible(klvalue_getgcobj(&attrs[i]), gclist);
   }

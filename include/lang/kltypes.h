@@ -7,6 +7,7 @@
 typedef long long KlLangInt;
 typedef double KlLangFloat;
 typedef KlLangInt KlLangBool;
+typedef unsigned long long KlLangUInt;
 
 
 typedef unsigned KlUnsigned;

@@ -52,7 +52,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
 
   KlClass* fallback = klcommon_phonyclass(klmm);
   done = done && fallback;
-  for (size_t type = 0; type < KL_NTYPE; ++type)
+  for (KlType type = 0; type < KL_NTYPE; ++type)
     common->klclass.phony[type] = fallback;
 
   done = done && (common->klclass.map = klmap_class(klmm, mapnodepool));
@@ -94,7 +94,7 @@ KlGCObject* klcommon_propagate(KlCommon* common, KlGCObject* gclist) {
 
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->klclass.map), gclist);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->klclass.array), gclist);
-  for (size_t type = 0; type < KL_NTYPE; ++type)
+  for (KlType type = 0; type < KL_NTYPE; ++type)
     klmm_gcobj_mark_accessible(klmm_to_gcobj(common->klclass.phony[type]), gclist);
   return gclist;
 }

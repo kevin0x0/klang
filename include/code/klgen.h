@@ -2,6 +2,7 @@
 #define _KLANG_INCLUDE_CODE_KLGEN_H_
 
 #include "include/code/klcode.h"
+#include "include/code/klcodeval.h"
 #include "include/code/klcontbl.h"
 #include "include/code/klsymtbl.h"
 #include "include/ast/klast.h"
@@ -48,8 +49,8 @@ struct tagKlGenUnit {
   KlInstArray code;
   KlFPArray position;         /* position information (for debug) */
   KlStrTbl* strtbl;
-  size_t stksize;             /* current used stack size */
-  size_t framesize;           /* stack frame size of this klang function */
+  KlCStkId stksize;           /* current used stack size */
+  KlCStkId framesize;         /* stack frame size of this klang function */
   bool vararg;                /* has variable arguments */
   struct {
     KlGenJumpInfo* jumpinfo;  /* information needed by code generator that evaluates boolean expression as a single value */
@@ -74,28 +75,28 @@ KlCode* klgen_file(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config
 void klgen_validate(KlGenUnit* gen);
 /* convert to KlCode and destroy self.
  * if failed, return NULL, and destroy self. */
-KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam);
+KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, unsigned nparam);
 void klgen_error(KlGenUnit* gen, KlFileOffset begin, KlFileOffset end, const char* format, ...);
-KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFilePosition symbolpos);
+KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, KlCStkId idx, KlFilePosition symbolpos);
 KlSymbol* klgen_getsymbol(KlGenUnit* gen, KlStrDesc name);
 void klgen_pushsymtbl(KlGenUnit* gen);
 void klgen_popsymtbl(KlGenUnit* gen);
 
-static inline size_t klgen_newconstant(KlGenUnit* gen, KlConstant* constant);
-static inline size_t klgen_newstring(KlGenUnit* gen, KlStrDesc str);
-static inline size_t klgen_newfloat(KlGenUnit* gen, KlCFloat val);
-static inline size_t klgen_newinteger(KlGenUnit* gen, KlCInt val);
+static inline KlCIdx klgen_newconstant(KlGenUnit* gen, KlConstant* constant);
+static inline KlCIdx klgen_newstring(KlGenUnit* gen, KlStrDesc str);
+static inline KlCIdx klgen_newfloat(KlGenUnit* gen, KlCFloat val);
+static inline KlCIdx klgen_newinteger(KlGenUnit* gen, KlCInt val);
 static inline KlConEntry* klgen_searchinteger(KlGenUnit* gen, KlCInt val);
 
 
-void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position);
+void klgen_loadval(KlGenUnit* gen, KlCStkId target, KlCodeVal val, KlFilePosition position);
 static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
 static inline void klgen_putonstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
-static inline size_t klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position);
-void klgen_emitloadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition position);
-void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nval, KlFilePosition position);
-void klgen_emitmethod(KlGenUnit* gen, size_t obj, size_t method, size_t narg, size_t nret, size_t retpos, KlFilePosition position);
-void klgen_emitcall(KlGenUnit* gen, size_t callable, size_t narg, size_t nret, size_t retpos, KlFilePosition position);
+static inline KlCPC klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position);
+void klgen_emitloadnils(KlGenUnit* gen, KlCStkId target, size_t nnil, KlFilePosition position);
+void klgen_emitmove(KlGenUnit* gen, KlCStkId target, KlCStkId from, size_t nval, KlFilePosition position);
+void klgen_emitmethod(KlGenUnit* gen, KlCStkId obj, KlCStkId method, size_t narg, size_t nret, KlCStkId retpos, KlFilePosition position);
+void klgen_emitcall(KlGenUnit* gen, KlCStkId callable, size_t narg, size_t nret, KlCStkId retpos, KlFilePosition position);
 
 
 kl_noreturn void klgen_error_fatal(KlGenUnit* gen, const char* message);
@@ -105,21 +106,21 @@ kl_noreturn void klgen_error_fatal(KlGenUnit* gen, const char* message);
     klgen_error_fatal(gen, "out of memory");                                    \
 }
 
-static inline size_t klgen_newconstant(KlGenUnit* gen, KlConstant* constant) {
+static inline KlCIdx klgen_newconstant(KlGenUnit* gen, KlConstant* constant) {
   KlConEntry* conent = klcontbl_get(gen->contbl, constant);
   klgen_oomifnull(gen, conent);
   return conent->index;
 }
 
-static inline size_t klgen_newstring(KlGenUnit* gen, KlStrDesc str) {
+static inline KlCIdx klgen_newstring(KlGenUnit* gen, KlStrDesc str) {
   return klgen_newconstant(gen, &(KlConstant) { .type = KLC_STRING, .string = str });
 }
 
-static inline size_t klgen_newfloat(KlGenUnit* gen, KlCFloat val) {
+static inline KlCIdx klgen_newfloat(KlGenUnit* gen, KlCFloat val) {
   return klgen_newconstant(gen, &(KlConstant) { .type = KLC_FLOAT, .floatval = val });
 }
 
-static inline size_t klgen_newinteger(KlGenUnit* gen, KlCInt val) {
+static inline KlCIdx klgen_newinteger(KlGenUnit* gen, KlCInt val) {
   return klgen_newconstant(gen, &(KlConstant) { .type = KLC_INT, .intval = val });
 }
 
@@ -127,27 +128,27 @@ static inline KlConEntry* klgen_searchinteger(KlGenUnit* gen, KlCInt val) {
   return klcontbl_search(gen->contbl, &(KlConstant){ .type = KLC_INT, .intval = val });
 }
 
-static inline size_t klgen_stacktop(KlGenUnit* gen) {
+static inline KlCStkId klgen_stacktop(KlGenUnit* gen) {
   return gen->stksize;
 }
 
-static inline size_t klgen_stackalloc(KlGenUnit* gen, size_t size) {
-  size_t base = gen->stksize;
+static inline KlCStkId klgen_stackalloc(KlGenUnit* gen, size_t size) {
+  KlCStkId base = gen->stksize;
   gen->stksize += size;
   return base;
 }
 
-static inline size_t klgen_stackalloc1(KlGenUnit* gen) {
+static inline KlCStkId klgen_stackalloc1(KlGenUnit* gen) {
   return klgen_stackalloc(gen, 1);
 }
 
-static inline void klgen_stackfree(KlGenUnit* gen, size_t stkid) {
+static inline void klgen_stackfree(KlGenUnit* gen, KlCStkId stkid) {
   if (gen->stksize > gen->framesize)
     gen->framesize = gen->stksize;
   gen->stksize = stkid;
 }
 
-static inline void klgen_stackpreserve(KlGenUnit* gen, size_t stkid) {
+static inline void klgen_stackpreserve(KlGenUnit* gen, KlCStkId stkid) {
   if (gen->stksize <= stkid)
     gen->stksize = stkid + 1;
 }
@@ -162,7 +163,7 @@ static inline void klgen_popinst(KlGenUnit* gen, size_t npop) {
     klfparr_pop_back(&gen->position, npop);
 }
 
-static inline void klgen_popinstto(KlGenUnit* gen, size_t to) {
+static inline void klgen_popinstto(KlGenUnit* gen, KlCPC to) {
   klgen_popinst(gen, klgen_currcodesize(gen) - to);
 }
 
@@ -174,8 +175,8 @@ static inline KlFilePosition klgen_position(KlFileOffset begin, KlFileOffset end
 #define klgen_astposition(ast) klgen_position(klast_begin(ast), klast_end(ast))
 
 
-static inline size_t klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position) {
-  size_t pc = klinstarr_size(&gen->code);
+static inline KlCPC klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position) {
+  KlCPC pc = klinstarr_size(&gen->code);
   if (kl_unlikely(!klinstarr_push_back(&gen->code, inst)))
     klgen_error_fatal(gen, "out of memory");
   if (gen->config->posinfo)
@@ -185,14 +186,14 @@ static inline size_t klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePositi
 
 static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position) {
   if (val->kind == KLVAL_STACK) return;
-  size_t stkid = klgen_stackalloc1(gen);
+  KlCStkId stkid = klgen_stackalloc1(gen);
   klgen_loadval(gen, stkid, *val, position);
   val->kind = KLVAL_STACK;
   val->index = stkid;
 }
 
 static inline void klgen_putonstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position) {
-  size_t stkid = klgen_stacktop(gen);
+  KlCStkId stkid = klgen_stacktop(gen);
   klgen_putonstack(gen, val, position);
   if (val->index != stkid)
     klgen_emit(gen, klinst_move(stkid, val->index), position);

@@ -12,8 +12,8 @@ KlCodeVal klgen_exprnot(KlGenUnit* gen, KlAstPre* notast, bool jumpcond);
 KlCodeVal klgen_expror(KlGenUnit* gen, KlAstBin* orast, bool jumpcond);
 KlCodeVal klgen_exprand(KlGenUnit* gen, KlAstBin* andast, bool jumpcond);
 
-KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlAst* ast, size_t target);
-void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, size_t jmppos);
+KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlAst* ast, KlCStkId target);
+void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, KlCPC jmppos);
 
 
 static inline void klgen_setoffset(KlGenUnit* gen, KlInstruction* jmpinst, int offset) {
@@ -24,8 +24,8 @@ static inline void klgen_setoffset(KlGenUnit* gen, KlInstruction* jmpinst, int o
   } else {
     if (!klinst_inrange(offset, 16))
       klgen_error_fatal(gen, "jump too far, can not generate code");
-    uint8_t opcode = KLINST_GET_OPCODE(*jmpinst);
-    uint8_t AorX = KLINST_AI_GETA(*jmpinst);
+    KlOpcode opcode = KLINST_GET_OPCODE(*jmpinst);
+    KlCIdx AorX = KLINST_AI_GETA(*jmpinst);
     *jmpinst = klinst_AI(opcode, AorX, offset);
   }
 }

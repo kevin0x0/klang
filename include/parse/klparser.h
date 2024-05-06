@@ -8,11 +8,11 @@
 typedef struct tagKlParser {
   char* inputname;
   KlStrTbl* strtbl;
-  size_t incid;
   KlError* klerror;
   struct {
     KlStrDesc this;
   } string;
+  unsigned incid;
 } KlParser;
 
 

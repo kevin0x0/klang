@@ -1,6 +1,8 @@
 #ifndef _KLANG_INCLUDE_MISC_KLUTILS_H_
 #define _KLANG_INCLUDE_MISC_KLUTILS_H_
 
+#include <stdint.h>
+
 #define kl_likely(expr)       (__builtin_expect(!!(expr), 1))
 #define kl_unlikely(expr)     (__builtin_expect(!!(expr), 0))
 
@@ -8,7 +10,7 @@
 
 
 #define klcast(totype, obj)   ((totype)(obj))
-#define klbit(idx)            ((size_t)1 << (idx))
+#define klbit(idx)            ((uintmax_t)1 << (idx))
 #define kllowbits(a, n)       (a & (klbit(n) - 1))
 #define kllow4bits(a)         kllowbits(a, 4)
 #define kllow8bits(a)         kllowbits(a, 8)

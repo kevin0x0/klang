@@ -34,17 +34,15 @@ bool klparser_init(KlParser* parser, KlStrTbl* strtbl, char* inputname, KlError*
 }
 
 static KlStrDesc klparser_newtmpid(KlParser* parser, KlLex* lex) {
-  char* newid = klstrtbl_allocstring(parser->strtbl, sizeof (size_t) * 8);
+  char* newid = klstrtbl_allocstring(parser->strtbl, sizeof (unsigned) * CHAR_BIT);
   if (kl_unlikely(!newid)) {
     klparser_error_oom(parser, lex);
-    KlStrDesc str = { .id = 0, .length = 0 };
-    return str;
+    return (KlStrDesc) { .id = 0, .length = 0 };
   }
   newid[0] = '\0';  /* all temporary identifiers begin with '\0' */
-  int len = sprintf(newid + 1, "%zu", parser->incid++) + 1;
+  int len = sprintf(newid + 1, "%u", parser->incid++) + 1;
   size_t strid = klstrtbl_pushstring(parser->strtbl, len);
-  KlStrDesc str = { .id = strid, .length = len };
-  return str;
+  return (KlStrDesc) { .id = strid, .length = len };
 }
 
 /* recovery */
@@ -689,8 +687,8 @@ static KlAstTuple* klparser_correctfuncparams(KlParser* parser, KlLex* lex, KlAs
     return params;
   } else if (klast_kind(expr) == KLAST_EXPR_VARARG) {
     *vararg = true;
-    size_t begin = klast_begin(expr);
-    size_t end = klast_end(expr);
+    KlFileOffset begin = klast_begin(expr);
+    KlFileOffset end = klast_end(expr);
     klast_delete(expr);
     return klparser_emptyexprlist(parser, lex, begin, end);
   } else {

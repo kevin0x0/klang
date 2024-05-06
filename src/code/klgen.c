@@ -1,5 +1,6 @@
 #include "include/code/klgen.h"
 #include "include/code/klcode.h"
+#include "include/code/klcodeval.h"
 #include "include/code/klcontbl.h"
 #include "include/code/klgen_stmt.h"
 #include "include/code/klsymtbl.h"
@@ -112,7 +113,7 @@ void klgen_destroy(KlGenUnit* gen) {
   klinstarr_destroy(&gen->code);
 }
 
-KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, size_t nparam) {
+KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, unsigned nparam) {
   klinstarr_shrink(&gen->code);
   klfparr_shrink(&gen->position);
   klcodearr_shrink(&gen->subfunc);
@@ -173,7 +174,7 @@ KlSymbol* klgen_getsymbolref(KlGenUnit* gen, KlStrDesc name) {
   return symbol;
 }
 
-KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, size_t idx, KlFilePosition symbolpos) {
+KlSymbol* klgen_newsymbol(KlGenUnit* gen, KlStrDesc name, KlCIdx idx, KlFilePosition symbolpos) {
   KlSymTbl* symtbl = gen->symtbl;
   KlSymbol* symbol = klsymtbl_search(symtbl, name);
   if (kl_unlikely(symbol)) {
@@ -224,7 +225,7 @@ void klgen_popsymtbl(KlGenUnit* gen) {
   klsymtblpool_dealloc(gen->symtblpool, symtbl);
 }
 
-void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition position) {
+void klgen_loadval(KlGenUnit* gen, KlCStkId target, KlCodeVal val, KlFilePosition position) {
   switch (val.kind) {
     case KLVAL_STACK: {
       if (target != val.index)
@@ -271,17 +272,17 @@ void klgen_loadval(KlGenUnit* gen, size_t target, KlCodeVal val, KlFilePosition 
   }
 }
 
-void klgen_emitloadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePosition position) {
+void klgen_emitloadnils(KlGenUnit* gen, KlCStkId target, size_t nnil, KlFilePosition position) {
   if (klgen_currcodesize(gen) == 0) {
     klgen_emit(gen, klinst_loadnil(target, nnil), position);
   } else {
     KlInstruction* previnst = klinstarr_back(&gen->code);
     if (KLINST_GET_OPCODE(*previnst) == KLOPCODE_LOADNIL) {
-      size_t prev_target = KLINST_AX_GETA(*previnst);
+      KlCStkId prev_target = KLINST_AX_GETA(*previnst);
       size_t prev_nnil = KLINST_AX_GETX(*previnst);
       if ((prev_target <= target && target <= prev_target + prev_nnil) ||
           (target <= prev_target && prev_target <= target + nnil)) {
-        size_t new_target = prev_target < target ? prev_target : target;
+        KlCStkId new_target = prev_target < target ? prev_target : target;
         size_t new_nnil = prev_target + prev_nnil > target + nnil
                         ? (size_t)(prev_target + prev_nnil - new_target)
                         : target + nnil - new_target;
@@ -293,7 +294,7 @@ void klgen_emitloadnils(KlGenUnit* gen, size_t target, size_t nnil, KlFilePositi
   }
 }
 
-void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, KlFilePosition position) {
+void klgen_emitmove(KlGenUnit* gen, KlCStkId target, KlCStkId from, size_t nmove, KlFilePosition position) {
   if (nmove == 0) return;
   kl_assert(from != target, "");
   if (nmove == KLINST_VARRES) {
@@ -304,16 +305,16 @@ void klgen_emitmove(KlGenUnit* gen, size_t target, size_t from, size_t nmove, Kl
     klgen_emit(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
   } else {
     KlInstruction* previnst = klinstarr_back(&gen->code);
-    uint8_t prev_opcode = KLINST_GET_OPCODE(*previnst);
+    KlOpcode prev_opcode = KLINST_GET_OPCODE(*previnst);
     if (prev_opcode == KLOPCODE_MOVE || prev_opcode == KLOPCODE_MULTIMOVE) {
-      size_t prev_target = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETA(*previnst) : KLINST_ABX_GETA(*previnst);
-      size_t prev_from = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETB(*previnst) : KLINST_ABX_GETB(*previnst);
+      KlCStkId prev_target = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETA(*previnst) : KLINST_ABX_GETA(*previnst);
+      KlCStkId prev_from = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETB(*previnst) : KLINST_ABX_GETB(*previnst);
       size_t prev_nmove = prev_opcode == KLOPCODE_MOVE ? 1 : KLINST_ABX_GETX(*previnst);
       if (prev_from + target == from + prev_target &&
           ((from <= prev_from && prev_from <= from + nmove) ||
           (prev_from <= from && from <= prev_from + prev_nmove))) {
-        size_t new_target = prev_target < target ? prev_target : target;
-        size_t new_from = prev_from < from ? prev_from : from;
+        KlCStkId new_target = prev_target < target ? prev_target : target;
+        KlCStkId new_from = prev_from < from ? prev_from : from;
         size_t new_nmove = prev_target + prev_nmove > target + nmove
                          ? prev_target + prev_nmove - new_target
                          : target + nmove - new_target;
@@ -376,12 +377,12 @@ KlCode* klgen_file(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config
   }
 }
 
-void klgen_emitmethod(KlGenUnit* gen, size_t obj, size_t method, size_t narg, size_t nret, size_t retpos, KlFilePosition position) {
+void klgen_emitmethod(KlGenUnit* gen, KlCStkId obj, KlCStkId method, size_t narg, size_t nret, KlCStkId retpos, KlFilePosition position) {
   klgen_emit(gen, klinst_method(obj, method), position);
   klgen_emit(gen, klinst_methodextra(narg, nret, retpos), position);
 }
 
-void klgen_emitcall(KlGenUnit* gen, size_t callable, size_t narg, size_t nret, size_t retpos, KlFilePosition position) {
+void klgen_emitcall(KlGenUnit* gen, KlCStkId callable, size_t narg, size_t nret, KlCStkId retpos, KlFilePosition position) {
   klgen_emit(gen, klinst_call(callable), position);
   klgen_emit(gen, klinst_callextra(narg, nret, retpos), position);
 }

@@ -1,4 +1,5 @@
 #include "include/parse/kllex.h"
+#include "include/kio/kio_common.h"
 #include "include/lang/kltypes.h"
 #include "include/parse/kltokens.h"
 #include "deps/k/include/kio/ki.h"
@@ -16,7 +17,7 @@
 
 static KlTokenKind tokenkind[150];
 static KlUByte transition[150][256];
-static size_t start;
+static KlUByte start;
 
 
 /* finish read 'new line' and return '\n'. */
@@ -281,9 +282,9 @@ void kllex_error(KlLex* lex, const char* format, ...) {
 
 void kllex_next(KlLex* lex) {
   Ki* input = lex->input;
-  size_t orioff = ki_tell(input);
+  KioFileOffset orioff = ki_tell(input);
   int ch = kllex_nextvalid(lex);
-  size_t curroff = ki_tell(input);
+  KioFileOffset curroff = ki_tell(input);
   lex->tok.hasleadingblank = orioff + 1 != curroff;
   if (ch == KOF) {
     lex->tok.begin = curroff;
@@ -3352,4 +3353,4 @@ static KlTokenKind tokenkind[150] = {
   KLTK_CONTINUE,
 };
 
-static size_t start = 6;
+static KlUByte start = 6;

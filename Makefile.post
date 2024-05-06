@@ -1,0 +1,11 @@
+
+
+
+
+.PHONY: clean create_dir all
+clean :
+	$(RM) -r $(OBJ_DIR)* $(LIB_DIR)*
+	$(MAKE) -C $(DEPS_K_DIR) clean
+
+create_dir :
+	mkdir -p $(OBJ_DIR) $(LIB_DIR)

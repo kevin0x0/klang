@@ -1,10 +1,11 @@
 #include "include/error/klerror.h"
 #include "deps/k/include/kio/ki.h"
 #include "deps/k/include/kio/ko.h"
+#include "include/kio/kio_common.h"
 #include <stdbool.h>
 
 
-static size_t klerror_helper_locateline(Ki* input, KlFileOffset offset);
+static unsigned klerror_helper_locateline(Ki* input, KlFileOffset offset);
 static bool klerror_helper_showline_withcurl(KlError* klerror, Ki* input, KlFileOffset begin, KlFileOffset end);
 
 void klerror_error(KlError* klerror, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
@@ -17,16 +18,16 @@ void klerror_error(KlError* klerror, Ki* input, const char* inputname, KlFileOff
 void klerror_errorv(KlError* klerror, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, va_list args) {
   ++klerror->errcount;
   Ko* err = klerror->err;
-  size_t orioffset = ki_tell(input);
-  size_t line = klerror_helper_locateline(input, begin);
-  size_t linebegin = ki_tell(input);
+  KioFileOffset orioffset = ki_tell(input);
+  unsigned line = klerror_helper_locateline(input, begin);
+  KioFileOffset linebegin = ki_tell(input);
 
-  unsigned int col = begin - linebegin + 1;
+  unsigned col = begin - linebegin + 1;
   ko_printf(err, "%s%s:%4u:%4u: ", klerror->config.promptmsg, inputname, line, col);
   ko_vprintf(err, format, args);
   ko_putc(err, '\n');
 
-  size_t nputline = 0;
+  unsigned nputline = 0;
   while (nputline++ < klerror->config.maxtextline) {
     if (!klerror_helper_showline_withcurl(klerror, input, begin, end)) {
       break;
@@ -42,10 +43,10 @@ void klerror_errorv(KlError* klerror, Ki* input, const char* inputname, KlFileOf
 
 #define kl_isnl(ch)       ((ch) == '\n' || (ch) == '\r')
 
-static size_t klerror_helper_locateline(Ki* input, KlFileOffset offset) {
+static unsigned klerror_helper_locateline(Ki* input, KlFileOffset offset) {
   ki_seek(input, 0);
-  size_t currline = 1;
-  size_t lineoff = 0;
+  unsigned currline = 1;
+  KioFileOffset lineoff = 0;
   while (ki_tell(input) < offset) {
     int ch = ki_getc(input);
     if (ch == KOF) break;
@@ -62,7 +63,7 @@ static size_t klerror_helper_locateline(Ki* input, KlFileOffset offset) {
 
 static bool klerror_helper_showline_withcurl(KlError* klerror, Ki* input, KlFileOffset begin, KlFileOffset end) {
   Ko* err = klerror->err;
-  size_t curroffset = ki_tell(input);
+  KioFileOffset curroffset = ki_tell(input);
   if (curroffset >= end) return false;
   ko_printf(err, "%s", klerror->config.prompttext);
   int ch = ki_getc(input);

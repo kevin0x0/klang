@@ -328,7 +328,7 @@ KlMapNodePool* klmapnodepool_create(KlMM* klmm) {
   if (kl_unlikely(!nodepool)) return NULL;
   nodepool->nodes = NULL;
   nodepool->available = 0;
-  nodepool->ref_count = 0;
+  nodepool->pincount = 0;
   nodepool->klmm = klmm;
   return nodepool;
 }

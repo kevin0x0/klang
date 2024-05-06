@@ -99,9 +99,9 @@ static inline KlMapIter klmap_iter_next(KlMapIter current) {
 
 struct tagKlMapNodePool {
   KlMM* klmm;
-  size_t ref_count;
   KlMapNode* nodes;
   size_t available;
+  size_t pincount;
 };
 
 
@@ -118,13 +118,13 @@ static inline void klmapnodepool_freelist(KlMapNodePool* nodepool, KlMapNode* he
 void klmapnodepool_shrink(KlMapNodePool* nodepool);
 
 static inline void klmapnodepool_unpin(KlMapNodePool* nodepool) {
-  if (--nodepool->ref_count)
+  if (--nodepool->pincount)
     return;
   klmapnodepool_delete(nodepool);
 }
 
 static inline void klmapnodepool_pin(KlMapNodePool* nodepool) {
-  ++nodepool->ref_count;
+  ++nodepool->pincount;
 }
 
 static inline KlMM* klmapnodepool_getmm(KlMapNodePool* nodepool) {

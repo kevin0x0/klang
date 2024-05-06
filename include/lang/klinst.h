@@ -6,6 +6,7 @@
 
 
 typedef uint32_t KlInstruction;
+typedef uint8_t KlOpcode;
 
 
 /* A, B, C, ...         represent register index
@@ -15,7 +16,7 @@ typedef uint32_t KlInstruction;
  */
 
 #define klinst_inrange(num, width)      (klinst_utos(0, width) <= num && num <= klinst_utos(klbit(width) - 1, width))
-#define klinst_inurange(num, width)     ((size_t)num <= klbit(width - 1))
+#define klinst_inurange(num, width)     ((uintmax_t)num <= klbit(width - 1))
 #define klinst_utos(num, width)         ((int32_t)(num) - (int32_t)(klbit((width) - 1)))
 #define klinst_stou(num, width)         ((int32_t)(num) + (klbit((width) - 1)))
 
