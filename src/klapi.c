@@ -150,7 +150,7 @@ KlException klapi_loadlib(KlState* state, const char* libpath, const char* entry
 
   /* find entry point */
   entryfunction = entryfunction ? entryfunction : "kllib_init";
-  KlCFunction* init = klib_dlsym(handle, entryfunction);
+  KlCFunction* init = (KlCFunction*)klib_dlsym(handle, entryfunction);
   if (kl_unlikely(!init)) {
     klib_dlclose(handle);
     return klstate_throw(state, KL_E_INVLD, "can not find entry point: %s", entryfunction);

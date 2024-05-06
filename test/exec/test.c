@@ -25,7 +25,7 @@ int main(void) {
   //klapi_pushstring(state, "hello,");
   //klapi_pushstring(state, " ");
   //klapi_pushstring(state, "world!");
-  KlException exception = klapi_call(state, klapi_access(state, -1 - narg), narg, 1);
+  KlException exception = klapi_scall(state, klapi_access(state, -1 - narg), narg, 1);
   printf("%f\n", (clock() - t) / (float)CLOCKS_PER_SEC);
   if (exception) {
     fprintf(stderr, "%s\n", state->throwinfo.exception.message);

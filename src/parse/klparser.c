@@ -11,8 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define KLCODE_GFOR_NSTATE  (2)
-
 
 static KlFileOffset ph_filepos = ~(KlFileOffset)0;
 
@@ -159,7 +157,7 @@ static KlAstTuple* klparser_emptyexprlist(KlParser* parser, KlLex* lex, KlFileOf
 }
 
 static inline KlAstTuple* klparser_exprlist_mayempty(KlParser* parser, KlLex* lex) {
-  return klparser_exprbegin(lex) ? klparser_exprlist(parser, lex) : klparser_emptyexprlist(parser, lex, lex->tok.begin, lex->tok.begin);
+  return klparser_exprbegin(lex) ? klparser_exprlist(parser, lex) : klparser_emptyexprlist(parser, lex, kllex_tokbegin(lex), kllex_tokbegin(lex));
 }
 
 static KlAstTuple* klparser_singletonexprlist(KlParser* parser, KlLex* lex, KlAst* expr) {
@@ -189,43 +187,43 @@ KlAst* klparser_exprunit(KlParser* parser, KlLex* lex, bool* inparenthesis) {
   if (inparenthesis) *inparenthesis = false;
   switch (kllex_tokkind(lex)) {
     case KLTK_INT: {
-      KlAstConstant* ast = klast_constant_create_integer(lex->tok.intval, lex->tok.begin, lex->tok.end);
+      KlAstConstant* ast = klast_constant_create_integer(lex->tok.intval, kllex_tokbegin(lex), kllex_tokend(lex));
       if (kl_unlikely(!ast)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klast(ast);
     }
     case KLTK_FLOAT: {
-      KlAstConstant* ast = klast_constant_create_float(lex->tok.floatval, lex->tok.begin, lex->tok.end);
+      KlAstConstant* ast = klast_constant_create_float(lex->tok.floatval, kllex_tokbegin(lex), kllex_tokend(lex));
       if (kl_unlikely(!ast)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klast(ast);
     }
     case KLTK_STRING: {
-      KlAstConstant* ast = klast_constant_create_string(lex->tok.string, lex->tok.begin, lex->tok.end);
+      KlAstConstant* ast = klast_constant_create_string(lex->tok.string, kllex_tokbegin(lex), kllex_tokend(lex));
       if (kl_unlikely(!ast)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klast(ast);
     }
     case KLTK_BOOLVAL: {
-      KlAstConstant* ast = klast_constant_create_boolean(lex->tok.boolval, lex->tok.begin, lex->tok.end);
+      KlAstConstant* ast = klast_constant_create_boolean(lex->tok.boolval, kllex_tokbegin(lex), kllex_tokend(lex));
       if (kl_unlikely(!ast)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klast(ast);
     }
     case KLTK_NIL: {
-      KlAstConstant* ast = klast_constant_create_nil(lex->tok.begin, lex->tok.end);
+      KlAstConstant* ast = klast_constant_create_nil(kllex_tokbegin(lex), kllex_tokend(lex));
       if (kl_unlikely(!ast)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klast(ast);
     }
     case KLTK_ID: {
-      KlAstIdentifier* ast = klast_id_create(lex->tok.string, lex->tok.begin, lex->tok.end);
+      KlAstIdentifier* ast = klast_id_create(lex->tok.string, kllex_tokbegin(lex), kllex_tokend(lex));
       if (kl_unlikely(!ast)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klast(ast);
     }
     case KLTK_VARARG: {
-      KlAstVararg* ast = klast_vararg_create(lex->tok.begin, lex->tok.end);
+      KlAstVararg* ast = klast_vararg_create(kllex_tokbegin(lex), kllex_tokend(lex));
       if (kl_unlikely(!ast)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klast(ast);
@@ -234,42 +232,41 @@ KlAst* klparser_exprunit(KlParser* parser, KlLex* lex, bool* inparenthesis) {
       return klast(klparser_array(parser, lex));
     }
     case KLTK_LBRACE: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       kllex_next(lex);
       KlAst* ast = kllex_check(lex, KLTK_COLON) ? klparser_finishmap(parser, lex) : klparser_generatorclass(parser, lex);
-      KlFileOffset end = lex->tok.end;
+      KlFileOffset end = kllex_tokend(lex);
       klparser_match(parser, lex, KLTK_RBRACE);
       if (kl_likely(ast)) klast_setposition(ast, begin, end);
       return ast;
     }
     case KLTK_LPAREN: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       kllex_next(lex);
-      KlFileOffset mayend = lex->tok.end;
+      KlFileOffset mayend = kllex_tokend(lex);
       if (kllex_trymatch(lex, KLTK_RPAREN)) { /* empty tuple */
         KlAstTuple* tuple = klparser_emptytuple(parser, lex, begin, mayend);
-        klparser_returnifnull(tuple);
         return klast(tuple);
       }
       /* may be a tuple */
       KlAst* expr = klparser_expr(parser, lex);
       if (kllex_check(lex, KLTK_RPAREN)) {
         if (inparenthesis) *inparenthesis = true;
-        klast_setposition(expr, begin, lex->tok.end);
+        klast_setposition(expr, begin, kllex_tokend(lex));
         kllex_next(lex);
         return expr;
       }
       /* it is a tuple */
       klparser_returnifnull(expr);
       KlAstTuple* tuple = klparser_finishtuple(parser, lex, expr);
-      KlFileOffset end = lex->tok.end;
+      KlFileOffset end = kllex_tokend(lex);
       klparser_match(parser, lex, KLTK_RPAREN);
       klparser_returnifnull(tuple);
       klast_setposition(tuple, begin, end);
       return klast(tuple);
     }
     default: {
-      klparser_error(parser, kllex_inputstream(lex), lex->tok.begin, lex->tok.end,
+      klparser_error(parser, kllex_inputstream(lex), kllex_tokbegin(lex), kllex_tokend(lex),
                      "expect '(', '{', '[', true, false, identifier, string or integer");
       return NULL;
     }
@@ -278,7 +275,7 @@ KlAst* klparser_exprunit(KlParser* parser, KlLex* lex, bool* inparenthesis) {
 
 static KlAst* klparser_array(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_LBRACKET), "expect \'[\'");
-  KlFileOffset begin = lex->tok.begin;
+  KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);  /* skip '[' */
   KlAstTuple* exprlist = klparser_exprlist_mayempty(parser, lex);
   if (kl_unlikely(!exprlist)) {
@@ -295,13 +292,13 @@ static KlAst* klparser_array(KlParser* parser, KlLex* lex) {
     KlAstStmtExpr* inner_stmt = klast_stmtexpr_create(tuple, klast_begin(exprlist), klast_end(exprlist));
     klparser_oomifnull(inner_stmt);
     KlAstStmtList* stmtlist = klparser_generator(parser, lex, klcast(KlAst*, inner_stmt));
-    KlFileOffset end = lex->tok.end;
+    KlFileOffset end = kllex_tokend(lex);
     klparser_match(parser, lex, KLTK_RBRACKET);
     klparser_returnifnull(stmtlist);  /* 'inner_stmt' will be deleted in klparser_generator() when error occurred */
     KlAstArrayGenerator* array = klast_arraygenerator_create(arrid->id, stmtlist, begin, end);
     return klast(array);
   } else {
-    KlFileOffset end = lex->tok.end;
+    KlFileOffset end = kllex_tokend(lex);
     klparser_match(parser, lex, KLTK_RBRACKET);
     KlAstArray* array = klast_array_create(exprlist, begin, end);
     klparser_oomifnull(array);
@@ -402,7 +399,7 @@ static KlAst* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc id, K
       klparser_sharedlist(parser, lex, &fields, &vals);
       kllex_trymatch(lex, KLTK_SEMI);
     } else {
-      klparser_error(parser, kllex_inputstream(lex), lex->tok.begin, lex->tok.end, "end of file");
+      klparser_error(parser, kllex_inputstream(lex), kllex_tokbegin(lex), kllex_tokend(lex), "end of file");
       break;
     }
   }
@@ -510,7 +507,7 @@ static KlAst* klparser_dotchain(KlParser* parser, KlLex* lex) {
       kllex_next(lex);
       continue;
     }
-    KlAstDot* dot = klast_dot_create(dotexpr, lex->tok.string, dotexpr->begin, lex->tok.end);
+    KlAstDot* dot = klast_dot_create(dotexpr, lex->tok.string, dotexpr->begin, kllex_tokend(lex));
     klparser_oomifnull(dot);
     dotexpr = klast(dot);
     kllex_next(lex);
@@ -538,7 +535,7 @@ static KlAst* klparser_exprnew(KlParser* parser, KlLex* lex) {
 KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
   switch (kllex_tokkind(lex)) {
     case KLTK_MINUS: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       kllex_next(lex);
       KlAst* expr = klparser_exprpre(parser, lex);
       klparser_returnifnull(expr);
@@ -547,7 +544,7 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       return klast(neg);
     }
     case KLTK_NOT: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       kllex_next(lex);
       KlAst* expr = klparser_exprpre(parser, lex);
       klparser_returnifnull(expr);
@@ -556,7 +553,7 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       return klast(notexpr);
     }
     case KLTK_ARROW: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       KlAstStmtList* block = klparser_arrowfuncbody(parser, lex);
       klparser_returnifnull(block);
       KlAstTuple* params = klparser_emptyexprlist(parser, lex, begin, begin);
@@ -569,7 +566,7 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       return klast(func);
     }
     case KLTK_DARROW: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       KlAstStmtList* block = klparser_darrowfuncbody(parser, lex);
       klparser_returnifnull(block);
       KlAstTuple* params = klparser_emptyexprlist(parser, lex, begin, begin);
@@ -582,7 +579,7 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       return klast(func);
     }
     case KLTK_YIELD: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       kllex_next(lex);
       KlAstTuple* exprlist = klparser_exprlist_mayempty(parser, lex);
       klparser_returnifnull(exprlist);
@@ -591,7 +588,7 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       return klast(yieldexpr);
     }
     case KLTK_ASYNC: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       kllex_next(lex);
       KlAst* expr = klparser_exprpre(parser, lex);
       klparser_returnifnull(expr);
@@ -600,7 +597,7 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       return klast(asyncexpr);
     }
     case KLTK_INHERIT: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       kllex_next(lex);
       KlAst* base = klparser_exprpre(parser, lex);
       klparser_returnifnull(base);
@@ -623,7 +620,7 @@ KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       return klast(klclass);
     }
     case KLTK_METHOD: {
-      KlFileOffset begin = lex->tok.begin;
+      KlFileOffset begin = kllex_tokbegin(lex);
       kllex_next(lex);
       KlAst* expr = klparser_exprpre(parser, lex);
       klparser_returnifnull(expr);
@@ -700,10 +697,10 @@ static KlAstStmtList* klparser_darrowfuncbody(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_DARROW), "");
   kllex_next(lex);
   if (kllex_check(lex, KLTK_LPAREN)) {
-    KlFileOffset begin = lex->tok.begin;
+    KlFileOffset begin = kllex_tokbegin(lex);
     kllex_next(lex);
     KlAstTuple* exprlist = klparser_exprlist(parser, lex);
-    KlFileOffset end = lex->tok.end;
+    KlFileOffset end = kllex_tokend(lex);
     klparser_match(parser, lex, KLTK_RPAREN);
     klparser_returnifnull(exprlist);
     KlAstStmtReturn* stmtreturn = klast_stmtreturn_create(exprlist, begin, end);
@@ -719,10 +716,10 @@ static KlAstStmtList* klparser_darrowfuncbody(KlParser* parser, KlLex* lex) {
     return block;
   } else {
     klparser_check(parser, lex, KLTK_LBRACE);
-    KlFileOffset begin = lex->tok.begin;
+    KlFileOffset begin = kllex_tokbegin(lex);
     kllex_next(lex);
     KlAstStmtList* block = klparser_stmtlist(parser, lex);
-    KlFileOffset end = lex->tok.end;
+    KlFileOffset end = kllex_tokend(lex);
     klparser_match(parser, lex, KLTK_RBRACE);
     klparser_returnifnull(block);
     klast_setposition(block, begin, end);
@@ -771,10 +768,10 @@ static KlAstCall* klparser_exprcall(KlParser* parser, KlLex* lex, KlAst* callabl
     klparser_oomifnull(call);
     return call;
   } else {
-    KlFileOffset begin = lex->tok.begin;
+    KlFileOffset begin = kllex_tokbegin(lex);
     klparser_match(parser, lex, KLTK_LPAREN);
     KlAstTuple* params = klparser_exprlist_mayempty(parser, lex);
-    KlFileOffset end = lex->tok.end;
+    KlFileOffset end = kllex_tokend(lex);
     klparser_match(parser, lex, KLTK_RPAREN);
     if (kl_unlikely(!params)) {
       if (callable) klast_delete(callable);
@@ -795,10 +792,10 @@ KlAst* klparser_exprwhere(KlParser* parser, KlLex* lex, KlAst* expr) {
   kllex_next(lex);
   KlAstStmtList* block;
   if (kllex_check(lex, KLTK_LBRACE)) {
-    KlFileOffset begin = lex->tok.begin;
+    KlFileOffset begin = kllex_tokbegin(lex);
     kllex_next(lex);
     block = klparser_stmtlist(parser, lex);
-    KlFileOffset end = lex->tok.end;
+    KlFileOffset end = kllex_tokend(lex);
     klparser_match(parser, lex, KLTK_RBRACE);
     if (kl_unlikely(!block)) {
       klast_delete(expr);
@@ -861,7 +858,7 @@ KlAst* klparser_exprpost(KlParser* parser, KlLex* lex) {
         }
         kllex_next(lex);
         KlAst* expr = klparser_expr(parser, lex);
-        KlFileOffset end = lex->tok.end;
+        KlFileOffset end = kllex_tokend(lex);
         klparser_match(parser, lex, KLTK_RBRACKET);
         if (kl_unlikely(!expr)) break;
         if (kl_unlikely(!postexpr)) {
@@ -915,7 +912,7 @@ KlAst* klparser_exprpost(KlParser* parser, KlLex* lex) {
         kllex_next(lex);
         if (kl_unlikely(!klparser_check(parser, lex, KLTK_ID) || !postexpr))
           break;
-        KlAstDot* dot = klast_dot_create(postexpr, lex->tok.string, postexpr->begin, lex->tok.end);
+        KlAstDot* dot = klast_dot_create(postexpr, lex->tok.string, postexpr->begin, kllex_tokend(lex));
         klparser_oomifnull(dot);
         postexpr = klast(dot);
         kllex_next(lex);
@@ -995,10 +992,10 @@ static KlAst* klparser_stmtexprandassign(KlParser* parser, KlLex* lex);
 
 KlAstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex) {
   if (kllex_check(lex, KLTK_LBRACE)) {
-    KlFileOffset begin = lex->tok.begin;
+    KlFileOffset begin = kllex_tokbegin(lex);
     kllex_next(lex);
     KlAstStmtList* stmtlist = klparser_stmtlist(parser, lex);
-    if (stmtlist) klast_setposition(stmtlist, begin, lex->tok.end);
+    if (stmtlist) klast_setposition(stmtlist, begin, kllex_tokend(lex));
     klparser_match(parser, lex, KLTK_RBRACE);
     return stmtlist;
   } else {
@@ -1185,7 +1182,7 @@ static KlAst* klparser_stmtinfor(KlParser* parser, KlLex* lex) {
 
 KlAst* klparser_stmtlet(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_LET), "expect 'let'");
-  KlFileOffset begin = lex->tok.begin;
+  KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
   KlAstTuple* lvals = klcast(KlAstTuple*, klparser_exprlist(parser, lex));
   klparser_match(parser, lex, KLTK_ASSIGN);
@@ -1223,7 +1220,7 @@ static KlAst* klparser_stmtexprandassign(KlParser* parser, KlLex* lex) {
 
 KlAstStmtIf* klparser_stmtif(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_IF), "expect 'if'");
-  KlFileOffset begin = lex->tok.begin;
+  KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
   KlAst* cond = klparser_expr(parser, lex);
   kllex_trymatch(lex, KLTK_COLON);
@@ -1246,7 +1243,7 @@ KlAstStmtIf* klparser_stmtif(KlParser* parser, KlLex* lex) {
 
 KlAst* klparser_stmtfor(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_FOR), "expect '('");
-  KlFileOffset begin = lex->tok.begin;
+  KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
   KlAst* stmtfor = klparser_stmtinfor(parser, lex);
   klparser_returnifnull(stmtfor);
@@ -1256,7 +1253,7 @@ KlAst* klparser_stmtfor(KlParser* parser, KlLex* lex) {
 
 KlAst* klparser_stmtwhile(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_WHILE), "expect 'while'");
-  KlFileOffset begin = lex->tok.begin;
+  KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
   KlAst* cond = klparser_expr(parser, lex);
   klparser_match(parser, lex, KLTK_COLON);
@@ -1303,7 +1300,7 @@ KlAstStmtList* klparser_stmtlist(KlParser* parser, KlLex* lex) {
 
 KlAst* klparser_stmtrepeat(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_REPEAT), "expect 'repeat'");
-  KlFileOffset begin = lex->tok.begin;
+  KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
   kllex_trymatch(lex, KLTK_COLON);
   KlAstStmtList* block = klparser_stmtblock(parser, lex);
@@ -1321,7 +1318,7 @@ KlAst* klparser_stmtrepeat(KlParser* parser, KlLex* lex) {
 
 KlAst* klparser_stmtreturn(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_RETURN), "expect 'return'");
-  KlFileOffset begin = lex->tok.begin;
+  KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
   KlAstTuple* results = klparser_exprlist_mayempty(parser, lex);
   klparser_returnifnull(results);

@@ -121,6 +121,7 @@ static inline void klmm_try_gc(KlMM* klmm);
 static inline void klmm_init(KlMM* klmm, size_t limit) {
   klmm->allgc = NULL;
   klmm->aftermark = NULL;
+  klmm->aftersweep = NULL;
   klmm->gcstop_rcs_count = 0;
   klmm->mem_used = 0;
   klmm->limit = limit;

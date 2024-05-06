@@ -1,6 +1,8 @@
 #include "include/code/klcode.h"
 #include "include/error/klerror.h"
 #include "include/parse/klparser.h"
+#include "deps/k/include/kio/kifile.h"
+#include "deps/k/include/kio/kofile.h"
 #include <time.h>
 
 void codegen_test(KlStrTbl* strtbl, Ki* input, const char* inputname, KlError* klerr, KlAstStmtList* ast);

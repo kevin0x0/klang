@@ -9,7 +9,10 @@
 
 #include <stdint.h>
 
-#define KLLEX_STRLIMIT  (KLSTRTAB_EXTRA)
+#define KLLEX_STRLIMIT        (KLSTRTAB_EXTRA)
+
+#define kllex_tokbegin(lex)   ((lex)->tok.begin)
+#define kllex_tokend(lex)     ((lex)->tok.end)
 
 typedef struct tagKlLex {
   KlStrTbl* strtbl;         /* string table */

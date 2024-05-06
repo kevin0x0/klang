@@ -43,7 +43,7 @@ typedef enum tagKlType {
 } KlType;
 
 typedef KlLangInt KlInt;
-typedef KlLangInt KlUInt;
+typedef KlLangUInt KlUInt;
 typedef KlLangFloat KlFloat;
 typedef KlLangBool KlBool;
 
