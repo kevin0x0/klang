@@ -34,11 +34,11 @@ all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.so
 
 
 $(LIB_DIR)libklang.a : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
-	cp $(DEPS_K_DIR)lib/libk.a $(OBJ_DIR)libklang.a
+	cp $(DEPS_K_DIR)lib/libk.a $(LIB_DIR)libklang.a
 	$(AR) $@ $(KLANG_OBJS)
 
 $(LIB_DIR)libklangc.a : $(KLANGC_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
-	cp $(DEPS_K_DIR)lib/libk.a $(OBJ_DIR)libklangc.a
+	cp $(DEPS_K_DIR)lib/libk.a $(LIB_DIR)libklangc.a
 	$(AR) $@ $(KLANGC_OBJS)
 
 $(LIB_DIR)libklangc.so : $(KLANGC_PIC_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
