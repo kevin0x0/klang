@@ -28,7 +28,7 @@ typedef enum tagKlAstKind {
   KLAST_EXPR_CONSTANT,
   KLAST_EXPR_ID,
   KLAST_EXPR_VARARG,
-  KLAST_EXPR_TUPLE, KLAST_EXPR_UNIT_END = KLAST_EXPR_TUPLE,
+  KLAST_EXPR_LIST, KLAST_EXPR_UNIT_END = KLAST_EXPR_LIST,
 
   KLAST_EXPR_PRE,
   KLAST_EXPR_NEW,
@@ -114,7 +114,7 @@ typedef struct tagKlConstant {
 
 
 /* forward declaration */
-typedef struct tagKlAstTuple KlAstTuple;
+typedef struct tagKlAstExprList KlAstExprList;
 typedef struct tagKlAstStmtList KlAstStmtList;
 
 typedef struct tagKlAstClassFieldDesc {
@@ -137,7 +137,7 @@ typedef struct tagKlAstMap {
 
 typedef struct tagKlAstArray {
   KlAst base;
-  KlAstTuple* exprlist;             /* tuple */
+  KlAstExprList* exprlist;             /* exprlist */
 } KlAstArray;
 
 typedef struct tagKlAstArrayGenerator {
@@ -163,11 +163,11 @@ typedef struct tagKlAstVararg {
   KlAst base;
 } KlAstVararg;
 
-typedef struct tagKlAstTuple {
+typedef struct tagKlAstExprList {
   KlAst base;
-  KlAst** elems;                      /* elements of tuple */
-  size_t nelem;                       /* number of elements */
-} KlAstTuple;
+  KlAst** exprs;                      /* elements of exprlist */
+  size_t nexpr;                       /* number of elements */
+} KlAstExprList;
 
 typedef struct tagKlAstBin {
   KlAst base;
@@ -185,12 +185,12 @@ typedef struct tagKlAstPre {
 typedef struct tagKlAstNew {
   KlAst base;
   KlAst* klclass;
-  KlAstTuple* args;   /* parameters for new operator */
+  KlAstExprList* args;   /* parameters for new operator */
 } KlAstNew;
 
 typedef struct tagKlAstYield {
   KlAst base;
-  KlAstTuple* vals;
+  KlAstExprList* vals;
 } KlAstYield;
 
 typedef struct tagKlAstPost {
@@ -203,13 +203,13 @@ typedef struct tagKlAstPost {
 typedef struct tagKlAstCall {
   KlAst base;
   KlAst* callable;
-  KlAstTuple* args;
+  KlAstExprList* args;
 } KlAstCall;
 
 typedef struct tagKlAstFunc {
   KlAst base;
   KlAstStmtList* block; /* function body */
-  KlAstTuple* params;
+  KlAstExprList* params;
   bool vararg;          /* has variable argument */
   bool is_method;
 } KlAstFunc;
@@ -236,39 +236,39 @@ typedef struct tagKlAstStmtList {
 /* statements */
 typedef struct tagKlAstStmtLet {
   KlAst base;
-  KlAstTuple* lvals;        /* left values(tuple) */
-  KlAstTuple* rvals;        /* right values(must be tuple or single value). */
+  KlAstExprList* lvals;        /* left values(exprlist) */
+  KlAstExprList* rvals;        /* right values(must be exprlist or single value). */
 } KlAstStmtLet;
 
 typedef struct tagKlAstStmtAssign {
   KlAst base;
-  KlAstTuple* lvals;        /* left values(single value or tuple) */
-  KlAstTuple* rvals;        /* right values(single value or tuple) */
+  KlAstExprList* lvals;        /* left values(single value or exprlist) */
+  KlAstExprList* rvals;        /* right values(single value or exprlist) */
 } KlAstStmtAssign;
 
 typedef struct tagKlAstStmtExpr {
   KlAst base;
-  KlAstTuple* exprlist;
+  KlAstExprList* exprlist;
 } KlAstStmtExpr;
 
 typedef struct tagKlAstStmtIf {
   KlAst base;
   KlAst* cond;
-  KlAstStmtList* if_block;
+  KlAstStmtList* then_block;
   KlAstStmtList* else_block;  /* optional. no else block if NULL */
 } KlAstStmtIf;
 
 /* variable arguments for */
 typedef struct tagKlAstStmtVFor {
   KlAst base;
-  KlAstTuple* lvals;
+  KlAstExprList* lvals;
   KlAstStmtList* block;
 } KlAstStmtVFor;
 
 /* integer for */
 typedef struct tagKlAstStmtIFor {
   KlAst base;
-  KlAst* lval;
+  KlAstExprList* lval;
   KlAst* begin;
   KlAst* end;
   KlAst* step;    /* nil if NULL */
@@ -278,7 +278,7 @@ typedef struct tagKlAstStmtIFor {
 /* generic for */
 typedef struct tagKlAstStmtGFor {
   KlAst base;
-  KlAstTuple* lvals;
+  KlAstExprList* lvals;
   KlAst* expr;
   KlAstStmtList* block;
 } KlAstStmtGFor;
@@ -297,7 +297,7 @@ typedef struct tagKlAstStmtRepeat {
 
 typedef struct tagKlAstStmtReturn {
   KlAst base;
-  KlAstTuple* retvals;  /* tuple. */
+  KlAstExprList* retvals;  /* exprlist. */
 } KlAstStmtReturn;
 
 typedef struct tagKlAstStmtBreak {
@@ -342,7 +342,7 @@ static inline void klast_setposition_raw(KlAst* ast, KlFileOffset begin, KlFileO
 /* expressions */
 KlAstIdentifier* klast_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset end);
 KlAstMap* klast_map_create(KlAst** keys, KlAst** vals, size_t npair, KlFileOffset begin, KlFileOffset end);
-KlAstArray* klast_array_create(KlAstTuple* exprlist, KlFileOffset begin, KlFileOffset end);
+KlAstArray* klast_array_create(KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end);
 KlAstArrayGenerator* klast_arraygenerator_create(KlStrDesc arrid, KlAstStmtList* stmts, KlFileOffset begin, KlFileOffset end);
 KlAstClass* klast_class_create(KlAstClassFieldDesc* fields, KlAst** vals, size_t nfield, KlAst* base, KlFileOffset begin, KlFileOffset end);
 KlAstConstant* klast_constant_create_string(KlStrDesc string, KlFileOffset begin, KlFileOffset end);
@@ -351,14 +351,14 @@ KlAstConstant* klast_constant_create_float(KlCFloat floatval, KlFileOffset begin
 KlAstConstant* klast_constant_create_boolean(KlCBool boolval, KlFileOffset begin, KlFileOffset end);
 KlAstConstant* klast_constant_create_nil(KlFileOffset begin, KlFileOffset end);
 KlAstVararg* klast_vararg_create(KlFileOffset begin, KlFileOffset end);
-KlAstTuple* klast_tuple_create(KlAst** elems, size_t nelem, KlFileOffset begin, KlFileOffset end);
+KlAstExprList* klast_exprlist_create(KlAst** exprs, size_t nexpr, KlFileOffset begin, KlFileOffset end);
 KlAstBin* klast_bin_create(KlTokenKind op, KlAst* loperand, KlAst* roperand, KlFileOffset begin, KlFileOffset end);
 KlAstPre* klast_pre_create(KlTokenKind op, KlAst* operand, KlFileOffset begin, KlFileOffset end);
-KlAstNew* klast_new_create(KlAst* klclass, KlAstTuple* args, KlFileOffset begin, KlFileOffset end);
-KlAstYield* klast_yield_create(KlAstTuple* vals, KlFileOffset begin, KlFileOffset end);
+KlAstNew* klast_new_create(KlAst* klclass, KlAstExprList* args, KlFileOffset begin, KlFileOffset end);
+KlAstYield* klast_yield_create(KlAstExprList* vals, KlFileOffset begin, KlFileOffset end);
 KlAstPost* klast_post_create(KlTokenKind op, KlAst* operand, KlAst* post, KlFileOffset begin, KlFileOffset end);
-KlAstCall* klast_call_create(KlAst* callable, KlAstTuple* args, KlFileOffset begin, KlFileOffset end);
-KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstTuple* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
+KlAstCall* klast_call_create(KlAst* callable, KlAstExprList* args, KlFileOffset begin, KlFileOffset end);
+KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
 KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
 KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
 
@@ -375,24 +375,24 @@ static inline bool klast_isboolexpr(KlAst* ast) {
 }
 
 
-static inline void klast_tuple_shallow_replace(KlAstTuple* tuple, KlAst** elems, size_t nelem) {
-  free(tuple->elems);
-  tuple->elems = elems;
-  tuple->nelem = nelem;
+static inline void klast_exprlist_shallow_replace(KlAstExprList* exprlist, KlAst** exprs, size_t nexpr) {
+  free(exprlist->exprs);
+  exprlist->exprs = exprs;
+  exprlist->nexpr = nexpr;
 }
 
 /* statements */
 KlAstStmtList* klast_stmtlist_create(KlAst** stmts, size_t nstmt, KlFileOffset begin, KlFileOffset end);
-KlAstStmtLet* klast_stmtlet_create(KlAstTuple* lvals, KlAstTuple* rvals, KlFileOffset begin, KlFileOffset end);
-KlAstStmtAssign* klast_stmtassign_create(KlAstTuple* lvals, KlAstTuple* rvals, KlFileOffset begin, KlFileOffset end);
-KlAstStmtExpr* klast_stmtexpr_create(KlAstTuple* exprlist, KlFileOffset begin, KlFileOffset end);
+KlAstStmtLet* klast_stmtlet_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end);
+KlAstStmtAssign* klast_stmtassign_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end);
+KlAstStmtExpr* klast_stmtexpr_create(KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end);
 KlAstStmtIf* klast_stmtif_create(KlAst* cond, KlAstStmtList* then_block, KlAstStmtList* else_block, KlFileOffset begin, KlFileOffset end);
-KlAstStmtVFor* klast_stmtvfor_create(KlAstTuple* lvals, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
-KlAstStmtIFor* klast_stmtifor_create(KlAst* lval, KlAst* ibegin, KlAst* iend, KlAst* istep, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
-KlAstStmtGFor* klast_stmtgfor_create(KlAstTuple* lvals, KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
+KlAstStmtVFor* klast_stmtvfor_create(KlAstExprList* lvals, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
+KlAstStmtIFor* klast_stmtifor_create(KlAstExprList* lval, KlAst* ibegin, KlAst* iend, KlAst* istep, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
+KlAstStmtGFor* klast_stmtgfor_create(KlAstExprList* lvals, KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
 KlAstStmtWhile* klast_stmtwhile_create(KlAst* cond, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
 KlAstStmtRepeat* klast_stmtrepeat_create(KlAstStmtList* block, KlAst* cond, KlFileOffset begin, KlFileOffset end);
-KlAstStmtReturn* klast_stmtreturn_create(KlAstTuple* retvals, KlFileOffset begin, KlFileOffset end);
+KlAstStmtReturn* klast_stmtreturn_create(KlAstExprList* retvals, KlFileOffset begin, KlFileOffset end);
 KlAstStmtBreak* klast_stmtbreak_create(KlFileOffset begin, KlFileOffset end);
 KlAstStmtContinue* klast_stmtcontinue_create(KlFileOffset begin, KlFileOffset end);
 

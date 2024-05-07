@@ -273,7 +273,7 @@ void klgen_loadval(KlGenUnit* gen, KlCStkId target, KlCodeVal val, KlFilePositio
 }
 
 void klgen_emitloadnils(KlGenUnit* gen, KlCStkId target, size_t nnil, KlFilePosition position) {
-  if (klgen_currcodesize(gen) == 0) {
+  if (klgen_currentpc(gen) == 0) {
     klgen_emit(gen, klinst_loadnil(target, nnil), position);
   } else {
     KlInstruction* previnst = klinstarr_back(&gen->code);
@@ -301,7 +301,7 @@ void klgen_emitmove(KlGenUnit* gen, KlCStkId target, KlCStkId from, size_t nmove
     klgen_emit(gen, klinst_multimove(target, from, nmove), position);
     return;
   }
-  if (klgen_currcodesize(gen) == 0) {
+  if (klgen_currentpc(gen) == 0) {
     klgen_emit(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
   } else {
     KlInstruction* previnst = klinstarr_back(&gen->code);
@@ -352,7 +352,7 @@ KlCode* klgen_file(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config
     kl_assert(klast_kind(ast) == KLAST_STMT_BLOCK, "");
     klgen_stmtlist(&gen, ast);
     /* add a return statement if 'return' is missing */
-    if (!klast_mustreturn(klcast(KlAstStmtList*, ast))) {
+    if (!klast_mustreturn(ast)) {
       if (gen.symtbl->info.referenced)
         klgen_emit(&gen, klinst_close(0), klgen_position(klast_end(ast), klast_end(ast)));
       klgen_emit(&gen, klinst_return0(), klgen_position(klast_end(ast), klast_end(ast)));

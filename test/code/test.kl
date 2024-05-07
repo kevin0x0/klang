@@ -1,1 +1,1 @@
-let {: "hello" : "hello", "mama" : mama :} = {::};
+let a = b or 3;

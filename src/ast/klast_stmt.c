@@ -32,7 +32,7 @@ static KlAstInfo klast_stmtbreak_vfunc = { .destructor = (KlAstDelete)klast_stmt
 static KlAstInfo klast_stmtcontinue_vfunc = { .destructor = (KlAstDelete)klast_stmtcontinue_destroy, .kind = KLAST_STMT_CONTINUE };
 
 
-KlAstStmtLet* klast_stmtlet_create(KlAstTuple* lvals, KlAstTuple* rvals, KlFileOffset begin, KlFileOffset end) {
+KlAstStmtLet* klast_stmtlet_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end) {
   KlAstStmtLet* stmtlet = klast_alloc(KlAstStmtLet);
   if (kl_unlikely(!stmtlet)) {
     klast_delete(lvals);
@@ -46,7 +46,7 @@ KlAstStmtLet* klast_stmtlet_create(KlAstTuple* lvals, KlAstTuple* rvals, KlFileO
   return stmtlet;
 }
 
-KlAstStmtAssign* klast_stmtassign_create(KlAstTuple* lvals, KlAstTuple* rvals, KlFileOffset begin, KlFileOffset end) {
+KlAstStmtAssign* klast_stmtassign_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end) {
   KlAstStmtAssign* stmtassign = klast_alloc(KlAstStmtAssign);
   if (kl_unlikely(!stmtassign)) {
     free(lvals);
@@ -60,7 +60,7 @@ KlAstStmtAssign* klast_stmtassign_create(KlAstTuple* lvals, KlAstTuple* rvals, K
   return stmtassign;
 }
 
-KlAstStmtExpr* klast_stmtexpr_create(KlAstTuple* exprlist, KlFileOffset begin, KlFileOffset end) {
+KlAstStmtExpr* klast_stmtexpr_create(KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end) {
   KlAstStmtExpr* stmtexpr = klast_alloc(KlAstStmtExpr);
   if (kl_unlikely(!stmtexpr)) {
     klast_delete(exprlist);
@@ -81,14 +81,14 @@ KlAstStmtIf* klast_stmtif_create(KlAst* cond, KlAstStmtList* then_block, KlAstSt
     return NULL;
   }
   stmtif->cond = cond;
-  stmtif->if_block = then_block;
+  stmtif->then_block = then_block;
   stmtif->else_block = else_block;
   klast_setposition(stmtif, begin, end);
   klast_init(stmtif, &klast_stmtif_vfunc);
   return stmtif;
 }
 
-KlAstStmtVFor* klast_stmtvfor_create(KlAstTuple* lvals, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
+KlAstStmtVFor* klast_stmtvfor_create(KlAstExprList* lvals, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlAstStmtVFor* stmtvfor = klast_alloc(KlAstStmtVFor);
   if (kl_unlikely(!stmtvfor)) {
     klast_delete(block);
@@ -102,7 +102,7 @@ KlAstStmtVFor* klast_stmtvfor_create(KlAstTuple* lvals, KlAstStmtList* block, Kl
   return stmtvfor;
 }
 
-KlAstStmtIFor* klast_stmtifor_create(KlAst* lval, KlAst* ibegin, KlAst* iend, KlAst* istep, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
+KlAstStmtIFor* klast_stmtifor_create(KlAstExprList* lval, KlAst* ibegin, KlAst* iend, KlAst* istep, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlAstStmtIFor* stmtifor = klast_alloc(KlAstStmtIFor);
   if (kl_unlikely(!stmtifor)) {
     klast_delete(lval);
@@ -122,7 +122,7 @@ KlAstStmtIFor* klast_stmtifor_create(KlAst* lval, KlAst* ibegin, KlAst* iend, Kl
   return stmtifor;
 }
 
-KlAstStmtGFor* klast_stmtgfor_create(KlAstTuple* lvals, KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
+KlAstStmtGFor* klast_stmtgfor_create(KlAstExprList* lvals, KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlAstStmtGFor* stmtgfor = klast_alloc(KlAstStmtGFor);
   if (kl_unlikely(!stmtgfor)) {
     klast_delete(block);
@@ -182,7 +182,7 @@ KlAstStmtRepeat* klast_stmtrepeat_create(KlAstStmtList* block, KlAst* cond, KlFi
   return stmtrepeat;
 }
 
-KlAstStmtReturn* klast_stmtreturn_create(KlAstTuple* retvals, KlFileOffset begin, KlFileOffset end) {
+KlAstStmtReturn* klast_stmtreturn_create(KlAstExprList* retvals, KlFileOffset begin, KlFileOffset end) {
   KlAstStmtReturn* stmtreturn = klast_alloc(KlAstStmtReturn);
   if (kl_unlikely(!stmtreturn)) {
     klast_delete(retvals);
@@ -228,7 +228,7 @@ static void klast_stmtexpr_destroy(KlAstStmtExpr* stmtexpr) {
 
 static void klast_stmtif_destroy(KlAstStmtIf* stmtif) {
   klast_delete(stmtif->cond);
-  klast_delete(stmtif->if_block);
+  klast_delete(stmtif->then_block);
   if (stmtif->else_block)
     klast_delete(stmtif->else_block);
 }
@@ -290,7 +290,7 @@ bool klast_mustreturn(KlAstStmtList* stmtlist) {
     return true;
   if (klast_kind(laststmt) == KLAST_STMT_IF) {
     KlAstStmtIf* stmtif = klcast(KlAstStmtIf*, laststmt);
-    return klast_mustreturn(klcast(KlAstStmtList*, stmtif->if_block)) &&
+    return klast_mustreturn(klcast(KlAstStmtList*, stmtif->then_block)) &&
            (!stmtif->else_block || klast_mustreturn(klcast(KlAstStmtList*, stmtif->else_block)));
   }
   return false;

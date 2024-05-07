@@ -343,14 +343,14 @@ KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAst* ast, bool jumpcond) {
     if (kltoken_isrelation(binast->op))
       return klgen_exprrelation(gen, binast, jumpcond);
     /* else is other binary expression, fallthrough */
-  } else if (klast_kind(ast) == KLAST_EXPR_TUPLE) {
-    KlAstTuple* tuple = klcast(KlAstTuple*, ast);
-    KlAst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
+  } else if (klast_kind(ast) == KLAST_EXPR_LIST) {
+    KlAstExprList* exprlist = klcast(KlAstExprList*, ast);
+    KlAst* lastelem = exprlist->nexpr == 0 ? NULL : exprlist->exprs[exprlist->nexpr - 1];
     if (lastelem && klast_isboolexpr(lastelem)) {
-      klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, 0, klgen_astposition(tuple));
+      klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr - 1, 0, klgen_astposition(exprlist));
       return klgen_exprbool(gen, lastelem, jumpcond);
     }
-    /* else the tuple should be evaluated by klgen_expr, fallthrough */
+    /* else the exprlist should be evaluated by klgen_expr, fallthrough */
   }
   KlCStkId stktop = klgen_stacktop(gen);
   KlCodeVal res = klgen_expr(gen, ast);
@@ -387,7 +387,7 @@ KlCodeVal klgen_expror(KlGenUnit* gen, KlAstBin* orast, bool jumpcond) {
   if (jumpcond) {
     return klgen_mergejmplist(gen, ljmp, rjmp);
   } else {
-    klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+    klgen_setinstjmppos(gen, ljmp, klgen_currentpc(gen));
     return rjmp;
   }
 }
@@ -409,7 +409,7 @@ KlCodeVal klgen_exprand(KlGenUnit* gen, KlAstBin* andast, bool jumpcond) {
     klgen_stackfree(gen, stktop);
   }
   if (jumpcond) {
-    klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+    klgen_setinstjmppos(gen, ljmp, klgen_currentpc(gen));
     return rjmp;
   } else {
     return klgen_mergejmplist(gen, ljmp, rjmp);
@@ -448,7 +448,7 @@ static KlCodeVal klgen_exprorset(KlGenUnit* gen, KlAstBin* orast, KlCStkId targe
       klgen_stackfree(gen, stktop);
     }
     /* else true, fall through */
-    klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+    klgen_setinstjmppos(gen, ljmp, klgen_currentpc(gen));
     return klcodeval_none();
   }
 }
@@ -469,7 +469,7 @@ static KlCodeVal klgen_exprandset(KlGenUnit* gen, KlAstBin* andast, KlCStkId tar
       klgen_stackfree(gen, stktop);
     }
     /* else false, fall through */
-    klgen_setinstjmppos(gen, ljmp, klgen_currcodesize(gen));
+    klgen_setinstjmppos(gen, ljmp, klgen_currentpc(gen));
     return klcodeval_none();
   } else {
     KlCodeVal lval = klgen_exprboolset(gen, andast->loperand, target, false);
@@ -512,14 +512,14 @@ static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlAst* ast, KlCStkId target, 
       return klgen_exprboolset_handleresult(gen, res, setcond);
     }
     /* else is other binary expression, fallthrough */
-  } else if (klast_kind(ast) == KLAST_EXPR_TUPLE) {
-    KlAstTuple* tuple = klcast(KlAstTuple*, ast);
-    KlAst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
+  } else if (klast_kind(ast) == KLAST_EXPR_LIST) {
+    KlAstExprList* exprlist = klcast(KlAstExprList*, ast);
+    KlAst* lastelem = exprlist->nexpr == 0 ? NULL : exprlist->exprs[exprlist->nexpr - 1];
     if (lastelem && klast_isboolexpr(lastelem)) {
-      klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, 0, klgen_astposition(tuple));
+      klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr - 1, 0, klgen_astposition(exprlist));
       return klgen_exprboolset(gen, lastelem, target, setcond);
     }
-    /* else the tuple should be evaluated by klgen_expr, fallthrough */
+    /* else the exprlist should be evaluated by klgen_expr, fallthrough */
   }
   KlCStkId stktop = klgen_stacktop(gen);
   KlCodeVal res = klgen_expr(gen, ast);
@@ -543,7 +543,18 @@ static void klgen_finishexprboolvalraw(KlGenUnit* gen, KlCStkId target, KlFilePo
   KlCPC truepos = klgen_emit(gen, klinst_loadbool(target, true), pos);
   klgen_setinstjmppos(gen, jumpinfo->falselist, falsepos);
   klgen_setinstjmppos(gen, jumpinfo->truelist, truepos);
-  klgen_setinstjmppos(gen, jumpinfo->terminatelist, klgen_currcodesize(gen));
+  klgen_setinstjmppos(gen, jumpinfo->terminatelist, klgen_currentpc(gen));
+}
+
+static void klgen_finishexprboolvalraw_afterload(KlGenUnit* gen, KlCStkId target, KlFilePosition pos) {
+  if (gen->jmpinfo.jumpinfo->truelist.kind == KLVAL_NONE &&
+      gen->jmpinfo.jumpinfo->falselist.kind == KLVAL_NONE) {
+    klgen_setinstjmppos(gen, gen->jmpinfo.jumpinfo->terminatelist, klgen_currentpc(gen));
+  } else {
+    KlCodeVal jmp = klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), pos));
+    klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->terminatelist, jmp);
+    klgen_finishexprboolvalraw(gen, target, pos);
+  }
 }
 
 static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId target) {
@@ -563,11 +574,9 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId targe
       }
       KlCodeVal rjmp = klgen_exprboolvalraw(gen, binast->roperand, target);
       if (klcodeval_isconstant(rjmp)) {
-        if (klcodeval_istrue(rjmp)) {
-          rjmp = klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), klgen_astposition(binast->roperand)));
-          klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->truelist, rjmp);
-        }
-        klgen_finishexprboolvalraw(gen, target, klgen_astposition(ast));
+        klgen_loadval(gen, target, rjmp, klgen_astposition(binast->roperand));
+        klgen_finishexprboolvalraw_afterload(gen, target, klgen_astposition(ast));
+        klgen_stackfree(gen, target < klgen_stacktop(gen) ? klgen_stacktop(gen) : target + 1);
       }
       return klcodeval_none();
     }
@@ -579,11 +588,9 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId targe
       }
       KlCodeVal rjmp = klgen_exprboolvalraw(gen, binast->roperand, target);
       if (klcodeval_isconstant(rjmp)) {
-        if (klcodeval_istrue(rjmp)) {
-          rjmp = klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), klgen_astposition(binast->roperand)));
-          klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->truelist, rjmp);
-        }
-        klgen_finishexprboolvalraw(gen, target, klgen_astposition(ast));
+        klgen_loadval(gen, target, rjmp, klgen_astposition(binast->roperand));
+        klgen_finishexprboolvalraw_afterload(gen, target, klgen_astposition(ast));
+        klgen_stackfree(gen, target < klgen_stacktop(gen) ? klgen_stacktop(gen) : target + 1);
       }
       return klcodeval_none();
     }
@@ -595,26 +602,19 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId targe
       return klcodeval_none();
     }
     /* else is other binary expression, fallthrough */
-  } else if (klast_kind(ast) == KLAST_EXPR_TUPLE) {
-    KlAstTuple* tuple = klcast(KlAstTuple*, ast);
-    KlAst* lastelem = tuple->nelem == 0 ? NULL : tuple->elems[tuple->nelem - 1];
+  } else if (klast_kind(ast) == KLAST_EXPR_LIST) {
+    KlAstExprList* exprlist = klcast(KlAstExprList*, ast);
+    KlAst* lastelem = exprlist->nexpr == 0 ? NULL : exprlist->exprs[exprlist->nexpr - 1];
     if (lastelem && klast_isboolexpr(lastelem)) {
-      klgen_exprlist_raw(gen, tuple->elems, tuple->nelem - 1, 0, klgen_astposition(tuple));
+      klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr - 1, 0, klgen_astposition(exprlist));
       return klgen_exprboolvalraw(gen, lastelem, target);
     }
-    /* else the tuple should be evaluated by klgen_expr, fallthrough */
+    /* else the exprlist should be evaluated by klgen_expr, fallthrough */
   }
   KlCStkId stktop = klgen_stacktop(gen);
   KlCodeVal res = klgen_exprtarget(gen, ast, target);
   if (klcodeval_isconstant(res)) return res;
-  if (gen->jmpinfo.jumpinfo->truelist.kind == KLVAL_NONE &&
-      gen->jmpinfo.jumpinfo->falselist.kind == KLVAL_NONE) {
-    klgen_setinstjmppos(gen, gen->jmpinfo.jumpinfo->terminatelist, klgen_currcodesize(gen));
-  } else {
-    KlCodeVal jmp = klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), klgen_astposition(ast)));
-    klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->terminatelist, jmp);
-    klgen_finishexprboolvalraw(gen, target, klgen_astposition(ast));
-  }
+  klgen_finishexprboolvalraw_afterload(gen, target, klgen_astposition(ast));
   klgen_stackfree(gen, target < stktop ? stktop : target + 1);
   return klcodeval_none();
 }

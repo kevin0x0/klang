@@ -153,7 +153,7 @@ static inline void klgen_stackpreserve(KlGenUnit* gen, KlCStkId stkid) {
     gen->stksize = stkid + 1;
 }
 
-static inline size_t klgen_currcodesize(KlGenUnit* gen) {
+static inline KlCPC klgen_currentpc(KlGenUnit* gen) {
   return klinstarr_size(&gen->code);
 }
 
@@ -164,7 +164,7 @@ static inline void klgen_popinst(KlGenUnit* gen, size_t npop) {
 }
 
 static inline void klgen_popinstto(KlGenUnit* gen, KlCPC to) {
-  klgen_popinst(gen, klgen_currcodesize(gen) - to);
+  klgen_popinst(gen, klgen_currentpc(gen) - to);
 }
 
 static inline KlFilePosition klgen_position(KlFileOffset begin, KlFileOffset end) {
