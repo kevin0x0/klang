@@ -2,6 +2,7 @@ ROOT_DIR = $(abspath ./)/
 
 INC_DIR = $(ROOT_DIR)include/
 SRC_DIR = $(ROOT_DIR)src/
+BIN_DIR = $(ROOT_DIR)bin/
 LIB_DIR = $(ROOT_DIR)lib/
 OBJ_DIR = $(ROOT_DIR)obj/
 
@@ -25,13 +26,15 @@ KLANG_OBJS = $(OBJ_DIR)klapi.o $(OBJ_DIR)klutils.o $(OBJ_DIR)klgc.o $(OBJ_DIR)kl
 KLANGC_OBJS = $(OBJ_DIR)klparser.o $(OBJ_DIR)kltokens.o $(OBJ_DIR)kllex.o $(OBJ_DIR)klidarr.o $(OBJ_DIR)klcfdarr.o \
 							$(OBJ_DIR)klerror.o $(OBJ_DIR)klast_expr.o $(OBJ_DIR)klast_stmt.o $(OBJ_DIR)klstrtbl.o $(OBJ_DIR)klcode.o \
 							$(OBJ_DIR)klcode_dump.o $(OBJ_DIR)klcode_print.o $(OBJ_DIR)klcontbl.o $(OBJ_DIR)klgen.o $(OBJ_DIR)klgen_expr.o \
-							$(OBJ_DIR)klgen_exprbool.o $(OBJ_DIR)klgen_pattern.o $(OBJ_DIR)klgen_stmt.o $(OBJ_DIR)klsymtbl.o
+							$(OBJ_DIR)klgen_exprbool.o $(OBJ_DIR)klgen_pattern.o $(OBJ_DIR)klgen_stmt.o $(OBJ_DIR)klsymtbl.o $(OBJ_DIR)klutils.o
 
 KLANGC_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGC_OBJS))
 
 
-all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.so 
+all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.so $(BIN_DIR)klangc
 
+$(BIN_DIR)klangc : $(OBJ_DIR)klangc.o $(LIB_DIR)libklangc.a $(DEPS_K_DIR)lib/libk.a | create_dir
+	$(CC) -o $@ $< $(CFLAGS) -Wl,-Bstatic -L $(LIB_DIR) -L $(DEPS_K_DIR)lib/ -lk -lklangc -Wl,-Bdynamic
 
 $(LIB_DIR)libklang.a : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
 	cp $(DEPS_K_DIR)lib/libk.a $(LIB_DIR)libklang.a
@@ -103,7 +106,7 @@ $(OBJ_DIR)klapi.o : $(SRC_DIR)klapi.c $(DEPS_K_DIR)include/lib/lib.h $(INC_DIR)k
 $(OBJ_DIR)klconvert.o : $(SRC_DIR)lang/klconvert.c $(INC_DIR)lang/klconvert.h $(INC_DIR)lang/kltypes.h | create_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(OBJ_DIR)klangc.o : $(SRC_DIR)main/klangc.c $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kio_common.h $(DEPS_K_DIR)include/kio/ko.h $(DEPS_K_DIR)include/array/karray.h $(DEPS_K_DIR)include/kutils/utils.h $(DEPS_K_DIR)include/kio/kifile.h $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kofile.h $(DEPS_K_DIR)include/kio/ko.h $(DEPS_K_DIR)include/kio/kibuf.h $(INC_DIR)parse/klparser.h $(INC_DIR)ast/klast.h $(INC_DIR)ast/klstrtbl.h $(INC_DIR)misc/klutils.h $(INC_DIR)error/klerror.h $(INC_DIR)lang/kltypes.h $(INC_DIR)parse/kltokens.h $(INC_DIR)parse/kllex.h $(INC_DIR)code/klcode.h $(INC_DIR)code/klcontbl.h $(INC_DIR)code/klcodeval.h $(INC_DIR)lang/klinst.h | create_dir
+$(OBJ_DIR)klangc.o : $(SRC_DIR)main/klangc.c $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kio_common.h $(DEPS_K_DIR)include/kio/ko.h $(DEPS_K_DIR)include/array/karray.h $(DEPS_K_DIR)include/kutils/utils.h $(DEPS_K_DIR)include/kio/kifile.h $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kofile.h $(DEPS_K_DIR)include/kio/ko.h $(DEPS_K_DIR)include/kio/kibuf.h $(INC_DIR)parse/kllex.h $(INC_DIR)ast/klast.h $(INC_DIR)ast/klstrtbl.h $(INC_DIR)misc/klutils.h $(INC_DIR)error/klerror.h $(INC_DIR)lang/kltypes.h $(INC_DIR)parse/kltokens.h $(INC_DIR)parse/klparser.h $(INC_DIR)code/klcode.h $(INC_DIR)code/klcontbl.h $(INC_DIR)code/klcodeval.h $(INC_DIR)lang/klinst.h | create_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(OBJ_DIR)klutils.o : $(SRC_DIR)misc/klutils.c $(INC_DIR)misc/klutils.h | create_dir
@@ -246,4 +249,4 @@ clean :
 	$(MAKE) -C $(DEPS_K_DIR) clean
 
 create_dir :
-	mkdir -p $(OBJ_DIR) $(LIB_DIR)
+	mkdir -p $(OBJ_DIR) $(LIB_DIR) $(BIN_DIR)

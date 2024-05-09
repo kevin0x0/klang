@@ -2,6 +2,7 @@ ROOT_DIR = $(abspath ./)/
 
 INC_DIR = $(ROOT_DIR)include/
 SRC_DIR = $(ROOT_DIR)src/
+BIN_DIR = $(ROOT_DIR)bin/
 LIB_DIR = $(ROOT_DIR)lib/
 OBJ_DIR = $(ROOT_DIR)obj/
 
@@ -30,8 +31,10 @@ KLANGC_OBJS = $(OBJ_DIR)klparser.o $(OBJ_DIR)kltokens.o $(OBJ_DIR)kllex.o $(OBJ_
 KLANGC_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGC_OBJS))
 
 
-all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.so 
+all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.so $(BIN_DIR)klangc
 
+$(BIN_DIR)klangc : $(OBJ_DIR)klangc.o $(LIB_DIR)libklangc.a $(DEPS_K_DIR)lib/libk.a | create_dir
+	$(CC) -o $@ $< $(CFLAGS) -Wl,-Bstatic -lk -lklangc -Wl,-Bdynamic
 
 $(LIB_DIR)libklang.a : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
 	cp $(DEPS_K_DIR)lib/libk.a $(LIB_DIR)libklang.a

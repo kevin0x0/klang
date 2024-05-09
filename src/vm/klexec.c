@@ -2065,8 +2065,6 @@ KlException klexec_execute(KlState* state) {
         break;
       }
       case KLOPCODE_YIELD: {
-        if (kl_unlikely(!klco_valid(&state->coinfo)))   /* is this 'state' a valid coroutine? */
-          return klstate_throw(state, KL_E_INVLD, "can not yield from outside a coroutine");
         if (kl_unlikely(!klco_yield_allowed(&state->coinfo)))
           return klstate_throw(state, KL_E_INVLD, "can not yield from here");
         KlValue* first = stkbase + KLINST_AXY_GETA(inst);

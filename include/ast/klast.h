@@ -16,8 +16,8 @@
 #define klast_init(ast, vfunc)              (klast_init_raw(klcast(KlAst*, (ast)), (vfunc)))
 #define klast_kind(ast)                     (klast_kind_raw(klcast(KlAst*, (ast))))
 #define klast_destroy(ast)                  (klast_destroy_raw(klcast(KlAst*, (ast))))
-#define klast_delete(ast)                   (klast_delete_raw(klcast(KlAst*, (ast))))
 #define klast(ast)                          (klcast(KlAst*, (ast)))
+#define klast_delete(ast)                   do { klast_destroy((ast)); free((ast)); } while (0)
 
 
 typedef enum tagKlAstKind {
@@ -310,7 +310,6 @@ typedef struct tagKlAstStmtContinue {
 
 /* general functions */
 static inline void klast_init_raw(KlAst* ast, KlAstInfo* vfunc);
-static inline void klast_delete_raw(KlAst* ast);
 static inline void klast_destroy_raw(KlAst* ast);
 static inline KlAstKind klast_kind_raw(KlAst* ast);
 static inline void klast_setposition_raw(KlAst* ast, KlFileOffset begin, KlFileOffset end);
@@ -318,11 +317,6 @@ static inline void klast_setposition_raw(KlAst* ast, KlFileOffset begin, KlFileO
 
 static inline void klast_init_raw(KlAst* ast, KlAstInfo* vfunc) {
   ast->info = vfunc;
-}
-
-static inline void klast_delete_raw(KlAst* ast) {
-  ast->info->destructor(ast);
-  free(ast);
 }
 
 static inline void klast_destroy_raw(KlAst* ast) {

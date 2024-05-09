@@ -31,14 +31,14 @@ let Window = inherit {} : {
 };
 
 
-let a = foo(x, x + 1) where {
+let a0 = foo(x, x + 1) where {
   let x = bar(4);
   let y = 4;
 };
 
-let [a, b, [c, d]] = getarray(0, 100);
+let [a1, b, [c, d]] = getarray(0, 100);
 
-let a << 3, 4, [(last_inner_left, _)] = expr;
+let 4, [(last_inner_left, _)] = expr;
 
 with = (obj, func) => {
   func(obj);
@@ -49,20 +49,20 @@ with = (obj, func) => {
 
 with = obj -> func -> (func(), obj.close());
 
-let f = ((a, b)) => (p, q);
+let fj = ((a, b)) => (p, q);
 
 f ();
 
-let f = n -> n + 1;
+let f0 = n -> n + 1;
 
 f.'+' = method rop -> n -> this n + rop;
 
 let g = f + 1;
 
 
-let [a, b], [1, 3, { name = name }] = foo(3);
+let [a2, b0], [1, 3, { name = name }] = foo(3);
 
-let class = {
+let class0 = {
   local name;
   local age,
   gender;

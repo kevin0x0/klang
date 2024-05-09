@@ -579,8 +579,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId targe
         klgen_stackfree(gen, target < klgen_stacktop(gen) ? klgen_stacktop(gen) : target + 1);
       }
       return klcodeval_none();
-    }
-    if (binast->op == KLTK_OR) {
+    } else if (binast->op == KLTK_OR) {
       KlCodeVal ljmp = klgen_exprboolset(gen, binast->loperand, target, true);
       if (klcodeval_isconstant(ljmp)) {
         if (klcodeval_istrue(ljmp)) return ljmp;
@@ -593,8 +592,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId targe
         klgen_stackfree(gen, target < klgen_stacktop(gen) ? klgen_stacktop(gen) : target + 1);
       }
       return klcodeval_none();
-    }
-    if (kltoken_isrelation(binast->op)) {
+    } else if (kltoken_isrelation(binast->op)) {
       KlCodeVal res = klgen_exprrelation(gen, binast, true);
       if (klcodeval_isconstant(res)) return res;
       klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->truelist, res);

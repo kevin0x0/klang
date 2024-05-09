@@ -62,6 +62,7 @@ static inline bool klco_ismethod(KlCoroutine* co) {
 }
 
 static inline void klco_allow_yield(KlCoroutine* co, bool allow) {
+  kl_assert(!allow || co->kclo != NULL, "do not allow main coroutine(created by klpai_new_state()) yield");
   co->allow_yield = allow;
 }
 

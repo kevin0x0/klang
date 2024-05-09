@@ -1,1 +1,1 @@
-let a = b or 3;
+let a = a <= 3 and a or 3 + 2 where { repeat: {let a = 3;} until false; };

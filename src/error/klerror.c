@@ -4,39 +4,53 @@
 #include "include/kio/kio_common.h"
 #include <stdbool.h>
 
+void klerror_init(KlError* klerr, Ko* errout) {
+  klerr->err = errout;
+  klerr->errcount = 0;
+  klerr->config = (KlErrorConfig) {
+    .curl = '~',
+    .zerocurl = '^',
+    .tabstop = 8,
+    .maxtextline = 3,
+    .promptnorm = "|| ",
+    .prompttext = "||== ",
+    .promptmsg = "|| "
+  };
+}
+
 
 static unsigned klerror_helper_locateline(Ki* input, KlFileOffset offset);
-static bool klerror_helper_showline_withcurl(KlError* klerror, Ki* input, KlFileOffset begin, KlFileOffset end);
+static bool klerror_helper_showline_withcurl(KlError* klerr, Ki* input, KlFileOffset begin, KlFileOffset end);
 
-void klerror_error(KlError* klerror, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
+void klerror_error(KlError* klerr, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
   va_list args;
   va_start(args, format);
-  klerror_errorv(klerror, input, inputname, begin, end, format, args);
+  klerror_errorv(klerr, input, inputname, begin, end, format, args);
   va_end(args);
 }
 
-void klerror_errorv(KlError* klerror, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, va_list args) {
-  ++klerror->errcount;
-  Ko* err = klerror->err;
+void klerror_errorv(KlError* klerr, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, va_list args) {
+  ++klerr->errcount;
+  Ko* err = klerr->err;
   KioFileOffset orioffset = ki_tell(input);
   unsigned line = klerror_helper_locateline(input, begin);
   KioFileOffset linebegin = ki_tell(input);
 
   unsigned col = begin - linebegin + 1;
-  ko_printf(err, "%s%s:%4u:%4u: ", klerror->config.promptmsg, inputname, line, col);
+  ko_printf(err, "%s%s:%4u:%4u: ", klerr->config.promptmsg, inputname, line, col);
   ko_vprintf(err, format, args);
   ko_putc(err, '\n');
 
   unsigned nputline = 0;
-  while (nputline++ < klerror->config.maxtextline) {
-    if (!klerror_helper_showline_withcurl(klerror, input, begin, end)) {
+  while (nputline++ < klerr->config.maxtextline) {
+    if (!klerror_helper_showline_withcurl(klerr, input, begin, end)) {
       break;
     }
   }
-  if (nputline > klerror->config.maxtextline)
-    ko_printf(err, "%stoo many lines...\n", klerror->config.promptnorm);
+  if (nputline > klerr->config.maxtextline)
+    ko_printf(err, "%stoo many lines...\n", klerr->config.promptnorm);
   ki_seek(input, orioffset);
-  ko_printf(err, "%s\n", klerror->config.promptnorm);
+  ko_printf(err, "%s\n", klerr->config.promptnorm);
   //ko_putc(err, '\n');
   ko_flush(err);
 }
@@ -61,24 +75,24 @@ static unsigned klerror_helper_locateline(Ki* input, KlFileOffset offset) {
   return currline;
 }
 
-static bool klerror_helper_showline_withcurl(KlError* klerror, Ki* input, KlFileOffset begin, KlFileOffset end) {
-  Ko* err = klerror->err;
+static bool klerror_helper_showline_withcurl(KlError* klerr, Ki* input, KlFileOffset begin, KlFileOffset end) {
+  Ko* err = klerr->err;
   KioFileOffset curroffset = ki_tell(input);
   if (curroffset >= end) return false;
-  ko_printf(err, "%s", klerror->config.prompttext);
+  ko_printf(err, "%s", klerr->config.prompttext);
   int ch = ki_getc(input);
   while (!kl_isnl(ch) && ch != KOF) {
     ko_putc(err, ch);
     ch = ki_getc(input);
   }
   ko_putc(err, '\n');
-  ko_printf(err, "%s", klerror->config.prompttext);
+  ko_printf(err, "%s", klerr->config.prompttext);
   ki_seek(input, curroffset);
   ch = ki_getc(input);
   /* leading white space should not be underlined. */
   while (ch == ' ' || ch == '\t') {
     if (ch == '\t') {
-      for (size_t i = 0; i < klerror->config.tabstop; ++i)
+      for (size_t i = 0; i < klerr->config.tabstop; ++i)
         ko_putc(err, ' ');
     } else {
       ko_putc(err, ' ');
@@ -89,17 +103,17 @@ static bool klerror_helper_showline_withcurl(KlError* klerror, Ki* input, KlFile
 
   while (!kl_isnl(ch)) {
     if (curroffset == begin && curroffset == end) {
-      ko_putc(err, klerror->config.zerocurl);
+      ko_putc(err, klerr->config.zerocurl);
     } else if (curroffset >= begin && curroffset < end) {
       if (ch == '\t') {
-        for (size_t i = 0; i < klerror->config.tabstop; ++i)
-          ko_putc(err, klerror->config.curl);
+        for (size_t i = 0; i < klerr->config.tabstop; ++i)
+          ko_putc(err, klerr->config.curl);
       } else {
-        ko_putc(err, klerror->config.curl);
+        ko_putc(err, klerr->config.curl);
       }
     } else {
       if (ch == '\t') {
-        for (size_t i = 0; i < klerror->config.tabstop; ++i)
+        for (size_t i = 0; i < klerr->config.tabstop; ++i)
           ko_putc(err, ' ');
       } else {
         ko_putc(err, ' ');

@@ -8,4 +8,4 @@ clean :
 	$(MAKE) -C $(DEPS_K_DIR) clean
 
 create_dir :
-	mkdir -p $(OBJ_DIR) $(LIB_DIR)
+	mkdir -p $(OBJ_DIR) $(LIB_DIR) $(BIN_DIR)

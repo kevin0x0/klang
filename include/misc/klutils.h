@@ -34,9 +34,9 @@ kl_noreturn void kl_abort(const char* expr, const char* head, int line_no, const
 #endif
 
 #if defined (__GNUC__) || defined (__clang__)
-#define kl_fallthrough  __attribute__ ((fallthrough))
+#define KL_FALLTHROUGH  __attribute__ ((fallthrough))
 #else
-#define kl_fallthrough  /* fall through */
+#define KL_FALLTHROUGH  /* fall through */
 #endif
 
 

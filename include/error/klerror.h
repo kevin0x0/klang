@@ -25,8 +25,12 @@ typedef struct tagKlError {
 
 typedef unsigned KlFileOffset;
 
-void klerror_error(KlError* klerror, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, ...);
-void klerror_errorv(KlError* klerror, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, va_list args);
+void klerror_init(KlError* klerr, Ko* errout);
+void klerror_error(KlError* klerr, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, ...);
+void klerror_errorv(KlError* klerr, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, va_list args);
 
+static inline unsigned klerror_nerror(KlError* klerr) {
+  return klerr->errcount;
+}
 
 #endif
