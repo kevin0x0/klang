@@ -50,6 +50,11 @@ static void klcode_dumpobj(KlCodeDumpState* state, void* obj, size_t size);
 static void klcode_dump_globalheader(KlCodeDumpState* state);
 static void klcode_dump_codeheader(KlCodeDumpState* state, KlCodeHeader* header);
 static void klcode_dump_refinfo(KlCodeDumpState* state, KlCRefInfo* refinfo, size_t nref);
+static void klcode_dumpinteger(KlCodeDumpState* state, KlCInt val);
+static void klcode_dumpfloat(KlCodeDumpState* state, KlCFloat val);
+static void klcode_dumpbool(KlCodeDumpState* state, KlCBool val);
+static void klcode_dumpnil(KlCodeDumpState* state);
+static void klcode_dumpstring(KlCodeDumpState* state, KlStrTbl* strtbl, KlStrDesc str);
 static void klcode_dump_constants(KlCodeDumpState* state, KlStrTbl* strtbl, KlConstant* constants, size_t nconst);
 static void klcode_dump_instructions(KlCodeDumpState* state, KlInstruction* inst, size_t codelen);
 static void klcode_dump_posinfo(KlCodeDumpState* state, KlFilePosition* posinfo, size_t npos);
@@ -61,6 +66,7 @@ bool klcode_dump(KlCode* code, Ko* file) {
   };
   if (setjmp(dumpstate.jmppos) == 0) {
     klcode_dump_globalheader(&dumpstate);
+    klcode_dumpstring(&dumpstate, code->strtbl, code->srcfile);
     klcode_dump_code(&dumpstate, code);
     return true;
   } else {
@@ -209,6 +215,7 @@ typedef struct tagKlCodeUndumpState KlCodeUndumpState;
 struct tagKlCodeUndumpState {
   Ki* file;
   KlStrTbl* strtbl;
+  KlStrDesc srcfile;
   KlUnDumpError error;
 };
 
@@ -218,6 +225,7 @@ static KlUnDumpError klcode_undumpobj(KlCodeUndumpState* state, void* buf, size_
 static KlUnDumpError klcode_undumpinteger(KlCodeUndumpState* state, KlCInt* buf);
 static KlUnDumpError klcode_undumpfloat(KlCodeUndumpState* state, KlCFloat* buf);
 static KlUnDumpError klcode_undumpbool(KlCodeUndumpState* state, KlCBool* buf);
+static KlUnDumpError klcode_undumpstring_withtypetag(KlCodeUndumpState* state, KlStrDesc* strdesc);
 static KlUnDumpError klcode_undumpstring(KlCodeUndumpState* state, KlStrDesc* strdesc);
 static KlUnDumpError klcode_undump_refinfo(KlCodeUndumpState* state, KlCRefInfo* refinfo, size_t nref);
 static KlUnDumpError klcode_undump_constants(KlCodeUndumpState* state, KlConstant* constants, size_t nconst);
@@ -232,6 +240,11 @@ KlCode* klcode_undump(Ki* file, KlStrTbl* strtbl, KlUnDumpError* perror) {
     .file = file,
   };
   KlUnDumpError error = klcode_undump_globalheader(&state);
+  if (kl_unlikely(error)) {
+    if (perror) *perror = error;
+    return NULL;
+  }
+  error = klcode_undumpstring_withtypetag(&state, &state.srcfile);
   if (kl_unlikely(error)) {
     if (perror) *perror = error;
     return NULL;
@@ -317,7 +330,7 @@ static KlCode* klcode_undump_code(KlCodeUndumpState* state) {
   KlCode* code = klcode_create(refinfo, header.nref, constants, header.nconst,
                                insts, posinfo, header.codelen, nestedfunc,
                                header.nnested, state->strtbl, header.nparam,
-                               header.framesize);
+                               header.framesize, state->srcfile);
   if (kl_unlikely(!code)) {
     state->error = KLUNDUMP_ERROR_OOM;
     return NULL;
@@ -347,6 +360,13 @@ static KlUnDumpError klcode_undumpfloat(KlCodeUndumpState* state, KlCFloat* buf)
 
 static KlUnDumpError klcode_undumpbool(KlCodeUndumpState* state, KlCBool* buf) {
   return klcode_undumpobj(state, buf, sizeof (KlCBool));
+}
+
+static KlUnDumpError klcode_undumpstring_withtypetag(KlCodeUndumpState* state, KlStrDesc* strdesc) {
+  int type = ki_getc(state->file);
+  if (kl_unlikely(type == KOF || type != KLC_STRING))
+    return KLUNDUMP_ERROR_BAD;
+  return klcode_undumpstring(state, strdesc);
 }
 
 static KlUnDumpError klcode_undumpstring(KlCodeUndumpState* state, KlStrDesc* strdesc) {
