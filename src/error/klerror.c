@@ -82,7 +82,12 @@ static bool klerror_helper_showline_withcurl(KlError* klerr, Ki* input, KlFileOf
   ko_printf(err, "%s", klerr->config.prompttext);
   int ch = ki_getc(input);
   while (!kl_isnl(ch) && ch != KOF) {
-    ko_putc(err, ch);
+    if (ch == '\t') {
+      for (size_t i = 0; i < klerr->config.tabstop; ++i)
+        ko_putc(err, ' ');
+    } else {
+      ko_putc(err, ch);
+    }
     ch = ki_getc(input);
   }
   ko_putc(err, '\n');
