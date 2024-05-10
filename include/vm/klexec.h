@@ -18,22 +18,12 @@
 typedef KlException (*KlCallPrepCallBack)(KlState* state, KlValue* callable, size_t narg);
 
 KlException klexec_execute(KlState* state);
-KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback);
 KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
 KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field);
+
 static inline void klexec_pop_callinfo(KlState* state);
-static inline void klexec_push_callinfo(KlState* state);
-static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff);
 static inline KlCallInfo* klexec_newed_callinfo(KlState* state);
-KlCallInfo* klexec_alloc_callinfo(KlState* state);
-
 static inline void klexec_setnils(KlValue* vals, size_t nnil);
-
-/* 'a' should be stack value */
-KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue* c, KlString* op);
-
-KlException klexec_mapsearch(KlState* state, KlMap* map, KlValue* key, KlValue* res);
-KlException klexec_mapinsert(KlState* state, KlMap* map, KlValue* key, KlValue* val);
 
 
 static inline void klexec_pop_callinfo(KlState* state) {
@@ -42,14 +32,6 @@ static inline void klexec_pop_callinfo(KlState* state) {
 
 static inline void klexec_push_callinfo(KlState* state) {
   state->callinfo = state->callinfo->next;
-}
-
-static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff) {
-  KlCallInfo* callinfo = state->callinfo->next ? state->callinfo->next : klexec_alloc_callinfo(state);
-  if (kl_unlikely(!callinfo)) return NULL;
-  callinfo->nret = nret;
-  callinfo->retoff = retoff;
-  return callinfo;
 }
 
 static inline KlCallInfo* klexec_newed_callinfo(KlState* state) {

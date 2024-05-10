@@ -19,6 +19,7 @@ static KlTokenKind tokenkind[150];
 static KlUByte transition[150][256];
 static KlUByte start;
 
+static void kllex_error(KlLex* lex, const char* format, ...);
 
 /* finish read 'new line' and return '\n'. */
 static inline char kllex_finishnl(KlLex* lex, Ki* input);

@@ -8,10 +8,6 @@
 
 
 KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAst* ast, bool jumpcond);
-KlCodeVal klgen_exprnot(KlGenUnit* gen, KlAstPre* notast, bool jumpcond);
-KlCodeVal klgen_expror(KlGenUnit* gen, KlAstBin* orast, bool jumpcond);
-KlCodeVal klgen_exprand(KlGenUnit* gen, KlAstBin* andast, bool jumpcond);
-
 KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlAst* ast, KlCStkId target);
 void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, KlCPC jmppos);
 

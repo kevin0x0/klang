@@ -10,8 +10,52 @@
 #include "include/lang/klinst.h"
 #include <setjmp.h>
 
+
+
+static inline KlCodeVal klgen_expr_onstack(KlGenUnit* gen, KlAst* ast);
+static inline KlCodeVal klgen_exprlist(KlGenUnit* gen, KlAstExprList* exprlist);
+static inline KlCodeVal klgen_exprlist_target(KlGenUnit* gen, KlAstExprList* exprlist, KlCStkId target);
+static inline void klgen_expryield(KlGenUnit* gen, KlAstYield* yieldast, size_t nwanted);
+static KlCodeVal klgen_exprpost(KlGenUnit* gen, KlAstPost* postast, KlCStkId target, bool append_target);
+static KlCodeVal klgen_exprpre(KlGenUnit* gen, KlAstPre* preast, KlCStkId target);
+static KlCodeVal klgen_exprbin(KlGenUnit* gen, KlAstBin* binast, KlCStkId target);
+static void klgen_exprarr(KlGenUnit* gen, KlAstArray* arrast, KlCStkId target);
+static void klgen_exprarrgen(KlGenUnit* gen, KlAstArrayGenerator* arrgenast, KlCStkId target);
+static void klgen_exprmap(KlGenUnit* gen, KlAstMap* mapast, KlCStkId target);
+static void klgen_exprclass(KlGenUnit* gen, KlAstClass* classast, KlCStkId target);
 static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlAstBin* binast, KlCodeVal left, KlCStkId target);
 static KlCodeVal klgen_exprbinrightnonstk(KlGenUnit* gen, KlAstBin* binast, KlCodeVal left, KlCodeVal right, KlCStkId target, KlCStkId oristktop);
+
+
+static inline KlCodeVal klgen_expr_onstack(KlGenUnit* gen, KlAst* ast) {
+  KlCodeVal res = klgen_expr(gen, ast);
+  klgen_putonstack(gen, &res, klgen_astposition(ast));
+  return res;
+}
+
+static inline KlCodeVal klgen_exprlist(KlGenUnit* gen, KlAstExprList* exprlist) {
+  if (exprlist->nexpr == 0)
+    return klcodeval_nil();
+  klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr - 1, 0, klgen_astposition(exprlist));
+  return klgen_expr(gen, exprlist->exprs[exprlist->nexpr - 1]);
+}
+
+static inline KlCodeVal klgen_exprlist_target(KlGenUnit* gen, KlAstExprList* exprlist, KlCStkId target) {
+  if (exprlist->nexpr == 0)
+    return klcodeval_nil();
+  klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr - 1, 0, klgen_astposition(exprlist));
+  return klgen_exprtarget(gen, exprlist->exprs[exprlist->nexpr - 1], target);
+}
+
+static inline void klgen_expryield(KlGenUnit* gen, KlAstYield* yieldast, size_t nwanted) {
+  KlCStkId base = klgen_stacktop(gen);
+  size_t nres = klgen_passargs(gen, yieldast->vals);
+  klgen_emit(gen, klinst_yield(base, nres, nwanted), klgen_astposition(yieldast));
+  if (nwanted != KLINST_VARRES)
+    klgen_stackfree(gen, base + nwanted);
+}
+
+
 
 void klgen_exprarr(KlGenUnit* gen, KlAstArray* arrast, KlCStkId target) {
   KlCStkId argbase = klgen_stacktop(gen);

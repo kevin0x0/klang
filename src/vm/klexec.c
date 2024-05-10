@@ -18,10 +18,22 @@
 /* extra stack frame size for calling operator method */
 #define KLEXEC_STACKFRAME_EXTRA             (4)
 
-#define klexec_savestktop(state, stktop)                                          \
-        klstack_set_top(klstate_stack((state)), (stktop))
-
+#define klexec_savestktop(state, stktop)    klstack_set_top(klstate_stack((state)), (stktop))
 #define klexec_savepc(callinfo, pc)         ((callinfo)->savedpc = (pc))
+
+
+static KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback);
+static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff);
+static KlCallInfo* klexec_alloc_callinfo(KlState* state);
+
+static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff) {
+  KlCallInfo* callinfo = state->callinfo->next ? state->callinfo->next : klexec_alloc_callinfo(state);
+  if (kl_unlikely(!callinfo)) return NULL;
+  callinfo->nret = nret;
+  callinfo->retoff = retoff;
+  return callinfo;
+}
+
 
 
 
@@ -47,7 +59,7 @@ static KlException klexec_handle_newlocal_exception(KlState* state, KlException 
 
 static KlException klexec_handle_newobject_exception(KlState* state, KlException exception) {
   if (exception == KL_E_OOM) {
-    return klstate_throw(state, exception, "out of memory when creating new object");
+    return klstate_throw_oom(state, "creating new object");
   } else {
     return klstate_throw(state, exception, "exception occurred while creating new object");
   }
@@ -63,7 +75,7 @@ static KlException klexec_handle_arrayindexas_exception(KlState* state, KlExcept
   return KL_E_NONE;
 }
 
-KlCallInfo* klexec_alloc_callinfo(KlState* state) {
+static KlCallInfo* klexec_alloc_callinfo(KlState* state) {
   KlCallInfo* callinfo = (KlCallInfo*)klmm_alloc(klstate_getmm(state), sizeof (KlCallInfo));
   if (kl_unlikely(!callinfo)) return NULL;
   state->callinfo->next = callinfo;
@@ -77,7 +89,7 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
   KlCallInfo* prevci = state->callinfo;
   KlCallInfo* newci = klexec_new_callinfo(state, nret, respos - (klstate_stktop(state) - narg));
   if (kl_unlikely(!newci))
-    return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
+    return klstate_throw_oom(state, "calling a callable object");
   bool yieldallowance_save = klco_yield_allowed(&state->coinfo);
   klco_allow_yield(&state->coinfo, false);
   ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
@@ -110,7 +122,7 @@ static bool klexec_is_method(KlValue* callable) {
 /* Prepare for calling a callable object (C function, C closure, klang closure).
  * Also perform the actual call for C function and C closure.
  */
-KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback) {
+static KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback) {
   if (kl_likely(klvalue_checktype(callable, KL_KCLOSURE))) {          /* is a klang closure ? */
     /* get closure in advance, in case of dangling pointer due to stack grow */
     KlKClosure* kclo = klvalue_getobj(callable, KlKClosure*);
@@ -118,7 +130,7 @@ KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, K
     size_t framesize = klkfunc_framesize(kfunc);
     /* ensure enough stack size for this call. */
     if (kl_unlikely(klstate_checkframe(state, framesize + KLEXEC_STACKFRAME_EXTRA))) {
-      return klstate_throw(state, KL_E_OOM, "out of memory when calling a klang closure");
+      return klstate_throw_oom(state, "calling a klang closure");
     }
     size_t nparam = klkfunc_nparam(kfunc);
     if (narg < nparam) {  /* complete missing arguments */
@@ -225,12 +237,12 @@ static KlException klexec_dopreopmethod(KlState* state, KlValue* a, KlValue* b, 
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, a - klstate_stktop(state));
   if (kl_unlikely(!newci))
-    return klstate_throw(state, KL_E_OOM, "out of memory when calling a prefix operator method");
+    return klstate_throw_oom(state, "calling a prefix operator method");
   klstack_pushvalue(klstate_stack(state), b);
   return klexec_callprepare(state, method, 1, NULL);
 }
 
-KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue* c, KlString* op) {
+static KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue* c, KlString* op) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
@@ -244,7 +256,7 @@ KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, a - klstate_stktop(state));
   if (kl_unlikely(!newci))
-    return klstate_throw(state, KL_E_OOM, "out of memory when calling a binary operator method");
+    return klstate_throw_oom(state, "calling a binary operator method");
   klstack_pushvalue(klstate_stack(state), b);
   klstack_pushvalue(klstate_stack(state), c);
   return klexec_callprepare(state, method, 2, NULL);
@@ -265,7 +277,7 @@ static KlException klexec_doindexmethod(KlState* state, KlValue* val, KlValue* i
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, val - klstate_stktop(state));
   if (kl_unlikely(!newci))
-    return klstate_throw(state, KL_E_OOM, "out of memory when calling index operator method");
+    return klstate_throw_oom(state, "calling index operator method");
   klstack_pushvalue(klstate_stack(state), indexable);
   klstack_pushvalue(klstate_stack(state), key);
   return klexec_callprepare(state, method, 2, NULL);
@@ -285,7 +297,7 @@ static KlException klexec_doindexasmethod(KlState* state, KlValue* indexable, Kl
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 0, 0);
   if (kl_unlikely(!newci))
-    return klstate_throw(state, KL_E_OOM, "out of memory when calling indexas operator method");
+    return klstate_throw_oom(state, "calling indexas operator method");
   klstack_pushvalue(klstate_stack(state), indexable);
   klstack_pushvalue(klstate_stack(state), key);
   klstack_pushvalue(klstate_stack(state), val);
@@ -426,7 +438,7 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
       klexec_savestktop(state, state->callinfo->top);
       KlClassSlot* newslot = klclass_add(klclass, klstate_getmm(state), keystr);
       if (kl_unlikely(!newslot))
-        return klstate_throw(state, KL_E_OOM, "out of memory when add new field");
+        return klstate_throw_oom(state, "adding new field");
       klvalue_setvalue(&newslot->value, val);
     }
   } else {  /* other types. search their phony class */
@@ -864,12 +876,12 @@ KlException klexec_execute(KlState* state) {
         if (kl_likely(klvalue_checktype(b, KL_STRING) && klvalue_checktype(c, KL_STRING))) {
           KlString* res = klstrpool_string_concat(state->strpool, klvalue_getobj(b, KlString*), klvalue_getobj(c, KlString*));
           if (kl_unlikely(!res))
-            return klstate_throw(state, KL_E_OOM, "out of memory when do concat");
+            return klstate_throw_oom(state, "doing concat");
           klvalue_setobj(a, res, KL_STRING);
         } else if (kl_likely(klvalue_isstrornumber(b) && klvalue_isstrornumber(c))) {
           KlString* res = klexec_doconcat(state, b, c);
           if (kl_unlikely(!res))
-            return klstate_throw(state, KL_E_OOM, "out of memory when do concat");
+            return klstate_throw_oom(state, "doing concat");
           klvalue_setobj(a, res, KL_STRING);
         } else {
           KlString* op = state->common->string.concat;
@@ -996,7 +1008,7 @@ KlException klexec_execute(KlState* state) {
         klexec_savestate(callable + 1 + narg, pc);
         KlCallInfo* newci = klexec_new_callinfo(state, nret, -1);
         if (kl_unlikely(!newci))
-          return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
+          return klstate_throw_oom(state, "calling a callable object");
         KlException exception = klexec_callprepare(state, callable, narg, klexec_callprep_callback_for_call);
         if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
           KlValue* newbase = state->callinfo->base;
@@ -1020,7 +1032,7 @@ KlException klexec_execute(KlState* state) {
         klexec_savestate(callable + 1 + narg, pc);
         KlCallInfo* newci = klexec_new_callinfo(state, nret, (stkbase + KLINST_AXY_GETY(extra)) - callable);
         if (kl_unlikely(!newci))
-          return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
+          return klstate_throw_oom(state, "calling a callable object");
         KlException exception = klexec_callprepare(state, callable, narg, klexec_callprep_callback_for_call);
         if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
           KlValue* newbase = state->callinfo->base;
@@ -1050,7 +1062,7 @@ KlException klexec_execute(KlState* state) {
         kl_assert(KLINST_AX_GETX(extra) != KLEXEC_VARIABLE_RESULTS || (stkbase + KLINST_XYZ_GETZ(extra)) == thisobj, "");
         KlCallInfo* newci = klexec_new_callinfo(state, nret, (stkbase + KLINST_XYZ_GETZ(extra)) - (ismethod ? thisobj : thisobj + 1));
         if (kl_unlikely(!newci))
-          return klstate_throw(state, KL_E_OOM, "out of memory when calling a callable object");
+          return klstate_throw_oom(state, "calling a callable object");
         KlString* field = klvalue_getobj(constants + KLINST_AX_GETX(inst), KlString*);
         KlValue* callable = klexec_getfield(state, thisobj, field);
         KlException exception = klexec_callprepare(state, callable, narg, klexec_callprep_callback_for_method);
@@ -1178,7 +1190,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           klexec_savestate(callinfo->top, pc);
           if (kl_unlikely(!klmap_insertstring(state->global, varname, a)))
-            return klstate_throw(state, KL_E_OOM, "out of memory when setting a global variable");
+            return klstate_throw_oom(state, "setting a global variable");
         }
         break;
       }
@@ -1190,7 +1202,7 @@ KlException klexec_execute(KlState* state) {
         klexec_savestate(stktop, pc); /* creating map may trigger gc */
         KlMap* map = klmap_create(state->common->klclass.map, capacity, state->mapnodepool);
         if (kl_unlikely(!map))
-          return klstate_throw(state, KL_E_OOM, "out of memory when creating a map");
+          return klstate_throw_oom(state, "creating a map");
         klvalue_setobj(a, map, KL_MAP);
         break;
       }
@@ -1205,7 +1217,7 @@ KlException klexec_execute(KlState* state) {
         klexec_savestate(first + nelem, pc);  /* creating array may trigger gc */
         KlArray* arr = klarray_create(state->common->klclass.array, klstate_getmm(state), nelem);
         if (kl_unlikely(!arr))
-          return klstate_throw(state, KL_E_OOM, "out of memory when creating an array");
+          return klstate_throw_oom(state, "creating an array");
         KlArrayIter iter = klarray_iter_begin(arr);
         while(nelem--) {  /* fill this array with values on stack */
           klvalue_setvalue(iter, first++);
@@ -1221,7 +1233,7 @@ KlException klexec_execute(KlState* state) {
         klexec_savestate(callinfo->top, pc);
         KlKClosure* kclo = klkclosure_create(klstate_getmm(state), kfunc, stkbase, &state->reflist, closure->refs);
         if (kl_unlikely(!kclo))
-          return klstate_throw(state, KL_E_OOM, "out of memory when creating a closure");
+          return klstate_throw_oom(state, "creating a closure");
         if (opcode == KLOPCODE_MKMETHOD)
           klclosure_set(kclo, KLCLO_STATUS_METH);
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
@@ -1252,7 +1264,7 @@ KlException klexec_execute(KlState* state) {
         KlClass* klclass = NULL;
         if (KLINST_ABTX_GETT(inst)) { /* is stktop base class ? */
           if (kl_unlikely(!klvalue_checktype(stktop, KL_CLASS))) {
-            return klstate_throw(state, KL_E_OOM, "inherit a non-class value, type: %s", klvalue_typename(klvalue_gettype(stktop)));
+            return klstate_throw(state, KL_E_TYPE, "inherit a non-class value, type: %s", klvalue_typename(klvalue_gettype(stktop)));
           }
           klexec_savestate(stktop + 1, pc);   /* creating class may trigger gc */
           klclass = klclass_inherit(klstate_getmm(state), klvalue_getobj(stktop, KlClass*));
@@ -1261,7 +1273,7 @@ KlException klexec_execute(KlState* state) {
           klclass = klclass_create(klstate_getmm(state), capacity, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
         }
         if (kl_unlikely(!klclass))
-          return klstate_throw(state, KL_E_OOM, "out of memory when creating a class");
+          return klstate_throw_oom(state, "creating a class");
         klvalue_setobj(a, klclass, KL_CLASS);
         break;
       }
@@ -1318,7 +1330,7 @@ KlException klexec_execute(KlState* state) {
             } else {
               klexec_savestate(callinfo->top, pc);
               if (kl_unlikely(!klmap_insert(map, &key, val)))
-                return klstate_throw(state, KL_E_OOM, "out of memory when inserting a k-v pair to a map");
+                return klstate_throw_oom(state, "inserting a k-v pair to a map");
             }
             break;
           }
@@ -1397,7 +1409,7 @@ KlException klexec_execute(KlState* state) {
               } else {
                 klexec_savestate(callinfo->top, pc);
                 if (kl_unlikely(!klmap_insert(map, key, val)))
-                  return klstate_throw(state, KL_E_OOM, "out of memory when inserting a k-v pair to a map");
+                  return klstate_throw_oom(state, "inserting a k-v pair to a map");
               }
               break;
             } /* else fall through. try operator method */
@@ -1772,7 +1784,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* b = constants + KLINST_AX_GETX(inst);
         if (kl_unlikely(!(klvalue_sametype(a, b) && klvalue_sameinstance(a, b)))) {
           klexec_savestate(callinfo->top, pc);
-          return klstate_throw(state, KL_E_DISMATCH, "pattern dismatch");
+          return klstate_throw(state, KL_E_MISMATCH, "pattern dismatch");
         }
         break;
       }
@@ -2032,7 +2044,7 @@ KlException klexec_execute(KlState* state) {
         klexec_savestate(argbase + nret, pc);
         KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
         if (kl_unlikely(!newci))
-          return klstate_throw(state, KL_E_OOM, "out of memory when do generic for loop");
+          return klstate_throw_oom(state, "doing generic for loop");
         KlException exception = klexec_callprepare(state, a, nret, NULL);
         if (callinfo != state->callinfo) { /* is a klang call ? */
           KlValue* newbase = state->callinfo->base;
@@ -2059,7 +2071,7 @@ KlException klexec_execute(KlState* state) {
                                klvalue_typename(klvalue_gettype(f)));
         }
         KlState* costate = klco_create(state, klvalue_getobj(f, KlKClosure*));
-        if (kl_unlikely(!costate)) return klstate_throw(state, KL_E_OOM, "out of memory when creating a coroutine");
+        if (kl_unlikely(!costate)) return klstate_throw_oom(state, "creating a coroutine");
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);
         klvalue_setobj(a, costate, KL_COROUTINE);
         break;
@@ -2083,7 +2095,7 @@ KlException klexec_execute(KlState* state) {
           nwanted = nvarg;
         klexec_savestate(callinfo->top, pc);
         if (kl_unlikely(klstate_checkframe(state, nwanted)))
-          return klstate_throw(state, KL_E_OOM, "out of memory when copy '...' to stack");
+          return klstate_throw_oom(state, "copying '...' to stack");
         size_t ncopy = nwanted < nvarg ? nwanted : nvarg;
         KlValue* a = stkbase + KLINST_AXY_GETA(inst);
         KlValue* b = stkbase - nvarg;

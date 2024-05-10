@@ -86,6 +86,7 @@ static inline KlValue* klstate_stktop(KlState* state);
 
 KlException klstate_throw_link(KlState* state, KlState* src);
 KlException klstate_throw(KlState* state, KlException type, const char* format, ...);
+KlException klstate_throw_oom(KlState* state, const char* when);
 
 /* offset must be negative */
 static inline KlValue* klstate_getval(KlState* state, int offset);

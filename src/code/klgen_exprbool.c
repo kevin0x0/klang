@@ -7,6 +7,9 @@
 #include <string.h>
 
 
+static KlCodeVal klgen_exprnot(KlGenUnit* gen, KlAstPre* notast, bool jumpcond);
+static KlCodeVal klgen_expror(KlGenUnit* gen, KlAstBin* orast, bool jumpcond);
+static KlCodeVal klgen_exprand(KlGenUnit* gen, KlAstBin* andast, bool jumpcond);
 static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlAstBin* binast, KlCStkId oristktop, KlCodeVal left, KlCodeVal right, bool jumpcond);
 static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlAst* boolast, KlCStkId target, bool setcond);
 

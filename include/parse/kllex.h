@@ -48,8 +48,6 @@ static inline KlTokenKind kllex_tokkind(KlLex* lex);
 static inline Ki* kllex_inputstream(KlLex* lex);
 
 
-void kllex_error(KlLex* lex, const char* format, ...);
-void kllex_show_info(KlLex* lex, const char* format, va_list vlst);
 
 static inline bool kllex_hasleadingblank(KlLex* lex) {
   return lex->tok.hasleadingblank;

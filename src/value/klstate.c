@@ -116,6 +116,10 @@ KlException klstate_throw(KlState* state, KlException type, const char* format, 
   return exception;
 }
 
+KlException klstate_throw_oom(KlState* state, const char* when) {
+  return klstate_throw(state, KL_E_OOM, "out of memory when %s", when);
+}
+
 KlException klstate_throw_link(KlState* state, KlState* src) {
   return klthrow_link(&state->throwinfo, src);
 }
