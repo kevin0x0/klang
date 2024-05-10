@@ -50,6 +50,8 @@ static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject*
   }
   for (KlKFunction** itr = kfunc->subfunc; itr != kfunc->subfunc + kfunc->nsubfunc; ++itr)
     klmm_gcobj_mark_accessible(klmm_to_gcobj(*itr), gclist);
+  if (kfunc->debuginfo.srcfile)
+    klmm_gcobj_mark_accessible(klmm_to_gcobj(kfunc->debuginfo.srcfile), gclist);
   return gclist;
 }
 
@@ -58,8 +60,6 @@ static void klkfunc_delete(KlKFunction* kfunc, KlMM* klmm) {
   klmm_free(klmm, kfunc->refinfo, kfunc->nref * sizeof (KlRefInfo));
   klmm_free(klmm, kfunc->subfunc, kfunc->nsubfunc * sizeof (KlKFunction*));
   klmm_free(klmm, kfunc->code, kfunc->codelen * sizeof (KlInstruction));
-  if (kfunc->debuginfo.srcfile)
-    klmm_free(klmm, kfunc->debuginfo.srcfile, kfunc->debuginfo.srcfilelen);
   if (kfunc->debuginfo.posinfo)
     klmm_free(klmm, kfunc->debuginfo.posinfo, kfunc->codelen * sizeof (KlKFuncFilePosition));
   klmm_free(klmm, kfunc, sizeof (KlKFunction));

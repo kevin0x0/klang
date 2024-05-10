@@ -3,6 +3,7 @@
 
 #include "include/lang/kltypes.h"
 #include "include/mm/klmm.h"
+#include "include/value/klstring.h"
 #include "include/value/klvalue.h"
 #include "include/value/klref.h"
 #include "include/lang/klinst.h"
@@ -22,8 +23,7 @@ struct tagKlKFunction {
   KlKFunction** subfunc;    /* sub-functions, functions defined in this function */
   struct {
     KlKFuncFilePosition* posinfo;
-    char* srcfile;
-    unsigned srcfilelen;
+    KlString* srcfile;
   } debuginfo;
   unsigned codelen;         /* code length */
   unsigned short nconst;    /* number of constants */
@@ -50,8 +50,7 @@ static inline size_t klkfunc_codelen(KlKFunction* kfunc);
 static inline size_t klkfunc_framesize(KlKFunction* kfunc);
 static inline size_t klkfunc_nparam(KlKFunction* kfunc);
 
-/* the 'srcfile' must be allocated by klmm */
-static inline void klkfunc_setsrcfile(KlKFunction* kfunc, char* srcfile, size_t len);
+static inline void klkfunc_setsrcfile(KlKFunction* kfunc, KlString* srcfile);
 /* the 'posinfo' must be allocated by klmm */
 static inline void klkfunc_setposinfo(KlKFunction* kfunc, KlKFuncFilePosition* posinfo);
 
@@ -88,10 +87,8 @@ static inline size_t klkfunc_nparam(KlKFunction* kfunc) {
 }
 
 
-static inline void klkfunc_setsrcfile(KlKFunction* kfunc, char* srcfile, size_t len) {
-  kl_assert(kfunc->debuginfo.srcfile == NULL, "can not reset source file name");
+static inline void klkfunc_setsrcfile(KlKFunction* kfunc, KlString* srcfile) {
   kfunc->debuginfo.srcfile = srcfile;
-  kfunc->debuginfo.srcfilelen = len;
 }
 
 static inline void klkfunc_setposinfo(KlKFunction* kfunc, KlKFuncFilePosition* posinfo) {
