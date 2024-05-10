@@ -19,37 +19,41 @@ DEBUG = -DNDEBUG
 CFLAGS = $(OPTIMIZE) $(MEMORY_CHECK) $(WARNING) $(DEBUG) -I $(ROOT_DIR) -I $(DEPS_K_DIR)
 
 KLANG_OBJS = $(OBJ_DIR)klapi.o $(OBJ_DIR)klutils.o $(OBJ_DIR)klgc.o $(OBJ_DIR)klmm.o $(OBJ_DIR)klarray.o $(OBJ_DIR)klmap.o \
-						 $(OBJ_DIR)klclass.o $(OBJ_DIR)klclosure.o $(OBJ_DIR)klkfunc.o $(OBJ_DIR)klref.o $(OBJ_DIR)klstring.o $(OBJ_DIR)klcoroutine.o \
-						 $(OBJ_DIR)klvalue.o $(OBJ_DIR)klcommon.o $(OBJ_DIR)klexec.o $(OBJ_DIR)klstack.o $(OBJ_DIR)klstate.o $(OBJ_DIR)klthrow.o \
+             $(OBJ_DIR)klclass.o $(OBJ_DIR)klclosure.o $(OBJ_DIR)klkfunc.o $(OBJ_DIR)klref.o $(OBJ_DIR)klstring.o $(OBJ_DIR)klcoroutine.o \
+             $(OBJ_DIR)klvalue.o $(OBJ_DIR)klcommon.o $(OBJ_DIR)klexec.o $(OBJ_DIR)klstack.o $(OBJ_DIR)klstate.o $(OBJ_DIR)klthrow.o \
              $(OBJ_DIR)klconvert.o
 
 KLANGC_OBJS = $(OBJ_DIR)klparser.o $(OBJ_DIR)kltokens.o $(OBJ_DIR)kllex.o $(OBJ_DIR)klidarr.o $(OBJ_DIR)klcfdarr.o \
-							$(OBJ_DIR)klerror.o $(OBJ_DIR)klast_expr.o $(OBJ_DIR)klast_stmt.o $(OBJ_DIR)klstrtbl.o $(OBJ_DIR)klcode.o \
-							$(OBJ_DIR)klcode_dump.o $(OBJ_DIR)klcode_print.o $(OBJ_DIR)klcontbl.o $(OBJ_DIR)klgen.o $(OBJ_DIR)klgen_expr.o \
-							$(OBJ_DIR)klgen_exprbool.o $(OBJ_DIR)klgen_pattern.o $(OBJ_DIR)klgen_stmt.o $(OBJ_DIR)klsymtbl.o $(OBJ_DIR)klutils.o
+              $(OBJ_DIR)klerror.o $(OBJ_DIR)klast_expr.o $(OBJ_DIR)klast_stmt.o $(OBJ_DIR)klstrtbl.o $(OBJ_DIR)klcode.o \
+              $(OBJ_DIR)klcode_dump.o $(OBJ_DIR)klcode_print.o $(OBJ_DIR)klcontbl.o $(OBJ_DIR)klgen.o $(OBJ_DIR)klgen_expr.o \
+              $(OBJ_DIR)klgen_exprbool.o $(OBJ_DIR)klgen_pattern.o $(OBJ_DIR)klgen_stmt.o $(OBJ_DIR)klsymtbl.o $(OBJ_DIR)klutils.o
 
 KLANGC_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGC_OBJS))
 
 
-all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.so $(BIN_DIR)klangc
+all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc
 
 $(BIN_DIR)klangc : $(OBJ_DIR)klangc.o $(LIB_DIR)libklangc.a $(DEPS_K_DIR)lib/libk.a | create_dir
-	$(CC) -o $@ $< $(CFLAGS) -Wl,-Bstatic -L $(LIB_DIR) -L $(DEPS_K_DIR)lib/ -lk -lklangc -Wl,-Bdynamic
+	$(CC) -o $@ $< $(CFLAGS) -L $(LIB_DIR) -L $(DEPS_K_DIR)lib/ -Wl,-Bstatic -lk -lklangc -Wl,-Bdynamic
 
 $(LIB_DIR)libklang.a : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
-	cp $(DEPS_K_DIR)lib/libk.a $(LIB_DIR)libklang.a
+	cp $(DEPS_K_DIR)lib/libk.a $@
 	$(AR) $@ $(KLANG_OBJS)
 
 $(LIB_DIR)libklangc.a : $(KLANGC_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
-	cp $(DEPS_K_DIR)lib/libk.a $(LIB_DIR)libklangc.a
+	cp $(DEPS_K_DIR)lib/libk.a $@
 	$(AR) $@ $(KLANGC_OBJS)
 
-$(LIB_DIR)libklangc.so : $(KLANGC_PIC_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
-	$(CC) -shared -o $@ $(KLANGC_PIC_OBJS) -L $(DEPS_K_DIR)lib/ -Wl,-Bstatic -lk -Wl,-Bdynamic
+$(LIB_DIR)libklangc.pic.a : $(KLANGC_PIC_OBJS) $(DEPS_K_DIR)lib/libk.pic.a | create_dir
+	cp $(DEPS_K_DIR)lib/libk.pic.a $@
+	$(AR) $@ $(KLANGC_OBJS)
 
 
 $(DEPS_K_DIR)lib/libk.a :
 	$(MAKE) -C $(DEPS_K_DIR) $(DEPS_K_DIR)lib/libk.a "AR=$(AR)" "CC=$(CC)" "OPTIMIZE=$(OPTIMIZE)" "MEMORY_CHECK=$(MEMORY_CHECK)" "WARNING=$(WARNING)" "DEBUG=$(DEBUG)"
+
+$(DEPS_K_DIR)lib/libk.pic.a :
+	$(MAKE) -C $(DEPS_K_DIR) $(DEPS_K_DIR)lib/libk.pic.a "AR=$(AR)" "CC=$(CC)" "OPTIMIZE=$(OPTIMIZE)" "MEMORY_CHECK=$(MEMORY_CHECK)" "WARNING=$(WARNING)" "DEBUG=$(DEBUG)"
 
 $(DEPS_K_DIR)lib/libk.so :
 	$(MAKE) -C $(DEPS_K_DIR) $(DEPS_K_DIR)lib/libk.so "AR=$(AR)" "CC=$(CC)" "OPTIMIZE=$(OPTIMIZE)" "MEMORY_CHECK=$(MEMORY_CHECK)" "WARNING=$(WARNING)" "DEBUG=$(DEBUG)"
