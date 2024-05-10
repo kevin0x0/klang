@@ -1,4 +1,5 @@
 #include "include/value/klkfunc.h"
+#include "include/lang/klinst.h"
 #include "include/lang/kltypes.h"
 #include "include/misc/klutils.h"
 #include "include/value/klvalue.h"
@@ -30,6 +31,8 @@ KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, unsigned codelen, un
   kfunc->nsubfunc = nsubfunc;
   kfunc->framesize = framesize;
   kfunc->nparam = nparam;
+  kfunc->debuginfo.posinfo = NULL;
+  kfunc->debuginfo.srcfile = NULL;
   return kfunc;
 }
 
@@ -55,5 +58,9 @@ static void klkfunc_delete(KlKFunction* kfunc, KlMM* klmm) {
   klmm_free(klmm, kfunc->refinfo, kfunc->nref * sizeof (KlRefInfo));
   klmm_free(klmm, kfunc->subfunc, kfunc->nsubfunc * sizeof (KlKFunction*));
   klmm_free(klmm, kfunc->code, kfunc->codelen * sizeof (KlInstruction));
+  if (kfunc->debuginfo.srcfile)
+    klmm_free(klmm, kfunc->debuginfo.srcfile, kfunc->debuginfo.srcfilelen);
+  if (kfunc->debuginfo.posinfo)
+    klmm_free(klmm, kfunc->debuginfo.posinfo, kfunc->codelen * sizeof (KlKFuncFilePosition));
   klmm_free(klmm, kfunc, sizeof (KlKFunction));
 }

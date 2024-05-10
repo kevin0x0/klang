@@ -86,13 +86,13 @@ typedef enum tagKlCType {
 
 typedef struct tagKlAstInfo KlAstInfo;
 
+
 /* this serves as the base class of concrete syntax tree node,
  * and will be contained to the header of any other node.
  */
+#define KL_DERIVE_FROM_KlAst(prefix)  KlAstInfo* prefix##info; KlFileOffset prefix##begin; KlFileOffset prefix##end
 typedef struct tagKlAst {
-  KlAstInfo* info;
-  KlFileOffset begin;
-  KlFileOffset end;
+  KL_DERIVE_FROM(KlAst, );
 } KlAst;
 
 typedef void (*KlAstDelete)(KlAst* ast);
@@ -123,31 +123,31 @@ typedef struct tagKlAstClassFieldDesc {
 } KlAstClassFieldDesc;
 
 typedef struct tagKlAstIdentifier {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlStrDesc id;                     /* identifier */
   size_t stkid;                     /* used by code generator for pattern-match and pattern-extract */
 } KlAstIdentifier;
 
 typedef struct tagKlAstMap {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst** keys;                     /* keys */
   KlAst** vals;                     /* values */
   size_t npair;                     /* number of k-v pairs */
 } KlAstMap;
 
 typedef struct tagKlAstArray {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* exprlist;             /* exprlist */
 } KlAstArray;
 
 typedef struct tagKlAstArrayGenerator {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlStrDesc arrid;                  /* temporary identifier for array */
   KlAstStmtList* block;             /* code that generates an array */
 } KlAstArrayGenerator;
 
 typedef struct tagKlAstClass {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstClassFieldDesc* fields;      /* names of fields */
   KlAst** vals;                     /* values */
   size_t nfield;
@@ -155,59 +155,59 @@ typedef struct tagKlAstClass {
 } KlAstClass;
 
 typedef struct tagKlAstConstant {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlConstant con;
 } KlAstConstant;
 
 typedef struct tagKlAstVararg {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
 } KlAstVararg;
 
 typedef struct tagKlAstExprList {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst** exprs;                      /* elements of exprlist */
   size_t nexpr;                       /* number of elements */
 } KlAstExprList;
 
 typedef struct tagKlAstBin {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlTokenKind op;
   KlAst* loperand;
   KlAst* roperand;
 } KlAstBin;
 
 typedef struct tagKlAstPre {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlTokenKind op;
   KlAst* operand;
 } KlAstPre;
 
 typedef struct tagKlAstNew {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst* klclass;
   KlAstExprList* args;   /* parameters for new operator */
 } KlAstNew;
 
 typedef struct tagKlAstYield {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* vals;
 } KlAstYield;
 
 typedef struct tagKlAstPost {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlTokenKind op;
   KlAst* operand;
   KlAst* post;
 } KlAstPost;
 
 typedef struct tagKlAstCall {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst* callable;
   KlAstExprList* args;
 } KlAstCall;
 
 typedef struct tagKlAstFunc {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstStmtList* block; /* function body */
   KlAstExprList* params;
   bool vararg;          /* has variable argument */
@@ -215,44 +215,44 @@ typedef struct tagKlAstFunc {
 } KlAstFunc;
 
 typedef struct tagKlAstDot {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst* operand;
   KlStrDesc field;
 } KlAstDot;
 
 typedef struct tagKlAstWhere {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst* expr;
   KlAstStmtList* block;
 } KlAstWhere;
 
 
 typedef struct tagKlAstStmtList {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst** stmts;
   size_t nstmt;
 } KlAstStmtList;
 
 /* statements */
 typedef struct tagKlAstStmtLet {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* lvals;        /* left values(exprlist) */
   KlAstExprList* rvals;        /* right values(must be exprlist or single value). */
 } KlAstStmtLet;
 
 typedef struct tagKlAstStmtAssign {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* lvals;        /* left values(single value or exprlist) */
   KlAstExprList* rvals;        /* right values(single value or exprlist) */
 } KlAstStmtAssign;
 
 typedef struct tagKlAstStmtExpr {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* exprlist;
 } KlAstStmtExpr;
 
 typedef struct tagKlAstStmtIf {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst* cond;
   KlAstStmtList* then_block;
   KlAstStmtList* else_block;  /* optional. no else block if NULL */
@@ -260,14 +260,14 @@ typedef struct tagKlAstStmtIf {
 
 /* variable arguments for */
 typedef struct tagKlAstStmtVFor {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* lvals;
   KlAstStmtList* block;
 } KlAstStmtVFor;
 
 /* integer for */
 typedef struct tagKlAstStmtIFor {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* lval;
   KlAst* begin;
   KlAst* end;
@@ -277,35 +277,35 @@ typedef struct tagKlAstStmtIFor {
 
 /* generic for */
 typedef struct tagKlAstStmtGFor {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* lvals;
   KlAst* expr;
   KlAstStmtList* block;
 } KlAstStmtGFor;
 
 typedef struct tagKlAstStmtWhile {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst* cond;
   KlAstStmtList* block;
 } KlAstStmtWhile;
 
 typedef struct tagKlAstStmtRepeat {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstStmtList* block;
   KlAst* cond;
 } KlAstStmtRepeat;
 
 typedef struct tagKlAstStmtReturn {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* retvals;  /* exprlist. */
 } KlAstStmtReturn;
 
 typedef struct tagKlAstStmtBreak {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
 } KlAstStmtBreak;
 
 typedef struct tagKlAstStmtContinue {
-  KlAst base;
+  KL_DERIVE_FROM(KlAst, _astbase_);
 } KlAstStmtContinue;
 
 /* general functions */
