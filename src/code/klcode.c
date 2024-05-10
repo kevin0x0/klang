@@ -1,4 +1,5 @@
 #include "include/code/klcode.h"
+#include "include/ast/klstrtbl.h"
 #include "include/code/klgen.h"
 #include "include/code/klsymtbl.h"
 #include "include/lang/kltypes.h"
@@ -9,7 +10,7 @@
 KlCode* klcode_create(KlCRefInfo* refinfo, unsigned nref, KlConstant* constants, unsigned nconst,
                       KlInstruction* code, KlFilePosition* posinfo, unsigned codelen,
                       KlCode** nestedfunc, unsigned nnested, KlStrTbl* strtbl, unsigned nparam,
-                      unsigned framesize) {
+                      unsigned framesize, KlStrDesc srcfile) {
   KlCode* klcode = (KlCode*)malloc(sizeof (KlCode));
   if (kl_unlikely(!klcode)) return NULL;
   klcode->refinfo = refinfo;
@@ -18,6 +19,7 @@ KlCode* klcode_create(KlCRefInfo* refinfo, unsigned nref, KlConstant* constants,
   klcode->nconst = nconst;
   klcode->code = code;
   klcode->posinfo = posinfo;
+  klcode->srcfile = srcfile;
   klcode->codelen = codelen;
   klcode->nestedfunc = nestedfunc;
   klcode->nnested = nnested;

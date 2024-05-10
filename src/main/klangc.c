@@ -1,3 +1,5 @@
+#include "include/ast/klstrtbl.h"
+#include "include/os_spec/kfs.h"
 #include "include/parse/kllex.h"
 #include "include/parse/klparser.h"
 #include "include/code/klcode.h"
@@ -11,6 +13,7 @@
 #define KLC_OPTION_PRINT    ((unsigned)klbit(1))
 #define KLC_OPTION_DUMP     ((unsigned)klbit(2))
 #define KLC_OPTION_UNDUMP   ((unsigned)klbit(3))
+#define KLC_OPTION_STDIN    ((unsigned)klbit(4))
 
 
 #define KLC_NARGRAW(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...)     (_9)
@@ -157,6 +160,23 @@ static KlCode* klc_undump(KlCBehaviour* behaviour, KlStrTbl* strtbl) {
   return NULL;
 }
 
+static int klc_getsrcfilename(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlStrDesc* srcfile) {
+  if (behaviour->option & KLC_OPTION_STDIN) {
+    *srcfile = (KlStrDesc) { .id = 0, .length = 0 };
+    return 0;
+  }
+
+  char* srcfileraw = kfs_abspath(behaviour->inputname);
+  if (kl_unlikely(!srcfileraw)) return 1;
+
+  size_t srcfilelen = strlen(srcfileraw);
+  char* srcfile_intbl = klstrtbl_newstring(strtbl, srcfileraw);
+  free(srcfileraw);
+  if (kl_unlikely(!srcfile_intbl)) return 1;
+  *srcfile = (KlStrDesc) { .id = klstrtbl_stringid(strtbl, srcfile_intbl), .length = srcfilelen };
+  return 0;
+}
+
 static KlCode* klc_compile(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* klerr) {
   KlLex lex;
   if (kl_unlikely(!kllex_init(&lex, behaviour->input, klerr, behaviour->inputname, strtbl)))
@@ -174,19 +194,27 @@ static KlCode* klc_compile(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* k
     return NULL;
   }
 
+  KlStrDesc srcfilename;
+  if (kl_unlikely(klc_getsrcfilename(behaviour, strtbl, &srcfilename))) {
+    if (ast) klast_delete(ast);
+    kllex_destroy(&lex);
+    return NULL;
+  }
+
   /* genenrate code */
   KlCodeGenConfig config = {
     .inputname = behaviour->inputname,
+    .srcfile = srcfilename,
     .input = behaviour->input,
     .klerr = klerr,
     .debug = false,
     .posinfo = true,
   };
   KlCode* code = klcode_create_fromast(ast, strtbl, &config);
+  klast_delete(ast);
+  kllex_destroy(&lex);
   if (klerror_nerror(klerr) != 0) {
     if (code) klcode_delete(code);
-    klast_delete(ast);
-    kllex_destroy(&lex);
     return NULL;
   }
   return code;
@@ -277,6 +305,7 @@ static int klc_validatebehaviour(KlCBehaviour* behaviour) {
       klc_cleanbehaviour(behaviour);
       return 1;
     }
+    behaviour->option |= KLC_OPTION_STDIN;
     behaviour->inputname = "stdin";
   }
   return 0;

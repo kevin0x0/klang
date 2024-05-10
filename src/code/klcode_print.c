@@ -931,5 +931,6 @@ void klcode_print_function(KlCode* code, Ko* out, KlCodePrintInfo* printinfo) {
 }
 
 void klcode_print(KlCode* code, Ko* out) {
+  ko_printf(out, "source file: %.*s\n", code->srcfile.length, klstrtbl_getstring(code->strtbl, code->srcfile.id));
   klcode_print_function(code, out, NULL);
 }

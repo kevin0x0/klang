@@ -1,4 +1,5 @@
 #include "include/code/klgen.h"
+#include "include/ast/klstrtbl.h"
 #include "include/code/klcode.h"
 #include "include/code/klcodeval.h"
 #include "include/code/klcontbl.h"
@@ -135,7 +136,7 @@ KlCode* klgen_tocode_and_destroy(KlGenUnit* gen, unsigned nparam) {
   klgen_stackfree(gen, 0);
   KlCode* code = klcode_create(refinfo, klsymtbl_size(gen->reftbl), constants, klcontbl_size(gen->contbl),
                                insts, posinfo, codelen, nestedfunc, nnested,
-                               gen->strtbl, nparam, gen->framesize);
+                               gen->strtbl, nparam, gen->framesize, gen->config->srcfile);
   kl_assert(gen->symtbl == gen->reftbl, "");
   klsymtblpool_dealloc(gen->symtblpool, gen->symtbl);
   klcontbl_delete(gen->contbl);

@@ -1,6 +1,7 @@
 #ifndef _KLANG_INCLUDE_CODE_KLCODE_H_
 #define _KLANG_INCLUDE_CODE_KLCODE_H_
 
+#include "include/ast/klstrtbl.h"
 #include "include/code/klcontbl.h"
 #include "include/lang/klinst.h"
 #include "include/lang/kltypes.h"
@@ -13,6 +14,7 @@ typedef struct tagKlFilePosition {
 } KlFilePosition;
 
 typedef struct tagKlCodeGenConfig {
+  KlStrDesc srcfile;
   const char* inputname;
   KlError* klerr;
   Ki* input;
@@ -31,6 +33,7 @@ struct tagKlCode {
   KlConstant* constants;
   KlInstruction* code;
   KlFilePosition* posinfo;
+  KlStrDesc srcfile;
   KlCode** nestedfunc;        /* functions created inside this function */
   KlStrTbl* strtbl;
   unsigned nref;
@@ -44,7 +47,7 @@ struct tagKlCode {
 KlCode* klcode_create(KlCRefInfo* refinfo, unsigned nref, KlConstant* constants, unsigned nconst,
                       KlInstruction* code, KlFilePosition* posinfo, unsigned codelen,
                       KlCode** nestedfunc, unsigned nnested, KlStrTbl* strtbl, unsigned nparam,
-                      unsigned framesize);
+                      unsigned framesize, KlStrDesc srcfile);
 void klcode_delete(KlCode* code);
 
 KlCode* klcode_create_fromast(KlAstStmtList* ast, KlStrTbl* strtbl, KlCodeGenConfig* config);
