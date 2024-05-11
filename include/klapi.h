@@ -21,6 +21,8 @@
 KlState* klapi_new_state(KlMM* klmm);
 
 static inline KlException klapi_call(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
+/* the exception handler should be pushed into stack immediately before argmuments */
+KlException klapi_trycall(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
 static inline bool klapi_checkrange(KlState* state, int index);
 
 static inline KlValue* klapi_access(KlState* state, int index);

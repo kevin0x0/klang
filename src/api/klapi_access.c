@@ -1,55 +1,5 @@
 #include "include/klapi.h"
 #include "include/lang/klconvert.h"
-#include "include/lib/lib.h"
-#include "include/value/klcfunc.h"
-#include "include/vm/klexception.h"
-
-KlState* klapi_new_state(KlMM* klmm) {
-  klmm_stopgc(klmm);  /* disable gc */
-
-  KlMapNodePool* mapnodepool = klmapnodepool_create(klmm);
-  if (!mapnodepool) {
-    klmm_restartgc(klmm);
-    return NULL;
-  }
-  klmapnodepool_pin(mapnodepool);
-
-  KlStrPool* strpool = klstrpool_create(klmm, 32);
-  if (!strpool) {
-    klmm_restartgc(klmm);
-    klmapnodepool_unpin(mapnodepool);
-    return NULL;
-  }
-
-  KlCommon* common = klcommon_create(klmm, strpool, mapnodepool);
-  if (!common) {
-    klmm_restartgc(klmm);
-    klmapnodepool_unpin(mapnodepool);
-    return NULL;
-  }
-  klcommon_pin(common);
-
-  KlMap* global = klmap_create(common->klclass.map, 5, mapnodepool);
-  if (!global) {
-    klmm_restartgc(klmm);
-    klmapnodepool_unpin(mapnodepool);
-    klcommon_unpin(common, klmm);
-    return NULL;
-  }
-
-  KlState* state = klstate_create(klmm, global, common, strpool, mapnodepool, NULL);
-  if (!state) {
-    klmm_restartgc(klmm);
-    klmapnodepool_unpin(mapnodepool);
-    klcommon_unpin(common, klmm);
-    return NULL;
-  }
-  klmm_register_root(klmm, klmm_to_gcobj(state));
-  klmm_restartgc(klmm);
-  klmapnodepool_unpin(mapnodepool);
-  klcommon_unpin(common, klmm);
-  return state;
-}
 
 KlException klapi_loadglobal(KlState* state) {
   KlString* varname = klapi_getstring(state, -1);
@@ -142,21 +92,3 @@ KlString* klapi_tostring(KlState* state, int index) {
   }
 }
 
-KlException klapi_loadlib(KlState* state, const char* libpath, const char* entryfunction) {
-  /* open library */
-  KLib handle = klib_dlopen(libpath);
-  if (kl_unlikely(klib_failed(handle))) 
-    return klstate_throw(state, KL_E_INVLD, "can not open library: %s", libpath);
-
-  /* find entry point */
-  entryfunction = entryfunction ? entryfunction : "kllib_init";
-  KlCFunction* init = (KlCFunction*)klib_dlsym(handle, entryfunction);
-  if (kl_unlikely(!init)) {
-    klib_dlclose(handle);
-    return klstate_throw(state, KL_E_INVLD, "can not find entry point: %s", entryfunction);
-  }
-
-  /* call the entry function */
-  klapi_pushcfunc(state, init);
-  return klapi_call(state, klapi_access(state, -1), 0, KLAPI_VARIABLE_RESULTS, klapi_access(state, -1));
-}
