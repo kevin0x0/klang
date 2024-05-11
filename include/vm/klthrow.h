@@ -13,7 +13,7 @@ typedef struct tagKlThrowInfo {
   struct {
     union {
       KlValue eobj;   /* exception defined by user, only valid when exception == KL_E_USER. */
-      KlState* esrc;  /* the vm where exception occurrs */
+      KlState* esrc;  /* the vm where exception occurs */
     };
     char* message;    /* builtin exception description message */
   } exception;
