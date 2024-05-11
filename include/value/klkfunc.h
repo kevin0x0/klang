@@ -45,6 +45,7 @@ static inline KlValue* klkfunc_constants(KlKFunction* kfunc);
 static inline KlRefInfo* klkfunc_refinfo(KlKFunction* kfunc);
 static inline KlKFunction** klkfunc_subfunc(KlKFunction* kfunc);
 static inline KlKFuncFilePosition* klkfunc_posinfo(KlKFunction* kfunc);
+static inline KlString* klkfunc_srcfile(KlKFunction* kfunc);
 static inline KlInstruction* klkfunc_entrypoint(KlKFunction* kfunc);
 static inline size_t klkfunc_codelen(KlKFunction* kfunc);
 static inline size_t klkfunc_framesize(KlKFunction* kfunc);
@@ -68,6 +69,10 @@ static inline KlKFunction** klkfunc_subfunc(KlKFunction* kfunc) {
 
 static inline KlKFuncFilePosition* klkfunc_posinfo(KlKFunction* kfunc) {
   return kfunc->debuginfo.posinfo;
+}
+
+static inline KlString* klkfunc_srcfile(KlKFunction* kfunc) {
+  return   kfunc->debuginfo.srcfile;
 }
 
 static inline KlInstruction* klkfunc_entrypoint(KlKFunction* kfunc) {
