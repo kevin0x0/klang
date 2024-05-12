@@ -35,7 +35,7 @@ static inline char* klstrtbl_allocstring(KlStrTbl* strtbl, size_t size);
 static inline size_t klstrtbl_pushstring(KlStrTbl* strtbl, size_t length);
 static inline char* klstrtbl_newstring(KlStrTbl* strtbl, const char* str);
 /* get offset(id) of a string in the string table. */
-static inline size_t klstrtbl_stringid(KlStrTbl* strtbl, char* str);
+static inline size_t klstrtbl_stringid(KlStrTbl* strtbl, const char* str);
 /* get string by offset(id). */
 static inline char* klstrtbl_getstring(KlStrTbl* strtbl, size_t id);
 
@@ -77,7 +77,7 @@ static inline char* klstrtbl_newstring(KlStrTbl* strtbl, const char* str) {
   return mystr;
 }
 
-static inline size_t klstrtbl_stringid(KlStrTbl* strtbl, char* str) {
+static inline size_t klstrtbl_stringid(KlStrTbl* strtbl, const char* str) {
   kl_assert(str >= strtbl->stack && str <= strtbl->curr, "klstrtbl_stringid(): invalid string");
 
   return str - strtbl->stack;
