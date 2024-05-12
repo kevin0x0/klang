@@ -4,7 +4,7 @@
 
 .PHONY: clean create_dir all
 clean :
-	$(RM) -r $(OBJ_DIR)* $(LIB_DIR)*
+	$(RM) -r $(OBJ_DIR)* $(LIB_DIR)* $(BIN_DIR)*
 	$(MAKE) -C $(DEPS_K_DIR) clean
 
 create_dir :

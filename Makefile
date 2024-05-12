@@ -284,7 +284,7 @@ $(OBJ_DIR)kllib_tb.pic.o : $(SRC_DIR)langlib/traceback/kllib_tb.c $(INC_DIR)klap
 
 .PHONY: clean create_dir all
 clean :
-	$(RM) -r $(OBJ_DIR)* $(LIB_DIR)*
+	$(RM) -r $(OBJ_DIR)* $(LIB_DIR)* $(BIN_DIR)*
 	$(MAKE) -C $(DEPS_K_DIR) clean
 
 create_dir :
