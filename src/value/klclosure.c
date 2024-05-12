@@ -31,6 +31,8 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
     }
     KlRef* newref = klref_get(openreflist, klmm, stkbase + refinfo->index);
     if (kl_unlikely(!newref)) {
+      for (KlRef** unpinref = kclo->refs; unpinref != ref; ++unpinref)
+        klref_unpin(*unpinref, klmm);
       klmm_free(klmm, kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kfunc->nref);
       return NULL;
     }
@@ -71,6 +73,8 @@ KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, 
   for (; ref != end; ++ref) {
     KlRef* newref = klref_get(openreflist, klmm, stkbase++);
     if (kl_unlikely(!newref)) {
+      for (KlRef** unpinref = cclo->refs; unpinref != ref; ++unpinref)
+        klref_unpin(*unpinref, klmm);
       klmm_free(klmm, cclo, sizeof (KlCClosure) + sizeof (KlRef*) * cclo->nref);
       return NULL;
     }
