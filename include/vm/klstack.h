@@ -139,6 +139,10 @@ static inline void klstack_pushgcobj(KlStack* stack, KlGCObject* gcobj, KlType t
   klvalue_setgcobj(stack->curr++, gcobj, type);
 }
 
+static inline void klstack_pushuserdata(KlStack* stack, void* ud) {
+  klvalue_setuserdata(stack->curr++, ud);
+}
+
 static inline void klstack_pushvalue(KlStack* stack, KlValue* val) {
   klvalue_setvalue(stack->curr++, val);
 }

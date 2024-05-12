@@ -9,7 +9,7 @@
 
 #define klvalue_collectable(value)          ((value)->type >= KL_COLLECTABLE)
 #define klvalue_dotable(value)              ((value)->type >= KL_DOTABLE && (value)->type <= KL_DOTABLE_END)
-#define klvalue_callable(value)             (((value)->type >= KL_CALLABLEOBJ && (value)->type <= KL_CALLABLEOBJ_END) || (value)->type == KL_CFUNCTION)
+#define klvalue_callable(value)             (((value)->type >= KL_CALLABLEOBJ || (value)->type == KL_CFUNCTION)
 #define klvalue_canrawequal(value)          ((value)->type <= KL_RAWEQUAL)
 #define klvalue_checktype(value, valtype)   ((value)->type == (valtype))
 #define klvalue_isnumber(value)             ((value)->type < KL_NUMBER)
@@ -37,7 +37,7 @@ typedef enum tagKlType {
   KL_RAWEQUAL = KL_STRING,
   KL_DOTABLE, KL_MAP = KL_DOTABLE, KL_ARRAY, KL_OBJECT,
   KL_DOTABLE_END = KL_OBJECT,
-  KL_CLASS,
+  KL_CLASS, KL_KFUNCTION,
   KL_CALLABLEOBJ, KL_KCLOSURE = KL_CALLABLEOBJ, KL_CCLOSURE, KL_COROUTINE,
   KL_CALLABLEOBJ_END = KL_COROUTINE,
   KL_NTYPE, /* number of types */
@@ -60,6 +60,7 @@ typedef struct tagKlValue {
     KlBool boolval;
     KlCFunction* cfunc;
     KlGCObject* gcobj;
+    void* ud;
     KlUInt id;
   } value;
   KlType type;
@@ -100,6 +101,10 @@ static inline KlGCObject* klvalue_getgcobj(KlValue* val) {
   return val->value.gcobj;
 }
 
+static inline void* klvalue_getuserdata(KlValue* val) {
+  return val->value.ud;
+}
+
 static inline void klvalue_setint(KlValue *val, KlInt intval) {
   val->value.intval = intval;
   val->type = KL_INT;
@@ -128,6 +133,11 @@ static inline void klvalue_setcfunc(KlValue *val, KlCFunction* cfunc) {
 static inline void klvalue_setgcobj(KlValue* val, KlGCObject* gcobj, KlType type) {
   val->value.gcobj = gcobj;
   val->type = type; 
+}
+
+static inline void klvalue_setuserdata(KlValue* val, void* ud) {
+  val->value.ud = ud;
+  val->type = KL_USERDATA; 
 }
 
 static inline void klvalue_setnil(KlValue *val) {
