@@ -30,8 +30,14 @@ KLANGC_OBJS = $(OBJ_DIR)klparser.o $(OBJ_DIR)kltokens.o $(OBJ_DIR)kllex.o $(OBJ_
 
 KLANGC_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGC_OBJS))
 
+KLANGLIB_TB_PIC_OBJS = $(OBJ_DIR)kllib_tb.pic.o
 
-all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc
+KLANGLIB_RTCPL_PIC_OBJS = $(OBJ_DIR)kllib_rtcpl.pic.o
+
+KLANGLIBS = $(LIB_DIR)traceback.so $(LIB_DIR)runtime_compiler.so
+
+
+all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(KLANGLIBS)
 
 $(BIN_DIR)klangc : $(OBJ_DIR)klangc.o $(LIB_DIR)libklangc.a $(DEPS_K_DIR)lib/libk.a | create_dir
 	$(CC) -o $@ $< $(CFLAGS) -L $(LIB_DIR) -L $(DEPS_K_DIR)lib/ -Wl,-Bstatic -lk -lklangc -Wl,-Bdynamic
@@ -49,6 +55,14 @@ $(LIB_DIR)libklangc.pic.a : $(KLANGC_PIC_OBJS) $(DEPS_K_DIR)lib/libk.pic.a | cre
 	$(AR) $@ $(KLANGC_OBJS)
 
 
+$(LIB_DIR)traceback.so : $(KLANGLIB_TB_PIC_OBJS) | create_dir
+	$(CC) -shared -o $@ $(KLANGLIB_TB_PIC_OBJS) $(CFLAGS)
+
+$(LIB_DIR)runtime_compiler.so : $(KLANGLIB_RTCPL_PIC_OBJS) $(LIB_DIR)libklangc.pic.a | create_dir
+	$(CC) -shared -o $@ $(KLANGLIB_RTCPL_PIC_OBJS) $(CFLAGS) -L $(LIB_DIR) -Wl,-Bstatic -lklangc.pic -Wl,-Bdynamic
+
+
+
 $(DEPS_K_DIR)lib/libk.a :
 	$(MAKE) -C $(DEPS_K_DIR) $(DEPS_K_DIR)lib/libk.a "AR=$(AR)" "CC=$(CC)" "OPTIMIZE=$(OPTIMIZE)" "MEMORY_CHECK=$(MEMORY_CHECK)" "WARNING=$(WARNING)" "DEBUG=$(DEBUG)"
 
@@ -63,6 +77,9 @@ $(DEPS_K_DIR)lib/libk.so :
 
 
 $(OBJ_DIR)klapi_access.o : $(SRC_DIR)api/klapi_access.c $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h $(INC_DIR)lang/klconvert.h | create_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(OBJ_DIR)klapi_auxlib.o : $(SRC_DIR)api/klapi_auxlib.c $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h | create_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(OBJ_DIR)klapi_call.o : $(SRC_DIR)api/klapi_call.c $(DEPS_K_DIR)include/lib/lib.h $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h | create_dir
@@ -114,6 +131,12 @@ $(OBJ_DIR)klerror.o : $(SRC_DIR)error/klerror.c $(DEPS_K_DIR)include/kio/ki.h $(
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(OBJ_DIR)klconvert.o : $(SRC_DIR)lang/klconvert.c $(INC_DIR)lang/klconvert.h $(INC_DIR)lang/kltypes.h | create_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(OBJ_DIR)kllib_rtcpl.o : $(SRC_DIR)langlib/rtcpl/kllib_rtcpl.c $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kio_common.h $(DEPS_K_DIR)include/kio/ko.h $(DEPS_K_DIR)include/array/karray.h $(DEPS_K_DIR)include/kutils/utils.h $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h $(INC_DIR)code/klcode.h $(INC_DIR)ast/klstrtbl.h $(INC_DIR)code/klcontbl.h $(INC_DIR)ast/klast.h $(INC_DIR)error/klerror.h $(INC_DIR)parse/kltokens.h $(INC_DIR)code/klcodeval.h $(INC_DIR)parse/klparser.h $(INC_DIR)parse/kllex.h | create_dir
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(OBJ_DIR)kllib_tb.o : $(SRC_DIR)langlib/traceback/kllib_tb.c $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h | create_dir
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(OBJ_DIR)klangc.o : $(SRC_DIR)main/klangc.c $(DEPS_K_DIR)include/os_spec/kfs.h $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kio_common.h $(DEPS_K_DIR)include/kio/ko.h $(DEPS_K_DIR)include/array/karray.h $(DEPS_K_DIR)include/kutils/utils.h $(DEPS_K_DIR)include/kio/kifile.h $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kofile.h $(DEPS_K_DIR)include/kio/ko.h $(DEPS_K_DIR)include/kio/kibuf.h $(INC_DIR)ast/klstrtbl.h $(INC_DIR)misc/klutils.h $(INC_DIR)parse/kllex.h $(INC_DIR)ast/klast.h $(INC_DIR)error/klerror.h $(INC_DIR)lang/kltypes.h $(INC_DIR)parse/kltokens.h $(INC_DIR)parse/klparser.h $(INC_DIR)code/klcode.h $(INC_DIR)code/klcontbl.h $(INC_DIR)code/klcodeval.h $(INC_DIR)lang/klinst.h | create_dir
@@ -247,6 +270,12 @@ $(OBJ_DIR)klparser.pic.o : $(SRC_DIR)parse/klparser.c $(DEPS_K_DIR)include/kio/k
 	$(CC) -c -o $@ $< $(CFLAGS) -fPIC
 
 $(OBJ_DIR)kltokens.pic.o : $(SRC_DIR)parse/kltokens.c $(INC_DIR)parse/kltokens.h | create_dir
+	$(CC) -c -o $@ $< $(CFLAGS) -fPIC
+
+$(OBJ_DIR)kllib_rtcpl.pic.o : $(SRC_DIR)langlib/rtcpl/kllib_rtcpl.c $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kio_common.h $(DEPS_K_DIR)include/kio/ko.h $(DEPS_K_DIR)include/array/karray.h $(DEPS_K_DIR)include/kutils/utils.h $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h $(INC_DIR)code/klcode.h $(INC_DIR)ast/klstrtbl.h $(INC_DIR)code/klcontbl.h $(INC_DIR)ast/klast.h $(INC_DIR)error/klerror.h $(INC_DIR)parse/kltokens.h $(INC_DIR)code/klcodeval.h $(INC_DIR)parse/klparser.h $(INC_DIR)parse/kllex.h | create_dir
+	$(CC) -c -o $@ $< $(CFLAGS) -fPIC
+
+$(OBJ_DIR)kllib_tb.pic.o : $(SRC_DIR)langlib/traceback/kllib_tb.c $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h | create_dir
 	$(CC) -c -o $@ $< $(CFLAGS) -fPIC
 
 

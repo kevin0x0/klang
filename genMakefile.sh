@@ -56,7 +56,7 @@ gen_deps '-I . -I deps/k/'  ./src/ Makefile '$(CC) -c -o $@ $< $(CFLAGS)'
 
 echo -e "\n\n" >> Makefile
 echo "# ==============================SHARED OBJECT==================================" >> Makefile
-for dir in ast code error misc parse; do
+for dir in ast code error misc parse langlib; do
   gen_deps_pic '-I . -I ./deps/k/' ./src/$dir Makefile '$(CC) -c -o $@ $< $(CFLAGS) -fPIC'
 done
 
