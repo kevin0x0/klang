@@ -71,12 +71,15 @@ typedef struct tagKlState {
 KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlMapNodePool* mapnodepool, KlKClosure* kclo);
 
 static inline KlMM* klstate_getmm(KlState* state);
+static inline KlCallInfo* klstate_baseci(KlState* state);
 static inline KlCallInfo* klstate_currci(KlState* state);
+static inline void klstate_setcurrci(KlState* state, KlCallInfo* callinfo);
 static inline KlStack* klstate_stack(KlState* state);
 static inline KlCommon* klstate_common(KlState* state);
 static inline KlMap* klstate_global(KlState* state);
 static inline KlStrPool* klstate_strpool(KlState* state);
 static inline KlMapNodePool* klstate_mapnodepool(KlState* state);
+static inline KlRef** klstate_reflist(KlState* state);
 
 static inline size_t klstate_getnarg(KlState* state);
 
@@ -108,6 +111,14 @@ static inline KlCallInfo* klstate_currci(KlState* state) {
   return state->callinfo;
 }
 
+static inline void klstate_setcurrci(KlState* state, KlCallInfo* callinfo) {
+  state->callinfo = callinfo;
+}
+
+static inline KlCallInfo* klstate_baseci(KlState* state) {
+  return &state->baseci;
+}
+
 static inline KlStack* klstate_stack(KlState* state) {
   return &state->stack;
 }
@@ -126,6 +137,10 @@ static inline KlStrPool* klstate_strpool(KlState* state) {
 
 static inline KlMapNodePool* klstate_mapnodepool(KlState* state) {
   return state->mapnodepool;
+}
+
+static inline KlRef** klstate_reflist(KlState* state) {
+  return &state->reflist;
 }
 
 static inline size_t klstate_getnarg(KlState* state) {
