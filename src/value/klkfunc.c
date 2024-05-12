@@ -19,6 +19,7 @@ KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, unsigned codelen, un
     klmm_free(klmm, kfunc, sizeof (KlKFunction));
     klmm_free(klmm, constants, sizeof (KlValue) * nconst);
     klmm_free(klmm, refinfo, sizeof (KlRefInfo) * nref);
+    klmm_free(klmm, subfunc, sizeof (KlKFunction*) * nsubfunc);
     return NULL;
   }
   kfunc->code = code;
@@ -38,6 +39,15 @@ KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, unsigned codelen, un
 
 void klkfunc_initdone(KlMM* klmm, KlKFunction* kfunc) {
   klmm_gcobj_enable(klmm, klmm_to_gcobj(kfunc), &klkfunc_gcvfunc);
+}
+
+void klkfunc_initabort(KlMM* klmm, KlKFunction* kfunc) {
+  klmm_free(klmm, kfunc->subfunc, kfunc->nsubfunc * sizeof (KlKFunction*));
+  klmm_free(klmm, kfunc->refinfo, kfunc->nref * sizeof (KlRefInfo));
+  klmm_free(klmm, kfunc->constants, kfunc->nconst * sizeof (KlValue));
+  if (kfunc->debuginfo.posinfo)
+    klmm_free(klmm, kfunc->debuginfo.posinfo, kfunc->codelen * sizeof (KlKFuncFilePosition));
+  klmm_free(klmm, kfunc, sizeof (KlKFunction));
 }
 
 static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject* gclist) {
