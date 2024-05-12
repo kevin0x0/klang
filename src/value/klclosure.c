@@ -24,7 +24,7 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
   KlRef** ref = kclo->refs;
   KlRefInfo* end = refinfo + nref;
   for (; refinfo != end; ++refinfo, ++ref) {
-    if (!refinfo->on_stack) {       /* not in the stack */
+    if (!refinfo->on_stack) {       /* not on the stack */
       *ref = refs[refinfo->index];  /* in parent closure */
       klref_pin(*ref);
       continue;
