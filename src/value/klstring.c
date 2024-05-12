@@ -28,6 +28,17 @@ static KlString* klstring_create(KlMM* klmm, const char* str) {
   return klstr;
 }
 
+static KlString* klstring_create_buf(KlMM* klmm, const char* buf, size_t buflen) {
+  if (kl_unlikely(buflen > KLUINT_MAX)) return NULL;
+  KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + buflen + 1);
+  if (kl_unlikely(!klstr)) return NULL;
+
+  memcpy(klstr->strhead, buf, buflen);
+  klstr->strhead[buflen] = '\0';
+  klstr->length = buflen;
+  return klstr;
+}
+
 static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len1, const char* str2, size_t len2) {
   if (kl_unlikely(len1 + len2 > KLUINT_MAX)) return NULL;
   KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len1 + len2 + 1);
@@ -43,6 +54,13 @@ static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len
 static inline size_t klstring_calculate_hash(const char* str) {
   size_t hash = 0;
   while (*str)
+    hash = (*str++) + (hash << 6) + (hash << 16) - hash;
+  return hash;
+}
+
+static inline size_t klstring_calculate_hash_buf(const char* str, const char* end) {
+  size_t hash = 0;
+  while (str != end)
     hash = (*str++) + (hash << 6) + (hash << 16) - hash;
   return hash;
 }
@@ -147,6 +165,17 @@ KlString* klstrpool_new_string(KlStrPool* strpool, const char* str) {
   if (res) return res;
   KlMM* klmm = klstrpool_getmm(strpool);
   KlString* klstr = klstring_create(klmm, str);
+  if (!klstr) return NULL;
+  klstr->hash = hash;
+  return klstrpool_insert(strpool, klstr);
+}
+
+KlString* klstrpool_new_string_buf(KlStrPool* strpool, const char* buf, size_t buflen) {
+  size_t hash = klstring_calculate_hash_buf(buf, buf + buflen);
+  KlString* res = klstrpool_search(strpool, buf, hash);
+  if (res) return res;
+  KlMM* klmm = klstrpool_getmm(strpool);
+  KlString* klstr = klstring_create_buf(klmm, buf, buflen);
   if (!klstr) return NULL;
   klstr->hash = hash;
   return klstrpool_insert(strpool, klstr);
