@@ -4,7 +4,7 @@
 *.exe
 compile_commands.json
 bin/
+lib/
+obj/
 .cache/
-
-
 
