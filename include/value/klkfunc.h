@@ -40,6 +40,8 @@ KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, unsigned codelen, un
                            unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam);
 /* assume the initialization is done, enable gc for 'kfunc'. */
 void klkfunc_initdone(KlMM* klmm, KlKFunction* kfunc);
+/* init failed, clean resources */
+void klkfunc_initabort(KlMM* klmm, KlKFunction* kfunc);
 
 static inline KlValue* klkfunc_constants(KlKFunction* kfunc);
 static inline KlRefInfo* klkfunc_refinfo(KlKFunction* kfunc);
