@@ -880,7 +880,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
 }
 
 static void klcode_print_reftbl(KlCode* code, Ko* out) {
-  ko_printf(out, "%u references:\n", code->nconst);
+  ko_printf(out, "%u references:\n", code->nref);
   for (size_t i = 0; i < code->nref; ++i)
     ko_printf(out, "reference %4zu: from %10s, index = %u\n", i, code->refinfo[i].on_stack ? "stack" : "ref table", (unsigned)code->refinfo[i].index);
 }
