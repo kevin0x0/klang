@@ -87,6 +87,11 @@ static inline bool klstate_isrunning(KlState* state);
 
 static inline KlValue* klstate_stktop(KlState* state);
 
+static inline KlException klstate_currexception(KlState* state);
+static inline KlState* klstate_exception_source(KlState* state);
+static inline const char* klstate_exception_message(KlState* state);
+static inline KlValue* klstate_exception_object(KlState* state);
+
 KlException klstate_throw_link(KlState* state, KlState* src);
 KlException klstate_throw(KlState* state, KlException type, const char* format, ...);
 KlException klstate_throw_oom(KlState* state, const char* when);
@@ -153,6 +158,22 @@ static inline bool klstate_isrunning(KlState* state) {
 
 static inline KlValue* klstate_stktop(KlState* state) {
   return klstack_top(klstate_stack(state));
+}
+
+static inline KlException klstate_currexception(KlState* state) {
+  return klthrow_getetype(&state->throwinfo);
+}
+
+static inline KlState* klstate_exception_source(KlState* state) {
+  return klthrow_getesrc(&state->throwinfo);
+}
+
+static inline const char* klstate_exception_message(KlState* state) {
+  return klthrow_getemsg(&state->throwinfo);
+}
+
+static inline KlValue* klstate_exception_object(KlState* state) {
+  return klthrow_geteobj(&state->throwinfo);
 }
 
 static inline KlValue* klstate_getval(KlState* state, int offset) {
