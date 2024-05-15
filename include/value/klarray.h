@@ -20,6 +20,7 @@ typedef KlValue* KlArrayIter;
 
 KlClass* klarray_class(KlMM* klmm);
 KlArray* klarray_create(KlClass* arrayclass, KlMM* klmm, size_t capacity);
+bool klarray_compatiable(KlObject* obj);
 
 bool klarray_check_capacity(KlArray* array, KlMM* klmm, size_t capacity);
 

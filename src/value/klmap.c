@@ -197,6 +197,19 @@ KlMapIter klmap_search(KlMap* map, KlValue* key) {
   return NULL;
 }
 
+KlMapIter klmap_bucketnext(KlMap* map, size_t bucketid, KlMapIter itr) {
+  kl_assert(klmap_validbucket(map, bucketid) && klmap_bucketid(itr) == bucketid, "");
+  size_t mask = map->capacity - 1;
+  KlValue* key = &itr->key;
+  do {
+    if (klvalue_equal(key, &itr->key)) {
+      return itr->next == &map->tail ? NULL : itr->next;
+    }
+    itr = itr->next;
+  } while (itr != &map->tail && (itr->hash & mask) == bucketid);
+  return NULL;
+}
+
 KlMapIter klmap_searchstring(KlMap* map, KlString* str) {
   size_t mask = map->capacity - 1;
   size_t index = mask & klstring_hash(str);
@@ -260,8 +273,12 @@ static KlException klmap_constructor(KlClass* klclass, KlMM* klmm, KlValue* valu
 }
 
 KlClass* klmap_class(KlMM* klmm, KlMapNodePool* mapnodepool) {
-  KlClass* mapclass = klclass_create(klmm, 5, klobject_attrarrayoffset(KlMap), mapnodepool, (KlObjectConstructor)klmap_constructor);
+  KlClass* mapclass = klclass_create(klmm, 5, klobject_attrarrayoffset(KlMap), mapnodepool, klmap_constructor);
   return mapclass;
+}
+
+bool klmap_compatiable(KlObject* obj) {
+  return klobject_compatiable(obj, klmap_constructor);
 }
 
 static KlGCObject* klmap_propagate_nonweak(KlMap* map, KlGCObject* gclist) {

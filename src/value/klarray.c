@@ -1,5 +1,6 @@
 #include "include/value/klarray.h"
 #include "include/misc/klutils.h"
+#include "include/value/klclass.h"
 #include "include/vm/klexception.h"
 
 #include <stdlib.h>
@@ -38,7 +39,11 @@ static KlException klarray_constructor(KlClass* arrayclass, KlMM* klmm, KlValue*
 }
 
 KlClass* klarray_class(KlMM* klmm) {
-  return klclass_create(klmm, 5, klobject_attrarrayoffset(KlArray), NULL, (KlObjectConstructor)klarray_constructor);
+  return klclass_create(klmm, 5, klobject_attrarrayoffset(KlArray), NULL, klarray_constructor);
+}
+
+bool klarray_compatiable(KlObject* obj) {
+  return klobject_compatiable(obj, klarray_constructor);
 }
 
 bool klarray_check_capacity(KlArray* array, KlMM* klmm, size_t new_capacity) {

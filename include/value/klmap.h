@@ -40,6 +40,8 @@ typedef struct tagKlMap {
 KlMap* klmap_create(KlClass* mapclass, size_t capacity, KlMapNodePool* nodepool);
 KlClass* klmap_class(KlMM* klmm, KlMapNodePool* mapnodepool);
 
+bool klmap_compatiable(KlObject* obj);
+
 static inline size_t klmap_size(KlMap* map);
 static inline size_t klmap_capacity(KlMap* map);
 
@@ -53,7 +55,10 @@ static inline void klmap_index(KlMap* map, KlValue* key, KlValue* val);
 static inline bool klmap_indexas(KlMap* map, KlValue* key, KlValue* val);
 
 static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* node);
-
+static inline size_t klmap_bucketid(KlMap* map, KlMapIter itr);
+static inline KlMapIter klmap_getbucket(KlMap* map, size_t bucketid);
+static inline bool klmap_validbucket(KlMap* map, size_t bucketid);
+KlMapIter klmap_bucketnext(KlMap* map, size_t bucketid, KlMapIter itr);
 static inline KlMapIter klmap_iter_begin(KlMap* map);
 static inline KlMapIter klmap_iter_end(KlMap* map);
 static inline KlMapIter klmap_iter_next(KlMapIter current);
@@ -72,6 +77,18 @@ static inline bool klmap_indexas(KlMap* map, KlValue* key, KlValue* val) {
     klvalue_setvalue(&iter->value, val);
   }
   return true;
+}
+
+static inline size_t klmap_bucketid(KlMap* map, KlMapIter itr) {
+  return (map->capacity - 1) & itr->hash;
+}
+
+static inline KlMapIter klmap_getbucket(KlMap* map, size_t bucketid) {
+  return map->array[bucketid];
+}
+
+static inline bool klmap_validbucket(KlMap* map, size_t bucketid) {
+  return bucketid < map->capacity && map->array[bucketid] != NULL;
 }
 
 static inline KlMapIter klmap_iter_begin(KlMap* map) {
