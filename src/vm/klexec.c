@@ -92,7 +92,6 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
     return klstate_throw_oom(state, "calling a callable object");
   bool yieldallowance_save = klco_yield_allowed(&state->coinfo);
   klco_allow_yield(&state->coinfo, false);
-  ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state) - narg + nret);
   KlException exception = klexec_callprepare(state, callable, narg, NULL);
   if (exception) return exception;
   if (prevci != state->callinfo) {  /* to be executed klang call */
@@ -102,7 +101,23 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
     if (kl_unlikely(exception)) return exception;
   }
   klco_allow_yield(&state->coinfo, yieldallowance_save);
-  klstack_set_top(klstate_stack(state), klexec_restorestack(state, stktop_save));
+  return KL_E_NONE;
+}
+
+KlException klexec_tailcall(KlState* state, KlValue* callable, size_t narg) {
+  kl_assert(narg != KLEXEC_VARIABLE_RESULTS, "arguments can not have variable number of results");
+  KlCallInfo* prevci = state->callinfo->prev;
+  bool yieldallowance_save = klco_yield_allowed(&state->coinfo);
+  klco_allow_yield(&state->coinfo, false);
+  KlException exception = klexec_callprepare(state, callable, narg, NULL);
+  if (exception) return exception;
+  if (prevci != state->callinfo) {  /* to be executed klang call */
+    state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
+    exception = klexec_execute(state);
+    klco_allow_yield(&state->coinfo, yieldallowance_save);
+    if (kl_unlikely(exception)) return exception;
+  }
+  klco_allow_yield(&state->coinfo, yieldallowance_save);
   return KL_E_NONE;
 }
 

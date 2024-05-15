@@ -20,6 +20,7 @@ typedef KlException (*KlCallPrepCallBack)(KlState* state, KlValue* callable, siz
 KlException klexec_execute(KlState* state);
 KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
 KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field);
+KlException klexec_tailcall(KlState* state, KlValue* callable, size_t narg);
 
 static inline void klexec_pop_callinfo(KlState* state);
 static inline KlCallInfo* klexec_newed_callinfo(KlState* state);
