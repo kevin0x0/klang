@@ -52,12 +52,12 @@ gen_deps_pic() {
 
 cat Makefile.pre > Makefile
 
-gen_deps '-I . -I deps/k/'  ./src/ Makefile '$(CC) -c -o $@ $< $(CFLAGS)'
+gen_deps '-I . -I deps/k/'  ./src/ Makefile '$(CC) $(CFLAGS) -c -o $@ $<'
 
 echo -e "\n\n" >> Makefile
 echo "# ==============================SHARED OBJECT==================================" >> Makefile
 for dir in ast code error misc parse langlib; do
-  gen_deps_pic '-I . -I ./deps/k/' ./src/$dir Makefile '$(CC) -c -o $@ $< $(CFLAGS) -fPIC'
+  gen_deps_pic '-I . -I ./deps/k/' ./src/$dir Makefile '$(CC) -fPIC $(CFLAGS) -c -o $@ $<'
 done
 
 cat Makefile.post >> Makefile
