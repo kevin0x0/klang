@@ -7,6 +7,8 @@ static KlException kllib_mkclosure(KlState* state, KlCode* code);
 static void kllib_setconstant_nonstring(KlValue* val, KlConstant* constant);
 /* compiler */
 static KlException kllib_rtcpl_compiler(KlState* state);
+/* interactive compiler(only accept a statement) */
+static KlException kllib_rtcpl_compileri(KlState* state);
 /* byte code loader */
 static KlException kllib_rtcpl_bcloader(KlState* state);
 
@@ -14,19 +16,20 @@ KlException kllib_init(KlState* state);
 
 
 KlException kllib_init(KlState* state) {
-  KlException exception = klapi_allocstack(state, 2);
+  KlException exception = klapi_allocstack(state, 3);
   if (kl_unlikely(exception)) return exception;
-  klapi_setcfunc(state, -2, kllib_rtcpl_compiler);
+  klapi_setcfunc(state, -3, kllib_rtcpl_compiler);
+  klapi_setcfunc(state, -2, kllib_rtcpl_compileri);
   klapi_setcfunc(state, -1, kllib_rtcpl_bcloader);
-  return klapi_return(state, 2);
+  return klapi_return(state, 3);
 }
 
-static KlException kllib_rtcpl_compiler(KlState* state) {
+static KlException kllib_rtcpl_do_compile(KlState* state, KlAstStmtList* (*parse)(KlParser*, KlLex*)) {
   kl_assert(klapi_narg(state) == 4, "expected exactly 4 argmuments");
   kl_assert(klapi_checktypeb(state, 0, KL_USERDATA) &&
             klapi_checktypeb(state, 1, KL_USERDATA) &&
             klapi_checktypeb(state, 2, KL_STRING) &&
-            klapi_checktypeb(state, 3, KL_STRING) || klapi_checkypeb(state, 3, KL_NIL),
+            (klapi_checktypeb(state, 3, KL_STRING) || klapi_checktypeb(state, 3, KL_NIL)),
             "expected Ki, Ko(use type tag: KL_USERDATA), KL_STRING, KL_STRING(or nil)");
 
   Ki* input = klcast(Ki*, klapi_getuserdatab(state, 0));
@@ -54,7 +57,7 @@ static KlException kllib_rtcpl_compiler(KlState* state) {
 
   /* parse */
   kllex_next(&lex);
-  KlAstStmtList* ast = klparser_file(&parser, &lex);
+  KlAstStmtList* ast = parse(&parser, &lex);
   kllex_destroy(&lex);
   if (klerror_nerror(&klerr) != 0) {
     if (ast) klast_delete(ast);
@@ -98,6 +101,14 @@ static KlException kllib_rtcpl_compiler(KlState* state) {
   if (kl_unlikely(exception)) return exception;
   kl_assert(klapi_framesize(state) == klapi_narg(state) + 1, "");
   return klapi_return(state, 1);
+}
+
+static KlException kllib_rtcpl_compiler(KlState* state) {
+  return kllib_rtcpl_do_compile(state, klparser_file);
+}
+
+static KlException kllib_rtcpl_compileri(KlState* state) {
+  return kllib_rtcpl_do_compile(state, klparser_singletonstmtlist);
 }
 
 static KlException kllib_rtcpl_bcloader(KlState* state) {

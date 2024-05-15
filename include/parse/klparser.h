@@ -22,6 +22,7 @@ bool klparser_init(KlParser* parser, KlStrTbl* strtbl, const char* inputname, Kl
 
 KlAst* klparser_expr(KlParser* parser, KlLex* lex);
 KlAst* klparser_stmt(KlParser* parser, KlLex* lex);
+KlAstStmtList* klparser_singletonstmtlist(KlParser* parser, KlLex* lex);
 KlAstStmtList* klparser_file(KlParser* parser, KlLex* lex);
 
 

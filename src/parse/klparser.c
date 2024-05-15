@@ -1094,6 +1094,20 @@ static KlAstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex) {
   }
 }
 
+KlAstStmtList* klparser_singletonstmtlist(KlParser* parser, KlLex* lex) {
+  KlAst* stmt = klparser_stmt(parser, lex);
+  if (kl_unlikely(!stmt)) return NULL;
+  KlAst** stmts = (KlAst**)malloc(sizeof (KlAst*));
+  if (kl_unlikely(!stmts)) {
+    klast_delete(stmt);
+    return NULL;
+  }
+  stmts[0] = stmt;
+  KlAstStmtList* stmtlist = klast_stmtlist_create(stmts, 1, klast_begin(stmt), klast_end(stmt));
+  klparser_oomifnull(stmtlist);
+  return stmtlist;
+}
+
 KlAst* klparser_stmt(KlParser* parser, KlLex* lex) {
   switch (kllex_tokkind(lex)) {
     case KLTK_LET: {
