@@ -40,6 +40,7 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
   state->baseci.callable.cfunc = NULL;
   state->baseci.next = NULL;
   state->baseci.prev = NULL;
+  state->baseci.base = klstack_raw(klstate_stack(state));
   state->baseci.top = klstack_raw(klstate_stack(state));
   state->baseci.status = KLSTATE_CI_STATUS_NORM;
 
