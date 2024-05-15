@@ -1,6 +1,7 @@
 #include "include/klapi.h"
 #include "include/lang/klconvert.h"
 #include "include/lib/lib.h"
+#include "include/vm/klexception.h"
 
 
 /*=============================ACCESS INTERFACE==============================*/
@@ -18,8 +19,27 @@ KlException klapi_allocstack(KlState* state, size_t size) {
   return KL_E_NONE;
 }
 
+KlException klapi_checkframe(KlState* state, size_t size) {
+  size_t currframesize = klapi_framesize(state);
+  if (currframesize >= size) return KL_E_NONE;
+  return klapi_checkstack(state, size - currframesize);
+}
+
+KlException klapi_checkframeandset(KlState* state, size_t size) {
+  size_t currframesize = klapi_framesize(state);
+  if (currframesize >= size) {
+    klstack_set_top(klstate_stack(state), klapi_accessb(state, size));
+    return KL_E_NONE;
+  }
+  return klapi_allocstack(state, size - currframesize);
+}
+
 bool klapi_checkrange(KlState* state, int index) {
   return klstack_check_index(klstate_stack(state), index);
+}
+
+KlValue* klapi_stacktop(KlState* state) {
+  return klstate_stktop(state);
 }
 
 KlValue* klapi_access(KlState* state, int index) {
@@ -46,44 +66,38 @@ void klapi_pop(KlState* state, size_t count) {
   klstack_set_top(klstate_stack(state), bound);
 }
 
-KlException klapi_pushcfunc(KlState* state, KlCFunction* cfunc) {
-  if (!klstack_expand_if_full(&state->stack, klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+void klapi_pushcfunc(KlState* state, KlCFunction* cfunc) {
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushcfunc(klstate_stack(state), cfunc);
-  return KL_E_NONE;
 }
 
-KlException klapi_pushint(KlState* state, KlInt val) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+void klapi_pushint(KlState* state, KlInt val) {
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushint(klstate_stack(state), val);
-  return KL_E_NONE;
 }
 
-KlException klapi_pushfloat(KlState* state, KlFloat val) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+void klapi_pushuint(KlState* state, KlUInt val) {
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  klstack_pushuint(&state->stack, val);
+}
+
+void klapi_pushfloat(KlState* state, KlFloat val) {
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushfloat(klstate_stack(state), val);
-  return KL_E_NONE;
 }
 
-KlException klapi_pushnil(KlState* state, size_t count) {
-  if (kl_unlikely(klstate_checkframe(state, count)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+void klapi_pushnil(KlState* state, size_t count) {
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushnil(klstate_stack(state), count);
-  return KL_E_NONE;
 }
 
-KlException klapi_pushbool(KlState* state, KlBool val) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+void klapi_pushbool(KlState* state, KlBool val) {
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushbool(klstate_stack(state), val);
-  return KL_E_NONE;
 }
 
 KlException klapi_pushstring(KlState* state, const char* str) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlString* klstr = klstrpool_new_string(state->strpool, str);
   if (!klstr) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)klstr, KL_STRING);
@@ -91,8 +105,7 @@ KlException klapi_pushstring(KlState* state, const char* str) {
 }
 
 KlException klapi_pushstring_buf(KlState* state, const char* buf, size_t buflen) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlString* klstr = klstrpool_new_string_buf(state->strpool, buf, buflen);
   if (!klstr) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)klstr, KL_STRING);
@@ -100,8 +113,7 @@ KlException klapi_pushstring_buf(KlState* state, const char* buf, size_t buflen)
 }
 
 KlException klapi_pushmap(KlState* state, size_t capacity) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlMap* map = klmap_create(state->common->klclass.map, capacity, state->mapnodepool);
   if (!map) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)map, KL_MAP);
@@ -109,57 +121,46 @@ KlException klapi_pushmap(KlState* state, size_t capacity) {
 }
 
 KlException klapi_pusharray(KlState* state, size_t capacity) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlArray* array = klarray_create(state->common->klclass.array, klstate_getmm(state), capacity);
   if (!array) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)array, KL_ARRAY);
   return KL_E_NONE;
 }
 
-KlException klapi_pushuserdata(KlState* state, void* ud) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+void klapi_pushuserdata(KlState* state, void* ud) {
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushuserdata(klstate_stack(state), ud);
-  return KL_E_NONE;
 }
 
-KlException klapi_pushgcobj(KlState* state, KlGCObject* gcobj, KlType type) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+void klapi_pushgcobj(KlState* state, KlGCObject* gcobj, KlType type) {
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushgcobj(&state->stack, gcobj, type);
-  return KL_E_NONE;
 }
 
-KlException klapi_pushvalue(KlState* state, KlValue* val) {
-  if (!klstack_expand_if_full(klstate_stack(state), klstate_getmm(state)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
+void klapi_pushvalue(KlState* state, KlValue* val) {
+  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushvalue(&state->stack, val);
-  return KL_E_NONE;
 }
 
-KlException klapi_setcfunc(KlState* state, int index, KlCFunction* cfunc) {
+void klapi_setcfunc(KlState* state, int index, KlCFunction* cfunc) {
   KlValue* val = klapi_access(state, index);
   klvalue_setcfunc(val, cfunc);
-  return KL_E_NONE;
 }
 
-KlException klapi_setint(KlState* state, int index, KlInt intval) {
+void klapi_setint(KlState* state, int index, KlInt intval) {
   KlValue* val = klapi_access(state, index);
   klvalue_setint(val, intval);
-  return KL_E_NONE;
 }
 
-KlException klapi_setnil(KlState* state, int index) {
+void klapi_setnil(KlState* state, int index) {
   KlValue* val = klapi_access(state, index);
   klvalue_setnil(val);
-  return KL_E_NONE;
 }
 
-KlException klapi_setbool(KlState* state, int index, KlBool boolval) {
+void klapi_setbool(KlState* state, int index, KlBool boolval) {
   KlValue* val = klapi_access(state, index);
   klvalue_setbool(val, boolval);
-  return KL_E_NONE;
 }
 
 KlException klapi_setstring(KlState* state, int index, const char* str) {
@@ -186,22 +187,19 @@ KlException klapi_setarray(KlState* state, int index, size_t capacity) {
   return KL_E_NONE;
 }
 
-KlException klapi_setuserdata(KlState* state, int index, void* ud) {
+void klapi_setuserdata(KlState* state, int index, void* ud) {
   KlValue* val = klapi_access(state, index);
   klvalue_setuserdata(val, ud);
-  return KL_E_NONE;
 }
 
-KlException klapi_setgcobj(KlState* state, int index, KlGCObject* gcobj, KlType type) {
+void klapi_setgcobj(KlState* state, int index, KlGCObject* gcobj, KlType type) {
   KlValue* val = klapi_access(state, index);
   klvalue_setgcobj(val, gcobj, type);
-  return KL_E_NONE;
 }
 
-KlException klapi_setvalue(KlState* state, int index, KlValue* other) {
+void klapi_setvalue(KlState* state, int index, KlValue* other) {
   KlValue* val = klapi_access(state, index);
   klvalue_setvalue(val, other);
-  return KL_E_NONE;
 }
 
 KlCFunction* klapi_getcfunc(KlState* state, int index) {
@@ -326,13 +324,13 @@ KlException klapi_loadglobal(KlState* state) {
   return KL_E_NONE;
 }
 
-KlException klapi_storeglobal(KlState* state, KlString* varname) {
+KlException klapi_storeglobal(KlState* state, KlString* varname, int validx) {
   KlMapIter itr = klmap_searchstring(state->global, varname);
   if (!itr) {
-    if (kl_unlikely(!klmap_insertstring(state->global, varname, klapi_access(state, -1))))
+    if (kl_unlikely(!klmap_insertstring(state->global, varname, klapi_access(state, validx))))
       return KL_E_OOM;
   } else {
-    klvalue_setvalue(&itr->value, klapi_access(state, -1));
+    klvalue_setvalue(&itr->value, klapi_access(state, validx));
   }
   return KL_E_NONE;
 }
@@ -408,6 +406,7 @@ KlString* klapi_tostring(KlState* state, int index) {
     klstate_throw(state, KL_E_INVLD, "can not be converted to string");
     return NULL;
   }
+#undef KLAPI_BUFSIZE
 }
 
 
@@ -438,18 +437,6 @@ KlException klapi_trycall(KlState* state, KlValue* callable, size_t narg, size_t
   return KL_E_NONE;
 }
 
-size_t klapi_narg(KlState* state) {
-  return klstate_currci(state)->narg;
-}
-
-size_t klapi_nres(KlState* state) {
-  return klstate_currci(state)->nret;
-}
-
-size_t klapi_framesize(KlState* state) {
-  return klstate_stktop(state) - klstate_currci(state)->base;
-}
-
 KlException klapi_return(KlState* state, size_t nret) {
   kl_assert(klstack_size(klstate_stack(state)) >= nret, "number of returned values exceeds the stack size, which is impossible.");
   kl_assert(nret < KLAPI_VARIABLE_RESULTS, "currently does not support this number of returned values.");
@@ -457,7 +444,11 @@ KlException klapi_return(KlState* state, size_t nret) {
   KlValue* retpos = currci->base + currci->retoff;
   KlValue* respos = klapi_access(state, -nret);
   kl_assert(retpos <= respos, "number of returned values exceeds stack frame size, which is impossible");
-  if (retpos == respos) return KL_E_NONE;
+  if (retpos == respos) {
+    if (currci->nret != KLAPI_VARIABLE_RESULTS && nret < currci->nret)
+      klexec_setnils(respos, currci->nret - nret);
+    return KL_E_NONE;
+  }
   size_t nwanted = currci->nret == KLAPI_VARIABLE_RESULTS ? nret : currci->nret;
   size_t ncopy = nwanted < nret ? nwanted : nret;
   while (ncopy--)
@@ -489,9 +480,9 @@ KlException klapi_loadlib(KlState* state, const char* libpath, const char* entry
   }
 
   /* call the entry function */
-  KlException exception = klapi_pushcfunc(state, init);
-  if (kl_unlikely(exception)) return exception;
-  return klapi_call(state, klapi_access(state, -1), 0, KLAPI_VARIABLE_RESULTS, klapi_access(state, -1));
+  KlValue callable;
+  klvalue_setcfunc(&callable, init);
+  return klapi_call(state, &callable, 0, KLAPI_VARIABLE_RESULTS, klapi_stacktop(state));
 }
 
 
