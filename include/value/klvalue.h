@@ -61,7 +61,7 @@ typedef struct tagKlValue {
     KlCFunction* cfunc;
     KlGCObject* gcobj;
     void* ud;
-    KlUInt id;
+    KlUInt uintval;
   } value;
   KlType type;
 } KlValue;
@@ -77,6 +77,10 @@ static inline KlInt klvalue_getint(KlValue* val) {
   return val->value.intval;
 }
 
+static inline KlUInt klvalue_getuint(KlValue* val) {
+  return val->value.uintval;
+}
+
 static inline KlFloat klvalue_getfloat(KlValue* val) {
   return val->value.floatval;
 }
@@ -90,7 +94,7 @@ static inline KlBool klvalue_getbool(KlValue* val) {
 }
 
 static inline KlUInt klvalue_getid(KlValue* val) {
-  return val->value.id;
+  return val->value.uintval;
 }
 
 static inline KlCFunction* klvalue_getcfunc(KlValue* val) {
@@ -120,8 +124,8 @@ static inline void klvalue_setbool(KlValue *val, KlBool boolval) {
   val->type = KL_BOOL;
 }
 
-static inline void klvalue_setid(KlValue *val, KlUInt id) {
-  val->value.id = id;
+static inline void klvalue_setuint(KlValue *val, KlUInt id) {
+  val->value.uintval = id;
   val->type = KL_ID;
 }
 
