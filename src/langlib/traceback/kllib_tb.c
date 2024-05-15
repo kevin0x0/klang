@@ -27,14 +27,14 @@ static void kllib_tb_dotraceback(KlFmtConfig* fmt, FILE* err, KlCallInfo* from, 
 static KlException kllib_tb_main(KlState* state);
 
 KlException kllib_init(KlState* state) {
-  KlException exception = klapi_pushcfunc(state, kllib_tb_main);
-  if (kl_unlikely(exception)) return exception;
+  KLAPI_PROTECT(klapi_checkstack(state, 1));
+  klapi_pushcfunc(state, kllib_tb_main);
   return klapi_return(state, 1);
 }
 
 static KlException kllib_tb_main(KlState* state) {
   KlCallInfo* currci = klstate_currci(state);
-  kl_assert(currci->status & KLSTATE_CI_STATUS_CFUN && currci->cfunc == kllib_tb_main, "");
+  kl_assert(currci->status & KLSTATE_CI_STATUS_CFUN && currci->callable.cfunc == kllib_tb_main, "");
   FILE* err = NULL;
   if (klapi_narg(state) == 0) {
     err = stderr;
