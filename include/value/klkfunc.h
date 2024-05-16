@@ -36,13 +36,14 @@ struct tagKlKFunction {
 /* allocate memory and initialize some fields, but do not initialize the constants and refinfo.
  * the constants and refinfo should be initialized by caller.
  */
-KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, unsigned codelen, unsigned short nconst,
+KlKFunction* klkfunc_alloc(KlMM* klmm, unsigned codelen, unsigned short nconst,
                            unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam);
 /* assume the initialization is done, enable gc for 'kfunc'. */
 void klkfunc_initdone(KlMM* klmm, KlKFunction* kfunc);
 /* init failed, clean resources */
 void klkfunc_initabort(KlMM* klmm, KlKFunction* kfunc);
 
+static inline KlInstruction* klkfunc_insts(KlKFunction* kfunc);
 static inline KlValue* klkfunc_constants(KlKFunction* kfunc);
 static inline KlRefInfo* klkfunc_refinfo(KlKFunction* kfunc);
 static inline KlKFunction** klkfunc_subfunc(KlKFunction* kfunc);
@@ -56,6 +57,10 @@ static inline size_t klkfunc_nparam(KlKFunction* kfunc);
 static inline void klkfunc_setsrcfile(KlKFunction* kfunc, KlString* srcfile);
 /* the 'posinfo' must be allocated by klmm */
 static inline void klkfunc_setposinfo(KlKFunction* kfunc, KlKFuncFilePosition* posinfo);
+
+static inline KlInstruction* klkfunc_insts(KlKFunction* kfunc) {
+  return kfunc->code;
+}
 
 static inline KlValue* klkfunc_constants(KlKFunction* kfunc) {
   return kfunc->constants;

@@ -10,13 +10,15 @@ static void klkfunc_delete(KlKFunction* kfunc, KlMM* klmm);
 static KlGCVirtualFunc klkfunc_gcvfunc = { .destructor = (KlGCDestructor)klkfunc_delete, .propagate = (KlGCProp)klkfunc_propagate, .after = NULL };
 
 
-KlKFunction* klkfunc_alloc(KlMM* klmm, KlInstruction* code, unsigned codelen, unsigned short nconst, unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam) {
+KlKFunction* klkfunc_alloc(KlMM* klmm, unsigned codelen, unsigned short nconst, unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam) {
   KlKFunction* kfunc = (KlKFunction*)klmm_alloc(klmm, sizeof (KlKFunction));
+  KlInstruction* code = (KlInstruction*)klmm_alloc(klmm, sizeof (KlInstruction) * codelen);
   KlValue* constants = (KlValue*)klmm_alloc(klmm, sizeof (KlValue) * nconst);
   KlRefInfo* refinfo = (KlRefInfo*)klmm_alloc(klmm, sizeof (KlRefInfo) * nref);
   KlKFunction** subfunc = (KlKFunction**)klmm_alloc(klmm, sizeof (KlKFunction*) * nsubfunc);
-  if (kl_unlikely(!kfunc || !constants || !refinfo || !subfunc)) {
+  if (kl_unlikely(!kfunc || !code || !constants || !refinfo || !subfunc)) {
     klmm_free(klmm, kfunc, sizeof (KlKFunction));
+    klmm_free(klmm, code, sizeof (KlInstruction) * codelen);
     klmm_free(klmm, constants, sizeof (KlValue) * nconst);
     klmm_free(klmm, refinfo, sizeof (KlRefInfo) * nref);
     klmm_free(klmm, subfunc, sizeof (KlKFunction*) * nsubfunc);
@@ -47,6 +49,7 @@ void klkfunc_initabort(KlMM* klmm, KlKFunction* kfunc) {
   klmm_free(klmm, kfunc->constants, kfunc->nconst * sizeof (KlValue));
   if (kfunc->debuginfo.posinfo)
     klmm_free(klmm, kfunc->debuginfo.posinfo, kfunc->codelen * sizeof (KlKFuncFilePosition));
+  klmm_free(klmm, kfunc->code, kfunc->codelen * sizeof (KlInstruction));
   klmm_free(klmm, kfunc, sizeof (KlKFunction));
 }
 
