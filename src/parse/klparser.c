@@ -884,26 +884,6 @@ static KlAst* klparser_exprwhere(KlParser* parser, KlLex* lex, KlAst* expr) {
   return klast(exprwhere);
 }
 
-static KlAst* klparser_finishappend(KlParser* parser, KlLex* lex) {
-  KArray elemarr;
-  if (kl_unlikely(!karray_init(&elemarr)))
-    return klparser_error_oom(parser, lex);
-  while (kllex_trymatch(lex, KLTK_APPEND)) {
-    KlAst* unit = klparser_exprunit(parser, lex, NULL);
-    if (kl_unlikely(!unit)) continue;
-    klparser_karr_pushast(&elemarr, unit);
-  }
-  karray_shrink(&elemarr);
-  size_t nelem = karray_size(&elemarr);
-  if (nelem == 0) {
-    karray_destroy(&elemarr);
-    return NULL;
-  }
-  KlAst** elems = (KlAst**)karray_steal(&elemarr);
-  KlAstExprList* exprlist = klast_exprlist_create(elems, nelem, klast_begin(elems[0]), klast_end(elems[nelem - 1]));
-  return klast(exprlist);
-}
-
 static KlAst* klparser_exprpost(KlParser* parser, KlLex* lex) {
   bool inparenthesis;
   KlAst* postexpr = klparser_exprunit(parser, lex, &inparenthesis);
@@ -977,12 +957,13 @@ static KlAst* klparser_exprpost(KlParser* parser, KlLex* lex) {
         break;
       }
       case KLTK_APPEND: {
-        KlAst* vals = klparser_finishappend(parser, lex);
-        if (kl_unlikely(!postexpr || !vals)) {
-          if (vals) klast_delete(vals);
+        kllex_next(lex);
+        KlAstExprList* exprlist = klparser_exprlist(parser, lex);
+        if (kl_unlikely(!postexpr || !exprlist)) {
+          if (exprlist) klast_delete(exprlist);
           break;
         }
-        KlAstPost* arrpush = klast_post_create(KLTK_APPEND, postexpr, vals, postexpr->begin, vals->end);
+        KlAstPost* arrpush = klast_post_create(KLTK_APPEND, postexpr, klast(exprlist), postexpr->begin, klast_end(exprlist));
         klparser_oomifnull(arrpush);
         postexpr = klast(arrpush);
         break;
@@ -1095,8 +1076,41 @@ static KlAstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex) {
 }
 
 KlAstStmtList* klparser_singletonstmtlist(KlParser* parser, KlLex* lex) {
-  KlAst* stmt = klparser_stmt(parser, lex);
+  KlAst* stmt = klparser_stmt_nosemi(parser, lex);
   if (kl_unlikely(!stmt)) return NULL;
+  KlAst** stmts = (KlAst**)malloc(sizeof (KlAst*));
+  if (kl_unlikely(!stmts)) {
+    klast_delete(stmt);
+    return NULL;
+  }
+  stmts[0] = stmt;
+  KlAstStmtList* stmtlist = klast_stmtlist_create(stmts, 1, klast_begin(stmt), klast_end(stmt));
+  klparser_oomifnull(stmtlist);
+  return stmtlist;
+}
+
+KlAstStmtList* klparser_interactive(KlParser* parser, KlLex* lex) {
+  KlAst* stmt = NULL;
+  if (kllex_check(lex, KLTK_END)) {
+    KlAstExprList* exprlist = klparser_emptyexprlist(parser, lex, 0, 0);
+    klparser_oomifnull(exprlist);
+    KlAstStmtReturn* stmtreturn = klast_stmtreturn_create(klcast(KlAstExprList*, exprlist), klast_begin(exprlist), klast_end(exprlist));
+    klparser_oomifnull(stmtreturn);
+    stmt = klast(stmtreturn);
+  } else if (kl_unlikely(!klparser_exprbegin(lex))) {
+    klparser_error(parser, kllex_inputstream(lex), kllex_tokbegin(lex), kllex_tokend(lex),
+                   "expect an expression or assignment statement in interactive mode");
+    return NULL;
+  } else {
+    stmt = klparser_stmtexprandassign(parser, lex);
+    if (kl_unlikely(!stmt)) return NULL;
+    if (klast_kind(stmt) == KLAST_STMT_EXPR) {
+      KlAstExprList* exprlist = klast_stmtexpr_steal_exprlist_and_destroy(klcast(KlAstStmtExpr*, stmt));
+      KlAstStmtReturn* stmtreturn = klast_stmtreturn_create(klcast(KlAstExprList*, exprlist), klast_begin(exprlist), klast_end(exprlist));
+      klparser_oomifnull(stmtreturn);
+      stmt = klast(stmtreturn);
+    }
+  }
   KlAst** stmts = (KlAst**)malloc(sizeof (KlAst*));
   if (kl_unlikely(!stmts)) {
     klast_delete(stmt);
@@ -1545,8 +1559,8 @@ static KlAstStmtList* klparser_generator(KlParser* parser, KlLex* lex, KlAst* in
       }
       kllex_trymatch(lex, KLTK_SEMI);
     } else {
-      KlFileOffset begin = karray_size(&stmtarr) == 0 ? inner_stmt->begin : klast_begin(karray_access(&stmtarr, 0));
-      KlFileOffset end = karray_size(&stmtarr) == 0 ? inner_stmt->end : klast_end(karray_access(&stmtarr, karray_size(&stmtarr) - 1));
+      KlFileOffset begin = karray_size(&stmtarr) == 0 ? kllex_tokbegin(lex) : klast_begin(karray_access(&stmtarr, 0));
+      KlFileOffset end = karray_size(&stmtarr) == 0 ? kllex_tokbegin(lex) : klast_end(karray_access(&stmtarr, karray_size(&stmtarr) - 1));
       if (kl_unlikely(!karray_push_back(&stmtarr, inner_stmt))) {
         klparser_destroy_astarray(&stmtarr);
         klast_delete(inner_stmt);

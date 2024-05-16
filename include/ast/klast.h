@@ -391,5 +391,12 @@ KlAstStmtBreak* klast_stmtbreak_create(KlFileOffset begin, KlFileOffset end);
 KlAstStmtContinue* klast_stmtcontinue_create(KlFileOffset begin, KlFileOffset end);
 
 bool klast_mustreturn(KlAstStmtList* stmtlist);
+static inline KlAstExprList* klast_stmtexpr_steal_exprlist_and_destroy(KlAstStmtExpr* stmtexpr);
+
+static inline KlAstExprList* klast_stmtexpr_steal_exprlist_and_destroy(KlAstStmtExpr* stmtexpr) {
+  KlAstExprList* exprlist = stmtexpr->exprlist;
+  free(stmtexpr);
+  return exprlist;
+}
 
 #endif
