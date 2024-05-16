@@ -30,7 +30,7 @@
 
 typedef enum tagKlType {
   KL_INT = 0, KL_FLOAT,
-  KL_NUMBER, KL_ID = KL_NUMBER,   /* not actual type, KL_NUMBER is used for number(KlInt or KlFloat) fast test */
+  KL_NUMBER, KL_UINT = KL_NUMBER,   /* not actual type, KL_NUMBER is used for number(KlInt or KlFloat) fast test */
   KL_NIL, KL_BOOL, KL_CFUNCTION,
   KL_USERDATA,                    /* non-collectable type */
   KL_COLLECTABLE , KL_STRING = KL_COLLECTABLE,
@@ -93,10 +93,6 @@ static inline KlBool klvalue_getbool(KlValue* val) {
   return val->value.boolval;
 }
 
-static inline KlUInt klvalue_getid(KlValue* val) {
-  return val->value.uintval;
-}
-
 static inline KlCFunction* klvalue_getcfunc(KlValue* val) {
   return val->value.cfunc;
 }
@@ -126,7 +122,7 @@ static inline void klvalue_setbool(KlValue *val, KlBool boolval) {
 
 static inline void klvalue_setuint(KlValue *val, KlUInt id) {
   val->value.uintval = id;
-  val->type = KL_ID;
+  val->type = KL_UINT;
 }
 
 static inline void klvalue_setcfunc(KlValue *val, KlCFunction* cfunc) {
