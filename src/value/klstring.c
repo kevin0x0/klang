@@ -134,6 +134,19 @@ static void klstrpool_delete(KlStrPool* strpool, KlMM* klmm) {
   klmm_free(klmm, strpool, sizeof (KlStrPool));
 }
 
+static KlString* klstrpool_search_buf(KlStrPool* strpool, const char* buf, size_t buflen, size_t hash) {
+  size_t mask = strpool->capacity - 1;
+  size_t index = hash & mask;
+  KlString* node = strpool->array[index];
+  while (node) {
+    if (hash == node->hash &&
+        strncmp(buf, node->strhead, buflen) == 0)
+      return node;
+    node = node->next;
+  }
+  return NULL;
+}
+
 static KlString* klstrpool_search(KlStrPool* strpool, const char* str, size_t hash) {
   size_t mask = strpool->capacity - 1;
   size_t index = hash & mask;
@@ -172,7 +185,7 @@ KlString* klstrpool_new_string(KlStrPool* strpool, const char* str) {
 
 KlString* klstrpool_new_string_buf(KlStrPool* strpool, const char* buf, size_t buflen) {
   size_t hash = klstring_calculate_hash_buf(buf, buf + buflen);
-  KlString* res = klstrpool_search(strpool, buf, hash);
+  KlString* res = klstrpool_search_buf(strpool, buf, buflen, hash);
   if (res) return res;
   KlMM* klmm = klstrpool_getmm(strpool);
   KlString* klstr = klstring_create_buf(klmm, buf, buflen);
