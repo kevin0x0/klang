@@ -198,7 +198,7 @@ KlMapIter klmap_search(KlMap* map, KlValue* key) {
 }
 
 KlMapIter klmap_bucketnext(KlMap* map, size_t bucketid, KlMapIter itr) {
-  kl_assert(klmap_validbucket(map, bucketid) && klmap_bucketid(itr) == bucketid, "");
+  kl_assert(klmap_validbucket(map, bucketid) && klmap_bucketid(map, itr) == bucketid, "");
   size_t mask = map->capacity - 1;
   KlValue* key = &itr->key;
   do {
