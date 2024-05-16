@@ -129,9 +129,13 @@ static inline void klmm_init(KlMM* klmm, size_t limit) {
 }
 
 static inline void klmm_try_gc(KlMM* klmm) {
+#ifdef KLANG_DEBUG_ALWAYS_GC
+    klmm_do_gc(klmm);
+#else
   if (klmm->mem_used >= klmm->limit) {
     klmm_do_gc(klmm);
   }
+#endif
 }
 
 static inline void klmm_register_root(KlMM* klmm, KlGCObject* root) {
