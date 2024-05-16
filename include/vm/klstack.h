@@ -17,7 +17,7 @@ static inline void klstack_destroy(KlStack* stack, KlMM* klmm);
 
 static inline KlGCObject* klstack_propagate(KlStack* stack, KlGCObject* gclist);
 
-static inline bool klstack_instack(KlStack* stack, KlValue* val);
+static inline bool klstack_onstack(KlStack* stack, KlValue* val);
 
 static inline size_t klstack_size(KlStack* stack);
 static inline size_t klstack_residual(KlStack* stack);
@@ -68,8 +68,8 @@ static inline KlGCObject* klstack_propagate(KlStack* stack, KlGCObject* gclist) 
   return gclist;
 }
 
-static inline bool klstack_instack(KlStack* stack, KlValue* val) {
-  return val < stack->curr && val >= stack->array;
+static inline bool klstack_onstack(KlStack* stack, KlValue* val) {
+  return val < stack->end && val >= stack->array;
 }
 
 static inline size_t klstack_size(KlStack* stack) {

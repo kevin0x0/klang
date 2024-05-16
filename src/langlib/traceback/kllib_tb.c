@@ -86,7 +86,7 @@ static void kllib_tb_printframe(KlFmtConfig* fmt, FILE* err, KlCallInfo* callinf
     kllib_tb_printKframe_nosrcfile(fmt, err, pos.begin, pos.end);
     return;
   }
-  FILE* input = fopen(klstring_content(srcfile), "r");
+  FILE* input = fopen(klstring_content(srcfile), "rb");
   if (kl_unlikely(!input)) {
     KlKFuncFilePosition pos = posinfo[(callinfo->savedpc - klkfunc_entrypoint(kfunc)) - 1];
     kllib_tb_printKframe_openfilefailure(fmt, err, klstring_content(srcfile), pos.begin, pos.end);
@@ -148,13 +148,15 @@ static void kllib_tb_printKframe(KlFmtConfig* fmt, FILE* err, FILE* input, const
 static unsigned kllib_tb_helper_locateline(FILE* input, long offset) {
   fseek(input, 0, SEEK_SET);
   unsigned currline = 1;
+  long curroff = 0;
   long lineoff = 0;
-  while (lineoff < offset) {
+  while (curroff < offset) {
     int ch = fgetc(input);
+    ++curroff;
     if (ch == EOF) break;
     if (kl_isnl(ch)) {
       ++currline;
-      lineoff = ftell(input);
+      lineoff = curroff;
       if (lineoff < 0) {
         lineoff = 0;
         return currline;

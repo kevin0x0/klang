@@ -17,6 +17,7 @@ bool klstack_init(KlStack* stack, KlMM* klmm) {
 
 bool klstack_expand(KlStack* stack, KlMM* klmm) {
   size_t old_capacity = klstack_capacity(stack);
+  size_t old_size = klstack_size(stack);
   size_t new_capacity = old_capacity * 2;
   KlValue* array = (KlValue*)klmm_realloc(klmm, stack->array,
                                           new_capacity * sizeof (KlValue),
@@ -24,7 +25,7 @@ bool klstack_expand(KlStack* stack, KlMM* klmm) {
   if (!array) return false;
   for (KlValue* p = array + old_capacity; p != array + new_capacity; ++p)
     klvalue_setnil(p);
-  stack->curr += array - stack->array;
+  stack->curr = array + old_size;
   stack->array = array;
   stack->end = array + new_capacity;
   return true;

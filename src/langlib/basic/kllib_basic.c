@@ -5,6 +5,11 @@
 #include "include/vm/klexception.h"
 #include <stdio.h>
 
+#define KLLIB_BASIC_PRINT_DEPTH_LIMIT   (3)
+
+static void kllib_basic_print_map(KlMap* map, size_t depth);
+static void kllib_basic_print_inner(KlValue* val, size_t depth);
+static void kllib_basic_print_array(KlArray* array, size_t depth);
 static KlException kllib_basic_print(KlState* state);
 static KlException kllib_basic_map_next(KlState* state);
 static KlException kllib_basic_arr_next(KlState* state);
@@ -29,7 +34,7 @@ KlException kllib_init(KlState* state) {
 }
 
 
-static void kllib_basic_print_inner(KlValue* val) {
+static void kllib_basic_print_inner(KlValue* val, size_t depth) {
   switch (klvalue_gettype(val)) {
     case KL_INT: {
       fprintf(stdout, "%lld", klvalue_getint(val));
@@ -58,11 +63,11 @@ static void kllib_basic_print_inner(KlValue* val) {
       break;
     }
     case KL_ARRAY: {
-      fputs("[...]", stdout);
+      kllib_basic_print_array(klvalue_getobj(val, KlArray*), depth + 1);
       break;
     }
     case KL_MAP: {
-      fputs("{:...:}", stdout);
+      kllib_basic_print_map(klvalue_getobj(val, KlMap*), depth + 1);
       break;
     }
     default: {
@@ -72,40 +77,48 @@ static void kllib_basic_print_inner(KlValue* val) {
   }
 }
 
-static void kllib_basic_print_array(KlArray* array) {
+static void kllib_basic_print_array(KlArray* array, size_t depth) {
   KlArrayIter end = klarray_iter_end(array);
   KlArrayIter itr = klarray_iter_begin(array);
   if (itr == end) {
     fputs("[]", stdout);
     return;
   }
+  if (depth++ >= KLLIB_BASIC_PRINT_DEPTH_LIMIT) {
+    fputs("[...]", stdout);
+    return;
+  }
   fputc('[', stdout);
-  kllib_basic_print_inner(itr);
+  kllib_basic_print_inner(itr, depth);
   itr = klarray_iter_next(itr);
   for (; itr != end; itr = klarray_iter_next(itr)) {
     fputs(", ", stdout);
-    kllib_basic_print_inner(itr);
+    kllib_basic_print_inner(itr, depth);
   }
   fputc(']', stdout);
 }
 
-static void kllib_basic_print_map(KlMap* map) {
+static void kllib_basic_print_map(KlMap* map, size_t depth) {
   KlMapIter end = klmap_iter_end(map);
   KlMapIter itr = klmap_iter_begin(map);
   if (itr == end) {
     fputs("{::}", stdout);
     return;
   }
+  if (depth++ >= KLLIB_BASIC_PRINT_DEPTH_LIMIT) {
+    fputs("{:...:}", stdout);
+    return;
+  }
   fputs("{:", stdout);
-  kllib_basic_print_inner(&itr->key);
+  kllib_basic_print_inner(&itr->key, depth);
   fputc(':', stdout);
-  kllib_basic_print_inner(&itr->value);
+  kllib_basic_print_inner(&itr->value, depth);
   itr = klmap_iter_next(itr);
   for (; itr != end; itr = klmap_iter_next(itr)) {
     fputs(", ", stdout);
-    kllib_basic_print_inner(&itr->key);
+    kllib_basic_print_inner(&itr->key, depth);
     fputc(':', stdout);
-    kllib_basic_print_inner(&itr->value);
+    kllib_basic_print_inner(&itr->value, depth);
   }
   fputs(":}", stdout);
 }
@@ -127,11 +140,11 @@ static KlException kllib_basic_print(KlState* state) {
         break;
       }
       case KL_ARRAY: {
-        kllib_basic_print_array(klapi_getarrayb(state, i));
+        kllib_basic_print_array(klapi_getarrayb(state, i), 0);
         break;
       }
       case KL_MAP: {
-        kllib_basic_print_map(klapi_getmapb(state, i));
+        kllib_basic_print_map(klapi_getmapb(state, i), 0);
         break;
       }
       case KL_NIL: {
@@ -151,8 +164,10 @@ static KlException kllib_basic_print(KlState* state) {
         break;
       }
     }
+    fputc('\t', stdout);
   }
-  return KL_E_NONE;
+  fputc('\n', stdout);
+  return klapi_return(state, 0);
 }
 
 static KlException kllib_basic_map_next(KlState* state) {
@@ -175,6 +190,23 @@ static KlException kllib_basic_map_next(KlState* state) {
   return klapi_return(state, 4);
 }
 
+static KlException kllib_basic_arr_next_with_index(KlState* state) {
+  if (kl_unlikely(klapi_narg(state) < 2))
+    return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 2 arguments(0 iteration variable in for loop)");
+  KLAPI_PROTECT(klapi_checkframeandset(state, 4));
+  KlValue* base = klapi_accessb(state, 0);
+  if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY) && !(klvalue_checktype(base, KL_OBJECT) && klarray_compatiable(klvalue_getobj(base, KlObject*)))))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected array");
+  KlArray* array = klvalue_getobj(base, KlArray*);
+  KlUInt index = klvalue_getuint(base + 1) + 1;
+  if (kl_unlikely(index >= klarray_size(array)))
+    return klapi_return(state, 0);
+  klvalue_setuint(base + 1, index);
+  klvalue_setint(base + 2, klcast(KlInt, index));
+  klvalue_setvalue(base + 3, klarray_access(array, index));
+  return klapi_return(state, 4);
+}
+
 static KlException kllib_basic_arr_next(KlState* state) {
   if (kl_unlikely(klapi_narg(state) < 2))
     return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 2 arguments(0 iteration variable in for loop)");
@@ -183,11 +215,11 @@ static KlException kllib_basic_arr_next(KlState* state) {
   if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY) && !(klvalue_checktype(base, KL_OBJECT) && klarray_compatiable(klvalue_getobj(base, KlObject*)))))
     return klapi_throw_internal(state, KL_E_TYPE, "expected array");
   KlArray* array = klvalue_getobj(base, KlArray*);
-  size_t index = klvalue_getuint(base + 1);
+  KlUInt index = klvalue_getuint(base + 1) + 1;
   if (kl_unlikely(index >= klarray_size(array)))
     return klapi_return(state, 0);
-  klvalue_setuint(base + 1, index + 1);
-  klvalue_setvalue(base + 2, klarray_access(array, index + 1));
+  klvalue_setuint(base + 1, index);
+  klvalue_setvalue(base + 2, klarray_access(array, index));
   return klapi_return(state, 3);
 }
 
@@ -216,12 +248,20 @@ static KlException kllib_basic_arr_iter(KlState* state) {
     return klapi_throw_internal(state, KL_E_TYPE, "expected array");
   KlArray* array = klapi_getarray(state, -1);
   if (klarray_size(array) == 0) return klapi_return(state, 0);
-  KLAPI_PROTECT(klapi_checkstack(state, 3));
+  KLAPI_PROTECT(klapi_checkstack(state, 4));
   klapi_pushobj(state, array, KL_ARRAY);
   klapi_pushuint(state, 0);
-  klapi_pushvalue(state, klarray_access(array, 0));
-  klapi_setcfunc(state, -4, kllib_basic_arr_next);
-  kl_assert(klapi_framesize(state) == 4, "");
-  return klapi_return(state, 4);
+  if (klapi_nres(state) == 4) {
+    klapi_pushvalue(state, klarray_access(array, 0));
+    klapi_setcfunc(state, -4, kllib_basic_arr_next);
+    kl_assert(klapi_framesize(state) == 4, "");
+    return klapi_return(state, 4);
+  } else {
+    klapi_pushint(state, 0);
+    klapi_pushvalue(state, klarray_access(array, 0));
+    klapi_setcfunc(state, -5, kllib_basic_arr_next_with_index);
+    kl_assert(klapi_framesize(state) == 5, "");
+    return klapi_return(state, 5);
+  }
 }
 

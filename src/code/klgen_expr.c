@@ -66,7 +66,7 @@ void klgen_exprarr(KlGenUnit* gen, KlAstArray* arrast, KlCStkId target) {
 
 void klgen_exprarrgen(KlGenUnit* gen, KlAstArrayGenerator* arrgenast, KlCStkId target) {
   KlCStkId stktop = klgen_stackalloc1(gen);
-  klgen_emit(gen, klinst_mkarray(stktop, 0, 0), klgen_astposition(arrgenast));
+  klgen_emit(gen, klinst_mkarray(stktop, stktop, 0), klgen_astposition(arrgenast));
   klgen_newsymbol(gen, arrgenast->arrid, stktop, klgen_position(klast_begin(arrgenast), klast_begin(arrgenast)));
   bool needclose = klgen_stmtblockpure(gen, arrgenast->block);
   if (needclose)

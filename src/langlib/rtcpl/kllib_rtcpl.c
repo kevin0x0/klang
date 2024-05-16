@@ -16,8 +16,7 @@ KlException kllib_init(KlState* state);
 
 
 KlException kllib_init(KlState* state) {
-  KlException exception = klapi_allocstack(state, 3);
-  if (kl_unlikely(exception)) return exception;
+  KLAPI_PROTECT(klapi_allocstack(state, 3));
   klapi_setcfunc(state, -3, kllib_rtcpl_compiler);
   klapi_setcfunc(state, -2, kllib_rtcpl_compileri);
   klapi_setcfunc(state, -1, kllib_rtcpl_bcloader);
@@ -108,7 +107,7 @@ static KlException kllib_rtcpl_compiler(KlState* state) {
 }
 
 static KlException kllib_rtcpl_compileri(KlState* state) {
-  return kllib_rtcpl_do_compile(state, klparser_singletonstmtlist);
+  return kllib_rtcpl_do_compile(state, klparser_interactive);
 }
 
 static KlException kllib_rtcpl_bcloader(KlState* state) {
@@ -185,58 +184,46 @@ static KlException kllib_codetokfunc(KlState* state, KlCode* code) {
   size_t nnested = code->nnested;
   KlCode** nestedfunc = code->nestedfunc;
   for (size_t i = 0; i < nnested; ++i) {
-    KlException exception = kllib_codetokfunc(state, nestedfunc[i]);
-    if (kl_unlikely(exception)) return exception;
+    KLAPI_PROTECT(kllib_codetokfunc(state, nestedfunc[i]));
   }
+
   KlMM* klmm = klstate_getmm(state);
-  KlInstruction* insts = (KlInstruction*)klmm_alloc(klmm, code->codelen * sizeof (KlInstruction));
-  if (kl_unlikely(!insts))
-    return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating klang function");
-  memcpy(insts, code->code, code->codelen * sizeof (KlInstruction));
-  KlKFunction* kfunc = klkfunc_alloc(klmm, insts, code->codelen, code->nconst, code->nref, code->nnested, code->framesize, code->nparam);
-  if (kl_unlikely(!kfunc)) {
-    klmm_free(klmm, insts, code->codelen * sizeof (KlInstruction));
-    return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating klang function");
-  }
+  KlKFunction* kfunc = klapi_kfunc_alloc(state, code->codelen, code->nconst, code->nref, code->nnested, code->framesize, code->nparam);
+  if (kl_unlikely(!kfunc)) return klapi_currexception(state);
+  memcpy(klapi_kfunc_insts(state, kfunc), code->code, code->codelen * sizeof (KlInstruction));
 
   size_t nstkused = 0;  /* stack used from now */
   /* init source file info and posinfo */
   if (code->srcfile.length != 0) {
-    KlException exception = klapi_pushstring_buf(state, klstrtbl_getstring(code->strtbl, code->srcfile.id), code->srcfile.length);
-    if (kl_unlikely(exception)) {
-      klkfunc_initabort(klmm, kfunc);
-      klmm_free(klmm, insts, code->codelen * sizeof (KlInstruction));
-      return exception;
-    }
+    KLAPI_MAYFAIL(klapi_checkstack(state, 1), klapi_kfunc_initabort(state, kfunc));
+    KLAPI_MAYFAIL(klapi_pushstring_buf(state, klstrtbl_getstring(code->strtbl, code->srcfile.id), code->srcfile.length),
+                  klapi_kfunc_initabort(state, kfunc));
     ++nstkused;
-    klkfunc_setsrcfile(kfunc, klapi_getstring(state, -1));
+    klapi_kfunc_setsrcfile(state, kfunc, klapi_getstring(state, -1));
   }
   if (code->posinfo != NULL) {
     KlKFuncFilePosition* posinfo = (KlKFuncFilePosition*)klmm_alloc(klmm, code->codelen * sizeof (KlKFuncFilePosition));
     if (kl_unlikely(!posinfo)) {
-      klkfunc_initabort(klmm, kfunc);
-      klmm_free(klmm, insts, code->codelen * sizeof (KlInstruction));
+      klapi_kfunc_initabort(state, kfunc);
       return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating klang function");
     }
     for (size_t i = 0; i < code->codelen; ++i) {
       posinfo[i].begin = code->posinfo[i].begin;
       posinfo[i].end = code->posinfo[i].end;
     }
+    klapi_kfunc_setposinfo(state, kfunc, posinfo);
   }
   /* init constants */
   size_t nconst = code->nconst;
   KlConstant* concode = code->constants;
-  KlValue* conkfunc = klkfunc_constants(kfunc);
+  KlValue* conkfunc = klapi_kfunc_constants(state, kfunc);
   for (size_t i = 0; i < nconst; ++i) {
     if (concode[i].type != KLC_STRING) { /* not a gc constant */
       kllib_setconstant_nonstring(&conkfunc[i], &concode[i]);
     } else {  /* a gc constant, push it to stack to avoid being collected */
-      KlException exception = klapi_pushstring_buf(state, klstrtbl_getstring(code->strtbl, concode[i].string.id), concode[i].string.length);
-      if (kl_unlikely(exception)) {
-        klkfunc_initabort(klmm, kfunc);
-        klmm_free(klmm, insts, code->codelen * sizeof (KlInstruction));
-        return exception;
-      }
+      KLAPI_MAYFAIL(klapi_checkstack(state, 1), klapi_kfunc_initabort(state, kfunc));
+      KLAPI_MAYFAIL(klapi_pushstring_buf(state, klstrtbl_getstring(code->strtbl, concode[i].string.id), concode[i].string.length),
+                    klapi_kfunc_initabort(state, kfunc));
       ++nstkused;
       klvalue_setvalue(&conkfunc[i], klapi_access(state, -1));
     }
@@ -244,28 +231,22 @@ static KlException kllib_codetokfunc(KlState* state, KlCode* code) {
   /* init refinfo */
   size_t nref = code->nref;
   KlCRefInfo* refcode = code->refinfo;
-  KlRefInfo* refkfunc = klkfunc_refinfo(kfunc);
+  KlRefInfo* refkfunc = klapi_kfunc_refinfo(state, kfunc);
   for (size_t i = 0; i < nref; ++i) {
     refkfunc[i].index = refcode[i].index;
     refkfunc[i].on_stack = refcode[i].on_stack;
   }
-  if (nnested == 0) {
-    if (nstkused == 0) {
-      klapi_allocstack(state, 1);
-    } else {
-      klapi_pop(state, nnested - 1);
+  if (nnested + nstkused == 0) {
+    KLAPI_MAYFAIL(klapi_allocstack(state, 1), klapi_kfunc_initabort(state, kfunc));
+  } else {
+    KlValue* subfuncs_onstk = klapi_access(state, -(nstkused + code->nnested));
+    KlKFunction** subfuncs = klkfunc_subfunc(kfunc);
+    for (size_t i = 0; i < nnested; ++i) {
+      kl_assert(klvalue_checktype(&subfuncs_onstk[i], KL_KFUNCTION), "");
+      subfuncs[i] = klvalue_getobj(&subfuncs_onstk[i], KlKFunction*);
     }
-    klapi_setobj(state, -1, kfunc, KL_KFUNCTION);
-    klkfunc_initdone(klmm, kfunc);
-    return KL_E_NONE;
+    klapi_pop(state, (nstkused + nnested) - 1);
   }
-  KlValue* subfuncs_onstk = klapi_access(state, -(nstkused + code->nnested));
-  KlKFunction** subfuncs = klkfunc_subfunc(kfunc);
-  for (size_t i = 0; i < nnested; ++i) {
-    kl_assert(klvalue_checktype(&subfuncs_onstk[i], KL_KFUNCTION), "");
-    subfuncs[i] = klvalue_getobj(&subfuncs_onstk[i], KlKFunction*);
-  }
-  klapi_pop(state, (nstkused + nnested) - 1);
   klapi_setobj(state, -1, kfunc, KL_KFUNCTION);
   klkfunc_initdone(klmm, kfunc);
   return KL_E_NONE;

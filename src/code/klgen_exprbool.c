@@ -221,9 +221,9 @@ static KlCodeVal klgen_relcomptime(KlGenUnit* gen, KlAstBin* binast, KlCodeVal l
       case KLTK_GT: cond = l > r; break;
       case KLTK_GE: cond = l >= r; break;
       case KLTK_ISNOT:
-      case KLTK_NE: cond = left.kind != right.kind || l != r; break;
+      case KLTK_NE: cond = l != r; break;
       case KLTK_EQ:
-      case KLTK_IS: cond = left.kind == right.kind && l == r; break;
+      case KLTK_IS: cond = l == r; break;
       default: {
         kl_assert(false, "control flow should not reach here");
         return klcodeval_nil();

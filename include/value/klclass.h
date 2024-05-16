@@ -10,7 +10,7 @@
 #define KL_CLASS_TAG_SHARED     (0x1)
 
 #define klclass_isfree(slot)    ((slot)->key == NULL)
-#define klclass_is_local(slot)  (klvalue_checktype(&(slot)->value, KL_ID))
+#define klclass_is_local(slot)  (klvalue_checktype(&(slot)->value, KL_UINT))
 #define klclass_is_shared(slot) (!klclass_is_local((slot)))
 
 
@@ -124,7 +124,7 @@ static inline KlValue* klobject_getfield(KlObject* object, KlString* key) {
   KlClassSlot* slot = klclass_find(klclass, key);
   if (kl_unlikely(!slot)) return NULL;
   if (klclass_is_local(slot)) {
-    return object->attrs + klvalue_getid(&slot->value);
+    return object->attrs + klvalue_getuint(&slot->value);
   } else {
     return &slot->value;
   }

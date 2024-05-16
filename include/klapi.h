@@ -14,10 +14,18 @@
 #define KLAPI_VARIABLE_RESULTS    (KLEXEC_VARIABLE_RESULTS)
 
 
-#define KLAPI_PROTECT(expr) {                           \
+#define KLAPI_PROTECT(expr) do {                        \
   KlException _kl_exception = (expr);                   \
   if (kl_unlikely(_kl_exception)) return _kl_exception; \
-}
+} while (0)
+
+#define KLAPI_MAYFAIL(expr, cleaner) do {               \
+  KlException _kl_exception = (expr);                   \
+  if (kl_unlikely(_kl_exception)) {                     \
+    cleaner;                                            \
+    return _kl_exception;                               \
+  }                                                     \
+} while (0)
 
 
 #define klapi_pushobj(state, obj, type)               klapi_pushgcobj((state), (KlGCObject*)(obj), (type))
@@ -25,8 +33,6 @@
 #define klapi_getobj(state, index, type)              klcast(type, klapi_getgcobj((state), (index)))
 #define klapi_getobjb(state, index, type)             klcast(type, klapi_getgcobjb((state), (index)))
 
-#define klapi_scall(state, callable, narg, nret)      klapi_call((state), (callable), (narg), (nret), klstate_stktop((state)) - (narg));
-#define klapi_tryscall(state, callable, narg, nret)   klapi_trycall((state), (callable), (narg), (nret), klstate_stktop((state)) - (narg));
 #define klapi_throw_internal(state, etype, ...)       klstate_throw((state), (etype), __VA_ARGS__)
 #define klapi_throw(state, index)                     klthrow_user(&(state)->throwinfo, klapi_access((state), index))
 
@@ -34,6 +40,21 @@
 #define klapi_exception_message(state)                klstate_exception_message((state))
 #define klapi_exception_source(state)                 klstate_exception_source((state))
 #define klapi_exception_object(state)                 klstate_expcetion_object((state))
+
+#define klapi_kfunc_initdone(state, kfunc)            klkfunc_initdone(klstate_getmm((state)), (kfunc))
+#define klapi_kfunc_initabort(state, kfunc)           klkfunc_initabort(klstate_getmm((state)), (kfunc))
+#define klapi_kfunc_insts(state, kfunc)               klkfunc_insts((kfunc))
+#define klapi_kfunc_constants(state, kfunc)           klkfunc_constants((kfunc))
+#define klapi_kfunc_refinfo(state, kfunc)             klkfunc_refinfo((kfunc))
+#define klapi_kfunc_subfunc(state, kfunc)             klkfunc_subfunc((kfunc))
+#define klapi_kfunc_posinfo(state, kfunc)             klkfunc_posinfo((kfunc))
+#define klapi_kfunc_srcfile(state, kfunc)             klkfunc_srcfile((kfunc))
+#define klapi_kfunc_entrypoint(state, kfunc)          klkfunc_entrypoint((kfunc))
+#define klapi_kfunc_codelen(state, kfunc)             klkfunc_codelen((kfunc))
+#define klapi_kfunc_framesize(state, kfunc)           klkfunc_framesize((kfunc))
+#define klapi_kfunc_nparam(state, kfunc)              klkfunc_nparam((kfunc))
+#define klapi_kfunc_setposinfo(state, kfunc, posinfo) klkfunc_setposinfo((kfunc), (posinfo))
+#define klapi_kfunc_setsrcfile(state, kfunc, src)     klkfunc_setsrcfile((kfunc), (src))
 
 
 /* number of arguments passed by caller */
@@ -52,10 +73,12 @@
 
 KlState* klapi_new_state(KlMM* klmm);
 
+KlException klapi_scall(KlState* state, KlValue* callable, size_t narg, size_t nret);
+KlException klapi_tryscall(KlState* state, int errhandler, KlValue* callable, size_t narg, size_t nret);
 KlException klapi_call(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
 KlException klapi_tailcall(KlState* state, KlValue* callable, size_t narg);
 /* the exception handler should be pushed into stack immediately before argmuments */
-KlException klapi_trycall(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
+KlException klapi_trycall(KlState* state, int errhandler, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
 
 KlException klapi_allocstack(KlState* state, size_t size);
 KlException klapi_checkstack(KlState* state, size_t size);
@@ -64,6 +87,7 @@ KlException klapi_checkframeandset(KlState* state, size_t size);
 bool klapi_checkrange(KlState* state, int index);
 
 KlValue* klapi_stacktop(KlState* state);
+KlValue* klapi_pointer(KlState* state, int index);
 KlValue* klapi_access(KlState* state, int index);
 /* access from frame base */
 KlValue* klapi_accessb(KlState* state, unsigned index);
@@ -125,8 +149,12 @@ KlBool klapi_tobool(KlState* state, int index);
 KlString* klapi_tostring(KlState* state, int index);
 
 /* access to global variable */
-KlException klapi_loadglobal(KlState* state);
+void klapi_loadglobal(KlState* state);
 KlException klapi_storeglobal(KlState* state, KlString* varname, int validx);
+
+/* operation on value */
+KlKFunction* klapi_kfunc_alloc(KlState* state, unsigned codelen, unsigned short nconst,
+                              unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam);
 
 
 /* auxiliary function for library */

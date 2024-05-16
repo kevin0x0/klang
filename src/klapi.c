@@ -1,7 +1,10 @@
 #include "include/klapi.h"
 #include "include/lang/klconvert.h"
 #include "include/lib/lib.h"
+#include "include/value/klkfunc.h"
+#include "include/value/klstate.h"
 #include "include/vm/klexception.h"
+#include <stddef.h>
 
 
 /*=============================ACCESS INTERFACE==============================*/
@@ -47,6 +50,11 @@ KlValue* klapi_access(KlState* state, int index) {
   return klstate_getval(state, index);
 }
 
+KlValue* klapi_pointer(KlState* state, int index) {
+  kl_assert(klstack_size(klstate_stack(state)) + index <= klstack_capacity(klstate_stack(state)), "index out of range");
+  return klstate_getval(state, index);
+}
+
 KlValue* klapi_accessb(KlState* state, unsigned index) {
   return klstate_currci(state)->base + index;
 }
@@ -67,37 +75,37 @@ void klapi_pop(KlState* state, size_t count) {
 }
 
 void klapi_pushcfunc(KlState* state, KlCFunction* cfunc) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushcfunc(klstate_stack(state), cfunc);
 }
 
 void klapi_pushint(KlState* state, KlInt val) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushint(klstate_stack(state), val);
 }
 
 void klapi_pushuint(KlState* state, KlUInt val) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushuint(&state->stack, val);
 }
 
 void klapi_pushfloat(KlState* state, KlFloat val) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushfloat(klstate_stack(state), val);
 }
 
 void klapi_pushnil(KlState* state, size_t count) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushnil(klstate_stack(state), count);
 }
 
 void klapi_pushbool(KlState* state, KlBool val) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushbool(klstate_stack(state), val);
 }
 
 KlException klapi_pushstring(KlState* state, const char* str) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlString* klstr = klstrpool_new_string(state->strpool, str);
   if (!klstr) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)klstr, KL_STRING);
@@ -105,7 +113,7 @@ KlException klapi_pushstring(KlState* state, const char* str) {
 }
 
 KlException klapi_pushstring_buf(KlState* state, const char* buf, size_t buflen) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlString* klstr = klstrpool_new_string_buf(state->strpool, buf, buflen);
   if (!klstr) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)klstr, KL_STRING);
@@ -113,7 +121,7 @@ KlException klapi_pushstring_buf(KlState* state, const char* buf, size_t buflen)
 }
 
 KlException klapi_pushmap(KlState* state, size_t capacity) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlMap* map = klmap_create(state->common->klclass.map, capacity, state->mapnodepool);
   if (!map) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)map, KL_MAP);
@@ -121,7 +129,7 @@ KlException klapi_pushmap(KlState* state, size_t capacity) {
 }
 
 KlException klapi_pusharray(KlState* state, size_t capacity) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlArray* array = klarray_create(state->common->klclass.array, klstate_getmm(state), capacity);
   if (!array) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)array, KL_ARRAY);
@@ -129,17 +137,17 @@ KlException klapi_pusharray(KlState* state, size_t capacity) {
 }
 
 void klapi_pushuserdata(KlState* state, void* ud) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushuserdata(klstate_stack(state), ud);
 }
 
 void klapi_pushgcobj(KlState* state, KlGCObject* gcobj, KlType type) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushgcobj(&state->stack, gcobj, type);
 }
 
 void klapi_pushvalue(KlState* state, KlValue* val) {
-  kl_assert(kstack_residual(klstate_stack(state)) != 0, "stack index out of range");
+  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushvalue(&state->stack, val);
 }
 
@@ -296,7 +304,7 @@ KlBool klapi_tobool(KlState* state, int index) {
 }
 
 KlException klapi_mkcclosure(KlState* state, int index, KlCFunction* cfunc, size_t nref) {
-  KlCClosure* cclo = klcclosure_create(klstate_getmm(state), cfunc, klapi_access(state, -nref), klstate_reflist(state), nref);
+  KlCClosure* cclo = klcclosure_create(klstate_getmm(state), cfunc, klapi_pointer(state, -nref), klstate_reflist(state), nref);
   if (kl_unlikely(!cclo)) return klstate_throw(state, KL_E_OOM, "out of memory while creating C closure");
   klapi_setobj(state, index, cclo, KL_CCLOSURE);
   return KL_E_NONE;
@@ -317,11 +325,10 @@ bool klapi_checktypeb(KlState* state, int index, KlType type) {
   return klapi_gettypeb(state, index) == type;
 }
 
-KlException klapi_loadglobal(KlState* state) {
+void klapi_loadglobal(KlState* state) {
   KlString* varname = klapi_getstring(state, -1);
   KlMapIter itr = klmap_searchstring(state->global, varname);
   itr ? klapi_setvalue(state, -1, &itr->value) : klapi_setnil(state, -1);
-  return KL_E_NONE;
 }
 
 KlException klapi_storeglobal(KlState* state, KlString* varname, int validx) {
@@ -422,8 +429,37 @@ KlException klapi_call(KlState* state, KlValue* callable, size_t narg, size_t nr
   return klexec_call(state, callable, narg, nret, respos);
 }
 
-KlException klapi_trycall(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos) {
-  ptrdiff_t errhandler_save = klexec_savestack(state, klstate_stktop(state) - narg - 1);
+KlException klapi_scall(KlState* state, KlValue* callable, size_t narg, size_t nret) {
+  ptrdiff_t retpos_save = klexec_savestack(state, klstate_stktop(state) - narg);
+  KLAPI_PROTECT(klexec_call(state, callable, narg, nret, klexec_restorestack(state, retpos_save)));
+  if (nret != KLAPI_VARIABLE_RESULTS)
+    klstack_set_top(klstate_stack(state), klexec_restorestack(state, retpos_save) + nret);
+  return KL_E_NONE;
+}
+
+KlException klapi_tryscall(KlState* state, int errhandler, KlValue* callable, size_t narg, size_t nret) {
+  ptrdiff_t errhandler_save = klstack_size(klstate_stack(state)) + errhandler;
+  ptrdiff_t retpos_save = klexec_savestack(state, klstate_stktop(state) - narg);
+  kl_assert(errhandler_save >= 0, "errhandler not provided");
+  KlCallInfo* currci = klstate_currci(state);
+  KlException exception = klapi_call(state, callable, narg, nret, klexec_restorestack(state, retpos_save));
+  /* if no exception occurred, just return */
+  if (kl_likely(!exception)) {
+    if (nret != KLAPI_VARIABLE_RESULTS)
+      klstack_set_top(klstate_stack(state), klexec_restorestack(state, retpos_save) + nret);
+    return KL_E_NONE;
+  }
+  /* else handle exception */
+  exception = klapi_call(state, klexec_restorestack(state, errhandler_save), 0, nret, klexec_restorestack(state, retpos_save));
+  if (kl_unlikely(exception)) return exception;
+  if (nret != KLAPI_VARIABLE_RESULTS)
+    klstack_set_top(klstate_stack(state), klexec_restorestack(state, retpos_save) + nret);
+  klapi_exception_clear(state, currci);
+  return KL_E_NONE;
+}
+
+KlException klapi_trycall(KlState* state, int errhandler, KlValue* callable, size_t narg, size_t nret, KlValue* respos) {
+  ptrdiff_t errhandler_save = klstack_size(klstate_stack(state)) + errhandler;
   ptrdiff_t respos_save = klexec_savestack(state, respos);
   kl_assert(errhandler_save >= 0, "errhandler not provided");
   KlCallInfo* currci = klstate_currci(state);
@@ -438,11 +474,11 @@ KlException klapi_trycall(KlState* state, KlValue* callable, size_t narg, size_t
 }
 
 KlException klapi_return(KlState* state, size_t nret) {
-  kl_assert(klstack_size(klstate_stack(state)) >= nret, "number of returned values exceeds the stack size, which is impossible.");
+  kl_assert(klapi_framesize(state) >= nret, "number of returned values exceeds the stack frame size, which is impossible.");
   kl_assert(nret < KLAPI_VARIABLE_RESULTS, "currently does not support this number of returned values.");
   KlCallInfo* currci = klstate_currci(state);
   KlValue* retpos = currci->base + currci->retoff;
-  KlValue* respos = klapi_access(state, -nret);
+  KlValue* respos = klapi_pointer(state, -nret);
   kl_assert(retpos <= respos, "number of returned values exceeds stack frame size, which is impossible");
   if (retpos == respos) {
     if (currci->nret != KLAPI_VARIABLE_RESULTS && nret < currci->nret)
@@ -452,13 +488,26 @@ KlException klapi_return(KlState* state, size_t nret) {
   size_t nwanted = currci->nret == KLAPI_VARIABLE_RESULTS ? nret : currci->nret;
   size_t ncopy = nwanted < nret ? nwanted : nret;
   while (ncopy--)
-    klvalue_setvalue(respos++, retpos++);
+    klvalue_setvalue(retpos++, respos++);
   if (nret < nwanted)
-    klexec_setnils(respos, nwanted - nret);
+    klexec_setnils(retpos, nwanted - nret);
   if (currci->nret == KLAPI_VARIABLE_RESULTS)
-    klstack_set_top(klstate_stack(state), respos + nwanted);
+    klstack_set_top(klstate_stack(state), retpos + nwanted);
   return KL_E_NONE;
 }
+
+
+/*============================OPERATION ON VALUE=============================*/
+
+
+KlKFunction* klapi_kfunc_alloc(KlState* state, unsigned codelen, unsigned short nconst,
+                              unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam) {
+  KlKFunction* kfunc = klkfunc_alloc(klstate_getmm(state), codelen, nconst, nref, nsubfunc, framesize, nparam);
+  if (kl_unlikely(!kfunc))
+    klapi_throw_internal(state, KL_E_OOM, "out of memory while creating a to be initialized K function");
+  return kfunc;
+}
+
 
 
 

@@ -62,9 +62,9 @@ static void kl_print_help(void);
 static int kl_fatalerror(const char* stage, const char* fmt, ...);
 
 static int kl_do(KlBehaviour* behaviour);
-static int kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool);
-static int kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool, Ko* err);
-static int kl_interactive(KlState* state, KlBasicTool* btool, Ko* err);
+static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool);
+static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool, Ko* err);
+static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err);
 
 static KlException kl_errhandler(KlState* state);
 
@@ -123,183 +123,166 @@ static int kl_do(KlBehaviour* behaviour) {
     kl_cleanbehaviour(behaviour);
     return 0;
   }
+  int failure = 0;
   KlMM klmm;
   klmm_init(&klmm, 32 * 1024);
   KlState* state = klapi_new_state(&klmm);
   if (kl_unlikely(!state)) {
-    klmm_destroy(&klmm);
-    return kl_fatalerror("initializing", "can not create virtual machine");
+    failure = kl_fatalerror("initializing", "can not create virtual machine");
+    goto error_create_vm;
   }
   KlBasicTool btool = { NULL, NULL, NULL, NULL };
-  int ret = kl_dopreload(behaviour, state, &btool);
-  if (kl_unlikely(ret)) {
-    klmm_destroy(&klmm);
-    kl_cleanbehaviour(behaviour);
-    return ret;
+  failure = kl_dopreload(behaviour, state, &btool);
+  if (kl_unlikely(failure)) {
+    fprintf(stderr, "%s\n", klapi_exception_message(state));
+    goto error_preload;
   }
   Ko* err = kofile_attach(stderr);
   if (kl_unlikely(!err)) {
-    klmm_destroy(&klmm);
-    kl_cleanbehaviour(behaviour);
-    return kl_fatalerror("initializing", "can not create error output stream");
+    failure = kl_fatalerror("initializing", "can not create error output stream");
+    goto error_create_err;
   }
-  ret = kl_do_script(behaviour, state, &btool, err);
-  if (kl_unlikely(ret)) {
-    klmm_destroy(&klmm);
-    kl_cleanbehaviour(behaviour);
-    ko_delete(err);
-    return ret;
+  if (behaviour->option & (KL_OPTION_IN_ARG | KL_OPTION_IN_FILE)) {
+    failure = kl_do_script(behaviour, state, &btool, err);
+    if (kl_unlikely(failure)) {
+      fprintf(stderr, "%s\n", klapi_exception_message(state));
+      goto error_do_script;
+    }
   }
-  ret = kl_interactive(state, &btool, err);
-  klmm_destroy(&klmm);
-  kl_cleanbehaviour(behaviour);
+  if (behaviour->option & KL_OPTION_INTER) {
+    failure = kl_interactive(state, &btool, err);
+    if (kl_unlikely(failure))
+      fprintf(stderr, "%s\n", klapi_exception_message(state));
+  }
+
+error_do_script:
   ko_delete(err);
-  return ret;
+error_create_err:
+error_preload:
+  klmm_destroy(&klmm);
+error_create_vm:
+  kl_cleanbehaviour(behaviour);
+  return failure;
 }
 
-static int kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool) {
+static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool) {
   kl_unused(behaviour);
-  KlException exception = klapi_loadlib(state, "./runtime_compiler.so", NULL);
-  if (kl_unlikely(exception))
-    return kl_fatalerror("loading basic libraries", "can not load neccessary library: runtime_compiler.so");
-  exception = klapi_loadlib(state, "./traceback.so", NULL);
-  if (kl_unlikely(exception))
-    return kl_fatalerror("loading basic libraries", "can not load neccessary library: traceback.so");
-  exception = klapi_loadlib(state, "./basic.so", NULL);
-  if (kl_unlikely(exception))
-    return kl_fatalerror("loading basic libraries", "can not load neccessary library: basic.so");
+  KLAPI_PROTECT(klapi_loadlib(state, "./lib/runtime_compiler.so", NULL));
+  KLAPI_PROTECT(klapi_loadlib(state, "./lib/traceback.so", NULL));
+  KLAPI_PROTECT(klapi_loadlib(state, "./lib/basic.so", NULL));
   btool->traceback = klapi_getcfunc(state, -1);
   btool->bcloader = klapi_getcfunc(state, -2);
   btool->compileri = klapi_getcfunc(state, -3);
   btool->compiler = klapi_getcfunc(state, -4);
   klapi_pop(state, 4);
   kl_assert(klstack_size(klstate_stack(state)) == 0, "");
-  klapi_pushstring(state, "traceback");
+  KLAPI_PROTECT(klapi_pushstring(state, "traceback"));
+  klapi_pushnil(state, 1);
   klapi_pushcfunc(state, btool->traceback);
-  if (kl_unlikely(klapi_mkcclosure(state, -1, kl_errhandler, 1)))
-    return kl_fatalerror("making error handler", "can not make error handler");
-  if (kl_unlikely(klapi_storeglobal(state, klapi_getstring(state, -2), -1)))
-    return kl_fatalerror("making error handler", "can not set global variable: traceback");
-  klapi_pop(state, 2);
+  KLAPI_PROTECT(klapi_mkcclosure(state, -2, kl_errhandler, 1));
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -3), -2));
+  klapi_pop(state, 3);
   return 0;
 }
 
-static int kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool, Ko* err) {
+static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool, Ko* err) {
   Ki* input = NULL;
   /* create input stream */
   if (behaviour->option & KL_OPTION_IN_ARG) {
     input = kibuf_create(behaviour->stmt, strlen(behaviour->stmt));
     if (kl_unlikely(!input))
-      return kl_fatalerror("executing script", "failed to create input stream");
+      return klapi_throw_internal(state, KL_E_OOM, "can not create input stream");
   } else {
     kl_assert(behaviour->option & KL_OPTION_IN_FILE, "");
     input = kifile_create(behaviour->filename);
     if (kl_unlikely(!input))
-      return kl_fatalerror("executing script", "can not open file: ", behaviour->filename);
+      return klapi_throw_internal(state, KL_E_OOM, "can not open file: %s", behaviour->filename);
   }
 
   /* push arguments to compiler */
-  KlException exception = klapi_checkstack(state, 5);
-  if (kl_unlikely(exception)) {
-    ki_delete(input);
-    return kl_fatalerror("executing script", "can not execute script");
-  }
-  exception = klapi_pushstring(state, "traceback");
-  if (kl_unlikely(exception)) {
-    ki_delete(input);
-    return kl_fatalerror("executing script", "can not execute script");
-  }
-  exception = klapi_loadglobal(state);  /* error handler: traceback */
-  if (kl_unlikely(exception)) {
-    ki_delete(input);
-    return kl_fatalerror("executing script", "can not load global: traceback");
-  }
+  KLAPI_MAYFAIL(klapi_checkstack(state, 5), ki_delete(input));
+  KLAPI_MAYFAIL(klapi_pushstring(state, "traceback"), ki_delete(input));
+  klapi_loadglobal(state);  /* error handler: traceback */
   klapi_pushuserdata(state, input); /* first argument: input stream */
   klapi_pushuserdata(state, err);   /* second argument: error stream */
   /* third argument: input name */
-  exception = klapi_pushstring(state, (behaviour->option & KL_OPTION_IN_ARG) ? "command line" : behaviour->filename);
-  if (kl_unlikely(exception)) {
-    ki_delete(input);
-    return kl_fatalerror("executing script", "can not execute script");
-  }
+  KLAPI_MAYFAIL(klapi_pushstring(state, (behaviour->option & KL_OPTION_IN_ARG) ? "command line" : behaviour->filename),
+                ki_delete(input));
   /* fourth argument: source file path */
   if (behaviour->option & KL_OPTION_IN_ARG) {
     klapi_pushnil(state, 1);
   } else {
-    if (kl_unlikely(klapi_pushstring(state, behaviour->filename))) {
-      ki_delete(input);
-      return kl_fatalerror("executing script", "can not execute script");
-    }
+    KLAPI_MAYFAIL(klapi_pushstring(state, behaviour->filename),
+                  ki_delete(input));
   }
+
+  /* call compiler */
   KlValue callable;
   klvalue_setcfunc(&callable, btool->compiler);
-  exception = klapi_tryscall(state, &callable, 4, 1);
+  KLAPI_MAYFAIL(klapi_tryscall(state, -5, &callable, 4, 1), ki_delete(input));
   ki_delete(input);
-  if (kl_unlikely(exception))
-    return kl_fatalerror("executing script", "exception occurred while handling exception");
   if (klapi_checktype(state, -1, KL_NIL)) {
-    klapi_pop(state, 1);
+    klapi_pop(state, 2);  /* pop result and error handler */
     return 0;
   }
-  klapi_tryscall(state, klapi_access(state, -1), 0, 0);
-  if (kl_unlikely(exception))
-    return kl_fatalerror("executing script", "exception occurred while handling exception");
+
+  /* execute script */
+  KLAPI_PROTECT(klapi_tryscall(state, -2, klapi_access(state, -1), 0, 0));
+  klapi_pop(state, 2);    /* pop result and error handler */
   return 0;
 }
 
-static int kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
+static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
+  KLAPI_PROTECT(klapi_checkstack(state, 4));
+  KLAPI_PROTECT(klapi_pushstring(state, "traceback"));
+  klapi_loadglobal(state);  /* error handler: traceback */
   while (true) {
     Ki* input = kl_interactive_create();
     if (kl_unlikely(!input))
-      return kl_fatalerror("doing interactive", "can not create input stream");
+      return klapi_throw_internal(state, KL_E_OOM, "can not create input stream");
+
     /* push arguments to compiler */
     klapi_pushuserdata(state, input); /* first argument: input stream */
     klapi_pushuserdata(state, err);   /* second argument: error stream */
     /* third argument: input name */
-    KlException exception = klapi_pushstring(state, "stdin");
-    if (kl_unlikely(exception)) {
-      ki_delete(input);
-      return kl_fatalerror("doing interactive", "can not create string: \"stdin\"");
-    }
+    KLAPI_MAYFAIL(klapi_pushstring(state, "stdin"), ki_delete(input));
     /* fourth argument: source file path */
     klapi_pushnil(state, 1);
+
+    /* call compiler */
     KlValue callable;
     klvalue_setcfunc(&callable, btool->compileri);
-    exception = klapi_tryscall(state, &callable, 4, 1);
+    KLAPI_MAYFAIL(klapi_tryscall(state, -5, &callable, 4, 1), ki_delete(input));
+    bool eof = klcast(KiInteractive*, input)->eof;
     ki_delete(input);
-    if (kl_unlikely(exception)) {
-      return kl_fatalerror("doing interactive", "exception occurred while handling exception");
-    }
     if (klapi_checktype(state, -1, KL_NIL)) {
       klapi_pop(state, 1);
+      if (eof) return KL_E_NONE;
       continue;
     }
+
+    /* call */
     ptrdiff_t stktop_save = klexec_savestack(state, klstate_stktop(state));
-    exception = klapi_tryscall(state, klapi_access(state, -1), 0, KLAPI_VARIABLE_RESULTS);
-    if (kl_unlikely(exception))
-      return kl_fatalerror("doing interactive", "exception occurred while handling exception");
+    KLAPI_PROTECT(klapi_tryscall(state, -2, klapi_access(state, -1), 0, KLAPI_VARIABLE_RESULTS));
     int nres = klexec_savestack(state, klstate_stktop(state)) - stktop_save;
-    if (nres == 0) {
+    if (nres != 0) {
+      /* print results */
+      KLAPI_PROTECT(klapi_pushstring(state, "print"));
+      klapi_loadglobal(state);
+      klapi_setvalue(state, -nres - 2, klapi_access(state, -1));
       klapi_pop(state, 1);
-      continue;
+      KLAPI_PROTECT(klapi_tryscall(state, -nres - 2, klapi_access(state, -nres - 1), nres, 0));
     }
-    exception = klapi_pushstring(state, "print");
-    if (kl_unlikely(exception))
-      return kl_fatalerror("doing interactive", "failed to call function 'print'");
-    klapi_loadglobal(state);
-    klapi_setvalue(state, -nres - 2, klapi_access(state, -1));
     klapi_pop(state, 1);
-    exception = klapi_tryscall(state, klapi_access(state, -nres - 1), nres, 0);
-    if (kl_unlikely(exception))
-      return kl_fatalerror("doing interactive", "exception occurred while handling exception");
-    klapi_pop(state, 1);
+
+    if (eof) return KL_E_NONE;
   }
 }
 
 static KlException kl_errhandler(KlState* state) {
   KlException exception = klapi_currexception(state);
   if (exception == KL_E_USER || exception == KL_E_LINK) {
-    fprintf(stderr, "||-user defined exception and exception thrown across coroutine is currently not completely supported\n");
+    fprintf(stderr, "|| user defined exception and exception thrown across coroutine is currently not completely supported\n");
   } else {
     fprintf(stderr, "||-exception message: %s\n", klapi_exception_message(state));
   }
@@ -359,11 +342,15 @@ static void kl_interactive_input_delete(KiInteractive* ki) {
 
 static void kl_interactive_input_reader(KiInteractive* ki) {
   KioFileOffset readpos = ki_tell((Ki*)ki);
-  if (readpos < (KioFileOffset)(ki->curr - ki->buf) || ki->eof) {
+  if (readpos < (KioFileOffset)(ki->curr - ki->buf)) {
     ki_setbuf((Ki*)ki, ki->buf + readpos, ki->curr - (ki->buf + readpos), readpos);
     return;
   }
-  printf(ki->buf ? ">>>>" : ">>");
+  if (ki->eof) {
+    ki_setbuf((Ki*)ki, ki->buf, 0, readpos);
+    return;
+  }
+  printf(ki->buf ? "... " : ">>> ");
   if (readpos >= (KioFileOffset)(ki->end - ki->buf)) {
     size_t oldsize = ki->curr - ki->buf;
     size_t newcap = readpos + 8096;
@@ -376,9 +363,13 @@ static void kl_interactive_input_reader(KiInteractive* ki) {
     ki->curr = newbuf + oldsize;
     ki->buf = newbuf;
   }
-  fgets((char*)ki->curr, ki->end - ki->curr, stdin);
+  if (fgets((char*)ki->curr, ki->end - ki->curr, stdin) == NULL) {
+    ki->eof = true;
+    ki_setbuf((Ki*)ki, ki->curr, 0, readpos);
+    putchar('\n');  /* user ends the interactive mode, print a newline */
+    return;
+  }
   size_t readsize = strlen((char*)ki->curr);
-  ki->eof = feof(stdin);
   ki->curr += readsize;
   if (readpos >= (KioFileOffset)(ki->curr - ki->buf)) {
     ki_setbuf((Ki*)ki, ki->curr, 0, readpos);

@@ -5,11 +5,13 @@
 #include <string.h>
 
 bool klthrow_init(KlThrowInfo* info, KlMM* klmm, size_t buflen) {
+  kl_assert(buflen > 0, "");
   char* buf = (char*)klmm_alloc(klmm, buflen * sizeof (char));
   if (kl_unlikely(!buf)) return false;
   info->type = KL_E_NONE;
   info->buflen = buflen;
   info->exception.message = buf;
+  info->exception.message[0] = '\0';
   klvalue_setnil(&info->exception.eobj);
   return true;
 }
