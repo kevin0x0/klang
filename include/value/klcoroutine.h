@@ -44,11 +44,6 @@ static inline bool klco_yield_allowed(KlCoroutine* co);
 static inline bool klco_valid(KlCoroutine* co);
 static inline void klco_yield(KlCoroutine* co, KlValue* yieldvals, size_t nyield, size_t nwanted);
 
-KlException klco_start(KlState* co, KlState* caller, size_t narg, size_t nret);
-KlException klco_resume(KlState* co, KlState* caller, size_t narg, size_t nret);
-
-KlException klco_call(KlState* co, KlState* caller, size_t narg, size_t nret);
-
 static inline KlCoStatus klco_status(KlCoroutine* co) {
   return co->status;
 }
