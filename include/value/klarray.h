@@ -29,6 +29,7 @@ static inline size_t klarray_capacity(KlArray* array);
 
 static inline bool klarray_expand(KlArray* array, KlMM* klmm);
 
+static inline void klarray_fill(KlArray* array, KlValue* elems, size_t nelem);
 static inline bool klarray_push_back(KlArray* array, KlMM* klmm, KlValue* vals, size_t nval);
 static inline void klarray_pop_back(KlArray* array);
 static inline void klarray_multipop(KlArray* array, size_t count);
@@ -61,6 +62,13 @@ static inline bool klarray_expand(KlArray* array, KlMM* klmm) {
   return klarray_check_capacity(array, klmm, klarray_size(array) * 2);
 }
 
+static inline void klarray_fill(KlArray* array, KlValue* elems, size_t nelem) {
+  kl_assert(klarray_capacity(array) >= nelem, "");
+  array->current = array->begin + nelem;
+  for (size_t i = 0; i < nelem; ++i)
+    klvalue_setvalue(&array->begin[i], &elems[i]);
+}
+
 static inline bool klarray_push_back(KlArray* array, KlMM* klmm, KlValue* vals, size_t nval) {
   if (kl_unlikely(!klarray_check_capacity(array, klmm, klarray_size(array) + nval))) {
     return false;
@@ -88,7 +96,7 @@ static inline KlValue* klarray_access(KlArray* array, size_t index) {
 }
 
 static inline void klarray_index(KlArray* array, KlInt index, KlValue* val) {
-  if (0 < index && index < (KlInt)klarray_size(array)) {
+  if (0 <= index && index < (KlInt)klarray_size(array)) {
     klvalue_setvalue(val, klarray_access(array, index));
     return;
   }
