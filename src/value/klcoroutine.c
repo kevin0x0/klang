@@ -1,10 +1,6 @@
 #include "include/value/klcoroutine.h"
 #include "include/value/klclosure.h"
 #include "include/value/klstate.h"
-#include "include/value/klvalue.h"
-#include "include/vm/klexception.h"
-#include "include/vm/klexec.h"
-#include "include/vm/klstack.h"
 #include "include/mm/klmm.h"
 #include <stddef.h>
 

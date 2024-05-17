@@ -4,7 +4,6 @@
 #include "include/code/klcode.h"
 #include "include/code/klcodeval.h"
 #include "include/code/klgen.h"
-#include "include/lang/klinst.h"
 
 
 

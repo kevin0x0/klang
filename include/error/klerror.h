@@ -3,7 +3,6 @@
 
 #include "deps/k/include/kio/ki.h"
 #include "deps/k/include/kio/ko.h"
-#include <stddef.h>
 
 typedef struct tagKlErrorConfig {
   unsigned tabstop;

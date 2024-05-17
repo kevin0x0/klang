@@ -6,7 +6,6 @@
 #include "include/lang/kltypes.h"
 #include "include/misc/klutils.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 
 /* if a gcobject is not in list, then it must be leaf */

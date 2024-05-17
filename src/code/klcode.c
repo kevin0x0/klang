@@ -1,8 +1,6 @@
 #include "include/code/klcode.h"
 #include "include/ast/klstrtbl.h"
 #include "include/code/klgen.h"
-#include "include/code/klsymtbl.h"
-#include "include/lang/kltypes.h"
 #include "include/misc/klutils.h"
 
 

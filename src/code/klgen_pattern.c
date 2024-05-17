@@ -2,6 +2,7 @@
 #include "include/code/klcode.h"
 #include "include/code/klcodeval.h"
 #include "include/code/klgen.h"
+#include "include/code/klgen_expr.h"
 #include "include/code/klgen_exprbool.h"
 #include "include/code/klgen_stmt.h"
 #include "include/ast/klast.h"

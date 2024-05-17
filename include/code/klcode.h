@@ -1,10 +1,10 @@
 #ifndef _KLANG_INCLUDE_CODE_KLCODE_H_
 #define _KLANG_INCLUDE_CODE_KLCODE_H_
 
+#include "include/ast/klast.h"
 #include "include/ast/klstrtbl.h"
-#include "include/code/klcontbl.h"
+#include "include/error/klerror.h"
 #include "include/lang/klinst.h"
-#include "include/lang/kltypes.h"
 
 
 typedef struct tagKlCode KlCode;

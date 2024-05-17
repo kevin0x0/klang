@@ -3,7 +3,6 @@
 #include "include/ast/klstrtbl.h"
 #include "include/lang/klinst.h"
 #include "include/misc/klutils.h"
-#include <limits.h>
 #include <setjmp.h>
 
 #define KLCODEDUMP_MAGIC_SZ         (8)

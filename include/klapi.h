@@ -2,7 +2,6 @@
 #define _KLANG_INCLUDE_VM_KLAPI_H_
 
 #include "include/value/klcfunc.h"
-#include "include/value/klclosure.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"

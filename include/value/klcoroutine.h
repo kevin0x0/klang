@@ -4,7 +4,6 @@
 #include "include/misc/klutils.h"
 #include "include/mm/klmm.h"
 #include "include/value/klclosure.h"
-#include "include/vm/klexception.h"
 #include <setjmp.h>
 
 typedef struct tagKlState KlState;

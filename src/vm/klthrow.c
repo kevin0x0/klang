@@ -2,7 +2,6 @@
 #include "include/vm/klexception.h"
 
 #include <stdio.h>
-#include <string.h>
 
 bool klthrow_init(KlThrowInfo* info, KlMM* klmm, size_t buflen) {
   kl_assert(buflen > 0, "");

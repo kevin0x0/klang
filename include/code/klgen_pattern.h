@@ -1,5 +1,6 @@
 #ifndef _KLANG_INCLUDE_CODE_KLGEN_PATTERN_H_
 #define _KLANG_INCLUDE_CODE_KLGEN_PATTERN_H_
+
 #include "include/code/klcodeval.h"
 #include "include/code/klgen.h"
 

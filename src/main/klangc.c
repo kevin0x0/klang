@@ -5,7 +5,6 @@
 #include "include/code/klcode.h"
 #include "deps/k/include/kio/kifile.h"
 #include "deps/k/include/kio/kofile.h"
-#include "deps/k/include/kio/kibuf.h"
 #include <stdarg.h>
 
 #define KLC_OPTION_NORMAL   ((unsigned)0)

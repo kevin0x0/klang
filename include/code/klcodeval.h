@@ -3,7 +3,6 @@
 
 #include "include/ast/klast.h"
 #include "include/ast/klstrtbl.h"
-#include <stddef.h>
 
 typedef enum tagKlValKind {
   KLVAL_BOOL,
