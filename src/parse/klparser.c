@@ -1,6 +1,5 @@
 #include "include/parse/klparser.h"
 #include "include/parse/klcfdarr.h"
-#include "include/parse/klidarr.h"
 #include "include/parse/kllex.h"
 #include "include/parse/kltokens.h"
 #include "include/error/klerror.h"
@@ -577,17 +576,25 @@ static KlAst* klparser_exprnew(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_NEW), "");
 
   kllex_next(lex);
-  KlAst* klclass = kllex_check(lex, KLTK_LPAREN) ? klparser_exprunit(parser, lex, NULL) : klparser_dotchain(parser, lex);
-  kltodo("must have (patameters)");
-  KlAst* args = klparser_exprunit(parser, lex, NULL);
-  if (kl_unlikely(!klclass || !args)) {
-    if (klclass) klast_delete(klclass);
-    if (args) klast_delete(args);
-    return NULL;
+  KlAst* klclass = kllex_check(lex, KLTK_LPAREN)
+                 ? klparser_exprunit(parser, lex, NULL)
+                 : klparser_dotchain(parser, lex);
+  if (kllex_trymatch(lex, KLTK_LPAREN)) { /* has initialization list */
+    KlAstExprList* args = klparser_exprlist_mayempty(parser, lex);
+    klparser_match(parser, lex, KLTK_RPAREN);
+    if (kl_unlikely(!klclass || !args)) {
+      if (klclass) klast_delete(klclass);
+      if (args) klast_delete(args);
+      return NULL;
+    }
+    KlAstNew* newexpr = klast_new_create(klclass, klcast(KlAstExprList*, args), klast_begin(klclass), klast_end(args));
+    klparser_oomifnull(newexpr);
+    return klast(newexpr);
+  } else {
+    KlAstNew* newexpr = klast_new_create(klclass, NULL, klast_begin(klclass), klast_end(klclass));
+    klparser_oomifnull(newexpr);
+    return klast(newexpr);
   }
-  KlAstNew* newexpr = klast_new_create(klclass, klcast(KlAstExprList*, args), klclass->begin, args->end);
-  klparser_oomifnull(newexpr);
-  return klast(newexpr);
 }
 
 static KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {

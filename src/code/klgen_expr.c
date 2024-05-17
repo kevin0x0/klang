@@ -923,13 +923,15 @@ static void klgen_exprnew(KlGenUnit* gen, KlAstNew* newast, KlCStkId target) {
   KlCodeVal klclass = klgen_expr(gen, newast->klclass);
   klgen_putonstack(gen, &klclass, klgen_astposition(newast->klclass));
   klgen_emit(gen, klinst_newobj(target, klclass.index), klgen_astposition(newast));
-  if (target == klgen_stacktop(gen))
-    klgen_stackalloc1(gen);
-  KlCStkId stktop = klgen_stackalloc1(gen);
-  klgen_emitmove(gen, stktop, target, 1, klgen_astposition(newast));
-  size_t narg = klgen_passargs(gen, newast->args);
-  KlCIdx conidx = klgen_newstring(gen, gen->strings->constructor);
-  klgen_emitmethod(gen, stktop, conidx, narg, 0, stktop, klgen_astposition(newast));
+  if (newast->args) {
+    if (target == klgen_stacktop(gen))
+      klgen_stackalloc1(gen);
+    KlCStkId stktop = klgen_stackalloc1(gen);
+    klgen_emitmove(gen, stktop, target, 1, klgen_astposition(newast));
+    size_t narg = klgen_passargs(gen, newast->args);
+    KlCIdx conidx = klgen_newstring(gen, gen->strings->constructor);
+    klgen_emitmethod(gen, stktop, conidx, narg, 0, stktop, klgen_astposition(newast));
+  }
   klgen_stackfree(gen, oristktop == target ? target + 1 : oristktop);
 }
 

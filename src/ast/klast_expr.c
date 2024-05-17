@@ -214,7 +214,7 @@ KlAstNew* klast_new_create(KlAst* klclass, KlAstExprList* args, KlFileOffset beg
   KlAstNew* astnew = klast_alloc(KlAstNew);
   if (kl_unlikely(!astnew)) {
     klast_delete(klclass);
-    klast_delete(args);
+    if (args) klast_delete(args);
     return NULL;
   }
   astnew->klclass = klclass;
@@ -373,7 +373,7 @@ static void klast_pre_destroy(KlAstPre* astpre) {
 }
 
 static void klast_new_destroy(KlAstNew* astnew) {
-  klast_delete(astnew->args);
+  if (astnew->args) klast_delete(astnew->args);
   klast_delete(astnew->klclass);
 }
 
