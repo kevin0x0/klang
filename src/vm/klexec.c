@@ -12,7 +12,6 @@
 #include "include/lang/klinst.h"
 #include "include/lang/klconvert.h"
 #include "include/misc/klutils.h"
-#include <limits.h>
 
 
 /* extra stack frame size for calling operator method */
@@ -62,8 +61,10 @@ static KlException klexec_handle_newlocal_exception(KlState* state, KlException 
 static KlException klexec_handle_newobject_exception(KlState* state, KlException exception) {
   if (exception == KL_E_OOM) {
     return klstate_throw_oom(state, "creating new object");
+  } else if (exception == KL_E_INVLD) {
+    return klstate_throw(state, exception, "this class can not have any user-created instance");
   } else {
-    return klstate_throw(state, exception, "exception occurred while creating new object");
+    return klstate_throw(state, exception, "unknown exception");
   }
 }
 
@@ -1201,6 +1202,26 @@ KlException klexec_execute(KlState* state) {
         KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         KlValue* c = constants + KLINST_ABC_GETC(inst);
         klexec_binidiv(idiv, a, b, c);
+        break;
+      }
+      case KLOPCODE_LEN: {
+        KlValue* b = stkbase + KLINST_ABC_GETB(inst);
+        if (kl_likely(klvalue_checktype(b, KL_ARRAY))) {
+          klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klarray_size(klvalue_getobj(b, KlArray*)));
+        } else if (kl_likely(klvalue_checktype(b, KL_MAP))) {
+          klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klmap_size(klvalue_getobj(b, KlMap*)));
+        } else {
+          klexec_savestate(callinfo->top, pc);
+          KlException exception = klexec_dopreopmethod(state, stkbase + KLINST_ABC_GETA(inst), b, state->common->string.len);
+          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call */
+            KlValue* newbase = callinfo->top;
+            klexec_updateglobal(newbase);
+          } else {
+            if (kl_unlikely(exception)) return exception;
+            /* stack may have grown. restore stkbase. */
+            stkbase = callinfo->base;
+          }
+        }
         break;
       }
       case KLOPCODE_NEG: {

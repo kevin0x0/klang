@@ -7,6 +7,7 @@
 
 typedef struct tagKlCommon {
   struct {
+    KlString* len;
     KlString* neg;
     KlString* add;
     KlString* sub;

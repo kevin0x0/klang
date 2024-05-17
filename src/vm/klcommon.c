@@ -16,10 +16,7 @@ static KlException klcommon_null_contructor(KlClass* klclass, KlMM* klmm, KlValu
   return KL_E_INVLD;
 }
 static KlClass* klcommon_phonyclass(KlMM* klmm) {
-  KlClass* klclass = klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klcommon_null_contructor);
-  if (kl_unlikely(!klclass)) return NULL;
-  klclass_final(klclass);
-  return klclass;
+  return klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klcommon_null_contructor);
 }
 
 
@@ -29,6 +26,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   common->ref_count = 0;
 
   bool done = true;
+  done = done && (common->string.len = klstrpool_new_string(strpool, "$"));
   done = done && (common->string.neg = klstrpool_new_string(strpool, "u-"));
   done = done && (common->string.add = klstrpool_new_string(strpool, "+"));
   done = done && (common->string.sub = klstrpool_new_string(strpool, "-"));
@@ -73,6 +71,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
 }
 
 KlGCObject* klcommon_propagate(KlCommon* common, KlGCObject* gclist) {
+  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.len), gclist);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.neg), gclist);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.add), gclist);
   klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.sub), gclist);
