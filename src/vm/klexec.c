@@ -2024,7 +2024,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* b = constants + KLINST_AX_GETX(inst);
         if (kl_unlikely(!(klvalue_sametype(a, b) && klvalue_sameinstance(a, b)))) {
           klexec_savestate(callinfo->top, pc);
-          return klstate_throw(state, KL_E_MISMATCH, "pattern dismatch");
+          return klstate_throw(state, KL_E_MISMATCH, "pattern mismatch");
         }
         break;
       }

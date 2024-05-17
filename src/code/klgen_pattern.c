@@ -212,24 +212,6 @@ static inline bool klgen_pattern_allislval_maynull(KlAst** lvals, size_t nlval) 
 
 static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, KlPatternEmitter* emitter) {
   switch (klast_kind(pattern)) {
-    case KLAST_EXPR_LIST: {
-      kl_assert(klgen_stacktop(gen) > 0, "");
-      KlAstExprList* exprlist = klcast(KlAstExprList*, pattern);
-      size_t nexpr = exprlist->nexpr;
-      KlAst** exprs = exprlist->exprs;
-      KlCStkId obj = klgen_stacktop(gen) - 1;
-      if (klgen_pattern_allislval(exprs, nexpr)) {
-        emitter->exactarray(gen, nexpr, target - nexpr, obj, klgen_astposition(exprlist));
-        klgen_stackfree(gen, obj);
-        return target - nexpr;
-      }
-      /* else put on stack top */
-      emitter->exactarray(gen, nexpr, obj, obj, klgen_astposition(exprlist));
-      klgen_stackfree(gen, obj + nexpr);
-      for (size_t i = nexpr; i--;)
-        target = klgen_pattern(gen, exprs[i], target, emitter);
-      return target;
-    }
     case KLAST_EXPR_ARR: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
@@ -353,8 +335,7 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlStrDesc methodname = klgen_pattern_methodname(gen, pattern);
       KlCIdx method = klgen_newstring(gen, methodname);
-      KlAstCall* call = klcast(KlAstCall*, pattern);
-      KlAstExprList* args = call->args;
+      KlAstExprList* args = klcast(KlAstCall*, pattern)->args;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       size_t nelem = args->nexpr;
       KlAst** elems = args->exprs;
@@ -399,7 +380,7 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
     case KLAST_EXPR_VARARG:
     default: {
       kl_assert(klgen_stacktop(gen) > 0, "");
-      klgen_error(gen, klast_begin(pattern), klast_end(pattern), "unsupported pattern '...'");
+      klgen_error(gen, klast_begin(pattern), klast_end(pattern), "unsupported pattern");
       klgen_stackfree(gen, klgen_stacktop(gen) - 1);
       return target;
     }
@@ -408,18 +389,6 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
 
 static void klgen_pattern_fast(KlGenUnit* gen, KlAst* pattern, KlPatternEmitter* emitter) {
   switch (klast_kind(pattern)) {
-    case KLAST_EXPR_LIST: {
-      kl_assert(klgen_stacktop(gen) > 0, "");
-      KlAstExprList* exprlist = klcast(KlAstExprList*, pattern);
-      size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
-      KlCStkId obj = klgen_stacktop(gen) - 1;
-      emitter->exactarray(gen, nelem, obj, obj, klgen_astposition(exprlist));
-      klgen_stackfree(gen, obj + nelem);
-      if (nelem == 0) return;
-      klgen_pattern_fast(gen, elems[nelem - 1], emitter);
-      return;
-    }
     case KLAST_EXPR_ARR: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
@@ -554,17 +523,6 @@ static void klgen_pattern_fast(KlGenUnit* gen, KlAst* pattern, KlPatternEmitter*
 
 static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
   switch (klast_kind(pattern)) {
-    case KLAST_EXPR_LIST: {
-      KlAstExprList* exprlist = klcast(KlAstExprList*, pattern);
-      size_t nelem = exprlist->nexpr;
-      if (nelem == 0) return true;
-      KlAst** elems = exprlist->exprs;
-      for (size_t i = 0; i < nelem - 1; ++i) {
-        if (!klgen_pattern_islval(elems[i]))
-          return false;
-      }
-      return klgen_pattern_fast_check(gen, elems[nelem - 1]);
-    }
     case KLAST_EXPR_ARR: {
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
       size_t nelem = exprlist->nexpr;
@@ -621,8 +579,15 @@ static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
       return klgen_pattern_fast_check(gen, pre->operand);
     }
     case KLAST_EXPR_CALL: {
-      KlAstCall* call = klcast(KlAstCall*, pattern);
-      return klgen_pattern_fast_check(gen, klast(call->args));
+      KlAstExprList* exprlist = klcast(KlAstCall*, pattern)->args;
+      size_t nelem = exprlist->nexpr;
+      if (nelem == 0) return true;
+      KlAst** elems = exprlist->exprs;
+      for (size_t i = 0; i < nelem - 1; ++i) {
+        if (!klgen_pattern_islval(elems[i]))
+          return false;
+      }
+      return klgen_pattern_fast_check(gen, elems[nelem - 1]);
     }
     case KLAST_EXPR_POST: {
       KlAstPost* post = klcast(KlAstPost*, pattern);
@@ -710,8 +675,13 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
       return klgen_pattern_count_result(gen, pre->operand);
     }
     case KLAST_EXPR_CALL: {
-      KlAstCall* call = klcast(KlAstCall*, pattern);
-      return klgen_pattern_count_result(gen, klast(call->args));
+      KlAstExprList* exprlist = klcast(KlAstCall*, pattern)->args;
+      size_t nelem = exprlist->nexpr;
+      KlAst** elems = exprlist->exprs;
+      size_t count = 0;
+      for (size_t i = 0; i < nelem; ++i)
+        count += klgen_pattern_count_result(gen, elems[i]);
+      return count;
     }
     case KLAST_EXPR_POST: {
       KlAstPost* post = klcast(KlAstPost*, pattern);
@@ -737,14 +707,6 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
 
 void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
   switch (klast_kind(pattern)) {
-    case KLAST_EXPR_LIST: {
-      KlAstExprList* exprlist = klcast(KlAstExprList*, pattern);
-      size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
-      for (size_t i = nelem; i-- > 0;)
-        klgen_pattern_do_assignment(gen, elems[i]);
-      break;
-    }
     case KLAST_EXPR_ARR: {
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
       size_t nelem = exprlist->nexpr;
@@ -783,8 +745,11 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
       break;
     }
     case KLAST_EXPR_CALL: {
-      KlAstCall* call = klcast(KlAstCall*, pattern);
-      klgen_pattern_do_assignment(gen, klast(call->args));
+      KlAstExprList* exprlist = klcast(KlAstCall*, pattern)->args;
+      size_t nelem = exprlist->nexpr;
+      KlAst** elems = exprlist->exprs;
+      for (size_t i = nelem; i-- > 0;)
+        klgen_pattern_do_assignment(gen, elems[i]);
       break;
     }
     case KLAST_EXPR_POST: {
@@ -861,8 +826,12 @@ KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, KlCStkId base) 
       return klgen_pattern_newsymbol(gen, pre->operand, base);
     }
     case KLAST_EXPR_CALL: {
-      KlAstCall* call = klcast(KlAstCall*, pattern);
-      return klgen_pattern_newsymbol(gen, klast(call->args), base);
+      KlAstExprList* exprlist = klcast(KlAstCall*, pattern)->args;
+      size_t nelem = exprlist->nexpr;
+      KlAst** elems = exprlist->exprs;
+      for (size_t i = 0; i < nelem; ++i)
+        base = klgen_pattern_newsymbol(gen, elems[i], base);
+      return base;
     }
     case KLAST_EXPR_POST: {
       KlAstPost* post = klcast(KlAstPost*, pattern);
