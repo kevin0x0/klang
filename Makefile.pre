@@ -42,10 +42,10 @@ KLANGLIBS = $(LIB_DIR)traceback.so $(LIB_DIR)runtime_compiler.so $(LIB_DIR)basic
 all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(BIN_DIR)klang $(KLANGLIBS)
 
 $(BIN_DIR)klangc : $(OBJ_DIR)klangc.o $(LIB_DIR)libklangc.a | create_dir
-	$(CC) $(CFLAGS) -o $@ $< -L $(LIB_DIR) -Wl,-Bstatic -lklangc -Wl,-Bdynamic
+	$(CC) $(CFLAGS) -o $@ $< -L $(LIB_DIR) -lklangc
 
 $(BIN_DIR)klang : $(OBJ_DIR)klang.o $(LIB_DIR)libklang.a | create_dir
-	$(CC) $(CFLAGS) -rdynamic -o $@ $< -L $(LIB_DIR) -Wl,-Bstatic -lklang -Wl,-Bdynamic
+	$(CC) $(CFLAGS) -rdynamic -o $@ $< -L $(LIB_DIR) -lklang
 
 $(LIB_DIR)libklang.a : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
 	cp $(DEPS_K_DIR)lib/libk.a $@
@@ -64,7 +64,7 @@ $(LIB_DIR)traceback.so : $(KLANGLIB_TB_PIC_OBJS) | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $(KLANGLIB_TB_PIC_OBJS)
 
 $(LIB_DIR)runtime_compiler.so : $(KLANGLIB_RTCPL_PIC_OBJS) $(LIB_DIR)libklangc.pic.a | create_dir
-	$(CC) -shared $(CFLAGS) -o $@ $(KLANGLIB_RTCPL_PIC_OBJS) -L $(LIB_DIR) -Wl,-Bstatic -lklangc.pic -Wl,-Bdynamic
+	$(CC) -shared $(CFLAGS) -o $@ $(KLANGLIB_RTCPL_PIC_OBJS) -L $(LIB_DIR) -lklangc.pic
 
 $(LIB_DIR)basic.so : $(KLANGLIB_BASIC_PIC_OBJS) | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $(KLANGLIB_BASIC_PIC_OBJS)
