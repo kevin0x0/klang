@@ -5,6 +5,7 @@ typedef enum tagKlTokenKind {
   KLTK_ERR = -1,
   KLTK_ID = 0,
   KLTK_INT,
+  KLTK_INTDOT,
   KLTK_FLOAT,
   KLTK_STRING,
   KLTK_BOOLVAL,
@@ -33,6 +34,7 @@ typedef enum tagKlTokenKind {
   KLTK_OR,
   KLTK_NOT,
 
+  KLTK_LEN,
 
   KLTK_LPAREN,
   KLTK_RPAREN,

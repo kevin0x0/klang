@@ -7,7 +7,6 @@
 #include "include/error/klerror.h"
 #include "deps/k/include/kio/ki.h"
 
-#include <stdint.h>
 
 #define KLLEX_STRLIMIT        (KLSTRTAB_EXTRA)
 
@@ -41,6 +40,7 @@ KlLex* kllex_create(Ki* ki, KlError* klerr, const char* inputname, KlStrTbl* str
 void kllex_delete(KlLex* lex);
 
 void kllex_next(KlLex* lex);
+static inline void kllex_setcurrtok(KlLex* lex, KlTokenKind kind, KlFileOffset begin, KlFileOffset end);
 static inline bool kllex_hasleadingblank(KlLex* lex);
 static inline bool kllex_trymatch(KlLex* lex, KlTokenKind kind);
 static inline bool kllex_check(KlLex* lex, KlTokenKind kind);
@@ -48,6 +48,12 @@ static inline KlTokenKind kllex_tokkind(KlLex* lex);
 static inline Ki* kllex_inputstream(KlLex* lex);
 
 
+
+static inline void kllex_setcurrtok(KlLex* lex, KlTokenKind kind, KlFileOffset begin, KlFileOffset end) {
+  lex->tok.kind = kind;
+  lex->tok.begin = begin;
+  lex->tok.end = end;
+}
 
 static inline bool kllex_hasleadingblank(KlLex* lex) {
   return lex->tok.hasleadingblank;

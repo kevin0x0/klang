@@ -5,6 +5,9 @@ import "charset/unicode
 def integer(KLTK_INT):
   (KLTK_INT) $[1-9][0-9]* | 0[0-9]* | 0[xX][A-Fa-f0-9]+
 
+def integer(KLTK_INTDOT):
+  (KLTK_INTDOT) $[0-9]+\.
+
 def integer(KLTK_FLOAT):
   (KLTK_FLOAT) $[0-9]+\.[0-9]+
 
@@ -77,6 +80,9 @@ def and(KLTK_AND):
 def or(KLTK_OR):
   (KLTK_OR) $\|\| | or
 
+def length(KLTK_LEN):
+  (KLTK_LEN) $$
+
 def lp(KLTK_LPAREN):
   (KLTK_LPAREN) $\(
 
@@ -141,7 +147,7 @@ def for (KLTK_FOR):
   (KLTK_FOR) $for
 
 def in (KLTK_IN):
-  (KLTK_IN) $in
+  (KLTK_IN) $in | <-
 
 def let (KLTK_LET):
   (KLTK_LET) $let

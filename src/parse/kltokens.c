@@ -3,6 +3,7 @@
 static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_ID] = "identifier",
   [KLTK_INT] = "integer",
+  [KLTK_INTDOT] = "integer plus .",
   [KLTK_STRING] = "string",
   [KLTK_BOOLVAL] = "boolean",
   [KLTK_NIL] = "nil",
@@ -27,6 +28,7 @@ static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_NOT] = "!",
   [KLTK_AND] = "&&",
   [KLTK_OR] = "||",
+  [KLTK_LEN] = "$",
   [KLTK_LPAREN] = "(",
   [KLTK_RPAREN] = ")",
   [KLTK_LBRACKET] = "[",

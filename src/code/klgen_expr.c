@@ -535,6 +535,17 @@ size_t klgen_passargs(KlGenUnit* gen, KlAstExprList* args) {
 
 KlCodeVal klgen_exprpre(KlGenUnit* gen, KlAstPre* preast, KlCStkId target) {
   switch (preast->op) {
+    case KLTK_LEN: {
+      KlCStkId stktop = klgen_stacktop(gen);
+      KlCodeVal val = klgen_expr(gen, preast->operand);
+      if (val.kind == KLVAL_STRING)
+        return klcodeval_integer(val.string.length);
+      KlFilePosition pos = klgen_astposition(preast);
+      klgen_putonstack(gen, &val, pos);
+      klgen_emit(gen, klinst_len(target, val.index), pos);
+      klgen_stackfree(gen, stktop == target ? target + 1 : stktop);
+      return klcodeval_stack(target);
+    }
     case KLTK_MINUS: {
       KlCStkId stktop = klgen_stacktop(gen);
       KlCodeVal val = klgen_expr(gen, preast->operand);

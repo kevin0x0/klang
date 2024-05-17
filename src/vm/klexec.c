@@ -2187,9 +2187,9 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_NEWOBJ: {
         KlValue* klclass = stkbase + KLINST_ABC_GETB(inst);
+        klexec_savestate(callinfo->top, pc);
         if (kl_unlikely(!klvalue_checktype(klclass, KL_CLASS)))
           return klstate_throw(state, KL_E_TYPE, "%s is not a class", klvalue_typename(klvalue_gettype(klclass)));
-        klexec_savestate(callinfo->top, pc);
         KlException exception = klclass_new_object(klvalue_getobj(klclass, KlClass*), klstate_getmm(state), stkbase + KLINST_ABC_GETA(inst));
         if (kl_unlikely(exception))
           return klexec_handle_newobject_exception(state, exception);
