@@ -1208,6 +1208,8 @@ KlException klexec_execute(KlState* state) {
         KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         if (kl_likely(klvalue_checktype(b, KL_ARRAY))) {
           klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klarray_size(klvalue_getobj(b, KlArray*)));
+        } else if (kl_likely(klvalue_checktype(b, KL_STRING))) {
+          klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klstring_length(klvalue_getobj(b, KlString*)));
         } else if (kl_likely(klvalue_checktype(b, KL_MAP))) {
           klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klmap_size(klvalue_getobj(b, KlMap*)));
         } else {
