@@ -12,7 +12,7 @@
 
 #define klexec_savestack(state, stkptr)     ((stkptr) - klstack_raw(klstate_stack((state))))
 #define klexec_restorestack(state, diff)    (klstack_raw(klstate_stack((state))) + (diff))
-#define klexec_satisfy(val, cond)           ((klvalue_checktype((val), KL_BOOL) && klvalue_getbool((val)) == (cond)) || (!klvalue_checktype((val), KL_NIL)) == (cond))
+#define klexec_satisfy(val, cond)           ((klvalue_checktype((val), KL_BOOL) && klvalue_getbool((val)) == (cond)) || (!klvalue_checktype((val), KL_BOOL) && klvalue_checktype((val), KL_NIL) != (cond)))
 
 
 typedef KlException (*KlCallPrepCallBack)(KlState* state, KlValue* callable, size_t narg);

@@ -629,7 +629,7 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   KlCIdx conidx = klgen_newstring(gen, gen->strings->itermethod);
   klgen_emitmethod(gen, iterable, conidx, 0, gforast->lvals->nexpr + 3, forbase, klgen_astposition(gforast));
   klgen_mergejmplist_maynone(gen, gen->jmpinfo.breakjmp,
-                             klcodeval_jmplist(klgen_emit(gen, klinst_falsejmp(forbase + 2, 0), klgen_astposition(gforast))));
+                             klcodeval_jmplist(klgen_emit(gen, klinst_falsejmp(forbase + 1, 0), klgen_astposition(gforast))));
   KlCPC looppos = klgen_currentpc(gen);
   klgen_pushsymtbl(gen);    /* begin a new scope */
   klgen_stackalloc(gen, 3); /* forbase: iteration function, forbase + 1: static state, forbase + 2: index state */
