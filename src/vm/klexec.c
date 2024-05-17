@@ -761,8 +761,10 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
 #define klexec_binidiv(op, a, b, c) {                                             \
   if (kl_likely(klvalue_bothinteger((b), (c)))) {                                 \
     KlInt cval = klvalue_getint((c));                                             \
-    if (kl_unlikely(cval == 0))                                                   \
+    if (kl_unlikely(cval == 0)) {                                                 \
+      klexec_savestate(callinfo->top, pc);                                        \
       return klstate_throw(state, KL_E_ZERO, "divided by zero");                  \
+    }                                                                             \
     klvalue_setint((a), klop_##op(klvalue_getint((b)), cval));                    \
   } else {                                                                        \
     klexec_savestate(callinfo->top, pc);  /* in case of error and gc */           \
@@ -784,6 +786,7 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
   if (kl_likely(klvalue_bothinteger((b), (c)))) {                                 \
     KlInt cval = klvalue_getint((c));                                             \
     if (kl_unlikely(cval == 0)) {                                                 \
+      klexec_savestate(callinfo->top, pc);                                        \
       return klstate_throw(state, KL_E_ZERO, "divided by zero");                  \
     }                                                                             \
     klvalue_setint((a), klop_##op(klvalue_getint((b)), cval));                    \
@@ -828,8 +831,10 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
 
 #define klexec_binidiv_i(op, a, b, imm) {                                         \
   if (kl_likely(klvalue_checktype((b), KL_INT))) {                                \
-    if (kl_unlikely((imm) == 0))                                                  \
+    if (kl_unlikely((imm) == 0)) {                                                \
+      klexec_savestate(callinfo->top, pc);                                        \
       return klstate_throw(state, KL_E_ZERO, "divided by zero");                  \
+    }                                                                             \
     klvalue_setint((a), klop_##op(klvalue_getint((b)), imm));                     \
   } else {                                                                        \
     klexec_savestate(callinfo->top, pc);  /* in case of error and gc */           \
@@ -873,8 +878,10 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
 
 #define klexec_binmod_i(op, a, b, imm) {                                          \
   if (kl_likely(klvalue_checktype((b), KL_INT))) {                                \
-    if (kl_unlikely((imm) == 0))                                                  \
+    if (kl_unlikely((imm) == 0)) {                                                \
+      klexec_savestate(callinfo->top, pc);                                        \
       return klstate_throw(state, KL_E_ZERO, "divided by zero");                  \
+    }                                                                             \
     klvalue_setint((a), klop_##op(klvalue_getint((b)), (imm)));                   \
   } else {                                                                        \
     klexec_savestate(callinfo->top, pc);  /* in case of error and gc */           \
