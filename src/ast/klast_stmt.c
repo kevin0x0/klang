@@ -4,6 +4,7 @@
 
 
 static void klast_stmtlet_destroy(KlAstStmtLet* stmtlet);
+static void klast_stmtlocalfunc_destroy(KlAstStmtLocalFunc* stmtlocalfunc);
 static void klast_stmtassign_destroy(KlAstStmtAssign* stmtassign);
 static void klast_stmtexpr_destroy(KlAstStmtExpr* stmtexpr);
 static void klast_stmtif_destroy(KlAstStmtIf* stmtif);
@@ -18,6 +19,7 @@ static void klast_stmtbreak_destroy(KlAstStmtBreak* stmtbreak);
 static void klast_stmtcontinue_destroy(KlAstStmtContinue* stmtcontinue);
 
 static KlAstInfo klast_stmtlet_vfunc = { .destructor = (KlAstDelete)klast_stmtlet_destroy, .kind = KLAST_STMT_LET };
+static KlAstInfo klast_stmtlocalfunc_vfunc = { .destructor = (KlAstDelete)klast_stmtlocalfunc_destroy, .kind = KLAST_STMT_LOCALFUNC };
 static KlAstInfo klast_stmtassign_vfunc = { .destructor = (KlAstDelete)klast_stmtassign_destroy, .kind = KLAST_STMT_ASSIGN };
 static KlAstInfo klast_stmtexpr_vfunc = { .destructor = (KlAstDelete)klast_stmtexpr_destroy, .kind = KLAST_STMT_EXPR };
 static KlAstInfo klast_stmtif_vfunc = { .destructor = (KlAstDelete)klast_stmtif_destroy, .kind = KLAST_STMT_IF };
@@ -44,6 +46,21 @@ KlAstStmtLet* klast_stmtlet_create(KlAstExprList* lvals, KlAstExprList* rvals, K
   klast_setposition(stmtlet, begin, end);
   klast_init(stmtlet, &klast_stmtlet_vfunc);
   return stmtlet;
+}
+
+KlAstStmtLocalFunc* klast_stmtlocalfunc_create(KlStrDesc id, KlFileOffset idbegin, KlFileOffset idend, KlAstFunc* func, KlFileOffset begin, KlFileOffset end) {
+  KlAstStmtLocalFunc* stmtlocalfunc = klast_alloc(KlAstStmtLocalFunc);
+  if (kl_unlikely(!stmtlocalfunc)) {
+    klast_delete(func);
+    return NULL;
+  }
+  stmtlocalfunc->idbegin = idbegin;
+  stmtlocalfunc->idend = idend;
+  stmtlocalfunc->funcid = id;
+  stmtlocalfunc->func = func;
+  klast_setposition(stmtlocalfunc, begin, end);
+  klast_init(stmtlocalfunc, &klast_stmtlocalfunc_vfunc);
+  return stmtlocalfunc;
 }
 
 KlAstStmtAssign* klast_stmtassign_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end) {
@@ -215,6 +232,10 @@ KlAstStmtContinue* klast_stmtcontinue_create(KlFileOffset begin, KlFileOffset en
 static void klast_stmtlet_destroy(KlAstStmtLet* stmtlet) {
   klast_delete(stmtlet->rvals);
   klast_delete(stmtlet->lvals);
+}
+
+static void klast_stmtlocalfunc_destroy(KlAstStmtLocalFunc* stmtlocalfunc) {
+  klast_delete(stmtlocalfunc->func);
 }
 
 static void klast_stmtassign_destroy(KlAstStmtAssign* stmtassign) {

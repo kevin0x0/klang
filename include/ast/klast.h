@@ -44,6 +44,7 @@ typedef enum tagKlAstKind {
   KLAST_EXPR_WHERE, KLAST_EXPR_END = KLAST_EXPR_WHERE,
 
   KLAST_STMT_LET, KLAST_STMT = KLAST_STMT_LET,
+  KLAST_STMT_LOCALFUNC,
   KLAST_STMT_ASSIGN,
   KLAST_STMT_EXPR,
   KLAST_STMT_IF,
@@ -240,6 +241,14 @@ typedef struct tagKlAstStmtLet {
   KlAstExprList* rvals;        /* right values(must be exprlist or single value). */
 } KlAstStmtLet;
 
+typedef struct tagKlAstStmtLocalFunc {
+  KL_DERIVE_FROM(KlAst, _astbase_);
+  KlFileOffset idbegin;
+  KlFileOffset idend;
+  KlStrDesc funcid;
+  KlAstFunc* func;
+} KlAstStmtLocalFunc;
+
 typedef struct tagKlAstStmtAssign {
   KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* lvals;        /* left values(single value or exprlist) */
@@ -378,6 +387,7 @@ static inline void klast_exprlist_shallow_replace(KlAstExprList* exprlist, KlAst
 /* statements */
 KlAstStmtList* klast_stmtlist_create(KlAst** stmts, size_t nstmt, KlFileOffset begin, KlFileOffset end);
 KlAstStmtLet* klast_stmtlet_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end);
+KlAstStmtLocalFunc* klast_stmtlocalfunc_create(KlStrDesc id, KlFileOffset idbegin, KlFileOffset idend, KlAstFunc* func, KlFileOffset begin, KlFileOffset end);
 KlAstStmtAssign* klast_stmtassign_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end);
 KlAstStmtExpr* klast_stmtexpr_create(KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end);
 KlAstStmtIf* klast_stmtif_create(KlAst* cond, KlAstStmtList* then_block, KlAstStmtList* else_block, KlFileOffset begin, KlFileOffset end);

@@ -1,6 +1,5 @@
 #include "include/code/klgen_stmt.h"
 #include "include/code/klcodeval.h"
-#include "include/code/klcontbl.h"
 #include "include/code/klgen.h"
 #include "include/code/klgen_expr.h"
 #include "include/code/klgen_exprbool.h"
@@ -94,6 +93,13 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlAst** patterns, size_t
         target = klgen_pattern_binding(gen, patterns[count], target);
     }
   }
+}
+
+static void klgen_stmtlocalfunc(KlGenUnit* gen, KlAstStmtLocalFunc* localfuncast) {
+  KlCStkId stktop = klgen_stacktop(gen);
+  klgen_newsymbol(gen, localfuncast->funcid, stktop, klgen_position(localfuncast->idbegin, localfuncast->idend));
+  klgen_exprtarget_noconst(gen, klast(localfuncast->func), stktop);
+  kl_assert(klgen_stacktop(gen) == stktop + 1, "");
 }
 
 static void klgen_stmtlet(KlGenUnit* gen, KlAstStmtLet* letast) {
@@ -664,6 +670,10 @@ void klgen_stmtlist(KlGenUnit* gen, KlAstStmtList* ast) {
   for (KlAst** pstmt = ast->stmts; pstmt != endstmt; ++pstmt) {
     KlAst* stmt = *pstmt;
     switch (klast_kind(stmt)) {
+      case KLAST_STMT_LOCALFUNC: {
+        klgen_stmtlocalfunc(gen, klcast(KlAstStmtLocalFunc*, stmt));
+        break;
+      }
       case KLAST_STMT_LET: {
         klgen_stmtlet(gen, klcast(KlAstStmtLet*, stmt));
         break;
