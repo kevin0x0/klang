@@ -1021,7 +1021,7 @@ KlException klexec_execute(KlState* state) {
   KlInstruction* pc = callinfo->savedpc;
   KlValue* constants = klkfunc_constants(klcast(KlKClosure*, callinfo->callable.clo)->kfunc);
   KlValue* stkbase = callinfo->base;
-  kl_assert(callinfo->top >= klstate_stktop(state), "stack size not enough");
+  kl_assert(klcast(size_t, klexec_savestack(state, callinfo->top)) <= klstack_capacity(klstate_stack(state)), "stack size not enough");
 
   while (true) {
     KlInstruction inst = *pc++;

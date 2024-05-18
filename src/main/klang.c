@@ -238,9 +238,14 @@ static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicT
     return 0;
   }
 
+  /* push arguments to script */
+  KLAPI_PROTECT(klapi_checkstack(state, behaviour->narg));
+  for (size_t i = 0; i < behaviour->narg; ++i) {
+    KLAPI_PROTECT(klapi_pushstring(state, behaviour->args[i]));
+  }
   /* execute script */
-  KLAPI_PROTECT(klapi_tryscall(state, -2, klapi_access(state, -1), 0, 0));
-  klapi_pop(state, 2);    /* pop result and error handler */
+  KLAPI_PROTECT(klapi_tryscall(state, -2, klapi_access(state, -1 - behaviour->narg), behaviour->narg, 0));
+  klapi_pop(state, 2);                /* pop klang closure and error handler */
   return 0;
 }
 
@@ -286,7 +291,7 @@ static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
       KLAPI_PROTECT(klapi_tryscall(state, -nres - 2, klapi_access(state, -nres - 1), nres, 0));
     }
     klapi_pop(state, 1);
-
+    kl_assert(klstack_size(klstate_stack(state)) == 1, "");
     if (eof) return KL_E_NONE;
   }
 }
