@@ -17,12 +17,11 @@ static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
     }
     case KLC_FLOAT: {
       /* NOT PORTABLE */
-      kl_static_assert(sizeof (KlCFloat) == sizeof (KlCInt), "");
+      kl_static_assert(sizeof (KlCFloat) == sizeof (size_t), "");
       union {
         size_t hash;
         KlCFloat floatval;
-      } num;
-      num.floatval = con->floatval;
+      } num = { .floatval = con->floatval };
       /* +0.0 and -0.0 is equal but have difference binary representations */
       if (num.floatval == 0.0) return 0;
       return num.hash;

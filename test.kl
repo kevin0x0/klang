@@ -1,3 +1,10 @@
-let arr = [x | x = 0, 10000000];
-for v in arr:
-  2;
+let a = 3;
+
+case a of
+1 = do { print "H"; },
+2 = print "HH",
+3 = print "HHH",
+4 = print "HHHH",
+5 = print "HHHHH",
+6 = print "HHHHHH",
+7 = print "HHHHHHH";

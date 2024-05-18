@@ -302,9 +302,18 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlAstBin* binast, KlCS
       klgen_stackfree(gen, oristktop);
       return res;
     }
-    case KLVAL_REF:
-    case KLVAL_BOOL:
+    case KLVAL_BOOL: {
+      KlCodeVal res = klgen_pushrelinstc(gen, binast, left.index,
+                                         klgen_newconstant(gen, &(KlConstant) {.type = KLC_BOOL, .boolval = right.boolval }), jumpcond);
+      klgen_stackfree(gen, oristktop);
+      return res;
+    }
     case KLVAL_NIL: {
+      KlCodeVal res = klgen_pushrelinstc(gen, binast, left.index, klgen_newconstant(gen, &(KlConstant) { .type = KLC_NIL }), jumpcond);
+      klgen_stackfree(gen, oristktop);
+      return res;
+    }
+    case KLVAL_REF: {
       klgen_putonstack(gen, &right, klgen_astposition(binast->roperand));
       klgen_stackfree(gen, oristktop);
       return klgen_pushrelinst(gen, binast, left.index, right.index, jumpcond);

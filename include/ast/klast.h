@@ -41,6 +41,7 @@ typedef enum tagKlAstKind {
 
   KLAST_EXPR_BIN,
 
+  KLAST_EXPR_DO,
   KLAST_EXPR_MATCH,
   KLAST_EXPR_WHERE, KLAST_EXPR_END = KLAST_EXPR_WHERE,
 
@@ -127,7 +128,7 @@ typedef struct tagKlAstClassFieldDesc {
 typedef struct tagKlAstIdentifier {
   KL_DERIVE_FROM(KlAst, _astbase_);
   KlStrDesc id;                     /* identifier */
-  size_t stkid;                     /* used by code generator for pattern-match and pattern-extract */
+  size_t stkid;                     /* used by code generator for pattern-match and pattern-binding */
 } KlAstIdentifier;
 
 typedef struct tagKlAstMap {
@@ -222,12 +223,17 @@ typedef struct tagKlAstDot {
   KlStrDesc field;
 } KlAstDot;
 
+typedef struct tagKlAstDo {
+  KL_DERIVE_FROM(KlAst, _astbase_);
+  KlAstStmtList* stmtlist;
+} KlAstDo;
+
 typedef struct tagKlAstMatch {
   KL_DERIVE_FROM(KlAst, _astbase_);
-  KlAst* expr;
-  KlAst** cases;
+  KlAst* matchobj;
+  KlAst** patterns;
   KlAst** exprs;
-  size_t ncase;
+  size_t npattern;
 } KlAstMatch;
 
 typedef struct tagKlAstWhere {
@@ -372,7 +378,8 @@ KlAstPost* klast_post_create(KlTokenKind op, KlAst* operand, KlAst* post, KlFile
 KlAstCall* klast_call_create(KlAst* callable, KlAstExprList* args, KlFileOffset begin, KlFileOffset end);
 KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
 KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
-KlAstMatch* klast_match_create(KlAst* expr, KlAst** cases, KlAst** exprs, size_t ncase, KlFileOffset begin, KlFileOffset end);
+KlAstDo* klast_do_create(KlAstStmtList* stmtlist, KlFileOffset begin, KlFileOffset end);
+KlAstMatch* klast_match_create(KlAst* matchobj, KlAst** patterns, KlAst** exprs, size_t npattern, KlFileOffset begin, KlFileOffset end);
 KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
 
 static inline bool klast_isboolexpr(KlAst* ast) {

@@ -7,6 +7,7 @@
 
 
 
+KlCodeVal klgen_exprconstant(KlGenUnit* gen, KlAstConstant* conast);
 KlCodeVal klgen_expr(KlGenUnit* gen, KlAst* ast);
 KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlAst* ast, KlCStkId target);
 void klgen_exprlist_raw(KlGenUnit* gen, KlAst** asts, size_t nast, size_t nwanted, KlFilePosition filepos);

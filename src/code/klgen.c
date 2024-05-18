@@ -88,8 +88,8 @@ bool klgen_init(KlGenUnit* gen, KlSymTblPool* symtblpool, KlGUCommonString* stri
   gen->stksize = 0;
   gen->framesize = 0;
   gen->jmpinfo.jumpinfo = NULL;
-  gen->jmpinfo.breakjmp = NULL;
-  gen->jmpinfo.continuejmp = NULL;
+  gen->jmpinfo.breaklist = NULL;
+  gen->jmpinfo.continuelist = NULL;
   gen->jmpinfo.break_scope = NULL;
   gen->jmpinfo.continue_scope = NULL;
   gen->prev = prev;

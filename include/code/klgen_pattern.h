@@ -9,6 +9,7 @@ KlCStkId klgen_pattern_binding(KlGenUnit* gen, KlAst* pattern, KlCStkId target);
 KlCStkId klgen_pattern_matching(KlGenUnit* gen, KlAst* pattern, KlCStkId target);
 /* deconstruct a val to top of stack. */
 void klgen_pattern_binding_tostktop(KlGenUnit* gen, KlAst* pattern, KlCStkId val);
+void klgen_pattern_matching_tostktop(KlGenUnit* gen, KlAst* pattern, KlCStkId val);
 size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern);
 bool klgen_pattern_fastbinding(KlGenUnit* gen, KlAst* pattern);
 bool klgen_pattern_fastmatching(KlGenUnit* gen, KlAst* pattern);

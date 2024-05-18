@@ -29,6 +29,7 @@ static const char* klcode_get_instname(KlInstruction inst) {
     [KLOPCODE_DIVC] = "DIVC",
     [KLOPCODE_MODC] = "MODC",
     [KLOPCODE_IDIVC] = "IDIVC",
+    [KLOPCODE_LEN] = "LEN",
     [KLOPCODE_NEG] = "NEG",
     [KLOPCODE_SCALL] = "SCALL",
     [KLOPCODE_CALL] = "CALL",
@@ -185,6 +186,10 @@ static void klcode_print_constant(KlCode* code, Ko* out, KlConstant* constant) {
       ko_printf(out, "%s", constant->boolval ? "true" : "false");
       break;
     }
+    case KLC_NIL: {
+      ko_printf(out, "nil");
+      break;
+    }
     default: {
       kl_assert(false, "impossible constant type");
     }
@@ -299,8 +304,12 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       klcode_print_constant(code, out, &code->constants[KLINST_ABX_GETX(inst)]);
       return pc;
     }
+    case KLOPCODE_LEN: {
+      klcode_print_AB(out, inst);
+      return pc;
+    }
     case KLOPCODE_NEG: {
-      klcode_print_A(out, inst);
+      klcode_print_AB(out, inst);
       return pc;
     }
     case KLOPCODE_SCALL: {
@@ -776,7 +785,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     }
     case KLOPCODE_PMTUP: {
       klcode_print_ABX(out, inst);
-      ko_printf(out, "match R%u to R%u, %u elements", KLINST_ABX_GETB(inst), KLINST_ABX_GETA(inst), KLINST_ABX_GETX(inst));
+      ko_printf(out, "match R%u to R%u, %u elements\n", KLINST_ABX_GETB(inst), KLINST_ABX_GETA(inst), KLINST_ABX_GETX(inst));
       kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_EXTRA, "");
       KlInstruction extra = *pc++;
       klcode_print_prefix(code, out, pc - 1, "PMTUP EXTRA");

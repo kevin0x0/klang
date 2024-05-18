@@ -115,9 +115,19 @@ static void klgen_emit_genericmatching(KlGenUnit* gen, size_t nres, KlCStkId tar
 }
 
 static void klgen_pattern_constant_matchjmp(KlGenUnit* gen, KlAstConstant* constant) {
-  kl_unused(gen); kl_unused(constant);
-  kltodo("implement this");
-
+  KlCStkId leftop = klgen_stacktop(gen) - 1;
+  KlFilePosition filepos = klgen_astposition(constant);
+  if (constant->con.type == KLC_INT) {
+    klgen_emit(gen, klinst_inrange(constant->con.intval, 16)
+                    ? klinst_nei(leftop, constant->con.intval)
+                    : klinst_nec(leftop, klgen_newinteger(gen, constant->con.intval)),
+               filepos);
+  } else {
+    klgen_emit(gen, klinst_nec(leftop, klgen_newconstant(gen, &constant->con)), filepos);
+  }
+  KlCPC pc = klgen_emit(gen, klinst_condjmp(true, 0), filepos);
+  klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->terminatelist, klcodeval_jmplist(pc));
+  return;
 }
 
 static void klgen_pattern_constant_match(KlGenUnit* gen, KlAstConstant* constant) {
@@ -612,18 +622,26 @@ static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
   }
 }
 
-void klgen_pattern_binding_tostktop(KlGenUnit* gen, KlAst* pattern, KlCStkId val) {
+void klgen_pattern_tostktop(KlGenUnit* gen, KlAst* pattern, KlCStkId val, KlPatternEmitter* emitter) {
   size_t stktop = klgen_stacktop(gen);
   if (klgen_pattern_fast_check(gen, pattern)) {
-    klgen_emitmove(gen, stktop, val, 1, klgen_astposition(gen));
+    klgen_emitmove(gen, stktop, val, 1, klgen_astposition(pattern));
     klgen_stackalloc1(gen);
-    klgen_pattern_fast(gen, pattern, &binders);
+    klgen_pattern_fast(gen, pattern, emitter);
   } else {
     size_t nres = klgen_pattern_count_result(gen, pattern);
-    klgen_emitmove(gen, stktop + nres, val, 1, klgen_astposition(gen));
+    klgen_emitmove(gen, stktop + nres, val, 1, klgen_astposition(pattern));
     klgen_stackalloc(gen, nres + 1);
-    klgen_pattern_binding(gen, pattern, stktop + nres);
+    klgen_pattern(gen, pattern, stktop + nres, emitter);
   }
+}
+
+void klgen_pattern_binding_tostktop(KlGenUnit* gen, KlAst* pattern, KlCStkId val) {
+  klgen_pattern_tostktop(gen, pattern, val, &binders);
+}
+
+void klgen_pattern_matching_tostktop(KlGenUnit* gen, KlAst* pattern, KlCStkId val) {
+  klgen_pattern_tostktop(gen, pattern, val, &matchers);
 }
 
 size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {

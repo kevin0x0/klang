@@ -54,9 +54,9 @@ struct tagKlGenUnit {
   bool vararg;                /* has variable arguments */
   struct {
     KlGenJumpInfo* jumpinfo;  /* information needed by code generator that evaluates boolean expression as a single value */
-    KlCodeVal* continuejmp;   /* continue jmplist. continue is not allowed if NULL */
+    KlCodeVal* continuelist;   /* continue jmplist. continue is not allowed if NULL */
     KlSymTbl* continue_scope; /* the scope that start a scope that allows continue */
-    KlCodeVal* breakjmp;      /* break jmplist. break is not allowed if NULL */
+    KlCodeVal* breaklist;      /* break jmplist. break is not allowed if NULL */
     KlSymTbl* break_scope;    /* the scope that start a scope that allows break */
   } jmpinfo;
   KlGenUnit* prev;

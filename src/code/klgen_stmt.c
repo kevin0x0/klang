@@ -17,33 +17,33 @@ bool klgen_stmtblock(KlGenUnit *gen, KlAstStmtList *stmtlist) {
 }
 
 void klgen_stmtlistpure(KlGenUnit* gen, KlAstStmtList* stmtlist) {
-  KlCodeVal* prev_bjmp = gen->jmpinfo.breakjmp;
-  KlCodeVal* prev_cjmp = gen->jmpinfo.continuejmp;
+  KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
+  KlCodeVal* prev_cjmplist = gen->jmpinfo.continuelist;
   KlSymTbl* prev_bscope = gen->jmpinfo.break_scope;
   KlSymTbl* prev_cscope = gen->jmpinfo.continue_scope;
-  gen->jmpinfo.breakjmp = NULL;
-  gen->jmpinfo.continuejmp = NULL;
+  gen->jmpinfo.breaklist = NULL;
+  gen->jmpinfo.continuelist = NULL;
   gen->jmpinfo.break_scope = NULL;
   gen->jmpinfo.continue_scope = NULL;
   klgen_stmtlist(gen, stmtlist);
-  gen->jmpinfo.breakjmp = prev_bjmp;
-  gen->jmpinfo.continuejmp = prev_cjmp;
+  gen->jmpinfo.breaklist = prev_bjmplist;
+  gen->jmpinfo.continuelist = prev_cjmplist;
   gen->jmpinfo.break_scope = prev_bscope;
   gen->jmpinfo.continue_scope = prev_cscope;
 }
 
 bool klgen_stmtblockpure(KlGenUnit* gen, KlAstStmtList* stmtlist) {
-  KlCodeVal* prev_bjmp = gen->jmpinfo.breakjmp;
-  KlCodeVal* prev_cjmp = gen->jmpinfo.continuejmp;
+  KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
+  KlCodeVal* prev_cjmplist = gen->jmpinfo.continuelist;
   KlSymTbl* prev_bscope = gen->jmpinfo.break_scope;
   KlSymTbl* prev_cscope = gen->jmpinfo.continue_scope;
-  gen->jmpinfo.breakjmp = NULL;
-  gen->jmpinfo.continuejmp = NULL;
+  gen->jmpinfo.breaklist = NULL;
+  gen->jmpinfo.continuelist = NULL;
   gen->jmpinfo.break_scope = NULL;
   gen->jmpinfo.continue_scope = NULL;
   bool needclose = klgen_stmtblock(gen, stmtlist);
-  gen->jmpinfo.breakjmp = prev_bjmp;
-  gen->jmpinfo.continuejmp = prev_cjmp;
+  gen->jmpinfo.breaklist = prev_bjmplist;
+  gen->jmpinfo.continuelist = prev_cjmplist;
   gen->jmpinfo.break_scope = prev_bscope;
   gen->jmpinfo.continue_scope = prev_cscope;
   return needclose;
@@ -303,7 +303,7 @@ static bool klgen_stmttryfastjmp_inif(KlGenUnit* gen, KlAstStmtIf* ifast) {
   }
   KlAst* stmtast = block->stmts[block->nstmt - 1];
   KlSymTbl* endtbl = klast_kind(stmtast) == KLAST_STMT_BREAK ? gen->jmpinfo.break_scope : gen->jmpinfo.continue_scope;
-  KlCodeVal* jmplist = klast_kind(stmtast) == KLAST_STMT_BREAK ? gen->jmpinfo.breakjmp : gen->jmpinfo.continuejmp;
+  KlCodeVal* jmplist = klast_kind(stmtast) == KLAST_STMT_BREAK ? gen->jmpinfo.breaklist : gen->jmpinfo.continuelist;
   if (kl_unlikely(!jmplist)) {
     klgen_error(gen, klast_begin(stmtast), klast_end(stmtast), "break and continue statement is not allowed here");
     return true;
@@ -364,12 +364,12 @@ static void klgen_stmtif(KlGenUnit* gen, KlAstStmtIf* ifast) {
 static void klgen_stmtwhile(KlGenUnit* gen, KlAstStmtWhile* whileast) {
   KlCodeVal bjmplist = klcodeval_none();
   KlCodeVal cjmplist = klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), klgen_astposition(whileast)));
-  KlCodeVal* prev_bjmp = gen->jmpinfo.breakjmp;
-  KlCodeVal* prev_cjmp = gen->jmpinfo.continuejmp;
+  KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
+  KlCodeVal* prev_cjmplist = gen->jmpinfo.continuelist;
   KlSymTbl* prev_bscope = gen->jmpinfo.break_scope;
   KlSymTbl* prev_cscope = gen->jmpinfo.continue_scope;
-  gen->jmpinfo.breakjmp = &bjmplist;
-  gen->jmpinfo.continuejmp = &cjmplist;
+  gen->jmpinfo.breaklist = &bjmplist;
+  gen->jmpinfo.continuelist = &cjmplist;
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
@@ -398,8 +398,8 @@ static void klgen_stmtwhile(KlGenUnit* gen, KlAstStmtWhile* whileast) {
     klgen_setinstjmppos(gen, cjmplist, continuepos);
     klgen_setinstjmppos(gen, bjmplist, klgen_currentpc(gen));
   }
-  gen->jmpinfo.breakjmp = prev_bjmp;
-  gen->jmpinfo.continuejmp = prev_cjmp;
+  gen->jmpinfo.breaklist = prev_bjmplist;
+  gen->jmpinfo.continuelist = prev_cjmplist;
   gen->jmpinfo.break_scope = prev_bscope;
   gen->jmpinfo.continue_scope = prev_cscope;
 }
@@ -407,12 +407,12 @@ static void klgen_stmtwhile(KlGenUnit* gen, KlAstStmtWhile* whileast) {
 static void klgen_stmtrepeat(KlGenUnit* gen, KlAstStmtRepeat* repeatast) {
   KlCodeVal bjmplist = klcodeval_none();
   KlCodeVal cjmplist = klcodeval_none();
-  KlCodeVal* prev_bjmp = gen->jmpinfo.breakjmp;
-  KlCodeVal* prev_cjmp = gen->jmpinfo.continuejmp;
+  KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
+  KlCodeVal* prev_cjmplist = gen->jmpinfo.continuelist;
   KlSymTbl* prev_bscope = gen->jmpinfo.break_scope;
   KlSymTbl* prev_cscope = gen->jmpinfo.continue_scope;
-  gen->jmpinfo.breakjmp = &bjmplist;
-  gen->jmpinfo.continuejmp = &cjmplist;
+  gen->jmpinfo.breaklist = &bjmplist;
+  gen->jmpinfo.continuelist = &cjmplist;
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
@@ -441,14 +441,14 @@ static void klgen_stmtrepeat(KlGenUnit* gen, KlAstStmtRepeat* repeatast) {
     klgen_setinstjmppos(gen, cjmplist, continuepos);
     klgen_setinstjmppos(gen, bjmplist, klgen_currentpc(gen));
   }
-  gen->jmpinfo.breakjmp = prev_bjmp;
-  gen->jmpinfo.continuejmp = prev_cjmp;
+  gen->jmpinfo.breaklist = prev_bjmplist;
+  gen->jmpinfo.continuelist = prev_cjmplist;
   gen->jmpinfo.break_scope = prev_bscope;
   gen->jmpinfo.continue_scope = prev_cscope;
 }
 
 static void klgen_stmtbreak(KlGenUnit* gen, KlAstStmtBreak* breakast) {
-  if (kl_unlikely(!gen->jmpinfo.breakjmp)) {
+  if (kl_unlikely(!gen->jmpinfo.breaklist)) {
     klgen_error(gen, klast_begin(breakast), klast_end(breakast), "break statement is not allowed here");
     return;
   }
@@ -459,12 +459,12 @@ static void klgen_stmtbreak(KlGenUnit* gen, KlAstStmtBreak* breakast) {
   } else {
     breakinst = klinst_jmp(0);
   }
-  klgen_mergejmplist_maynone(gen, gen->jmpinfo.breakjmp,
+  klgen_mergejmplist_maynone(gen, gen->jmpinfo.breaklist,
                              klcodeval_jmplist(klgen_emit(gen, breakinst, klgen_astposition(breakast))));
 }
 
 static void klgen_stmtcontinue(KlGenUnit* gen, KlAstStmtContinue* continueast) {
-  if (kl_unlikely(!gen->jmpinfo.continuejmp)) {
+  if (kl_unlikely(!gen->jmpinfo.continuelist)) {
     klgen_error(gen, klast_begin(continueast), klast_end(continueast), "continue statement is not allowed here");
     return;
   }
@@ -475,7 +475,7 @@ static void klgen_stmtcontinue(KlGenUnit* gen, KlAstStmtContinue* continueast) {
   } else {
     continueinst = klinst_jmp(0);
   }
-  klgen_mergejmplist_maynone(gen, gen->jmpinfo.continuejmp,
+  klgen_mergejmplist_maynone(gen, gen->jmpinfo.continuelist,
                          klcodeval_jmplist(klgen_emit(gen, continueinst, klgen_astposition(continueast))));
 }
 
@@ -486,10 +486,10 @@ static void klgen_stmtreturn(KlGenUnit* gen, KlAstStmtReturn* returnast) {
     KlCodeVal retval;
     size_t nres = klgen_trytakeall(gen, res->exprs[0], &retval);
     kl_assert(retval.kind == KLVAL_STACK, "");
-    kl_assert(nres == 1 || nres == KLINST_VARRES, "");
     if (klgen_needclose(gen, gen->reftbl, NULL))
       klgen_emit(gen, klinst_close(0), klgen_astposition(returnast));
-    KlInstruction returninst = nres == KLINST_VARRES ? klinst_return(retval.index, nres)
+    KlInstruction returninst = nres == 0             ? klinst_return0() :
+                               nres == KLINST_VARRES ? klinst_return(retval.index, nres)
                                                      : klinst_return1(retval.index);
     klgen_emit(gen, returninst, klgen_astposition(returnast));
   } else {
@@ -508,12 +508,12 @@ static void klgen_stmtreturn(KlGenUnit* gen, KlAstStmtReturn* returnast) {
 static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
   KlCodeVal bjmplist = klcodeval_none();
   KlCodeVal cjmplist = klcodeval_none();
-  KlCodeVal* prev_bjmp = gen->jmpinfo.breakjmp;
-  KlCodeVal* prev_cjmp = gen->jmpinfo.continuejmp;
+  KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
+  KlCodeVal* prev_cjmplist = gen->jmpinfo.continuelist;
   KlSymTbl* prev_bscope = gen->jmpinfo.break_scope;
   KlSymTbl* prev_cscope = gen->jmpinfo.continue_scope;
-  gen->jmpinfo.breakjmp = &bjmplist;
-  gen->jmpinfo.continuejmp = &cjmplist;
+  gen->jmpinfo.breaklist = &bjmplist;
+  gen->jmpinfo.continuelist = &cjmplist;
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
@@ -529,7 +529,7 @@ static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
   }
   kl_assert(klgen_stacktop(gen) == forbase + 3, "");
 
-  klgen_mergejmplist_maynone(gen, gen->jmpinfo.breakjmp,
+  klgen_mergejmplist_maynone(gen, gen->jmpinfo.breaklist,
                              klcodeval_jmplist(klgen_emit(gen, klinst_iforprep(forbase, 0), klgen_astposition(iforast))));
   klgen_pushsymtbl(gen);  /* enter a new scope here */
   KlCPC looppos = klgen_currentpc(gen);
@@ -553,8 +553,8 @@ static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
   klgen_setinstjmppos(gen, bjmplist, klgen_currentpc(gen));
   klgen_stackfree(gen, forbase);
 
-  gen->jmpinfo.breakjmp = prev_bjmp;
-  gen->jmpinfo.continuejmp = prev_cjmp;
+  gen->jmpinfo.breaklist = prev_bjmplist;
+  gen->jmpinfo.continuelist = prev_cjmplist;
   gen->jmpinfo.break_scope = prev_bscope;
   gen->jmpinfo.continue_scope = prev_cscope;
 }
@@ -562,12 +562,12 @@ static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
 static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
   KlCodeVal bjmplist = klcodeval_none();
   KlCodeVal cjmplist = klcodeval_none();
-  KlCodeVal* prev_bjmp = gen->jmpinfo.breakjmp;
-  KlCodeVal* prev_cjmp = gen->jmpinfo.continuejmp;
+  KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
+  KlCodeVal* prev_cjmplist = gen->jmpinfo.continuelist;
   KlSymTbl* prev_bscope = gen->jmpinfo.break_scope;
   KlSymTbl* prev_cscope = gen->jmpinfo.continue_scope;
-  gen->jmpinfo.breakjmp = &bjmplist;
-  gen->jmpinfo.continuejmp = &cjmplist;
+  gen->jmpinfo.breaklist = &bjmplist;
+  gen->jmpinfo.continuelist = &cjmplist;
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
@@ -576,7 +576,7 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
   size_t npattern = vforast->lvals->nexpr;
   KlCodeVal step = klcodeval_integer(npattern);
   klgen_putonstktop(gen, &step, klgen_astposition(vforast));
-  klgen_mergejmplist_maynone(gen, gen->jmpinfo.breakjmp,
+  klgen_mergejmplist_maynone(gen, gen->jmpinfo.breaklist,
                              klcodeval_jmplist(klgen_emit(gen, klinst_vforprep(forbase, 0), klgen_astposition(vforast))));
   KlCPC looppos = klgen_currentpc(gen);
   klgen_stackalloc1(gen); /* forbase + 0: step, forbase + 1: index */
@@ -604,8 +604,8 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
   klgen_setinstjmppos(gen, bjmplist, klgen_currentpc(gen));
   klgen_stackfree(gen, forbase);
 
-  gen->jmpinfo.breakjmp = prev_bjmp;
-  gen->jmpinfo.continuejmp = prev_cjmp;
+  gen->jmpinfo.breaklist = prev_bjmplist;
+  gen->jmpinfo.continuelist = prev_cjmplist;
   gen->jmpinfo.break_scope = prev_bscope;
   gen->jmpinfo.continue_scope = prev_cscope;
 }
@@ -613,12 +613,12 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
 static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   KlCodeVal bjmplist = klcodeval_none();
   KlCodeVal cjmplist = klcodeval_none();
-  KlCodeVal* prev_bjmp = gen->jmpinfo.breakjmp;
-  KlCodeVal* prev_cjmp = gen->jmpinfo.continuejmp;
+  KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
+  KlCodeVal* prev_cjmplist = gen->jmpinfo.continuelist;
   KlSymTbl* prev_bscope = gen->jmpinfo.break_scope;
   KlSymTbl* prev_cscope = gen->jmpinfo.continue_scope;
-  gen->jmpinfo.breakjmp = &bjmplist;
-  gen->jmpinfo.continuejmp = &cjmplist;
+  gen->jmpinfo.breaklist = &bjmplist;
+  gen->jmpinfo.continuelist = &cjmplist;
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
 
@@ -628,7 +628,7 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   klgen_stackfree(gen, forbase);
   KlCIdx conidx = klgen_newstring(gen, gen->strings->itermethod);
   klgen_emitmethod(gen, iterable, conidx, 0, gforast->lvals->nexpr + 3, forbase, klgen_astposition(gforast));
-  klgen_mergejmplist_maynone(gen, gen->jmpinfo.breakjmp,
+  klgen_mergejmplist_maynone(gen, gen->jmpinfo.breaklist,
                              klcodeval_jmplist(klgen_emit(gen, klinst_falsejmp(forbase + 1, 0), klgen_astposition(gforast))));
   KlCPC looppos = klgen_currentpc(gen);
   klgen_pushsymtbl(gen);    /* begin a new scope */
@@ -659,8 +659,8 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   klgen_setinstjmppos(gen, bjmplist, klgen_currentpc(gen));
   klgen_stackfree(gen, forbase);
 
-  gen->jmpinfo.breakjmp = prev_bjmp;
-  gen->jmpinfo.continuejmp = prev_cjmp;
+  gen->jmpinfo.breaklist = prev_bjmplist;
+  gen->jmpinfo.continuelist = prev_cjmplist;
   gen->jmpinfo.break_scope = prev_bscope;
   gen->jmpinfo.continue_scope = prev_cscope;
 }
