@@ -25,6 +25,8 @@ typedef struct tagKlBehaviour {
     char* filename;
     const char* stmt;
   };
+  char** args;
+  size_t narg;
   unsigned option;
 } KlBehaviour;
 
@@ -77,6 +79,8 @@ int main(int argc, char** argv) {
 
 static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
   behaviour->filename = NULL;
+  behaviour->args = NULL;
+  behaviour->narg = 0;
   behaviour->stmt = NULL;
   behaviour->option = KL_OPTION_NORMAL;
   for (int i = 1; i < argc; ++i) {
@@ -95,6 +99,11 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
       }
       behaviour->option |= KL_OPTION_IN_ARG;
       behaviour->stmt = argv[i++];
+      behaviour->args = argv + i;
+      behaviour->narg = argc - i;
+      break;
+    } else if (kl_match(argv[i], "-i", "--interactive")) {
+      behaviour->option |= KL_OPTION_INTER;
     } else if (kl_isfilename(argv[i])) {
       if (behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)) {
         fprintf(stderr, "the input is specified more than once: %s.\n", argv[i]);
@@ -107,6 +116,9 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
         kl_cleanbehaviour(behaviour);
         return 1;
       }
+      behaviour->args = argv + i;
+      behaviour->narg = argc - i;
+      break;
     } else {
       fprintf(stderr, "unrecognized option: %s\n", argv[i]);
       kl_print_help();
@@ -181,7 +193,7 @@ static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicT
   klapi_pushcfunc(state, btool->traceback);
   KLAPI_PROTECT(klapi_mkcclosure(state, -2, kl_errhandler, 1));
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -3), -2));
-  klapi_pop(state, 3);
+  klapi_popclose(state, 3);
   return 0;
 }
 
@@ -318,9 +330,11 @@ static int kl_validatebehaviour(KlBehaviour* behaviour) {
 }
 
 static void kl_print_help(void) {
-  printf("Usage: klang [<inputfile> | -e statement] [options]\n");
+  printf("Usage: klang [<inputfile> | -e <code>] [options]\n");
   printf("options:\n");
   printf("  -h --help                   show this message.\n");
+  printf("  -e <code>                   execute the code provided by command line.\n");
+  printf("  -i --interactive            always enter interactive mode.\n");
   printf("if input is not specified, enter interactive mode.\n");
 }
 
