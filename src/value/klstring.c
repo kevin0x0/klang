@@ -8,7 +8,7 @@ static KlGCObject* klstrpool_propagate(KlStrPool* strpool, KlMM* klmm, KlGCObjec
 static void klstrpool_delete(KlStrPool* strpool, KlMM* klmm);
 static void klstrpool_post(KlStrPool* strpool, KlMM* klmm);
 
-static KlGCVirtualFunc klstrpool_gcvfunc = { .destructor = (KlGCDestructor)klstrpool_delete, .propagate = (KlGCProp)klstrpool_propagate, .after = (KlGCAfter)klstrpool_post };
+static const KlGCVirtualFunc klstrpool_gcvfunc = { .destructor = (KlGCDestructor)klstrpool_delete, .propagate = (KlGCProp)klstrpool_propagate, .after = (KlGCAfter)klstrpool_post };
 
 
 static KlString* klstrpool_search(KlStrPool* strpool, const char* str, size_t hash);

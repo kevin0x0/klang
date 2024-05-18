@@ -11,7 +11,7 @@
 #include <string.h>
 
 
-static KlFileOffset ph_filepos = ~(KlFileOffset)0;
+static const KlFileOffset ph_filepos = ~(KlFileOffset)0;
 
 
 static void klparser_error(KlParser* parser, Ki* input, KlFileOffset begin, KlFileOffset end, const char* format, ...);
@@ -43,6 +43,7 @@ static KlAstExprList* klparser_finishexprlist(KlParser* parser, KlLex* lex, KlAs
 static KlAst* klparser_dotchain(KlParser* parser, KlLex* lex);
 static KlAst* klparser_exprnew(KlParser* parser, KlLex* lex);
 static KlAst* klparser_exprwhere(KlParser* parser, KlLex* lex, KlAst* expr);
+static KlAst* klparser_exprmatch(KlParser* parser, KlLex* lex);
 static KlAst* klparser_exprunit(KlParser* parser, KlLex* lex, bool* inparenthesis);
 static KlAst* klparser_exprpost(KlParser* parser, KlLex* lex);
 static KlAst* klparser_exprpre(KlParser* parser, KlLex* lex);
@@ -172,7 +173,7 @@ static void* klparser_error_oom(KlParser* parser, KlLex* lex) {
 
 
 static inline bool klparser_exprbegin(KlLex* lex) {
-  static bool isexprbegin[KLTK_NTOKEN] = {
+  static const bool isexprbegin[KLTK_NTOKEN] = {
     [KLTK_ARROW] = true,
     [KLTK_DARROW] = true,
     [KLTK_VARARG] = true,
@@ -1013,7 +1014,7 @@ static KlAst* klparser_exprpost(KlParser* parser, KlLex* lex) {
 }
 
 static KlAst* klparser_exprbin(KlParser* parser, KlLex* lex, int prio) {
-  static int binop_prio[KLTK_NTOKEN] = {
+  static const int binop_prio[KLTK_NTOKEN] = {
     [KLTK_OR]     = 1,
     [KLTK_AND]    = 2,
     [KLTK_LE]     = 3,

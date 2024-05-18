@@ -17,25 +17,27 @@ static void klast_post_destroy(KlAstPost* astpost);
 static void klast_call_destroy(KlAstCall* astcall);
 static void klast_dot_destroy(KlAstDot* astdot);
 static void klast_func_destroy(KlAstFunc* astfunc);
+static void klast_match_destroy(KlAstMatch* astmatch);
 static void klast_where_destroy(KlAstWhere* astwhere);
 
-static KlAstInfo klast_id_vfunc = { .destructor = (KlAstDelete)klast_id_destroy, .kind = KLAST_EXPR_ID };
-static KlAstInfo klast_map_vfunc = { .destructor = (KlAstDelete)klast_map_destroy, .kind = KLAST_EXPR_MAP };
-static KlAstInfo klast_array_vfunc = { .destructor = (KlAstDelete)klast_array_destroy, .kind = KLAST_EXPR_ARR };
-static KlAstInfo klast_arraygenerator_vfunc = { .destructor = (KlAstDelete)klast_arraygenerator_destroy, .kind = KLAST_EXPR_ARRGEN };
-static KlAstInfo klast_class_vfunc = { .destructor = (KlAstDelete)klast_class_destroy, .kind = KLAST_EXPR_CLASS };
-static KlAstInfo klast_constant_vfunc = { .destructor = (KlAstDelete)klast_constant_destroy, .kind = KLAST_EXPR_CONSTANT };
-static KlAstInfo klast_vararg_vfunc = { .destructor = (KlAstDelete)klast_vararg_destroy, .kind = KLAST_EXPR_VARARG };
-static KlAstInfo klast_exprlist_vfunc = { .destructor = (KlAstDelete)klast_exprlist_destroy, .kind = KLAST_EXPR_LIST };
-static KlAstInfo klast_bin_vfunc = { .destructor = (KlAstDelete)klast_bin_destroy, .kind = KLAST_EXPR_BIN };
-static KlAstInfo klast_pre_vfunc = { .destructor = (KlAstDelete)klast_pre_destroy, .kind = KLAST_EXPR_PRE };
-static KlAstInfo klast_new_vfunc = { .destructor = (KlAstDelete)klast_new_destroy, .kind = KLAST_EXPR_NEW };
-static KlAstInfo klast_yield_vfunc = { .destructor = (KlAstDelete)klast_yield_destroy, .kind = KLAST_EXPR_YIELD };
-static KlAstInfo klast_post_vfunc = { .destructor = (KlAstDelete)klast_post_destroy, .kind = KLAST_EXPR_POST };
-static KlAstInfo klast_call_vfunc = { .destructor = (KlAstDelete)klast_call_destroy, .kind = KLAST_EXPR_CALL };
-static KlAstInfo klast_dot_vfunc = { .destructor = (KlAstDelete)klast_dot_destroy, .kind = KLAST_EXPR_DOT };
-static KlAstInfo klast_func_vfunc = { .destructor = (KlAstDelete)klast_func_destroy, .kind = KLAST_EXPR_FUNC };
-static KlAstInfo klast_where_vfunc = { .destructor = (KlAstDelete)klast_where_destroy, .kind = KLAST_EXPR_WHERE };
+static const KlAstInfo klast_id_vfunc = { .destructor = (KlAstDelete)klast_id_destroy, .kind = KLAST_EXPR_ID };
+static const KlAstInfo klast_map_vfunc = { .destructor = (KlAstDelete)klast_map_destroy, .kind = KLAST_EXPR_MAP };
+static const KlAstInfo klast_array_vfunc = { .destructor = (KlAstDelete)klast_array_destroy, .kind = KLAST_EXPR_ARR };
+static const KlAstInfo klast_arraygenerator_vfunc = { .destructor = (KlAstDelete)klast_arraygenerator_destroy, .kind = KLAST_EXPR_ARRGEN };
+static const KlAstInfo klast_class_vfunc = { .destructor = (KlAstDelete)klast_class_destroy, .kind = KLAST_EXPR_CLASS };
+static const KlAstInfo klast_constant_vfunc = { .destructor = (KlAstDelete)klast_constant_destroy, .kind = KLAST_EXPR_CONSTANT };
+static const KlAstInfo klast_vararg_vfunc = { .destructor = (KlAstDelete)klast_vararg_destroy, .kind = KLAST_EXPR_VARARG };
+static const KlAstInfo klast_exprlist_vfunc = { .destructor = (KlAstDelete)klast_exprlist_destroy, .kind = KLAST_EXPR_LIST };
+static const KlAstInfo klast_bin_vfunc = { .destructor = (KlAstDelete)klast_bin_destroy, .kind = KLAST_EXPR_BIN };
+static const KlAstInfo klast_pre_vfunc = { .destructor = (KlAstDelete)klast_pre_destroy, .kind = KLAST_EXPR_PRE };
+static const KlAstInfo klast_new_vfunc = { .destructor = (KlAstDelete)klast_new_destroy, .kind = KLAST_EXPR_NEW };
+static const KlAstInfo klast_yield_vfunc = { .destructor = (KlAstDelete)klast_yield_destroy, .kind = KLAST_EXPR_YIELD };
+static const KlAstInfo klast_post_vfunc = { .destructor = (KlAstDelete)klast_post_destroy, .kind = KLAST_EXPR_POST };
+static const KlAstInfo klast_call_vfunc = { .destructor = (KlAstDelete)klast_call_destroy, .kind = KLAST_EXPR_CALL };
+static const KlAstInfo klast_dot_vfunc = { .destructor = (KlAstDelete)klast_dot_destroy, .kind = KLAST_EXPR_DOT };
+static const KlAstInfo klast_func_vfunc = { .destructor = (KlAstDelete)klast_func_destroy, .kind = KLAST_EXPR_FUNC };
+static const KlAstInfo klast_match_vfunc = { .destructor = (KlAstDelete)klast_match_destroy, .kind = KLAST_EXPR_MATCH };
+static const KlAstInfo klast_where_vfunc = { .destructor = (KlAstDelete)klast_where_destroy, .kind = KLAST_EXPR_WHERE };
 
 KlAstIdentifier* klast_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset end) {
   KlAstIdentifier* astid = klast_alloc(KlAstIdentifier);
@@ -294,6 +296,27 @@ KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, 
   return astdot;
 }
 
+KlAstMatch* klast_match_create(KlAst* expr, KlAst** cases, KlAst** exprs, size_t ncase, KlFileOffset begin, KlFileOffset end) {
+  KlAstMatch* astmatch = klast_alloc(KlAstMatch);
+  if (kl_unlikely(!astmatch)) {
+    klast_delete(expr);
+    for (size_t i = 0; i < ncase; ++i) {
+      klast_delete(cases[i]);
+      klast_delete(exprs[i]);
+    }
+    free(cases);
+    free(exprs);
+    return NULL;
+  }
+  astmatch->expr = expr;
+  astmatch->cases = cases;
+  astmatch->exprs = cases;
+  astmatch->ncase = ncase;
+  klast_setposition(astmatch, begin, end);
+  klast_init(astmatch, &klast_match_vfunc);
+  return astmatch;
+}
+
 KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlAstWhere* astwhere = klast_alloc(KlAstWhere);
   if (kl_unlikely(!astwhere)) {
@@ -398,6 +421,19 @@ static void klast_dot_destroy(KlAstDot* astdot) {
 static void klast_func_destroy(KlAstFunc* astfunc) {
   klast_delete(astfunc->params);
   klast_delete(astfunc->block);
+}
+
+static void klast_match_destroy(KlAstMatch* astmatch) {
+    klast_delete(astmatch->expr);
+    KlAst** exprs = astmatch->exprs;
+    KlAst** cases = astmatch->cases;
+    size_t ncase = astmatch->ncase;
+    for (size_t i = 0; i < ncase; ++i) {
+      klast_delete(cases[i]);
+      klast_delete(exprs[i]);
+    }
+    free(cases);
+    free(exprs);
 }
 
 static void klast_where_destroy(KlAstWhere* astwhere) {

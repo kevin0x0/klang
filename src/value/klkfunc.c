@@ -7,7 +7,7 @@
 static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject* gclist);
 static void klkfunc_delete(KlKFunction* kfunc, KlMM* klmm);
 
-static KlGCVirtualFunc klkfunc_gcvfunc = { .destructor = (KlGCDestructor)klkfunc_delete, .propagate = (KlGCProp)klkfunc_propagate, .after = NULL };
+static const KlGCVirtualFunc klkfunc_gcvfunc = { .destructor = (KlGCDestructor)klkfunc_delete, .propagate = (KlGCProp)klkfunc_propagate, .after = NULL };
 
 
 KlKFunction* klkfunc_alloc(KlMM* klmm, unsigned codelen, unsigned short nconst, unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam) {

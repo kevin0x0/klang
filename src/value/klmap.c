@@ -13,7 +13,7 @@ static KlGCObject* klmap_propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist);
 static void klmap_delete(KlMap* map, KlMM* klmm);
 static void klmap_post(KlMap* map, KlMM* klmm);
 
-static KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_propagate, .destructor = (KlGCDestructor)klmap_delete, .after = (KlGCAfter)klmap_post };
+static const KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_propagate, .destructor = (KlGCDestructor)klmap_delete, .after = (KlGCAfter)klmap_post };
 
 
 static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* elem);

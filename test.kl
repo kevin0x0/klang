@@ -1,28 +1,3 @@
-# let Fool = {
-#   local name, age, gender;
-#   constructor = method (name, age, gender) => {
-#     this.name = name;
-#     this.age = age;
-#     this.gender = gender;
-#     print("A fool was born!");
-#   };
-#   getname = method -> this.name;
-#   getage = method -> this.age;
-#   getgender = method -> this.gender;
-#   sayhello = method -> print("Hello! I am " .. this.name .. ". I am " .. this.age .. " years old.");
-#   die = method -> print("A fool " .. this.name .. " died!");
-# };
-# 
-# repeat {
-#   let fool = new Fool("Yang Tongshen", 3, "male");
-#   fool.sayhello();
-#   fool.die();
-# } until false;
-
-# local gcd(a, b) -> b == 0 and a or gcd(b, a % b);
-
-# a // 0 where let a = 1;
-# print(gcd(0, 1));
-
-local f(n) -> n <= 1 and n or f(n - 1) + f(n - 2);
-print ($ [...]);
+let arr = [x | x = 0, 10000000];
+for v in arr:
+  2;

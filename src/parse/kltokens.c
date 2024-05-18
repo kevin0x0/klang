@@ -1,6 +1,6 @@
 #include "include/parse/kltokens.h"
 
-static const char* descrition[KLTK_NTOKEN] = {
+static const char* const descrition[KLTK_NTOKEN] = {
   [KLTK_ID] = "identifier",
   [KLTK_INT] = "integer",
   [KLTK_INTDOT] = "integer plus .",
@@ -43,6 +43,8 @@ static const char* descrition[KLTK_NTOKEN] = {
   [KLTK_ARROW] = "->",
   [KLTK_ASSIGN] = "=",
   [KLTK_BAR] = "|",
+  [KLTK_CASE] = "case",
+  [KLTK_OF] = "of",
   [KLTK_WHERE] = "where",
   [KLTK_IF] = "if",
   [KLTK_ELSE] = "else",

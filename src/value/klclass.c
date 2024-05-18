@@ -8,7 +8,7 @@
 static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist);
 static void klclass_delete(KlClass* klclass, KlMM* klmm);
 
-static KlGCVirtualFunc klclass_gcvfunc = { .destructor = (KlGCDestructor)klclass_delete, .propagate = (KlGCProp)klclass_propagate, .after = NULL };
+static const KlGCVirtualFunc klclass_gcvfunc = { .destructor = (KlGCDestructor)klclass_delete, .propagate = (KlGCProp)klclass_propagate, .after = NULL };
 
 static KlClassSlot* klclass_getfreeslot(KlClass* klclass);
 static bool klclass_rehash(KlClass* klclass, KlMM* klmm);

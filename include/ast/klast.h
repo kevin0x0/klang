@@ -41,6 +41,7 @@ typedef enum tagKlAstKind {
 
   KLAST_EXPR_BIN,
 
+  KLAST_EXPR_MATCH,
   KLAST_EXPR_WHERE, KLAST_EXPR_END = KLAST_EXPR_WHERE,
 
   KLAST_STMT_LET, KLAST_STMT = KLAST_STMT_LET,
@@ -91,7 +92,7 @@ typedef struct tagKlAstInfo KlAstInfo;
 /* this serves as the base class of concrete syntax tree node,
  * and will be contained to the header of any other node.
  */
-#define KL_DERIVE_FROM_KlAst(prefix)  KlAstInfo* prefix##info; KlFileOffset prefix##begin; KlFileOffset prefix##end
+#define KL_DERIVE_FROM_KlAst(prefix)  const KlAstInfo* prefix##info; KlFileOffset prefix##begin; KlFileOffset prefix##end
 typedef struct tagKlAst {
   KL_DERIVE_FROM(KlAst, );
 } KlAst;
@@ -221,6 +222,14 @@ typedef struct tagKlAstDot {
   KlStrDesc field;
 } KlAstDot;
 
+typedef struct tagKlAstMatch {
+  KL_DERIVE_FROM(KlAst, _astbase_);
+  KlAst* expr;
+  KlAst** cases;
+  KlAst** exprs;
+  size_t ncase;
+} KlAstMatch;
+
 typedef struct tagKlAstWhere {
   KL_DERIVE_FROM(KlAst, _astbase_);
   KlAst* expr;
@@ -318,13 +327,13 @@ typedef struct tagKlAstStmtContinue {
 } KlAstStmtContinue;
 
 /* general functions */
-static inline void klast_init_raw(KlAst* ast, KlAstInfo* vfunc);
+static inline void klast_init_raw(KlAst* ast, const KlAstInfo* vfunc);
 static inline void klast_destroy_raw(KlAst* ast);
 static inline KlAstKind klast_kind_raw(KlAst* ast);
 static inline void klast_setposition_raw(KlAst* ast, KlFileOffset begin, KlFileOffset end);
 
 
-static inline void klast_init_raw(KlAst* ast, KlAstInfo* vfunc) {
+static inline void klast_init_raw(KlAst* ast, const KlAstInfo* vfunc) {
   ast->info = vfunc;
 }
 
@@ -363,6 +372,7 @@ KlAstPost* klast_post_create(KlTokenKind op, KlAst* operand, KlAst* post, KlFile
 KlAstCall* klast_call_create(KlAst* callable, KlAstExprList* args, KlFileOffset begin, KlFileOffset end);
 KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
 KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
+KlAstMatch* klast_match_create(KlAst* expr, KlAst** cases, KlAst** exprs, size_t ncase, KlFileOffset begin, KlFileOffset end);
 KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
 
 static inline bool klast_isboolexpr(KlAst* ast) {

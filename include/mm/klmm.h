@@ -58,7 +58,7 @@ typedef struct tagKlGCVirtualFunc {
 #define KL_DERIVE_FROM_KlGCObject(prefix)                                                   \
   KL_DERIVE_FROM_KlGCObjectNotInList(prefix);                                               \
   KlGCObject* prefix##next;             /* link all objects */                              \
-  KlGCVirtualFunc* prefix##virtualfunc;                                                     \
+  const KlGCVirtualFunc* prefix##virtualfunc;                                               \
   union {                                                                                   \
     KlGCObject* prefix##next_reachable; /* link all accessible object in the same level */  \
     KlGCObject* prefix##next_after;     /* next object in after list */                     \
@@ -106,7 +106,7 @@ static inline void klmm_free(KlMM* klmm, void* blk, size_t size);
 
 static inline void klmm_gcobj_aftermark(KlMM* klmm, KlGCObject* obj);
 static inline void klmm_gcobj_aftersweep(KlMM* klmm, KlGCObject* obj);
-static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, KlGCVirtualFunc* vfunc);
+static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, const KlGCVirtualFunc* vfunc);
 static inline void klmm_gcobj_enable_notinlist(KlMM* klmm, KlGCObjectNotInList* gcobj);
 static inline void klmm_stopgc(KlMM* klmm);
 static inline void klmm_restartgc(KlMM* klmm);
@@ -193,7 +193,7 @@ static inline void klmm_gcobj_aftersweep(KlMM* klmm, KlGCObject* obj) {
   klmm->aftersweep = obj;
 }
 
-static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, KlGCVirtualFunc* vfunc) {
+static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, const KlGCVirtualFunc* vfunc) {
   gcobj->virtualfunc = vfunc;
   gcobj->gc_state = KLGC_NORM | KLGC_INLIST;
   gcobj->next = klmm->allgc;

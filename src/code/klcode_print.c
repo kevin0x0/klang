@@ -7,7 +7,7 @@ static void klcode_print_prefix(KlCode* code, Ko* out, KlInstruction* pc, const 
 }
 
 static const char* klcode_get_instname(KlInstruction inst) {
-  static const char* names[KLOPCODE_NINST] = {
+  static const char* const names[KLOPCODE_NINST] = {
     [KLOPCODE_MOVE] = "MOVE",
     [KLOPCODE_MULTIMOVE] = "MULTIMOVE",
     [KLOPCODE_ADD] = "ADD",
@@ -491,8 +491,8 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     }
     case KLOPCODE_REFSETFIELDC: {
       klcode_print_ABC(out, inst);
-      ko_printf(out, "REF%u.", KLINST_AXY_GETX(inst));
-      klcode_print_string_noquote(code, out, &code->constants[KLINST_AXY_GETY(inst)]);
+      ko_printf(out, "REF%u.", KLINST_AXY_GETY(inst));
+      klcode_print_string_noquote(code, out, &code->constants[KLINST_AXY_GETX(inst)]);
       ko_printf(out, " = R%u", KLINST_AXY_GETA(inst));
       return pc;
     }

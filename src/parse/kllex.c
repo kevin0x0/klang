@@ -14,9 +14,9 @@
 #define kl_isnl(ch)       ((ch) == '\n' || (ch) == '\r')
 
 
-static KlTokenKind tokenkind[152];
-static KlUByte transition[152][256];
-static KlUByte start;
+static const KlTokenKind tokenkind[152];
+static const KlUByte transition[152][256];
+static const KlUByte start;
 
 static void kllex_error(KlLex* lex, const char* format, ...);
 
@@ -351,7 +351,7 @@ void kllex_next(KlLex* lex) {
 
 
 /* DFA */
-static KlUByte transition[152][256] = {
+static const KlUByte transition[152][256] = {
   /* 0 */
   {
      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
@@ -3242,7 +3242,7 @@ static KlUByte transition[152][256] = {
   },
 };
 
-static KlTokenKind tokenkind[152] = {
+static const KlTokenKind tokenkind[152] = {
   KLTK_ERR,
   KLTK_ERR,
   KLTK_ERR,
@@ -3397,4 +3397,4 @@ static KlTokenKind tokenkind[152] = {
   KLTK_CONTINUE,
 };
 
-static KlUByte start = 5;
+static const KlUByte start = 5;
