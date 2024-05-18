@@ -67,7 +67,17 @@ KlType klapi_gettypeb(KlState* state, int index) {
   return klvalue_gettype(klapi_accessb(state, index));
 }
 
+void klapi_setframesize(KlState* state, unsigned size) {
+  kl_assert(klstate_currci(state)->base + size <= klstack_size(klstate_stack(state)), "check stack capacity before setting framesize");
+  klstack_set_top(klstate_stack(state), klstate_currci(state)->base + size);
+}
+
 void klapi_pop(KlState* state, size_t count) {
+  kl_assert(count <= klstack_size(klstate_stack(state)), "pop too many values");
+  klstack_move_top(klstate_stack(state), -count);
+}
+
+void klapi_popclose(KlState* state, size_t count) {
   kl_assert(count <= klstack_size(klstate_stack(state)), "pop too many values");
   KlValue* bound = klstate_stktop(state) - count;
   klreflist_close(&state->reflist, bound, klstate_getmm(state));
@@ -315,14 +325,6 @@ KlValue* klapi_getref(KlState* state, unsigned short refidx) {
   KlCClosure* cclo = klcast(KlCClosure*, klstate_currci(state)->callable.clo);
   kl_assert(refidx < cclo->nref, "'refidx' exceeds the number of references hold by this C closure");
   return klref_getval(klcclosure_getref(cclo, refidx));
-}
-
-bool klapi_checktype(KlState* state, int index, KlType type) {
-  return klapi_gettype(state, index) == type;
-}
-
-bool klapi_checktypeb(KlState* state, int index, KlType type) {
-  return klapi_gettypeb(state, index) == type;
 }
 
 void klapi_loadglobal(KlState* state) {
@@ -584,5 +586,23 @@ KlState* klapi_new_state(KlMM* klmm) {
   klmapnodepool_unpin(mapnodepool);
   klcommon_unpin(common, klmm);
   return state;
+}
+
+/*=============================VALUE OPERATION===============================*/
+
+
+KlException klapi_class_newshared(KlState* state, KlClass* klclass, KlString* fieldname) {
+  kl_assert(klapi_framesize(state) >= 1, "you must push a value on top of stack");
+  KlException exception = klclass_newshared(klclass, klstate_getmm(state), fieldname, klapi_access(state, -1));
+  if (exception == KL_E_OOM)
+    return klstate_throw(state, exception, "out of memory when setting a new shared field: %s", klstring_content(fieldname));
+  return KL_E_NONE;
+}
+
+KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fieldname) {
+  KlException exception = klclass_newlocal(klclass, klstate_getmm(state), fieldname);
+  if (exception == KL_E_OOM)
+    return klstate_throw(state, exception, "out of memory when adding a new local field: %s", klstring_content(fieldname));
+  return KL_E_NONE;
 }
 

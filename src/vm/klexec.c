@@ -39,21 +39,17 @@ static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int r
 
 
 static KlException klexec_handle_newshared_exception(KlState* state, KlException exception, KlString* key) {
-  if (exception == KL_E_OOM) {
+  if (exception == KL_E_OOM)
     return klstate_throw(state, exception, "out of memory when setting a new field: %s", klstring_content(key));
-  } else if (exception == KL_E_INVLD) {
-    return klstate_throw(state, exception, "\'%s\' is not a shared field", klstring_content(key));
-  }
+
   kl_assert(false, "control flow should not reach here");
   return KL_E_NONE;
 }
 
 static KlException klexec_handle_newlocal_exception(KlState* state, KlException exception, KlString* key) {
-  if (exception == KL_E_OOM) {
+  if (exception == KL_E_OOM)
     return klstate_throw(state, exception, "out of memory when adding a new field: %s", klstring_content(key));
-  } else if (exception == KL_E_INVLD) {
-    return klstate_throw(state, exception, "\'%s\' alreay exists", klstring_content(key));
-  }
+
   kl_assert(false, "control flow should not reach here");
   return KL_E_NONE;
 }

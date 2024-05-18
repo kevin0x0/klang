@@ -6,14 +6,16 @@ static const char* const klvalue_typenames[KL_NTYPE] = {
   [KL_NIL] = "nil",
   [KL_BOOL] = "bool",
   [KL_CFUNCTION] = "C function",
+  [KL_USERDATA] = "user data",
+  [KL_STRING] = "string",
   [KL_MAP] = "map",
   [KL_ARRAY] = "array",
-  [KL_STRING] = "string",
-  [KL_KCLOSURE] = "closure",
+  [KL_OBJECT] = "object",
+  [KL_CLASS] = "class",
+  [KL_KFUNCTION] = "K function",
+  [KL_KCLOSURE] = "K closure",
   [KL_CCLOSURE] = "C closure",
   [KL_COROUTINE] = "coroutine",
-  [KL_CLASS] = "class",
-  [KL_OBJECT] = "object",
 };
 
 const char* klvalue_typename(KlType type) {

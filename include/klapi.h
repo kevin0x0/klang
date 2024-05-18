@@ -56,6 +56,9 @@
 #define klapi_kfunc_setsrcfile(state, kfunc, src)     klkfunc_setsrcfile((kfunc), (src))
 
 
+#define klapi_checktype(state, index, type)           (klapi_gettype((state), (index)) == (type))
+#define klapi_checktypeb(state, index, type)          (klapi_gettypeb((state), (index)) == (type))
+
 /* number of arguments passed by caller */
 #define klapi_narg(state)                             (klstate_currci(state)->narg)
 /* expected number of returned values.
@@ -92,7 +95,9 @@ KlValue* klapi_access(KlState* state, int index);
 KlValue* klapi_accessb(KlState* state, unsigned index);
 KlType klapi_gettype(KlState* state, int index);
 KlType klapi_gettypeb(KlState* state, int index);
+void klapi_setframesize(KlState* state, unsigned size);
 void klapi_pop(KlState* state, size_t count);
+void klapi_popclose(KlState* state, size_t count);
 
 /* push method */
 void klapi_pushcfunc(KlState* state, KlCFunction* cfunc);
@@ -177,7 +182,8 @@ KlValue* klapi_getref(KlState* state, unsigned short refidx);
  */
 KlException klapi_loadlib(KlState* state, const char* libpath, const char* entryfunction);
 
-bool klapi_checktype(KlState* state, int index, KlType type);
-bool klapi_checktypeb(KlState* state, int index, KlType type);
+KlException klapi_class_newshared(KlState* state, KlClass* klclass, KlString* fieldname);
+KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fieldname);
+
 
 #endif

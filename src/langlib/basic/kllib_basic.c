@@ -13,8 +13,10 @@ static void kllib_basic_print_array(KlArray* array, size_t depth);
 static KlException kllib_basic_print(KlState* state);
 static KlException kllib_basic_map_next(KlState* state);
 static KlException kllib_basic_arr_next(KlState* state);
+static KlException kllib_basic_callable_next(KlState* state);
 static KlException kllib_basic_map_iter(KlState* state);
 static KlException kllib_basic_arr_iter(KlState* state);
+static KlException kllib_basic_callable_iter(KlState* state);
 
 KlException kllib_init(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
@@ -23,13 +25,11 @@ KlException kllib_init(KlState* state) {
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
   klapi_pop(state, 2);
   klapi_pushcfunc(state, kllib_basic_map_iter);
-  KlException exception = klclass_newshared(state->common->klclass.map, klstate_getmm(state), state->common->string.iter, klapi_access(state, -1));
-  if (kl_unlikely(exception))
-    return klapi_throw_internal(state, KL_E_OOM, "out of memory while setting shared field");
+  KLAPI_PROTECT(klapi_class_newshared(state, state->common->klclass.map, state->common->string.iter));
   klapi_setcfunc(state, -1, kllib_basic_arr_iter);
-  exception = klclass_newshared(state->common->klclass.array, klstate_getmm(state), state->common->string.iter, klapi_access(state, -1));
-  if (kl_unlikely(exception))
-    return klapi_throw_internal(state, KL_E_OOM, "out of memory while setting shared field");
+  KLAPI_PROTECT(klapi_class_newshared(state, state->common->klclass.array, state->common->string.iter));
+  klapi_setcfunc(state, -1, kllib_basic_callable_iter);
+  KLAPI_PROTECT(klapi_class_newshared(state, state->common->klclass.phony[KL_COROUTINE], state->common->string.iter));
   return klapi_return(state, 0);
 }
 
@@ -220,7 +220,23 @@ static KlException kllib_basic_arr_next(KlState* state) {
     return klapi_return(state, 0);
   klvalue_setuint(base + 1, index);
   klvalue_setvalue(base + 2, klarray_access(array, index));
+  klapi_setframesize(state, 3);
   return klapi_return(state, 3);
+}
+
+static KlException kllib_basic_callable_next(KlState* state) {
+  if (kl_unlikely(klapi_narg(state) < 2))
+    return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 2 arguments(0 iteration variable in for loop)");
+  if (klapi_nres(state) < 3)
+    return klapi_throw_internal(state, KL_E_ARGNO, "must expect at least 3 returned values");
+  if (klapi_nres(state) == KLAPI_VARIABLE_RESULTS)
+    return klapi_throw_internal(state, KL_E_ARGNO, "must expect fixed number of returned values");
+  size_t nval = klapi_nres(state) - 2;
+  klapi_setframesize(state, 2);
+  KLAPI_PROTECT(klapi_scall(state, klapi_accessb(state, 0), 0, nval));
+  if (klapi_checktype(state, -nval, KL_NIL))
+    return klapi_return(state, 0);
+  return klapi_return(state, klapi_nres(state));
 }
 
 static KlException kllib_basic_map_iter(KlState* state) {
@@ -265,3 +281,20 @@ static KlException kllib_basic_arr_iter(KlState* state) {
   }
 }
 
+static KlException kllib_basic_callable_iter(KlState* state) {
+  if (klapi_narg(state) != 1)
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argmument(this method should be automatically called in iterration loop)");
+  if (klapi_nres(state) < 4)
+    return klapi_throw_internal(state, KL_E_ARGNO, "must expect at least 4 returned value");
+  if (klapi_nres(state) == KLAPI_VARIABLE_RESULTS)
+    return klapi_throw_internal(state, KL_E_ARGNO, "must expect fixed number of returned values");
+  KLAPI_PROTECT(klapi_checkstack(state, 2));
+  klapi_pushvalue(state, klapi_access(state, -1));
+  klapi_pushint(state, 0);  /* this value doesn't matter, any value except nil and false will be OK. */
+  size_t nval = klapi_nres(state) - 3;
+  KLAPI_PROTECT(klapi_scall(state, klapi_access(state, -2), 0, nval));
+  if (klapi_checktype(state, -nval, KL_NIL))
+    return klapi_return(state, 0);
+  klapi_setcfunc(state, -klapi_framesize(state), kllib_basic_callable_next);
+  return klapi_return(state, klapi_nres(state));
+}

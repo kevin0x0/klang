@@ -58,6 +58,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   done = done && (common->klclass.array = klarray_class(klmm));
   done = done && (common->klclass.phony[KL_STRING] = klcommon_phonyclass(klmm));
   done = done && (common->klclass.phony[KL_INT] = klcommon_phonyclass(klmm));
+  done = done && (common->klclass.phony[KL_FLOAT] = klcommon_phonyclass(klmm));
   done = done && (common->klclass.phony[KL_BOOL] = klcommon_phonyclass(klmm));
   done = done && (common->klclass.phony[KL_NIL] = klcommon_phonyclass(klmm));
   done = done && (common->klclass.phony[KL_KCLOSURE] = klcommon_phonyclass(klmm));
