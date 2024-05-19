@@ -23,6 +23,7 @@ KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* co
   klclass->constructor_data = constructor_data;
   klclass->attroffset = attroffset;
   klclass->nlocal = 0;
+  klclass->is_final = false;
   klclass->slots = (KlClassSlot*)klmm_alloc(klmm, klclass->capacity * sizeof (KlClassSlot));
   if (kl_unlikely(!klclass->slots)) {
     klmm_free(klmm, klclass, sizeof (KlClass));
@@ -59,6 +60,7 @@ KlClass* klclass_inherit(KlMM* klmm, KlClass* parent) {
   klclass->lastfree = parent->lastfree;
   klclass->attroffset = parent->attroffset;
   klclass->nlocal = parent->nlocal;
+  klclass->is_final = false;
   klclass->slots = array;
   return klclass;
 }

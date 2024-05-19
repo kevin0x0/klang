@@ -1514,11 +1514,13 @@ KlException klexec_execute(KlState* state) {
         size_t capacity = KLINST_ABTX_GETX(inst);
         KlClass* klclass = NULL;
         if (KLINST_ABTX_GETT(inst)) { /* is stktop base class ? */
-          if (kl_unlikely(!klvalue_checktype(stktop, KL_CLASS))) {
-            return klstate_throw(state, KL_E_TYPE, "inherit a non-class value, type: %s", klvalue_typename(klvalue_gettype(stktop)));
-          }
           klexec_savestate(stktop + 1, pc);   /* creating class may trigger gc */
-          klclass = klclass_inherit(klstate_getmm(state), klvalue_getobj(stktop, KlClass*));
+          if (kl_unlikely(!klvalue_checktype(stktop, KL_CLASS)))
+            return klstate_throw(state, KL_E_TYPE, "inherit a non-class value, type: %s", klvalue_typename(klvalue_gettype(stktop)));
+          KlClass* base = klvalue_getobj(stktop, KlClass*);
+          if (kl_unlikely(klclass_isfinal(base)))
+            return klstate_throw(state, KL_E_INVLD, "can not inherit this class");
+          klclass = klclass_inherit(klstate_getmm(state), base);
         } else {  /* this class has no base */
           klexec_savestate(stktop, pc); /* creating class may trigger gc */
           klclass = klclass_create(klstate_getmm(state), capacity, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);

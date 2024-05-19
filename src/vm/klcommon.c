@@ -16,7 +16,10 @@ static KlException klcommon_null_contructor(KlClass* klclass, KlMM* klmm, KlValu
   return KL_E_INVLD;
 }
 static KlClass* klcommon_phonyclass(KlMM* klmm) {
-  return klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klcommon_null_contructor);
+  KlClass* klclass = klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klcommon_null_contructor);
+  if (kl_unlikely(!klclass)) return NULL;
+  klclass_final(klclass);
+  return klclass;
 }
 
 
