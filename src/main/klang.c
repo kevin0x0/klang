@@ -336,7 +336,7 @@ static int kl_validatebehaviour(KlBehaviour* behaviour) {
 }
 
 static void kl_print_help(void) {
-  printf("Usage: klang [<inputfile> | -e <code>] [options]\n");
+  printf("Usage: klang [options] [<script> | -e <code>] [args...]\n");
   printf("options:\n");
   printf("  -h --help                   show this message.\n");
   printf("  -e <code>                   execute the code provided by command line.\n");
