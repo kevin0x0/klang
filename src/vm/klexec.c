@@ -224,7 +224,7 @@ static KlException klexec_co_resume(KlState* costate, KlState* caller, size_t na
     nwanted = narg;
   if (narg < nwanted)
     klexec_setnils(costktop, nwanted - narg);
-  klstack_set_top(klstate_stack(costate), costktop + nwanted - narg);
+  klstack_set_top(klstate_stack(costate), klstate_stktop(costate) + nwanted);
   klstack_set_top(klstate_stack(caller), argbase);
 
   klco_setstatus(&costate->coinfo, KLCO_RUNNING);
@@ -1286,7 +1286,7 @@ KlException klexec_execute(KlState* state) {
           narg = klstate_stktop(state) - callable - 1;
         size_t nret = KLINST_XYZ_GETY(extra);
         klexec_savestate(callable + 1 + narg, pc);
-        KlCallInfo* newci = klexec_new_callinfo(state, nret, (stkbase + KLINST_AXY_GETY(extra)) - callable);
+        KlCallInfo* newci = klexec_new_callinfo(state, nret, (stkbase + KLINST_AXY_GETY(extra) - 1) - callable);
         if (kl_unlikely(!newci))
           return klstate_throw_oom(state, "calling a callable object");
         KlException exception = klexec_callprepare(state, callable, narg, klexec_callprep_callback_for_call);
