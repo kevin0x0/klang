@@ -1,0 +1,6 @@
+let seive = [x | x = 2, 10000];
+while $seive != 0: {
+  let prime = seive[0];
+  print(prime);
+  seive = [x | x <- seive; x % prime != 0];
+}

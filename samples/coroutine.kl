@@ -1,0 +1,11 @@
+let double = async n => {
+  repeat {
+    print n;
+    n = yield n * 2;
+  } until false;
+};
+
+let n = 1;
+repeat {
+  n = double n;
+} until n > 100;

@@ -1,0 +1,9 @@
+let seive = { x | x = 2, 10000 };
+
+repeat {
+  let prime = seive();
+  if not prime: break;
+  print prime;
+  let previous_seive = seive;
+  seive = { x | x <- previous_seive; x % prime != 0 };
+} until false;

@@ -1,0 +1,2 @@
+local f n -> n <= 1 and n or f(n - 1) + f(n - 2);
+print ("fibonacci(36) = " .. f 36);
