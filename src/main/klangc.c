@@ -83,7 +83,7 @@ static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
       }
     } else if (klc_match(argv[i], "-d", "--dump")) {
       behaviour->option |= KLC_OPTION_DUMP;
-      if (!argv[i + 1] || !klc_isfilename(argv[i + 1])) {
+      if (!(argv[i + 1] && klc_isfilename(argv[i + 1]))) {
         fprintf(stderr, "%s should specify output file\n", argv[i]);
         klc_cleanbehaviour(behaviour);
         return 1;

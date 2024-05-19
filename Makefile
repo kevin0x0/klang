@@ -39,17 +39,16 @@ KLANGLIB_BASIC_PIC_OBJS = $(OBJ_DIR)kllib_basic.pic.o
 KLANGLIBS = $(LIB_DIR)traceback.so $(LIB_DIR)runtime_compiler.so $(LIB_DIR)basic.so
 
 
-all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(BIN_DIR)klang $(KLANGLIBS)
+all: $(LIB_DIR)klang.dll $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(BIN_DIR)klang $(KLANGLIBS)
 
 $(BIN_DIR)klangc : $(OBJ_DIR)klangc.o $(LIB_DIR)libklangc.a | create_dir
 	$(CC) $(CFLAGS) -o $@ $< -L $(LIB_DIR) -lklangc
 
-$(BIN_DIR)klang : $(OBJ_DIR)klang.o $(LIB_DIR)libklang.a | create_dir
-	$(CC) $(CFLAGS) -rdynamic -o $@ $< -L $(LIB_DIR) -lklang
+$(BIN_DIR)klang : $(OBJ_DIR)klang.o $(LIB_DIR)klang.dll $(DEPS_K_DIR)lib/libk.a | create_dir
+	$(CC) $(CFLAGS) -o $@ $^
 
-$(LIB_DIR)libklang.a : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
-	cp $(DEPS_K_DIR)lib/libk.a $@
-	$(AR) $@ $(KLANG_OBJS)
+$(LIB_DIR)klang.dll : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
+	$(CC) -shared -o $@ $^
 
 $(LIB_DIR)libklangc.a : $(KLANGC_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
 	cp $(DEPS_K_DIR)lib/libk.a $@
@@ -60,14 +59,14 @@ $(LIB_DIR)libklangc.pic.a : $(KLANGC_PIC_OBJS) $(DEPS_K_DIR)lib/libk.pic.a | cre
 	$(AR) $@ $(KLANGC_PIC_OBJS)
 
 
-$(LIB_DIR)traceback.so : $(KLANGLIB_TB_PIC_OBJS) | create_dir
-	$(CC) -shared $(CFLAGS) -o $@ $(KLANGLIB_TB_PIC_OBJS)
+$(LIB_DIR)traceback.so : $(KLANGLIB_TB_PIC_OBJS) $(LIB_DIR)klang.dll $(DEPS_K_DIR)lib/libk.a | create_dir
+	$(CC) -shared $(CFLAGS) -o $@ $^
 
-$(LIB_DIR)runtime_compiler.so : $(KLANGLIB_RTCPL_PIC_OBJS) $(LIB_DIR)libklangc.pic.a | create_dir
-	$(CC) -shared $(CFLAGS) -o $@ $(KLANGLIB_RTCPL_PIC_OBJS) -L $(LIB_DIR) -lklangc.pic
+$(LIB_DIR)runtime_compiler.so : $(KLANGLIB_RTCPL_PIC_OBJS) $(LIB_DIR)klang.dll $(LIB_DIR)libklangc.pic.a | create_dir
+	$(CC) -shared $(CFLAGS) -o $@ $^
 
-$(LIB_DIR)basic.so : $(KLANGLIB_BASIC_PIC_OBJS) | create_dir
-	$(CC) -shared $(CFLAGS) -o $@ $(KLANGLIB_BASIC_PIC_OBJS)
+$(LIB_DIR)basic.so : $(KLANGLIB_BASIC_PIC_OBJS) $(LIB_DIR)klang.dll $(DEPS_K_DIR)lib/libk.a | create_dir
+	$(CC) -shared $(CFLAGS) -o $@ $^
 
 
 $(DEPS_K_DIR)lib/libk.a :

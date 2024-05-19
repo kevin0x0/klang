@@ -284,6 +284,7 @@ static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
     int nres = klexec_savestack(state, klstate_stktop(state)) - stktop_save;
     if (nres != 0) {
       /* print results */
+      KLAPI_PROTECT(klapi_checkstack(state, 1));
       KLAPI_PROTECT(klapi_pushstring(state, "print"));
       klapi_loadglobal(state);
       klapi_setvalue(state, -nres - 2, klapi_access(state, -1));
