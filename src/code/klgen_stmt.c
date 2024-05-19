@@ -110,6 +110,69 @@ static void klgen_stmtlet(KlGenUnit* gen, KlAstStmtLet* letast) {
   klgen_patterns_newsymbol(gen, lvals->exprs, lvals->nexpr, newsymbol_base);
 }
 
+static void klgen_stmt_domatching(KlGenUnit* gen, KlAst* pattern, KlCStkId base, KlCStkId matchobj) {
+  if (klast_kind(pattern) == KLAST_EXPR_CONSTANT) {
+    KlConstant* constant = &klcast(KlAstConstant*, pattern)->con;
+    KlFilePosition filepos = klgen_astposition(pattern);
+    if (constant->type == KLC_INT) {
+      klgen_emit(gen, klinst_inrange(constant->intval, 16)
+                      ? klinst_nei(matchobj, constant->intval)
+                      : klinst_nec(matchobj, klgen_newinteger(gen, constant->intval)),
+                 filepos);
+    } else {
+      klgen_emit(gen, klinst_nec(matchobj, klgen_newconstant(gen, constant)), filepos);
+    }
+    KlCPC pc = klgen_emit(gen, klinst_condjmp(true, 0), filepos);
+    klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->terminatelist, klcodeval_jmplist(pc));
+  } else {
+    klgen_pattern_matching_tostktop(gen, pattern, matchobj);
+    klgen_pattern_newsymbol(gen, pattern, base);
+  }
+}
+
+static void klgen_stmtmatch(KlGenUnit* gen, KlAstStmtMatch* stmtmatchast) {
+  KlCStkId oristktop = klgen_stacktop(gen);
+  KlCodeVal matchobj = klgen_expr(gen, stmtmatchast->matchobj);
+  klgen_putonstack(gen, &matchobj, klgen_astposition(stmtmatchast->matchobj));
+  KlCStkId currstktop = klgen_stacktop(gen);
+
+  KlCodeVal jmpoutlist = klcodeval_none();
+  size_t npattern = stmtmatchast->npattern;
+  KlAst** patterns = stmtmatchast->patterns;
+  KlAstStmtList** stmtlists = stmtmatchast->stmtlists;
+  for (size_t i = 0; i < npattern; ++i) {
+    KlGenJumpInfo jmpinfo = {
+      .truelist = klcodeval_none(),
+      .falselist = klcodeval_none(),
+      .terminatelist = klcodeval_none(),
+      .prev = gen->jmpinfo.jumpinfo,
+    };
+    gen->jmpinfo.jumpinfo = &jmpinfo;
+
+    klgen_pushsymtbl(gen);
+    klgen_stmt_domatching(gen, patterns[i], currstktop, matchobj.index);
+    klgen_stmtlist(gen, stmtlists[i]);
+
+
+    if (i != npattern - 1) {
+      KlCPC pc = klgen_emit(gen, gen->symtbl->info.referenced ? klinst_closejmp(currstktop, 0)
+                                                              : klinst_jmp(0),
+                            klgen_astposition(stmtmatchast));
+      klgen_mergejmplist_maynone(gen, &jmpoutlist, klcodeval_jmplist(pc));
+    } else if (gen->symtbl->info.referenced) {
+      klgen_emit(gen, klinst_close(currstktop), klgen_astposition(stmtmatchast));
+    }
+    klgen_popsymtbl(gen);
+
+    klgen_setinstjmppos(gen, jmpinfo.terminatelist, klgen_currentpc(gen));
+    gen->jmpinfo.jumpinfo = jmpinfo.prev;
+    kl_assert(jmpinfo.truelist.kind == KLVAL_NONE && jmpinfo.falselist.kind == KLVAL_NONE, "");
+    klgen_stackfree(gen, currstktop);
+  }
+  klgen_setinstjmppos(gen, jmpoutlist, klgen_currentpc(gen));
+  klgen_stackfree(gen, oristktop);
+}
+
 static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
   if (klast_kind(lval) == KLAST_EXPR_ID) {
     KlAstIdentifier* id = klcast(KlAstIdentifier*, lval);
@@ -676,6 +739,10 @@ void klgen_stmtlist(KlGenUnit* gen, KlAstStmtList* ast) {
       }
       case KLAST_STMT_LET: {
         klgen_stmtlet(gen, klcast(KlAstStmtLet*, stmt));
+        break;
+      }
+      case KLAST_STMT_MATCH: {
+        klgen_stmtmatch(gen, klcast(KlAstStmtMatch*, stmt));
         break;
       }
       case KLAST_STMT_ASSIGN: {

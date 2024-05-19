@@ -4,6 +4,7 @@
 
 
 static void klast_stmtlet_destroy(KlAstStmtLet* stmtlet);
+static void klast_stmtmatch_destroy(KlAstStmtMatch* stmtmatch);
 static void klast_stmtlocalfunc_destroy(KlAstStmtLocalFunc* stmtlocalfunc);
 static void klast_stmtassign_destroy(KlAstStmtAssign* stmtassign);
 static void klast_stmtexpr_destroy(KlAstStmtExpr* stmtexpr);
@@ -19,6 +20,7 @@ static void klast_stmtbreak_destroy(KlAstStmtBreak* stmtbreak);
 static void klast_stmtcontinue_destroy(KlAstStmtContinue* stmtcontinue);
 
 static const KlAstInfo klast_stmtlet_vfunc = { .destructor = (KlAstDelete)klast_stmtlet_destroy, .kind = KLAST_STMT_LET };
+static const KlAstInfo klast_stmtmatch_vfunc = { .destructor = (KlAstDelete)klast_stmtmatch_destroy, .kind = KLAST_STMT_MATCH };
 static const KlAstInfo klast_stmtlocalfunc_vfunc = { .destructor = (KlAstDelete)klast_stmtlocalfunc_destroy, .kind = KLAST_STMT_LOCALFUNC };
 static const KlAstInfo klast_stmtassign_vfunc = { .destructor = (KlAstDelete)klast_stmtassign_destroy, .kind = KLAST_STMT_ASSIGN };
 static const KlAstInfo klast_stmtexpr_vfunc = { .destructor = (KlAstDelete)klast_stmtexpr_destroy, .kind = KLAST_STMT_EXPR };
@@ -46,6 +48,27 @@ KlAstStmtLet* klast_stmtlet_create(KlAstExprList* lvals, KlAstExprList* rvals, K
   klast_setposition(stmtlet, begin, end);
   klast_init(stmtlet, &klast_stmtlet_vfunc);
   return stmtlet;
+}
+
+KlAstStmtMatch* klast_stmtmatch_create(KlAst* matchobj, KlAst** patterns, KlAstStmtList** stmtlists, size_t npattern, KlFileOffset begin, KlFileOffset end) {
+  KlAstStmtMatch* stmtmatch = klast_alloc(KlAstStmtMatch);
+  if (kl_unlikely(!stmtmatch)) {
+    klast_delete(matchobj);
+    for (size_t i = 0; i < npattern; ++i) {
+      klast_delete(patterns[i]);
+      klast_delete(stmtlists[i]);
+    }
+    free(patterns);
+    free(stmtlists);
+    return NULL;
+  }
+  stmtmatch->matchobj = matchobj;
+  stmtmatch->patterns = patterns;
+  stmtmatch->stmtlists = stmtlists;
+  stmtmatch->npattern = npattern;
+  klast_setposition(stmtmatch, begin, end);
+  klast_init(stmtmatch, &klast_stmtmatch_vfunc);
+  return stmtmatch;
 }
 
 KlAstStmtLocalFunc* klast_stmtlocalfunc_create(KlStrDesc id, KlFileOffset idbegin, KlFileOffset idend, KlAstFunc* func, KlFileOffset begin, KlFileOffset end) {
@@ -232,6 +255,19 @@ KlAstStmtContinue* klast_stmtcontinue_create(KlFileOffset begin, KlFileOffset en
 static void klast_stmtlet_destroy(KlAstStmtLet* stmtlet) {
   klast_delete(stmtlet->rvals);
   klast_delete(stmtlet->lvals);
+}
+
+static void klast_stmtmatch_destroy(KlAstStmtMatch* stmtmatch) {
+  klast_delete(stmtmatch->matchobj);
+  KlAstStmtList** stmtlists = stmtmatch->stmtlists;
+  KlAst** patterns = stmtmatch->patterns;
+  size_t npattern = stmtmatch->npattern;
+  for (size_t i = 0; i < npattern; ++i) {
+    klast_delete(patterns[i]);
+    klast_delete(stmtlists[i]);
+  }
+  free(patterns);
+  free(stmtlists);
 }
 
 static void klast_stmtlocalfunc_destroy(KlAstStmtLocalFunc* stmtlocalfunc) {

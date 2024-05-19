@@ -112,13 +112,6 @@ static bool klgen_exprhasverres(KlGenUnit* gen, KlAst* expr) {
   }
 }
 
-static void klgen_exprdo(KlGenUnit* gen, KlAstDo* doast) {
-  KlCStkId base = klgen_stacktop(gen);
-  bool needclose = klgen_stmtblock(gen, doast->stmtlist);
-  if (needclose)
-    klgen_emit(gen, klinst_close(base), klgen_astposition(doast));
-}
-
 static void klgen_expr_domatching(KlGenUnit* gen, KlAst* pattern, KlCStkId base, KlCStkId matchobj) {
   if (klast_kind(pattern) == KLAST_EXPR_CONSTANT) {
     KlConstant* constant = &klcast(KlAstConstant*, pattern)->con;
@@ -136,20 +129,6 @@ static void klgen_expr_domatching(KlGenUnit* gen, KlAst* pattern, KlCStkId base,
   } else {
     klgen_pattern_matching_tostktop(gen, pattern, matchobj);
     klgen_pattern_newsymbol(gen, pattern, base);
-  }
-}
-
-static void klgen_exprmatch_genexpr(KlGenUnit* gen, KlAst* expr, KlCStkId target, bool needresult) {
-  if (klast_kind(expr) == KLAST_EXPR_DO) {
-    klgen_stmtlist(gen, klcast(KlAstDo*, expr)->stmtlist);
-    if (needresult) {
-      klgen_emitloadnils(gen, target, 1, klgen_astposition(expr));
-      if (target == klgen_stacktop(gen))
-        klgen_stackalloc1(gen);
-    }
-  } else {
-    needresult ? klgen_exprtarget_noconst(gen, expr, target)
-               : klgen_multival(gen, expr, 0, klgen_stacktop(gen));
   }
 }
 
@@ -177,7 +156,9 @@ static void klgen_exprmatch(KlGenUnit* gen, KlAstMatch* matchast, KlCStkId targe
 
     klgen_pushsymtbl(gen);
     klgen_expr_domatching(gen, patterns[i], currstktop, matchobj.index);
-    klgen_exprmatch_genexpr(gen, exprs[i], target, needresult);
+    needresult ? klgen_exprtarget_noconst(gen, exprs[i], target)
+               : klgen_multival(gen, exprs[i], 0, klgen_stacktop(gen));
+
 
     if (i != npattern - 1 || needresult) {
       KlCPC pc = klgen_emit(gen, gen->symtbl->info.referenced ? klinst_closejmp(currstktop, 0)
@@ -515,20 +496,11 @@ void klgen_multival(KlGenUnit* gen, KlAst* ast, size_t nval, KlCStkId target) {
       }
       break;
     }
-    case KLAST_EXPR_DO: {
-      klgen_exprdo(gen, klcast(KlAstDo*, ast));
-      KlCStkId stktop = klgen_stacktop(gen);
-      if (nval != 0)
-        klgen_emitloadnils(gen, target, nval, klgen_astposition(ast));
-      klgen_stackfree(gen, target + nval > stktop ? target + nval : stktop);
-      break;
-    }
     case KLAST_EXPR_MATCH: {
-      if (nval == 0) {
-        klgen_exprmatch(gen, klcast(KlAstMatch*, ast), 0, false);
-        break;
-      }
-      KL_FALLTHROUGH;
+      klgen_exprmatch(gen, klcast(KlAstMatch*, ast), target, nval != 0);
+      if (nval > 1)
+        klgen_emitloadnils(gen, target + 1, nval - 1, klgen_astposition(ast));
+      break;
     }
     default: {
       KlCStkId stktop = klgen_stacktop(gen);
@@ -559,11 +531,6 @@ size_t klgen_trytakeall(KlGenUnit* gen, KlAst* ast, KlCodeVal* val) {
       klgen_exprcall(gen, klcast(KlAstCall*, ast), KLINST_VARRES, stktop);
       *val = klcodeval_stack(stktop);
       return KLINST_VARRES;
-    }
-    case KLAST_EXPR_DO: {
-      klgen_exprdo(gen, klcast(KlAstDo*, ast));
-      *val = klcodeval_stack(klgen_stacktop(gen));
-      return 0;
     }
     case KLAST_EXPR_WHERE: {
       KlCStkId stktop = klgen_stacktop(gen);
@@ -596,10 +563,6 @@ size_t klgen_takeall(KlGenUnit* gen, KlAst* ast, KlCStkId target) {
     case KLAST_EXPR_CALL: {
       klgen_exprcall(gen, klcast(KlAstCall*, ast), KLINST_VARRES, target);
       return KLINST_VARRES;
-    }
-    case KLAST_EXPR_DO: {
-      klgen_exprdo(gen, klcast(KlAstDo*, ast));
-      return 0;
     }
     case KLAST_EXPR_WHERE: {
       return klgen_exprwhere(gen, klcast(KlAstWhere*, ast), KLINST_VARRES, target);
@@ -1099,10 +1062,6 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlAst* ast) {
       klgen_exprarrgen(gen, klcast(KlAstArrayGenerator*, ast), target);
       return klcodeval_stack(target);
     }
-    case KLAST_EXPR_DO: {
-      klgen_exprdo(gen, klcast(KlAstDo*, ast));
-      return klcodeval_nil();
-    }
     case KLAST_EXPR_MATCH: {
       KlCStkId target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprmatch(gen, klcast(KlAstMatch*, ast), target, true);
@@ -1190,10 +1149,6 @@ KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlAst* ast, KlCStkId target) {
     case KLAST_EXPR_ARRGEN: {
       klgen_exprarrgen(gen, klcast(KlAstArrayGenerator*, ast), target);
       return klcodeval_stack(target);
-    }
-    case KLAST_EXPR_DO: {
-      klgen_exprdo(gen, klcast(KlAstDo*, ast));
-      return klcodeval_nil();
     }
     case KLAST_EXPR_MATCH: {
       klgen_exprmatch(gen, klcast(KlAstMatch*, ast), target, true);

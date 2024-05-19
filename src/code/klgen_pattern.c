@@ -110,7 +110,7 @@ static void klgen_emit_objmatching(KlGenUnit* gen, size_t nres, KlCStkId target,
 static void klgen_emit_genericmatching(KlGenUnit* gen, size_t nres, KlCStkId target, KlCIdx method, KlCStkId obj, size_t narg, KlFilePosition filepos) {
   klgen_emit(gen, klinst_hasfield(obj, method), filepos);
   klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->terminatelist,
-                                  klcodeval_jmplist(klgen_emit(gen, klinst_condjmp(KLC_TRUE, 0), filepos)));
+                                  klcodeval_jmplist(klgen_emit(gen, klinst_condjmp(KLC_FALSE, 0), filepos)));
   klgen_emitmethod(gen, obj, method, narg, nres, target, filepos);
 }
 
@@ -184,7 +184,7 @@ static KlStrDesc klgen_pattern_methodname(KlGenUnit* gen, KlAst* ast) {
   } else if (klast_kind(ast) == KLAST_EXPR_CALL) {
     KlAstCall* call = klcast(KlAstCall*, ast);
     if (klast_kind(call->callable) != KLAST_EXPR_ID) {
-      klgen_error(gen, klast_begin(call->callable), klast_end(call->callable), "should be an identifier in pattern binding and pattern matching");
+      klgen_error(gen, klast_begin(call->callable), klast_end(call->callable), "should be an identifier in function call pattern");
       return gen->strings->pattern;
     }
     KlStrDesc callableid = klcast(KlAstIdentifier*, call->callable)->id;

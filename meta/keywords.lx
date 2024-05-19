@@ -128,8 +128,8 @@ def bar(KL_BAR):
 def if (KLTK_IF):
   (KLTK_IF) $if
 
-def where (KLTK_DO):
-  (KLTK_DO) $do
+def where (KLTK_MATCH):
+  (KLTK_MATCH) $match
 
 def where (KLTK_CASE):
   (KLTK_CASE) $case

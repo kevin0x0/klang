@@ -17,7 +17,6 @@ static void klast_post_destroy(KlAstPost* astpost);
 static void klast_call_destroy(KlAstCall* astcall);
 static void klast_dot_destroy(KlAstDot* astdot);
 static void klast_func_destroy(KlAstFunc* astfunc);
-static void klast_do_destroy(KlAstDo* astdo);
 static void klast_match_destroy(KlAstMatch* astmatch);
 static void klast_where_destroy(KlAstWhere* astwhere);
 
@@ -37,7 +36,6 @@ static const KlAstInfo klast_post_vfunc = { .destructor = (KlAstDelete)klast_pos
 static const KlAstInfo klast_call_vfunc = { .destructor = (KlAstDelete)klast_call_destroy, .kind = KLAST_EXPR_CALL };
 static const KlAstInfo klast_dot_vfunc = { .destructor = (KlAstDelete)klast_dot_destroy, .kind = KLAST_EXPR_DOT };
 static const KlAstInfo klast_func_vfunc = { .destructor = (KlAstDelete)klast_func_destroy, .kind = KLAST_EXPR_FUNC };
-static const KlAstInfo klast_do_vfunc = { .destructor = (KlAstDelete)klast_do_destroy, .kind = KLAST_EXPR_DO };
 static const KlAstInfo klast_match_vfunc = { .destructor = (KlAstDelete)klast_match_destroy, .kind = KLAST_EXPR_MATCH };
 static const KlAstInfo klast_where_vfunc = { .destructor = (KlAstDelete)klast_where_destroy, .kind = KLAST_EXPR_WHERE };
 
@@ -298,18 +296,6 @@ KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, 
   return astdot;
 }
 
-KlAstDo* klast_do_create(KlAstStmtList* stmtlist, KlFileOffset begin, KlFileOffset end) {
-  KlAstDo* astdo = klast_alloc(KlAstDo);
-  if (kl_unlikely(!astdo)) {
-    klast_delete(stmtlist);
-    return NULL;
-  }
-  astdo->stmtlist = stmtlist;
-  klast_setposition(astdo, begin, end);
-  klast_init(astdo, &klast_do_vfunc);
-  return astdo;
-}
-
 KlAstMatch* klast_match_create(KlAst* matchobj, KlAst** patterns, KlAst** exprs, size_t npattern, KlFileOffset begin, KlFileOffset end) {
   KlAstMatch* astmatch = klast_alloc(KlAstMatch);
   if (kl_unlikely(!astmatch)) {
@@ -435,10 +421,6 @@ static void klast_dot_destroy(KlAstDot* astdot) {
 static void klast_func_destroy(KlAstFunc* astfunc) {
   klast_delete(astfunc->params);
   klast_delete(astfunc->block);
-}
-
-static void klast_do_destroy(KlAstDo* astdo) {
-  klast_delete(astdo->stmtlist);
 }
 
 static void klast_match_destroy(KlAstMatch* astmatch) {
