@@ -68,7 +68,7 @@ KlType klapi_gettypeb(KlState* state, int index) {
 }
 
 void klapi_setframesize(KlState* state, unsigned size) {
-  kl_assert(klstate_currci(state)->base + size <= klstack_size(klstate_stack(state)), "check stack capacity before setting framesize");
+  kl_assert((size_t)(klstate_currci(state)->base - klstack_raw(klstate_stack(state))) + size <= klstack_size(klstate_stack(state)), "check stack capacity before setting framesize");
   klstack_set_top(klstate_stack(state), klstate_currci(state)->base + size);
 }
 
@@ -594,15 +594,21 @@ KlState* klapi_new_state(KlMM* klmm) {
 KlException klapi_class_newshared(KlState* state, KlClass* klclass, KlString* fieldname) {
   kl_assert(klapi_framesize(state) >= 1, "you must push a value on top of stack");
   KlException exception = klclass_newshared(klclass, klstate_getmm(state), fieldname, klapi_access(state, -1));
-  if (exception == KL_E_OOM)
+  if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when setting a new shared field: %s", klstring_content(fieldname));
+  } else if (exception == KL_E_INVLD) {
+    return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
+  }
   return KL_E_NONE;
 }
 
 KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fieldname) {
   KlException exception = klclass_newlocal(klclass, klstate_getmm(state), fieldname);
-  if (exception == KL_E_OOM)
+  if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when adding a new local field: %s", klstring_content(fieldname));
+  } else if (exception == KL_E_INVLD) {
+    return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
+  }
   return KL_E_NONE;
 }
 

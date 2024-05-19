@@ -18,19 +18,60 @@ static KlException kllib_basic_map_iter(KlState* state);
 static KlException kllib_basic_arr_iter(KlState* state);
 static KlException kllib_basic_callable_iter(KlState* state);
 
+static KlException kllib_basic_init_globalvar(KlState* state);
+static KlException kllib_basic_init_iter(KlState* state);
+
 KlException kllib_init(KlState* state) {
+  KLAPI_PROTECT(kllib_basic_init_globalvar(state));
+  KLAPI_PROTECT(kllib_basic_init_iter(state));
+  return klapi_return(state, 0);
+}
+
+static KlException kllib_basic_init_globalvar(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   KLAPI_PROTECT(klapi_pushstring(state, "print"));
   klapi_pushcfunc(state, kllib_basic_print);
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "String"));
+  klapi_setobj(state, -1, state->common->klclass.phony[KL_STRING], KL_CLASS);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "Integer"));
+  klapi_setobj(state, -1, state->common->klclass.phony[KL_INT], KL_CLASS);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "Float"));
+  klapi_setobj(state, -1, state->common->klclass.phony[KL_FLOAT], KL_CLASS);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "Coroutine"));
+  klapi_setobj(state, -1, state->common->klclass.phony[KL_COROUTINE], KL_CLASS);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "Boolean"));
+  klapi_setobj(state, -1, state->common->klclass.phony[KL_BOOL], KL_CLASS);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "Nil"));
+  klapi_setobj(state, -1, state->common->klclass.phony[KL_NIL], KL_CLASS);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "Closure"));
+  klapi_setobj(state, -1, state->common->klclass.phony[KL_KCLOSURE], KL_CLASS);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "Map"));
+  klapi_setobj(state, -1, state->common->klclass.map, KL_CLASS);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "Array"));
+  klapi_setobj(state, -1, state->common->klclass.array, KL_CLASS);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
   klapi_pop(state, 2);
+  return KL_E_NONE;
+}
+
+static KlException kllib_basic_init_iter(KlState* state) {
   klapi_pushcfunc(state, kllib_basic_map_iter);
   KLAPI_PROTECT(klapi_class_newshared(state, state->common->klclass.map, state->common->string.iter));
   klapi_setcfunc(state, -1, kllib_basic_arr_iter);
   KLAPI_PROTECT(klapi_class_newshared(state, state->common->klclass.array, state->common->string.iter));
   klapi_setcfunc(state, -1, kllib_basic_callable_iter);
   KLAPI_PROTECT(klapi_class_newshared(state, state->common->klclass.phony[KL_COROUTINE], state->common->string.iter));
-  return klapi_return(state, 0);
+  klapi_pop(state, 1);
+  return KL_E_NONE;
 }
 
 

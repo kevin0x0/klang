@@ -39,16 +39,24 @@ static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int r
 
 
 static KlException klexec_handle_newshared_exception(KlState* state, KlException exception, KlString* key) {
-  if (exception == KL_E_OOM)
+  if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when setting a new field: %s", klstring_content(key));
+  } else {
+  kl_assert(exception == KL_E_INVLD, "");
+    return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(key)); 
+  }
 
   kl_assert(false, "control flow should not reach here");
   return KL_E_NONE;
 }
 
 static KlException klexec_handle_newlocal_exception(KlState* state, KlException exception, KlString* key) {
-  if (exception == KL_E_OOM)
+  if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when adding a new field: %s", klstring_content(key));
+  } else {
+  kl_assert(exception == KL_E_INVLD, "");
+    return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(key)); 
+  }
 
   kl_assert(false, "control flow should not reach here");
   return KL_E_NONE;
@@ -633,8 +641,8 @@ static void klexec_getfieldgeneric(KlState* state, KlValue* dotable, KlValue* ke
     kl_likely(field) ? klvalue_setvalue(val, field) : klvalue_setnil(val);
   } else {  /* other types. search their phony class */
     KlClass* phony = klvalue_checktype(dotable, KL_CLASS)
-      ? klvalue_getobj(dotable, KlClass*)
-      : state->common->klclass.phony[klvalue_gettype(dotable)];
+                   ? klvalue_getobj(dotable, KlClass*)
+                   : state->common->klclass.phony[klvalue_gettype(dotable)];
     /* phony class should have only shared field */
     KlClassSlot* slot = klclass_find(phony, keystr);
     slot && klclass_is_shared(slot) ? klvalue_setvalue(val, &slot->value) : klvalue_setnil(val);
@@ -662,8 +670,8 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
     }
   } else {  /* other types. search their phony class */
     KlClass* phony = klvalue_checktype(dotable, KL_CLASS)
-      ? klvalue_getobj(dotable, KlClass*)
-      : state->common->klclass.phony[klvalue_gettype(dotable)];
+                   ? klvalue_getobj(dotable, KlClass*)
+                   : state->common->klclass.phony[klvalue_gettype(dotable)];
     klexec_savestktop(state, state->callinfo->top);
     KlException exception = klclass_newshared(phony, klstate_getmm(state), keystr, val);
     if (kl_unlikely(exception))

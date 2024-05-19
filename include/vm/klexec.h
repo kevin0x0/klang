@@ -40,7 +40,7 @@ static inline KlCallInfo* klexec_newed_callinfo(KlState* state) {
 }
 
 static inline void klexec_setnils(KlValue* vals, size_t nnil) {
-  while (nnil--) klvalue_setnil(vals);
+  while (nnil--) klvalue_setnil(vals++);
 }
 
 #endif

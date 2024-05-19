@@ -116,7 +116,7 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
         kl_cleanbehaviour(behaviour);
         return 1;
       }
-      behaviour->args = argv + i;
+      behaviour->args = argv + ++i;
       behaviour->narg = argc - i;
       break;
     } else {
@@ -244,7 +244,7 @@ static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicT
     KLAPI_PROTECT(klapi_pushstring(state, behaviour->args[i]));
   }
   /* execute script */
-  KLAPI_PROTECT(klapi_tryscall(state, -2, klapi_access(state, -1 - behaviour->narg), behaviour->narg, 0));
+  KLAPI_PROTECT(klapi_tryscall(state, -2 - behaviour->narg, klapi_access(state, -1 - behaviour->narg), behaviour->narg, 0));
   klapi_pop(state, 2);                /* pop klang closure and error handler */
   return 0;
 }

@@ -201,7 +201,7 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, KlString* key, KlValu
   while (findslot) {
     if (findslot->key == key) {
       if (klclass_is_local(findslot)) /* local field can not be overwritten */
-        return KL_E_OOM;
+        return KL_E_INVLD;
       klvalue_setvalue(&slot->value, value);
       return KL_E_NONE;
     }

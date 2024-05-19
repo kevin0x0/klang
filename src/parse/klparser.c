@@ -607,6 +607,7 @@ static KlAstNew* klparser_exprnew(KlParser* parser, KlLex* lex) {
     klparser_oomifnull(newexpr);
     return newexpr;
   } else {
+    klparser_returnifnull(klclass);
     KlAstNew* newexpr = klast_new_create(klclass, NULL, klast_begin(klclass), klast_end(klclass));
     klparser_oomifnull(newexpr);
     return newexpr;
