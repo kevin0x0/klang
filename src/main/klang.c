@@ -302,7 +302,7 @@ static KlException kl_errhandler(KlState* state) {
   if (exception == KL_E_USER || exception == KL_E_LINK) {
     fprintf(stderr, "|| user defined exception and exception thrown across coroutine is currently not completely supported\n");
   } else {
-    fprintf(stderr, "||-exception message: %s\n", klapi_exception_message(state));
+    fprintf(stderr, "|| exception message: %s\n", klapi_exception_message(state));
   }
   klapi_throw_internal(state, KL_E_NONE, "");
   KlValue* traceback = klapi_getref(state, 0);
