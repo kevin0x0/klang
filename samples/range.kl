@@ -6,19 +6,17 @@ local next(next, end) => {
 let Range = {
   local begin;
   local end;
+  constructor = method(begin, end) => {
+    this.begin = begin;
+    this.end = end;
+  };
   '<-' = method => {
-    if this.begin == this.end: return;
+    if this.begin >= this.end: return;
     return next, this.begin + 1, this.end, this.begin;
   }
 };
 
-local range n => {
-  return obj where {
-    let obj = new Range;
-    obj.begin = 0;
-    obj.end = n;
-  };
-};
+local range n -> new Range(0, n);
 
 for i in range 100:
   print i;
