@@ -7,18 +7,18 @@
 
 克隆此仓库，在项目根目录下执行
 ```bash
-    git submodule init
-    git submodule update
+git submodule init
+git submodule update
 ```
 然后:
 - Windows
 使用MinGW。在项目根目录执行
 ```bash
-    make PLATFORM=Windows
+make PLATFORM=Windows
 ```
 
 - Linux
 在项目根目录执行
 ```bash
-    make
+make
 ```
