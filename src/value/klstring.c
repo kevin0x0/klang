@@ -168,7 +168,7 @@ static KlString* klstrpool_insert(KlStrPool* strpool, KlString* str) {
   str->next = strpool->array[index];
   strpool->array[index] = str;
   strpool->size++;
-  klmm_gcobj_enable_notinlist(klstrpool_getmm(strpool), klmm_to_gcobjnotinlist(str));
+  klmm_gcobj_enable_delegate(klstrpool_getmm(strpool), klmm_to_gcobjdelegate(str));
   return str;
 }
 

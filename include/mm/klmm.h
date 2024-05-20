@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 
-/* if a gcobject is not in list, then it must be leaf */
+/* if a gcobject is not in list(is a delegated gcobject), then it must be leaf */
 
 #define KLGC_NORM         (klcast(KlGCStat, 0))
 #define KLGC_MARKED       (klcast(KlGCStat, klbit(0)))
@@ -17,7 +17,7 @@
 
 #define klmm_to_gcobj(obj)            (klcast(KlGCObject*, (obj)))
 #define klmm_to_gcobjgeneric(obj)     (klcast(KlGCObjectGeneric*, (obj)))
-#define klmm_to_gcobjnotinlist(obj)   (klcast(KlGCObjectNotInList*, (obj)))
+#define klmm_to_gcobjdelegate(obj)    (klcast(KlGCObjectDelegate*, (obj)))
 #define klmm_gcobj_marked(obj)        (klmm_to_gcobjgeneric((obj))->gc_state & KLGC_MARKED)
 #define klmm_gcobj_isleaf(obj)        (klmm_to_gcobjgeneric((obj))->gc_state & KLGC_ISLEAF)
 #define klmm_gcobj_isalive(obj)       klmm_gcobj_marked(obj)
@@ -53,10 +53,10 @@ typedef struct tagKlGCVirtualFunc {
 
 
 
-#define KL_DERIVE_FROM_KlGCObjectNotInList(prefix) KlGCStat prefix##gc_state
+#define KL_DERIVE_FROM_KlGCObjectDelegate(prefix) KlGCStat prefix##gc_state
 
 #define KL_DERIVE_FROM_KlGCObject(prefix)                                                   \
-  KL_DERIVE_FROM_KlGCObjectNotInList(prefix);                                               \
+  KL_DERIVE_FROM_KlGCObjectDelegate(prefix);                                                \
   KlGCObject* prefix##next;             /* link all objects */                              \
   const KlGCVirtualFunc* prefix##virtualfunc;                                               \
   union {                                                                                   \
@@ -69,12 +69,12 @@ typedef struct tagKlGCVirtualFunc {
 
 /* the pointer of this struct can point to any collectable object */
 typedef struct tagKlGCObjectGeneric {
-  KL_DERIVE_FROM(KlGCObjectNotInList, );
+  KL_DERIVE_FROM(KlGCObjectDelegate, );
 } KlGCObjectGeneric;
 
-typedef struct tagKlGCObjectNotInList {
-  KL_DERIVE_FROM(KlGCObjectNotInList, );
-} KlGCObjectNotInList;
+typedef struct tagKlGCObjectDelegate {
+  KL_DERIVE_FROM(KlGCObjectDelegate, );
+} KlGCObjectDelegate;
 
 struct tagKlGCObject {
   KL_DERIVE_FROM(KlGCObject, );
@@ -107,7 +107,7 @@ static inline void klmm_free(KlMM* klmm, void* blk, size_t size);
 static inline void klmm_gcobj_aftermark(KlMM* klmm, KlGCObject* obj);
 static inline void klmm_gcobj_aftersweep(KlMM* klmm, KlGCObject* obj);
 static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, const KlGCVirtualFunc* vfunc);
-static inline void klmm_gcobj_enable_notinlist(KlMM* klmm, KlGCObjectNotInList* gcobj);
+static inline void klmm_gcobj_enable_delegate(KlMM* klmm, KlGCObjectDelegate* gcobj);
 static inline void klmm_stopgc(KlMM* klmm);
 static inline void klmm_restartgc(KlMM* klmm);
 
@@ -200,7 +200,7 @@ static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, const KlGCVi
   klmm->allgc = gcobj;
 }
 
-static inline void klmm_gcobj_enable_notinlist(KlMM* klmm, KlGCObjectNotInList* gcobj) {
+static inline void klmm_gcobj_enable_delegate(KlMM* klmm, KlGCObjectDelegate* gcobj) {
   kl_unused(klmm);
   gcobj->gc_state = KLGC_NORM | KLGC_ISLEAF;
 }
