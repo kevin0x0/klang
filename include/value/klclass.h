@@ -41,7 +41,7 @@ struct tagKlClass {
   KL_DERIVE_FROM_KlGCObject(prefix##_gcbase_);  \
   KlClass* prefix##klclass;                     \
   KlValue* prefix##attrs;                       \
-  size_t prefix##size                           \
+  size_t prefix##size
 
 #define KLOBJECT_TAIL                         KlValue _klobject_valarray
 
