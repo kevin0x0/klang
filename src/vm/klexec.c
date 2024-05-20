@@ -669,9 +669,14 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
       klvalue_setvalue(&newslot->value, val);
     }
   } else {  /* other types. search their phony class */
-    KlClass* phony = klvalue_checktype(dotable, KL_CLASS)
-                   ? klvalue_getobj(dotable, KlClass*)
-                   : state->common->klclass.phony[klvalue_gettype(dotable)];
+    KlClass* phony;
+    if (klvalue_checktype(dotable, KL_CLASS)) {
+      phony = klvalue_getobj(dotable, KlClass*);
+    } else if (kl_likely(!klvalue_checktype(dotable, KL_NIL))) {
+      phony = state->common->klclass.phony[klvalue_gettype(dotable)];
+    } else {
+      return klstate_throw(state, KL_E_INVLD, "can not set field of nil class");
+    }
     klexec_savestktop(state, state->callinfo->top);
     KlException exception = klclass_newshared(phony, klstate_getmm(state), keystr, val);
     if (kl_unlikely(exception))
