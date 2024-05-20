@@ -1549,6 +1549,7 @@ KlException klexec_execute(KlState* state) {
             KlMap* map = klvalue_getobj(indexable, KlMap*);
             KlMapIter itr = klmap_search(map, &key);
             itr ? klvalue_setvalue(val, &itr->value) : klvalue_setnil(val);
+            break;
           } 
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_doindexmethod(state, val, indexable, &key);
