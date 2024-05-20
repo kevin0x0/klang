@@ -62,6 +62,7 @@ KlClass* klclass_inherit(KlMM* klmm, KlClass* parent) {
   klclass->nlocal = parent->nlocal;
   klclass->is_final = false;
   klclass->slots = array;
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(klclass), &klclass_gcvfunc);
   return klclass;
 }
 
