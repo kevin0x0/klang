@@ -54,7 +54,7 @@ static void klstate_delete(KlState* state, KlMM* klmm) {
   klthrow_destroy(&state->throwinfo, klmm);
   klmapnodepool_unpin(state->mapnodepool);
   klcommon_unpin(state->common, klmm);
-  KlCallInfo* ci= state->baseci.next;
+  KlCallInfo* ci = state->baseci.next;
   while (ci) {
     KlCallInfo* tmp = ci->next;
     klmm_free(klmm, ci, sizeof (KlCallInfo));
