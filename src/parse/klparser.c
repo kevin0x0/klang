@@ -1479,7 +1479,7 @@ static KlAstStmtLocalFunc* klparser_stmtlocalfunction(KlParser* parser, KlLex* l
   KlFileOffset idend = kllex_tokend(lex);
   KlStrDesc funcid = lex->tok.string;
   kllex_next(lex);
-  KlAst* funcexpr = klparser_exprpost(parser, lex);
+  KlAst* funcexpr = klparser_exprpre(parser, lex);
   klparser_returnifnull(funcexpr);
   if (kl_unlikely(klast_kind(funcexpr) != KLAST_EXPR_FUNC)) {
     klparser_error(parser, kllex_inputstream(lex), klast_begin(funcexpr), klast_end(funcexpr), "expected function");
