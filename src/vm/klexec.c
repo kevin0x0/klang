@@ -301,8 +301,11 @@ static KlException klexec_co_call(KlState* costate, KlState* caller, size_t narg
 }
 
 KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos) {
-  kl_assert(narg != KLEXEC_VARIABLE_RESULTS, "arguments can not have variable number of results");
+  kl_assert(nret <= KLEXEC_VARIABLE_RESULTS, "number of returned values should be in range [0, 255) or KLAPI_VARIABLE_RESULTS");
   kl_assert(klstack_onstack(klstate_stack(state), respos), "'respos' should be a position on stack");
+
+  if (kl_unlikely(narg > KLUINT_MAX))
+    return klstate_throw(state, KL_E_RANGE, "too many arguments");
 
   KlCallInfo* newci = klexec_new_callinfo(state, nret, respos - (klstate_stktop(state) - narg));
   if (kl_unlikely(!newci))
@@ -319,7 +322,11 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
 }
 
 KlException klexec_tailcall(KlState* state, KlValue* callable, size_t narg) {
-  kl_assert(narg != KLEXEC_VARIABLE_RESULTS, "arguments can not have variable number of results");
+  kl_assert(nret <= KLEXEC_VARIABLE_RESULTS, "number of returned values should be in range [0, 255) or KLAPI_VARIABLE_RESULTS");
+
+  if (kl_unlikely(narg > KLUINT_MAX))
+    return klstate_throw(state, KL_E_RANGE, "too many arguments");
+
   KlCallInfo* newci = state->callinfo;
   newci->retoff += newci->base - (klstate_stktop(state) - narg);
   bool yieldallowance_save = klco_yield_allowed(&state->coinfo);
