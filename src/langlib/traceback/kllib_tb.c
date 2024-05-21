@@ -5,6 +5,7 @@
 typedef struct tagKlFmtConfig {
   unsigned tabstop;
   unsigned maxtextline;
+  unsigned maxframe;
   char curl;
   char zerocurl;
   char* promptmsg;
@@ -48,6 +49,7 @@ static KlException kllib_tb_main(KlState* state) {
     .zerocurl = '^',
     .tabstop = 8,
     .maxtextline = 3,
+    .maxframe = 10,
     .promptnorm = "|| ",
     .prompttext = "||== ",
     .promptmsg = "|| ",
@@ -59,10 +61,14 @@ static KlException kllib_tb_main(KlState* state) {
 }
 
 static void kllib_tb_dotraceback(KlFmtConfig* fmt, FILE* err, KlCallInfo* from, KlCallInfo* end) {
-  while (from != end) {
+  unsigned count = 0;
+  while (from != end && count++ < fmt->maxframe) {
     kllib_tb_printframe(fmt, err, from);
     from = from->prev;
   }
+
+  if (from != end)
+    fprintf(err, "%stoo many frames...\n", fmt->promptmsg);
 }
 
 static void kllib_tb_printframe(KlFmtConfig* fmt, FILE* err, KlCallInfo* callinfo) {
