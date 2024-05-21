@@ -43,9 +43,7 @@ static inline void klstack_pushcfunc(KlStack* stack, KlCFunction* cfunc);
 static inline void klstack_pushgcobj(KlStack* stack, KlGCObject* gcobj, KlType type);
 static inline void klstack_pushvalue(KlStack* stack, KlValue* val);
 
-static inline bool klstack_expand_if_full(KlStack* stack, KlMM* klmm);
-
-bool klstack_expand(KlStack* stack, KlMM* klmm);
+KlException klstack_expand(KlStack* stack, KlMM* klmm, size_t expectedcap);
 
 
 static inline void klstack_destroy(KlStack* stack, KlMM* klmm) {
@@ -150,12 +148,6 @@ static inline void klstack_pushuserdata(KlStack* stack, void* ud) {
 
 static inline void klstack_pushvalue(KlStack* stack, KlValue* val) {
   klvalue_setvalue(stack->curr++, val);
-}
-
-static inline bool klstack_expand_if_full(KlStack* stack, KlMM* klmm) {
-  if (kl_unlikely(stack->curr == stack->end))
-    return klstack_expand(stack, klmm);
-  return true;
 }
 
 #endif

@@ -10,9 +10,7 @@
 /*=============================ACCESS INTERFACE==============================*/
 
 KlException klapi_checkstack(KlState* state, size_t size) {
-  if (kl_unlikely(klstate_checkframe(state, size)))
-    return klstate_throw(state, KL_E_OOM, "out of momery");
-  return KL_E_NONE;
+  return klstate_checkframe(state, size);
 }
 
 KlException klapi_allocstack(KlState* state, size_t size) {

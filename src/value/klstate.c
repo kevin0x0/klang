@@ -95,18 +95,21 @@ static void klstate_correct_callinfo(KlState* state, ptrdiff_t diff) {
 KlException klstate_growstack(KlState* state, size_t framesize) {
   KlValue* oristk = klstack_raw(klstate_stack(state));
   size_t expected_cap = klstack_size(klstate_stack(state)) + framesize;
-  KlException exception = KL_E_NONE;
-  do {
-    if (kl_unlikely(!klstack_expand(klstate_stack(state), klstate_getmm(state)))) {
-      exception = KL_E_OOM;
-      break;
+  KlException exception = klstack_expand(klstate_stack(state), klstate_getmm(state), expected_cap);
+  if (kl_unlikely(exception)) {
+    if (exception == KL_E_OOM) {
+      return klstate_throw_oom(state, "growing stack");
+    } else {
+      kl_assert(exception == KL_E_RANGE, "");
+      return klstate_throw(state, KL_E_RANGE, "stack overflow");
     }
-  } while (klstack_capacity(klstate_stack(state)) <= expected_cap);
+
+  }
   KlValue* newstk = klstack_raw(klstate_stack(state));
   ptrdiff_t diff = newstk - oristk;
   klreflist_correct(state->reflist, diff);
   klstate_correct_callinfo(state, diff);
-  return exception;
+  return KL_E_NONE;
 }
 
 KlException klstate_throw(KlState* state, KlException type, const char* format, ...) {
