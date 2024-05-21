@@ -321,8 +321,6 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
 }
 
 KlException klexec_tailcall(KlState* state, KlValue* callable, size_t narg) {
-  kl_assert(nret <= KLEXEC_VARIABLE_RESULTS, "number of returned values should be in range [0, 255) or KLAPI_VARIABLE_RESULTS");
-
   KlCallInfo* newci = state->callinfo;
   newci->retoff += newci->base - (klstate_stktop(state) - narg);
   bool yieldallowance_save = klco_yield_allowed(&state->coinfo);
