@@ -54,7 +54,7 @@ static void klkclosure_delete(KlKClosure* kclo, KlMM* klmm) {
 
 static KlGCObject* klkclosure_propagate(KlKClosure* kclo, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(kclo->kfunc), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(kclo->kfunc), gclist);
   for (size_t i = 0; i < kclo->nref; ++i) {
     if (klref_closed(kclo->refs[i]))
       gclist = klref_propagate(kclo->refs[i], gclist);

@@ -286,9 +286,9 @@ static KlGCObject* klmap_propagate_nonweak(KlMap* map, KlGCObject* gclist) {
   KlMapIter begin = klmap_iter_begin(map);
   for (KlMapIter itr = begin; itr != end; itr = klmap_iter_next(itr)) {
     if (klvalue_collectable(&itr->key))
-      klmm_gcobj_mark_accessible(klvalue_getgcobj(&itr->key), gclist);
+      klmm_gcobj_mark(klvalue_getgcobj(&itr->key), gclist);
     if (klvalue_collectable(&itr->value))
-      klmm_gcobj_mark_accessible(klvalue_getgcobj(&itr->value), gclist);
+      klmm_gcobj_mark(klvalue_getgcobj(&itr->value), gclist);
   }
   return klobject_propagate_nomm(klcast(KlObject*, map), gclist);
 }
@@ -298,7 +298,7 @@ static KlGCObject* klmap_propagate_keyweak(KlMap* map, KlGCObject* gclist) {
   KlMapIter begin = klmap_iter_begin(map);
   for (KlMapIter itr = begin; itr != end; itr = klmap_iter_next(itr)) {
     if (klvalue_collectable(&itr->value))
-      klmm_gcobj_mark_accessible(klvalue_getgcobj(&itr->value), gclist);
+      klmm_gcobj_mark(klvalue_getgcobj(&itr->value), gclist);
   }
   return klobject_propagate_nomm(klcast(KlObject*, map), gclist);
 }
@@ -308,7 +308,7 @@ static KlGCObject* klmap_propagate_valweak(KlMap* map, KlGCObject* gclist) {
   KlMapIter begin = klmap_iter_begin(map);
   for (KlMapIter itr = begin; itr != end; itr = klmap_iter_next(itr)) {
     if (klvalue_collectable(&itr->key))
-      klmm_gcobj_mark_accessible(klvalue_getgcobj(&itr->key), gclist);
+      klmm_gcobj_mark(klvalue_getgcobj(&itr->key), gclist);
   }
   return klobject_propagate_nomm(klcast(KlObject*, map), gclist);
 }

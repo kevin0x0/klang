@@ -59,12 +59,12 @@ static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject*
        constant != kfunc->constants + kfunc->nconst;
        ++constant) {
     if (klvalue_collectable(constant))
-      klmm_gcobj_mark_accessible(klvalue_getgcobj(constant), gclist);
+      klmm_gcobj_mark(klvalue_getgcobj(constant), gclist);
   }
   for (KlKFunction** itr = kfunc->subfunc; itr != kfunc->subfunc + kfunc->nsubfunc; ++itr)
-    klmm_gcobj_mark_accessible(klmm_to_gcobj(*itr), gclist);
+    klmm_gcobj_mark(klmm_to_gcobj(*itr), gclist);
   if (kfunc->debuginfo.srcfile)
-    klmm_gcobj_mark_accessible(klmm_to_gcobj(kfunc->debuginfo.srcfile), gclist);
+    klmm_gcobj_mark(klmm_to_gcobj(kfunc->debuginfo.srcfile), gclist);
   return gclist;
 }
 

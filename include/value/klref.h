@@ -91,7 +91,7 @@ static inline void klref_unpin(KlRef* ref, KlMM* klmm) {
 
 static inline KlGCObject* klref_propagate(KlRef* ref, KlGCObject* gclist) {
   if (klvalue_collectable(&ref->closed.val))
-    klmm_gcobj_mark_accessible(klvalue_getgcobj(&ref->closed.val), gclist);
+    klmm_gcobj_mark(klvalue_getgcobj(&ref->closed.val), gclist);
   return gclist;
 }
 

@@ -79,7 +79,7 @@ kl_noreturn static inline void klco_yield(KlCoroutine* co, KlValue* yieldvals, s
 
 static KlGCObject* klco_propagate(KlCoroutine* co, KlGCObject* gclist) {
   if (co->kclo)
-    klmm_gcobj_mark_accessible(klmm_to_gcobj(co->kclo), gclist);
+    klmm_gcobj_mark(klmm_to_gcobj(co->kclo), gclist);
   return gclist;
 }
 

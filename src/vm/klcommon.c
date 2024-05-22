@@ -75,31 +75,31 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
 }
 
 KlGCObject* klcommon_propagate(KlCommon* common, KlGCObject* gclist) {
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.len), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.neg), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.add), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.sub), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.mul), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.div), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.idiv), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.mod), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.call), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.concat), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.index), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.indexas), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.eq), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.neq), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.lt), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.gt), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.le), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.ge), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.hash), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.append), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->string.iter), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.len), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.neg), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.add), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.sub), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.mul), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.div), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.idiv), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.mod), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.call), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.concat), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.index), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.indexas), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.eq), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.neq), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.lt), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.gt), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.le), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.ge), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.hash), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.append), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.iter), gclist);
 
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->klclass.map), gclist);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(common->klclass.array), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->klclass.map), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->klclass.array), gclist);
   for (KlType type = 0; type < KL_NTYPE; ++type)
-    klmm_gcobj_mark_accessible(klmm_to_gcobj(common->klclass.phony[type]), gclist);
+    klmm_gcobj_mark(klmm_to_gcobj(common->klclass.phony[type]), gclist);
   return gclist;
 }

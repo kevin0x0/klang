@@ -300,9 +300,9 @@ static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* g
   KlClassSlot* end = slots + klclass->capacity;
   for (KlClassSlot* itr = slots; itr != end; ++itr) {
     if (itr->key)
-      klmm_gcobj_mark_accessible(klmm_to_gcobj(itr->key), gclist);
+      klmm_gcobj_mark(klmm_to_gcobj(itr->key), gclist);
     if (klvalue_collectable(&itr->value))
-      klmm_gcobj_mark_accessible(klvalue_getgcobj(&itr->value), gclist);
+      klmm_gcobj_mark(klvalue_getgcobj(&itr->value), gclist);
   }
   return gclist;
 }
@@ -351,12 +351,12 @@ KlObject* klclass_objalloc(KlClass* klclass, KlMM* klmm) {
 
 static KlGCObject* klobject_propagate(KlObject* object, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(object->klclass), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(object->klclass), gclist);
   KlValue* attrs = klobject_attrs(object);
   KlUnsigned nlocal = object->klclass->nlocal;
   for (KlUnsigned i = 0; i < nlocal; ++i) {
     if (klvalue_collectable(&attrs[i]))
-        klmm_gcobj_mark_accessible(klvalue_getgcobj(&attrs[i]), gclist);
+        klmm_gcobj_mark(klvalue_getgcobj(&attrs[i]), gclist);
   }
   return gclist;
 }

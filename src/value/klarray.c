@@ -66,7 +66,7 @@ static KlGCObject* klarray_propagate(KlArray* array, KlMM* klmm, KlGCObject* gcl
   KlArrayIter begin = klarray_iter_begin(array);
   for (KlArrayIter itr = begin; itr != end; itr = klarray_iter_next(itr)) {
     if (klvalue_collectable(itr))
-      klmm_gcobj_mark_accessible(klvalue_getgcobj(itr), gclist);
+      klmm_gcobj_mark(klvalue_getgcobj(itr), gclist);
   }
   return klobject_propagate_nomm(klcast(KlObject*, array), gclist);
 }

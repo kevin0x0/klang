@@ -26,7 +26,7 @@
 #define klmm_gcobj_shouldprop(obj)    (!(klmm_to_gcobjgeneric((obj))->gc_state & (KLGC_MARKED | KLGC_ISLEAF)))
 
 /* Mark a object accessible and link it to gclist. */
-#define klmm_gcobj_mark_accessible(obj, gclist) {               \
+#define klmm_gcobj_mark(obj, gclist) {                          \
   KlGCObject* gcobj = (obj);                                    \
   if (klmm_gcobj_shouldprop(gcobj)) {                           \
     gcobj->next_reachable = (gclist);                           \

@@ -57,7 +57,7 @@ static inline KlGCObject* klstack_propagate(KlStack* stack, KlGCObject* gclist) 
   KlValue* top = stack->curr;
   for (KlValue* p = stack->array; p != top; ++p) {
     if (klvalue_collectable(p))
-      klmm_gcobj_mark_accessible(klvalue_getgcobj(p), gclist);
+      klmm_gcobj_mark(klvalue_getgcobj(p), gclist);
   }
   KlValue* end = stack->end;
   /* ensure the entire stack has no dead gcobject */

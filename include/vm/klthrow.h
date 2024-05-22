@@ -34,9 +34,9 @@ KlException klthrow_user(KlThrowInfo* info, KlValue* user_exception);
 
 static inline KlGCObject* klthrow_propagate(KlThrowInfo* info, KlGCObject* gclist) {
   if (info->type == KL_E_USER && klvalue_collectable(&info->exception.eobj))
-    klmm_gcobj_mark_accessible(klvalue_getgcobj(&info->exception.eobj), gclist);
+    klmm_gcobj_mark(klvalue_getgcobj(&info->exception.eobj), gclist);
   if (info->type == KL_E_LINK)
-    klmm_gcobj_mark_accessible(klmm_to_gcobj(info->exception.esrc), gclist);
+    klmm_gcobj_mark(klmm_to_gcobj(info->exception.esrc), gclist);
   return gclist;
 }
 

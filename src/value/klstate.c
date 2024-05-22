@@ -72,12 +72,12 @@ static KlGCObject* klstate_propagate(KlState* state, KlMM* klmm, KlGCObject* gcl
   KlCallInfo* callinfo = state->callinfo;
   while (callinfo) {
     if ((callinfo->status & KLSTATE_CI_STATUS_KCLO) || callinfo->status & KLSTATE_CI_STATUS_CCLO)
-      klmm_gcobj_mark_accessible(callinfo->callable.clo, gclist);
+      klmm_gcobj_mark(callinfo->callable.clo, gclist);
     callinfo = callinfo->prev;
   }
 
-  klmm_gcobj_mark_accessible((KlGCObject*)state->global, gclist);
-  klmm_gcobj_mark_accessible((KlGCObject*)state->strpool, gclist);
+  klmm_gcobj_mark((KlGCObject*)state->global, gclist);
+  klmm_gcobj_mark((KlGCObject*)state->strpool, gclist);
   klmapnodepool_shrink(state->mapnodepool); /* shrink nodepool once for each iteration of gc */
   return gclist;
 }

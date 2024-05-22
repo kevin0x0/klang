@@ -139,12 +139,12 @@ static inline size_t klobject_size(KlObject* object) {
 }
 
 static inline KlGCObject* klobject_propagate_nomm(KlObject* object, KlGCObject* gclist) {
-  klmm_gcobj_mark_accessible(klmm_to_gcobj(object->klclass), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(object->klclass), gclist);
   KlValue* attrs = klobject_attrs(object);
   size_t nlocal = object->klclass->nlocal;
   for (size_t i = 0; i < nlocal; ++i) {
     if (klvalue_collectable(&attrs[i]))
-        klmm_gcobj_mark_accessible(klvalue_getgcobj(&attrs[i]), gclist);
+        klmm_gcobj_mark(klvalue_getgcobj(&attrs[i]), gclist);
   }
   return gclist;
 }
