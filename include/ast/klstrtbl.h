@@ -1,5 +1,5 @@
-#ifndef _KLANG_INCLUDE_PARSE_KLSTRTAB_H_
-#define _KLANG_INCLUDE_PARSE_KLSTRTAB_H_
+#ifndef _KLANG_INCLUDE_PARSE_KLSTRTBL_H_
+#define _KLANG_INCLUDE_PARSE_KLSTRTBL_H_
 
 #include "include/misc/klutils.h"
 #include <stdbool.h>
