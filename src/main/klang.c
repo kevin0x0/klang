@@ -312,7 +312,7 @@ static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
       return klapi_throw_internal(state, KL_E_OOM, "can not create input stream");
 
     /* call compiler */
-    KLAPI_MAYFAIL(kl_call_compiler(state, input, err, "stdin", NULL, btool->compiler),
+    KLAPI_MAYFAIL(kl_call_compiler(state, input, err, "stdin", NULL, btool->compileri),
                   ki_delete(input));
 
     bool eof = klcast(KiInteractive*, input)->eof;
