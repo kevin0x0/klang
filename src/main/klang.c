@@ -13,6 +13,7 @@
 #define KL_OPTION_INTER     ((unsigned)klbit(1))
 #define KL_OPTION_IN_FILE   ((unsigned)klbit(2))
 #define KL_OPTION_IN_ARG    ((unsigned)klbit(3))
+#define KL_OPTION_UNDUMP    ((unsigned)klbit(4))
 
 
 #define KL_NARGRAW(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...)     (_9)
@@ -65,6 +66,8 @@ static int kl_fatalerror(const char* stage, const char* fmt, ...);
 
 static int kl_do(KlBehaviour* behaviour);
 static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool);
+static KlException kl_call_bcloader(KlState* state, Ki* input, Ko* err, KlCFunction* bcloader);
+static KlException kl_call_compiler(KlState* state, Ki* input, Ko* err, const char* inputname, const char* srcfile, KlCFunction* compiler);
 static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool, Ko* err);
 static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err);
 
@@ -104,6 +107,26 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
       break;
     } else if (kl_match(argv[i], "-i", "--interactive")) {
       behaviour->option |= KL_OPTION_INTER;
+    } else if (kl_match(argv[i], "-u", "--undump")) {
+      if (++i == argc) {
+        fprintf(stderr, "expected <filename> after option: %s", argv[i - 1]);
+        kl_cleanbehaviour(behaviour);
+        return 1;
+      }
+      if (behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)) {
+        fprintf(stderr, "the input is specified more than once: %s.\n", argv[i]);
+        kl_cleanbehaviour(behaviour);
+        return 1;
+      }
+      behaviour->option |= KL_OPTION_IN_FILE | KL_OPTION_UNDUMP;
+      if (!(behaviour->filename = kfs_abspath(argv[i]))) {
+        fprintf(stderr, "out of memory while parsing command line\n");
+        kl_cleanbehaviour(behaviour);
+        return 1;
+      }
+      behaviour->args = argv + ++i;
+      behaviour->narg = argc - i;
+      break;
     } else if (kl_isfilename(argv[i])) {
       if (behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)) {
         fprintf(stderr, "the input is specified more than once: %s.\n", argv[i]);
@@ -197,6 +220,40 @@ static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicT
   return 0;
 }
 
+static KlException kl_call_bcloader(KlState* state, Ki* input, Ko* err, KlCFunction* bcloader) {
+  KLAPI_PROTECT(klapi_checkstack(state, 2));
+
+  klapi_pushuserdata(state, input); /* first argument: input stream */
+  klapi_pushuserdata(state, err);   /* second argument: error stream */
+
+  /* call bcloader */
+  KlValue callable;
+  klvalue_setcfunc(&callable, bcloader);
+  KLAPI_PROTECT(klapi_tryscall(state, -3, &callable, 2, 1));
+  return KL_E_NONE;
+}
+
+static KlException kl_call_compiler(KlState* state, Ki* input, Ko* err, const char* inputname, const char* srcfile, KlCFunction* compiler) {
+  KLAPI_PROTECT(klapi_checkstack(state, 4));
+
+  klapi_pushuserdata(state, input); /* first argument: input stream */
+  klapi_pushuserdata(state, err);   /* second argument: error stream */
+  /* third argument: input name */
+  KLAPI_PROTECT(klapi_pushstring(state, inputname));
+  /* fourth argument: source file path */
+  if (srcfile) {
+    KLAPI_PROTECT(klapi_pushstring(state, srcfile));
+  } else {
+    klapi_pushnil(state, 1);
+  }
+
+  /* call compiler */
+  KlValue callable;
+  klvalue_setcfunc(&callable, compiler);
+  KLAPI_PROTECT(klapi_tryscall(state, -5, &callable, 4, 1));
+  return KL_E_NONE;
+}
+
 static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool, Ko* err) {
   Ki* input = NULL;
   /* create input stream */
@@ -211,28 +268,24 @@ static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicT
       return klapi_throw_internal(state, KL_E_OOM, "can not open file: %s", behaviour->filename);
   }
 
-  /* push arguments to compiler */
-  KLAPI_MAYFAIL(klapi_checkstack(state, 5), ki_delete(input));
+  /* push error handler */
+  KLAPI_MAYFAIL(klapi_checkstack(state, 1), ki_delete(input));
   KLAPI_MAYFAIL(klapi_pushstring(state, "traceback"), ki_delete(input));
   klapi_loadglobal(state);  /* error handler: traceback */
-  klapi_pushuserdata(state, input); /* first argument: input stream */
-  klapi_pushuserdata(state, err);   /* second argument: error stream */
-  /* third argument: input name */
-  KLAPI_MAYFAIL(klapi_pushstring(state, (behaviour->option & KL_OPTION_IN_ARG) ? "command line" : behaviour->filename),
-                ki_delete(input));
-  /* fourth argument: source file path */
-  if (behaviour->option & KL_OPTION_IN_ARG) {
-    klapi_pushnil(state, 1);
-  } else {
-    KLAPI_MAYFAIL(klapi_pushstring(state, behaviour->filename),
-                  ki_delete(input));
-  }
 
   /* call compiler */
-  KlValue callable;
-  klvalue_setcfunc(&callable, btool->compiler);
-  KLAPI_MAYFAIL(klapi_tryscall(state, -5, &callable, 4, 1), ki_delete(input));
+  if (behaviour->option & KL_OPTION_UNDUMP) {
+    kl_assert(behaviour->option & KL_OPTION_IN_FILE, "");
+    KLAPI_MAYFAIL(kl_call_bcloader(state, input, err, btool->bcloader), ki_delete(input));
+  } else {
+    KLAPI_MAYFAIL(kl_call_compiler(state, input, err, 
+                                   (behaviour->option & KL_OPTION_IN_ARG) ? "command line" : behaviour->filename,
+                                   (behaviour->option & KL_OPTION_IN_ARG) ? NULL : behaviour->filename,
+                                   btool->compiler),
+                  ki_delete(input));
+  }
   ki_delete(input);
+
   if (klapi_checktype(state, -1, KL_NIL)) {
     klapi_pop(state, 2);  /* pop result and error handler */
     return 0;
@@ -250,7 +303,7 @@ static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicT
 }
 
 static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
-  KLAPI_PROTECT(klapi_checkstack(state, 4));
+  KLAPI_PROTECT(klapi_checkstack(state, 1));
   KLAPI_PROTECT(klapi_pushstring(state, "traceback"));
   klapi_loadglobal(state);  /* error handler: traceback */
   while (true) {
@@ -258,18 +311,10 @@ static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
     if (kl_unlikely(!input))
       return klapi_throw_internal(state, KL_E_OOM, "can not create input stream");
 
-    /* push arguments to compiler */
-    klapi_pushuserdata(state, input); /* first argument: input stream */
-    klapi_pushuserdata(state, err);   /* second argument: error stream */
-    /* third argument: input name */
-    KLAPI_MAYFAIL(klapi_pushstring(state, "stdin"), ki_delete(input));
-    /* fourth argument: source file path */
-    klapi_pushnil(state, 1);
-
     /* call compiler */
-    KlValue callable;
-    klvalue_setcfunc(&callable, btool->compileri);
-    KLAPI_MAYFAIL(klapi_tryscall(state, -5, &callable, 4, 1), ki_delete(input));
+    KLAPI_MAYFAIL(kl_call_compiler(state, input, err, "stdin", NULL, btool->compiler),
+                  ki_delete(input));
+
     bool eof = klcast(KiInteractive*, input)->eof;
     ki_delete(input);
     if (klapi_checktype(state, -1, KL_NIL)) {
