@@ -381,10 +381,11 @@ static int kl_validatebehaviour(KlBehaviour* behaviour) {
 }
 
 static void kl_print_help(void) {
-  printf("Usage: klang [options] [<script> | -e <code>] [args...]\n");
+  printf("Usage: klang [options] [(<script> | -e <code> | -u <filename>) [args...]]\n");
   printf("options:\n");
   printf("  -h --help                   show this message.\n");
   printf("  -e <code>                   execute the code provided by command line.\n");
+  printf("  -u --undump <filename>      load byte code from specified file.\n");
   printf("  -i --interactive            always enter interactive mode.\n");
   printf("if input is not specified, enter interactive mode.\n");
 }
