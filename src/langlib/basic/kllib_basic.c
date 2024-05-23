@@ -266,9 +266,9 @@ static KlException kllib_basic_callable_next(KlState* state) {
   if (kl_unlikely(klapi_narg(state) < 2))
     return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 2 arguments(0 iteration variable in for loop)");
   if (klapi_nres(state) < 3)
-    return klapi_throw_internal(state, KL_E_ARGNO, "must expect at least 3 returned values");
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected at least 3 returned values");
   if (klapi_nres(state) == KLAPI_VARIABLE_RESULTS)
-    return klapi_throw_internal(state, KL_E_ARGNO, "must expect fixed number of returned values");
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected fixed number of returned values");
   size_t nval = klapi_nres(state) - 2;
   klapi_setframesize(state, 2);
   KLAPI_PROTECT(klapi_scall(state, klapi_accessb(state, 0), 0, nval));
@@ -323,9 +323,9 @@ static KlException kllib_basic_callable_iter(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argmument(this method should be automatically called in iterration loop)");
   if (klapi_nres(state) < 4)
-    return klapi_throw_internal(state, KL_E_ARGNO, "must expect at least 4 returned value");
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected at least 4 returned value");
   if (klapi_nres(state) == KLAPI_VARIABLE_RESULTS)
-    return klapi_throw_internal(state, KL_E_ARGNO, "must expect fixed number of returned values");
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected fixed number of returned values");
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   klapi_pushvalue(state, klapi_access(state, -1));
   klapi_pushint(state, 0);  /* this value doesn't matter, any value except nil and false will be OK. */
