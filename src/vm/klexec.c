@@ -1246,6 +1246,8 @@ KlException klexec_execute(KlState* state) {
         KlValue* b = stkbase + KLINST_ABC_GETB(inst);
         if (kl_likely(klvalue_checktype(b, KL_INT))) {
           klvalue_setint(stkbase + KLINST_ABC_GETA(inst), -klvalue_getint(b));
+        } else if (kl_likely(klvalue_checktype(b, KL_FLOAT))) {
+          klvalue_setfloat(stkbase + KLINST_ABC_GETA(inst), -klvalue_getfloat(b));
         } else {
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_dopreopmethod(state, stkbase + KLINST_ABC_GETA(inst), b, state->common->string.neg);
