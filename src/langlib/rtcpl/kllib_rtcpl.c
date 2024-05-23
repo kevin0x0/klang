@@ -111,9 +111,9 @@ static KlException kllib_rtcpl_compileri(KlState* state) {
 }
 
 static KlException kllib_rtcpl_bcloader(KlState* state) {
-  kl_assert(klapi_narg(state) == 4, "expected exactly 4 argmuments");
+  kl_assert(klapi_narg(state) == 2, "expected exactly 2 argmuments");
   kl_assert(klapi_checktypeb(state, 0, KL_USERDATA) && klapi_checktypeb(state, 1, KL_USERDATA),
-            "expected Ki, Ko(use type tag: KL_USERDATA), KL_STRING, KL_STRING(or nil)");
+            "expected Ki, Ko(use type tag: KL_USERDATA)");
 
   Ki* input = klcast(Ki*, klapi_getuserdatab(state, 0));
   Ko* err = klcast(Ko*, klapi_getuserdatab(state, 1));
