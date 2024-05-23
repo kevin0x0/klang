@@ -243,6 +243,7 @@ static void klgen_exprfunc_deconstruct_params(KlGenUnit* gen, KlAstExprList* fun
           target = klgen_pattern_binding(gen, patterns[count], target);
         kl_assert(target == i, "");
       }
+      break;
     }
   }
   klgen_patterns_newsymbol(gen, patterns, npattern, 0);
