@@ -65,7 +65,7 @@ else
 all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(BIN_DIR)klang $(KLANGLIBS)
 
 $(BIN_DIR)klang : $(OBJ_DIR)klang.o $(LIB_DIR)libklang.a | create_dir
-	$(CC) $(CFLAGS) -rdynamic -o $@ $< -L $(LIB_DIR) -lklang
+	$(CC) $(CFLAGS) -rdynamic -o $@ $< -L $(LIB_DIR) -lklang -ldl
 
 $(LIB_DIR)libklang.a : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
 	cp $(DEPS_K_DIR)lib/libk.a $@
