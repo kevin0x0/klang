@@ -574,6 +574,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId targe
     if (klcodeval_isconstant(res)) return res;
     klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->truelist, res);
     klgen_finishexprboolvalraw(gen, target, klgen_astposition(ast));
+    klgen_stackfree(gen, target < klgen_stacktop(gen) ? klgen_stacktop(gen) : target + 1);
     return klcodeval_none();
   } else if (klast_kind(ast) == KLAST_EXPR_BIN) {
     KlAstBin* binast = klcast(KlAstBin*, ast);
@@ -608,6 +609,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId targe
       if (klcodeval_isconstant(res)) return res;
       klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->truelist, res);
       klgen_finishexprboolvalraw(gen, target, klgen_astposition(ast));
+      klgen_stackfree(gen, target < klgen_stacktop(gen) ? klgen_stacktop(gen) : target + 1);
       return klcodeval_none();
     }
     /* else is other binary expression, fallthrough */
