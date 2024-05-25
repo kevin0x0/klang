@@ -42,7 +42,7 @@ static KlException klexec_handle_newshared_exception(KlState* state, KlException
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when setting a new field: %s", klstring_content(key));
   } else {
-  kl_assert(exception == KL_E_INVLD, "");
+    kl_assert(exception == KL_E_INVLD, "");
     return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(key)); 
   }
 
@@ -54,7 +54,7 @@ static KlException klexec_handle_newlocal_exception(KlState* state, KlException 
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when adding a new field: %s", klstring_content(key));
   } else {
-  kl_assert(exception == KL_E_INVLD, "");
+    kl_assert(exception == KL_E_INVLD, "");
     return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(key)); 
   }
 
