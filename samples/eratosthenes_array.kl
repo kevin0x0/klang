@@ -3,4 +3,6 @@ while $seive != 0: {
   let prime = seive[0];
   print(prime);
   seive = [x | x <- seive; x % prime != 0];
+  # faster version
+  # seive = [x | i = 0, $seive; let x = seive[i]; x % prime != 0];
 }
