@@ -1571,14 +1571,21 @@ static KlAstStmtList* klparser_stmtlist(KlParser* parser, KlLex* lex) {
   return stmtlist;
 }
 
+static KlAst* klparser_stmtrepeat_defaultcondition(KlParser* parser, KlLex* lex, KlFileOffset begin, KlFileOffset end) {
+  KlAst* con = klast(klast_constant_create_boolean(KLC_FALSE, begin, end));
+  klparser_oomifnull(con);
+  return con;
+}
+
 static KlAstStmtRepeat* klparser_stmtrepeat(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_REPEAT), "expected 'repeat'");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
   kllex_trymatch(lex, KLTK_COLON);
   KlAstStmtList* block = klparser_stmtblock(parser, lex);
-  klparser_match(parser, lex, KLTK_UNTIL);
-  KlAst* cond = klparser_expr(parser, lex);
+  KlAst* cond = kllex_trymatch(lex, KLTK_UNTIL)
+              ? klparser_expr(parser, lex)
+              : klparser_stmtrepeat_defaultcondition(parser, lex, klast_end(block), klast_end(block));
   if (kl_unlikely(!cond || !block)) {
     if (cond) klast_delete(cond);
     if (block) klast_delete(block);
