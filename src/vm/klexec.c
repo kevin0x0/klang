@@ -616,12 +616,12 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
   if (begin < end) {
     if (step <= 0)
       return klstate_throw(state, KL_E_INVLD, "for loop: infinite loop: begin = %zd, end = %zd, step = %zd", begin, end, step);
-    end -= (end - begin + step - 1) % step;
+    end = begin + ((end - begin + step - 1) / step) * step;
     klvalue_setint(ctrlvars + 1, end);
   } else if (begin > end) {
     if (step >= 0)
       return klstate_throw(state, KL_E_INVLD, "for loop: infinite loop: begin = %zd, end = %zd, step = %zd", begin, end, step);
-    end += (begin - end - step - 1) % (-step);
+    end = begin - ((begin - end - step - 1) / -step) * (-step);
     klvalue_setint(ctrlvars + 1, end);
   } else {
     state->callinfo->savedpc += offset;
@@ -2043,7 +2043,10 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_MATCH: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         KlValue* b = constants + KLINST_AX_GETX(inst);
-        if (kl_unlikely(!(klvalue_sametype(a, b) && klvalue_sameinstance(a, b)))) {
+        bool matched = klvalue_sametype(a, b)   ? klvalue_sameinstance(a, b) :
+                       klvalue_bothnumber(a, b) ? klvalue_getnumber(a) == klvalue_getnumber(b) :
+                                                  false;
+        if (kl_unlikely(!matched)) {
           klexec_savestate(callinfo->top, pc);
           return klstate_throw(state, KL_E_MISMATCH, "pattern mismatch");
         }
