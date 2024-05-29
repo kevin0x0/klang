@@ -27,9 +27,9 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
     return NULL;
   }
   if (kl_unlikely(!klthrow_init(&state->throwinfo, klmm, 128))) {
+    klreflist_delete(*klstate_reflist(state), klmm);
     klstack_destroy(klstate_stack(state), klmm);
     klmm_free(klmm, state, sizeof (KlState));
-    klreflist_delete(*klstate_reflist(state), klmm);
     return NULL;
   }
   klco_init(&state->coinfo, kclo);
