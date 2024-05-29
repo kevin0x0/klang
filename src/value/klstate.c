@@ -26,7 +26,12 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
     klmm_free(klmm, state, sizeof (KlState));
     return NULL;
   }
-  klthrow_init(&state->throwinfo, klmm, 128);
+  if (kl_unlikely(!klthrow_init(&state->throwinfo, klmm, 128))) {
+    klstack_destroy(klstate_stack(state), klmm);
+    klmm_free(klmm, state, sizeof (KlState));
+    klreflist_delete(*klstate_reflist(state), klmm);
+    return NULL;
+  }
   klco_init(&state->coinfo, kclo);
   state->klmm = klmm;
   state->strpool = strpool;

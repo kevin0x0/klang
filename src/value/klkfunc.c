@@ -17,11 +17,11 @@ KlKFunction* klkfunc_alloc(KlMM* klmm, unsigned codelen, unsigned short nconst, 
   KlRefInfo* refinfo = (KlRefInfo*)klmm_alloc(klmm, sizeof (KlRefInfo) * nref);
   KlKFunction** subfunc = (KlKFunction**)klmm_alloc(klmm, sizeof (KlKFunction*) * nsubfunc);
   if (kl_unlikely(!kfunc || !code || !constants || !refinfo || !subfunc)) {
-    klmm_free(klmm, kfunc, sizeof (KlKFunction));
-    klmm_free(klmm, code, sizeof (KlInstruction) * codelen);
-    klmm_free(klmm, constants, sizeof (KlValue) * nconst);
-    klmm_free(klmm, refinfo, sizeof (KlRefInfo) * nref);
-    klmm_free(klmm, subfunc, sizeof (KlKFunction*) * nsubfunc);
+    if (kfunc) klmm_free(klmm, kfunc, sizeof (KlKFunction));
+    if (code) klmm_free(klmm, code, sizeof (KlInstruction) * codelen);
+    if (constants) klmm_free(klmm, constants, sizeof (KlValue) * nconst);
+    if (refinfo) klmm_free(klmm, refinfo, sizeof (KlRefInfo) * nref);
+    if (subfunc) klmm_free(klmm, subfunc, sizeof (KlKFunction*) * nsubfunc);
     return NULL;
   }
   kfunc->code = code;

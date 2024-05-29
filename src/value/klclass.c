@@ -29,11 +29,8 @@ KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* co
     klmm_free(klmm, klclass, sizeof (KlClass));
     return NULL;
   }
-  for (size_t i = 0; i < klclass->capacity; ++i) {
-    klvalue_setnil(&klclass->slots[i].value);
+  for (size_t i = 0; i < klclass->capacity; ++i)
     klclass->slots[i].key = NULL;
-    klclass->slots[i].next = NULL;
-  }
   klmm_gcobj_enable(klmm, klmm_to_gcobj(klclass), &klclass_gcvfunc);
   return klclass;
 }
@@ -42,17 +39,18 @@ KlClass* klclass_inherit(KlMM* klmm, KlClass* parent) {
   KlClassSlot* array = (KlClassSlot*)klmm_alloc(klmm, parent->capacity * sizeof (KlClassSlot));
   KlClass* klclass = (KlClass*)klmm_alloc(klmm, sizeof (KlClass));
   if (kl_unlikely(!array || !klclass)) {
-    klmm_free(klmm, array, parent->capacity * sizeof (KlClassSlot));
-    klmm_free(klmm, klclass, sizeof (KlClass));
+    if (array) klmm_free(klmm, array, parent->capacity * sizeof (KlClassSlot));
+    if (klclass) klmm_free(klmm, klclass, sizeof (KlClass));
     return NULL;
   }
 
-  KlClassSlot* slots = parent->slots;
-  memcpy(array, slots, parent->capacity * sizeof (KlClassSlot));
-  ptrdiff_t offset = array - slots;
   KlClassSlot* end = array + parent->capacity;
-  for (KlClassSlot* itr = array; itr != end; ++itr) {
-    if (itr->next) itr->next += offset;
+  KlClassSlot* slotbegin = parent->slots;
+  for (KlClassSlot* itr = array, * slot = slotbegin; itr != end; ++itr, ++slot) {
+    if ((itr->key = slot->key)) {
+      klvalue_setvalue(&itr->value, &slot->value);
+      itr->next = array + (slot->next - slotbegin);
+    }
   }
   klclass->constructor = parent->constructor;
   klclass->constructor_data = parent->constructor_data;
@@ -76,11 +74,8 @@ static bool klclass_rehash(KlClass* klclass, KlMM* klmm) {
     return false;
   }
 
-  for (size_t i = 0; i < new_capacity; ++i) {
-    klvalue_setnil(&klclass->slots[i].value);
+  for (size_t i = 0; i < new_capacity; ++i)
     klclass->slots[i].key = NULL;
-    klclass->slots[i].next = NULL;
-  }
 
   klclass->capacity = new_capacity;
   klclass->lastfree = new_capacity; /* reset lastfree */
@@ -299,10 +294,11 @@ static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* g
   KlClassSlot* slots = klclass->slots;
   KlClassSlot* end = slots + klclass->capacity;
   for (KlClassSlot* itr = slots; itr != end; ++itr) {
-    if (itr->key)
+    if (itr->key) {
       klmm_gcobj_mark(klmm_to_gcobj(itr->key), gclist);
-    if (klvalue_collectable(&itr->value))
-      klmm_gcobj_mark(klvalue_getgcobj(&itr->value), gclist);
+      if (klvalue_collectable(&itr->value))
+        klmm_gcobj_mark(klvalue_getgcobj(&itr->value), gclist);
+    }
   }
   return gclist;
 }
