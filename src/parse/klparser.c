@@ -380,22 +380,24 @@ static KlAst* klparser_array(KlParser* parser, KlLex* lex) {
 }
 
 static KlAstExprList* klparser_finishexprlist(KlParser* parser, KlLex* lex, KlAst* expr) {
-  KArray exprs;
-  if (kl_unlikely(!karray_init(&exprs)))
+  KArray exprarray;
+  if (kl_unlikely(!karray_init(&exprarray)))
     return klparser_error_oom(parser, lex);
-  if (kl_unlikely(!karray_push_back(&exprs, expr))) {
-    klparser_destroy_astarray(&exprs);
+  if (kl_unlikely(!karray_push_back(&exprarray, expr))) {
+    klparser_destroy_astarray(&exprarray);
     klast_delete(expr);
     return klparser_error_oom(parser, lex);
   }
   while (kllex_trymatch(lex, KLTK_COMMA) && klparser_exprbegin(lex)) {
     KlAst* expr = klparser_expr(parser, lex);
     if (kl_unlikely(!expr)) continue;
-    klparser_karr_pushast(&exprs, expr);
+    klparser_karr_pushast(&exprarray, expr);
   }
-  karray_shrink(&exprs);
-  size_t nelem = karray_size(&exprs);
-  KlAstExprList* exprlist = klast_exprlist_create((KlAst**)karray_steal(&exprs), nelem, expr->begin, klast_end(karray_top(&exprs)));
+  kl_assert(karray_size(&exprarray) != 0, "");
+  karray_shrink(&exprarray);
+  size_t nelem = karray_size(&exprarray);
+  KlAst** exprs = (KlAst**)karray_steal(&exprarray);
+  KlAstExprList* exprlist = klast_exprlist_create(exprs, nelem, expr->begin, klast_end(exprs[nelem - 1]));
   klparser_oomifnull(exprlist);
   return exprlist;
 }
