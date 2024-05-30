@@ -38,9 +38,6 @@ typedef struct tagKlMap {
 
 
 KlMap* klmap_create(KlClass* mapclass, size_t capacity, KlMapNodePool* nodepool);
-KlClass* klmap_class(KlMM* klmm, KlMapNodePool* mapnodepool);
-
-bool klmap_compatiable(KlObject* obj);
 
 static inline size_t klmap_size(KlMap* map);
 static inline size_t klmap_capacity(KlMap* map);

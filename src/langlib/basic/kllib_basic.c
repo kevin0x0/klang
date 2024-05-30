@@ -1,4 +1,5 @@
 #include "include/klapi.h"
+#include "include/value/klbuiltinclass.h"
 #include "include/value/klarray.h"
 #include "include/value/klmap.h"
 #include "include/value/klvalue.h"

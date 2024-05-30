@@ -1,10 +1,8 @@
 #include "include/vm/klcommon.h"
-#include "include/misc/klutils.h"
-#include "include/value/klarray.h"
-#include "include/value/klmap.h"
+#include "include/value/klbuiltinclass.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
-#include <string.h>
+#include "include/misc/klutils.h"
 
 static KlClass* klcommon_phonyclass(KlMM* klmm);
 static KlException klcommon_null_contructor(KlClass* klclass, KlMM* klmm, KlValue* value);
@@ -57,16 +55,16 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   for (KlType type = 0; type < KL_NTYPE; ++type)
     common->klclass.phony[type] = fallback;
 
-  done = done && (common->klclass.map = klmap_class(klmm, mapnodepool));
-  done = done && (common->klclass.array = klarray_class(klmm));
-  done = done && (common->klclass.phony[KL_STRING] = klcommon_phonyclass(klmm));
-  done = done && (common->klclass.phony[KL_INT] = klcommon_phonyclass(klmm));
-  done = done && (common->klclass.phony[KL_FLOAT] = klcommon_phonyclass(klmm));
-  done = done && (common->klclass.phony[KL_BOOL] = klcommon_phonyclass(klmm));
-  done = done && (common->klclass.phony[KL_NIL] = klcommon_phonyclass(klmm));
-  done = done && (common->klclass.phony[KL_KCLOSURE] = klcommon_phonyclass(klmm));
-  done = done && (common->klclass.phony[KL_CCLOSURE] = klcommon_phonyclass(klmm));
-  done = done && (common->klclass.phony[KL_COROUTINE] = klcommon_phonyclass(klmm));
+  done = done && (common->klclass.map = klbuiltinclass_map(klmm, mapnodepool));
+  done = done && (common->klclass.array = klbuiltinclass_array(klmm));
+  done = done && (common->klclass.phony[KL_STRING] = klbuiltinclass_string(klmm, strpool));
+  done = done && (common->klclass.phony[KL_INT] = klbuiltinclass_int(klmm));
+  done = done && (common->klclass.phony[KL_FLOAT] = klbuiltinclass_float(klmm));
+  done = done && (common->klclass.phony[KL_BOOL] = klbuiltinclass_bool(klmm));
+  done = done && (common->klclass.phony[KL_NIL] = klbuiltinclass_nil(klmm));
+  done = done && (common->klclass.phony[KL_KCLOSURE] = klbuiltinclass_kclosure(klmm));
+  done = done && (common->klclass.phony[KL_CCLOSURE] = klbuiltinclass_cclosure(klmm));
+  done = done && (common->klclass.phony[KL_COROUTINE] = klbuiltinclass_coroutine(klmm));
   if (kl_unlikely(!done)) {
     klmm_free(klmm, common, sizeof (KlCommon));
     return NULL;

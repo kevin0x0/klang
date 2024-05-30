@@ -31,21 +31,6 @@ static void klarray_delete(KlArray* array, KlMM* klmm) {
   klobject_free(klcast(KlObject*, array), klmm);
 }
 
-static KlException klarray_constructor(KlClass* arrayclass, KlMM* klmm, KlValue* value) {
-  KlArray* arr = klarray_create(arrayclass, klmm, 1);
-  if (kl_unlikely(!arr)) return KL_E_OOM;
-  klvalue_setobj(value, arr, KL_ARRAY);
-  return KL_E_NONE;
-}
-
-KlClass* klarray_class(KlMM* klmm) {
-  return klclass_create(klmm, 5, klobject_attrarrayoffset(KlArray), NULL, klarray_constructor);
-}
-
-bool klarray_compatiable(KlObject* obj) {
-  return klobject_compatiable(obj, klarray_constructor);
-}
-
 bool klarray_check_capacity(KlArray* array, KlMM* klmm, size_t new_capacity) {
   new_capacity = new_capacity == 0 ? 4 : new_capacity;
   if (klarray_capacity(array) >= new_capacity)

@@ -264,23 +264,6 @@ KlMapIter klmap_erase(KlMap* map, KlMapIter iter) {
   return next;
 }
 
-static KlException klmap_constructor(KlClass* klclass, KlMM* klmm, KlValue* value) {
-  (void)klmm;
-  KlMap* map = klmap_create(klclass, 3, klcast(KlMapNodePool*, klclass_constructor_data(klclass)));
-  if (kl_unlikely(!map)) return KL_E_OOM;
-  klvalue_setobj(value, map, KL_MAP);
-  return KL_E_NONE;
-}
-
-KlClass* klmap_class(KlMM* klmm, KlMapNodePool* mapnodepool) {
-  KlClass* mapclass = klclass_create(klmm, 5, klobject_attrarrayoffset(KlMap), mapnodepool, klmap_constructor);
-  return mapclass;
-}
-
-bool klmap_compatiable(KlObject* obj) {
-  return klobject_compatiable(obj, klmap_constructor);
-}
-
 static KlGCObject* klmap_propagate_nonweak(KlMap* map, KlGCObject* gclist) {
   KlMapIter end = klmap_iter_end(map);
   KlMapIter begin = klmap_iter_begin(map);
