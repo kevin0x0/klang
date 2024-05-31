@@ -197,10 +197,10 @@ KlMapIter klmap_search(KlMap* map, KlValue* key) {
   return NULL;
 }
 
-KlMapIter klmap_bucketnext(KlMap* map, size_t bucketid, KlMapIter itr) {
-  kl_assert(klmap_validbucket(map, bucketid) && klmap_bucketid(map, itr) == bucketid, "");
+KlMapIter klmap_bucketnext(KlMap* map, size_t bucketid, KlValue* key) {
+  kl_assert(klmap_validbucket(map, bucketid), "");
   size_t mask = map->capacity - 1;
-  KlValue* key = &itr->key;
+  KlMapIter itr = map->array[mask & bucketid];
   do {
     if (klvalue_equal(key, &itr->key)) {
       return itr->next == &map->tail ? NULL : itr->next;

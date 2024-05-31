@@ -220,8 +220,7 @@ static KlException kllib_basic_map_next(KlState* state) {
   KlUInt bucketid = klvalue_getuint(base + 1);
   if (kl_unlikely(!klmap_validbucket(map, bucketid)))
     return klapi_throw_internal(state, KL_E_INVLD, "the for loop is broken");
-  KlMapIter itr = klmap_getbucket(map, bucketid);
-  itr = klmap_bucketnext(map, bucketid, itr);
+  KlMapIter itr = klmap_bucketnext(map, bucketid, base + 2);
   if (kl_unlikely(!itr)) return klapi_return(state, 0);
   klvalue_setuint(base + 1, klmap_bucketid(map, itr));
   klvalue_setvalue(base + 2, &itr->key);

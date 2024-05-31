@@ -55,7 +55,7 @@ static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* node);
 static inline size_t klmap_bucketid(KlMap* map, KlMapIter itr);
 static inline KlMapIter klmap_getbucket(KlMap* map, size_t bucketid);
 static inline bool klmap_validbucket(KlMap* map, size_t bucketid);
-KlMapIter klmap_bucketnext(KlMap* map, size_t bucketid, KlMapIter itr);
+KlMapIter klmap_bucketnext(KlMap* map, size_t bucketid, KlValue* key);
 static inline KlMapIter klmap_iter_begin(KlMap* map);
 static inline KlMapIter klmap_iter_end(KlMap* map);
 static inline KlMapIter klmap_iter_next(KlMapIter current);
