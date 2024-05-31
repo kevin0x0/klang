@@ -21,7 +21,7 @@ STDC =
 CFLAGS = $(STDC) $(OPTIMIZE) $(MEMORY_CHECK) $(WARNING) $(DEBUG) -I $(ROOT_DIR) -I $(DEPS_K_DIR)
 
 KLANG_OBJS = $(OBJ_DIR)klutils.o $(OBJ_DIR)klgc.o $(OBJ_DIR)klmm.o $(OBJ_DIR)klarray.o $(OBJ_DIR)klmap.o $(OBJ_DIR)klclass.o \
-             $(OBJ_DIR)klclosure.o $(OBJ_DIR)klkfunc.o $(OBJ_DIR)klref.o $(OBJ_DIR)klstring.o $(OBJ_DIR)klcoroutine.o \
+             $(OBJ_DIR)klclosure.o $(OBJ_DIR)klkfunc.o $(OBJ_DIR)klref.o $(OBJ_DIR)klstring.o $(OBJ_DIR)klcoroutine.o $(OBJ_DIR)klbuiltinclass.o \
              $(OBJ_DIR)klvalue.o $(OBJ_DIR)klcommon.o $(OBJ_DIR)klexec.o $(OBJ_DIR)klstack.o $(OBJ_DIR)klstate.o $(OBJ_DIR)klthrow.o \
              $(OBJ_DIR)klconvert.o $(OBJ_DIR)klapi.o
 
@@ -159,7 +159,7 @@ $(OBJ_DIR)klapi.o : $(SRC_DIR)klapi.c $(DEPS_K_DIR)include/lib/lib.h $(INC_DIR)k
 $(OBJ_DIR)klconvert.o : $(SRC_DIR)lang/klconvert.c $(INC_DIR)lang/klconvert.h $(INC_DIR)lang/kltypes.h | create_dir
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJ_DIR)kllib_basic.o : $(SRC_DIR)langlib/basic/kllib_basic.c $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h | create_dir
+$(OBJ_DIR)kllib_basic.o : $(SRC_DIR)langlib/basic/kllib_basic.c $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h $(INC_DIR)value/klbuiltinclass.h | create_dir
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)kllib_rtcpl.o : $(SRC_DIR)langlib/rtcpl/kllib_rtcpl.c $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kio_common.h $(DEPS_K_DIR)include/kio/ko.h $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h $(INC_DIR)code/klcode.h $(INC_DIR)ast/klast.h $(INC_DIR)ast/klstrtbl.h $(INC_DIR)error/klerror.h $(INC_DIR)parse/kltokens.h $(INC_DIR)parse/klparser.h $(INC_DIR)parse/kllex.h | create_dir
@@ -198,6 +198,9 @@ $(OBJ_DIR)kltokens.o : $(SRC_DIR)parse/kltokens.c $(INC_DIR)parse/kltokens.h | c
 $(OBJ_DIR)klarray.o : $(SRC_DIR)value/klarray.c $(INC_DIR)value/klarray.h $(INC_DIR)misc/klutils.h $(INC_DIR)mm/klmm.h $(INC_DIR)lang/kltypes.h $(INC_DIR)value/klclass.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klvalue.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h | create_dir
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(OBJ_DIR)klbuiltinclass.o : $(SRC_DIR)value/klbuiltinclass.c $(INC_DIR)value/klbuiltinclass.h $(INC_DIR)value/klclass.h $(INC_DIR)lang/kltypes.h $(INC_DIR)misc/klutils.h $(INC_DIR)value/klstring.h $(INC_DIR)mm/klmm.h $(INC_DIR)value/klvalue.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klarray.h $(INC_DIR)value/klstate.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)vm/klstack.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h | create_dir
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 $(OBJ_DIR)klclass.o : $(SRC_DIR)value/klclass.c $(INC_DIR)value/klclass.h $(INC_DIR)lang/kltypes.h $(INC_DIR)misc/klutils.h $(INC_DIR)value/klstring.h $(INC_DIR)mm/klmm.h $(INC_DIR)value/klvalue.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h | create_dir
 	$(CC) $(CFLAGS) -c -o $@ $<
 
@@ -225,7 +228,7 @@ $(OBJ_DIR)klstring.o : $(SRC_DIR)value/klstring.c $(INC_DIR)value/klstring.h $(I
 $(OBJ_DIR)klvalue.o : $(SRC_DIR)value/klvalue.c $(INC_DIR)value/klvalue.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h | create_dir
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJ_DIR)klcommon.o : $(SRC_DIR)vm/klcommon.c $(INC_DIR)vm/klcommon.h $(INC_DIR)value/klclass.h $(INC_DIR)lang/kltypes.h $(INC_DIR)misc/klutils.h $(INC_DIR)value/klstring.h $(INC_DIR)mm/klmm.h $(INC_DIR)value/klvalue.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klarray.h | create_dir
+$(OBJ_DIR)klcommon.o : $(SRC_DIR)vm/klcommon.c $(INC_DIR)vm/klcommon.h $(INC_DIR)value/klclass.h $(INC_DIR)lang/kltypes.h $(INC_DIR)misc/klutils.h $(INC_DIR)value/klstring.h $(INC_DIR)mm/klmm.h $(INC_DIR)value/klvalue.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klbuiltinclass.h | create_dir
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)klexec.o : $(SRC_DIR)vm/klexec.c $(INC_DIR)vm/klexec.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klcfunc.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)misc/klutils.h $(INC_DIR)mm/klmm.h $(INC_DIR)lang/kltypes.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klvalue.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h $(INC_DIR)lang/klconvert.h | create_dir
@@ -298,7 +301,7 @@ $(OBJ_DIR)klparser.pic.o : $(SRC_DIR)parse/klparser.c $(DEPS_K_DIR)include/kio/k
 $(OBJ_DIR)kltokens.pic.o : $(SRC_DIR)parse/kltokens.c $(INC_DIR)parse/kltokens.h | create_dir
 	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
 
-$(OBJ_DIR)kllib_basic.pic.o : $(SRC_DIR)langlib/basic/kllib_basic.c $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h | create_dir
+$(OBJ_DIR)kllib_basic.pic.o : $(SRC_DIR)langlib/basic/kllib_basic.c $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h $(INC_DIR)value/klbuiltinclass.h | create_dir
 	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)kllib_rtcpl.pic.o : $(SRC_DIR)langlib/rtcpl/kllib_rtcpl.c $(DEPS_K_DIR)include/kio/ki.h $(DEPS_K_DIR)include/kio/kio_common.h $(DEPS_K_DIR)include/kio/ko.h $(INC_DIR)klapi.h $(INC_DIR)value/klcfunc.h $(INC_DIR)vm/klexception.h $(INC_DIR)value/klvalue.h $(INC_DIR)lang/kltypes.h $(INC_DIR)mm/klmm.h $(INC_DIR)misc/klutils.h $(INC_DIR)vm/klexec.h $(INC_DIR)value/klcoroutine.h $(INC_DIR)value/klclosure.h $(INC_DIR)value/klkfunc.h $(INC_DIR)value/klstring.h $(INC_DIR)value/klref.h $(INC_DIR)lang/klinst.h $(INC_DIR)value/klstate.h $(INC_DIR)vm/klstack.h $(INC_DIR)value/klmap.h $(INC_DIR)value/klclass.h $(INC_DIR)vm/klcommon.h $(INC_DIR)vm/klthrow.h $(INC_DIR)value/klarray.h $(INC_DIR)code/klcode.h $(INC_DIR)ast/klast.h $(INC_DIR)ast/klstrtbl.h $(INC_DIR)error/klerror.h $(INC_DIR)parse/kltokens.h $(INC_DIR)parse/klparser.h $(INC_DIR)parse/kllex.h | create_dir
