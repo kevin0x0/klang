@@ -1587,8 +1587,9 @@ KlException klexec_execute(KlState* state) {
             KlMap* map = klvalue_getobj(indexable, KlMap*);
             KlMapIter itr = klmap_search(map, &key);
             if (itr) {
-              klvalue_setvalue(&itr->value, val);
-            } else {
+              klvalue_checktype(val, KL_NIL) ? klmap_erase(map, itr)
+                                             : klvalue_setvalue(&itr->value, val);
+            } else if (!klvalue_checktype(val, KL_NIL)) {
               klexec_savestate(callinfo->top, pc);
               if (kl_unlikely(!klmap_insert(map, &key, val)))
                 return klstate_throw_oom(state, "inserting a k-v pair to a map");
@@ -1666,8 +1667,9 @@ KlException klexec_execute(KlState* state) {
             if (klvalue_canrawequal(key)) { /* simple types that can apply raw equal. fast search and set */
               KlMapIter itr = klmap_search(map, key);
               if (itr) {
-                klvalue_setvalue(&itr->value, val);
-              } else {
+                klvalue_checktype(val, KL_NIL) ? klmap_erase(map, itr)
+                                               : klvalue_setvalue(&itr->value, val);
+              } else if (!klvalue_checktype(val, KL_NIL)) {
                 klexec_savestate(callinfo->top, pc);
                 if (kl_unlikely(!klmap_insert(map, key, val)))
                   return klstate_throw_oom(state, "inserting a k-v pair to a map");
