@@ -33,9 +33,12 @@ static KlAstStmtList* klparser_generator(KlParser* parser, KlLex* lex, KlAst* in
 static KlAstStmtList* klparser_darrowfuncbody(KlParser* parser, KlLex* lex);
 static KlAstStmtList* klparser_arrowfuncbody(KlParser* parser, KlLex* lex);
 static KlAstExprList* klparser_emptyexprlist(KlParser* parser, KlLex* lex, KlFileOffset begin, KlFileOffset end);
-static KlAstMap* klparser_finishmap(KlParser* parser, KlLex* lex);
+/* parse all syntactical structure that begin with '{"(class, map, map generator, coroutine generator) */
+static KlAst* klparser_exprbrace(KlParser* parser, KlLex* lex);
+static KlAst* klparser_exprbrace_inner(KlParser* parser, KlLex* lex);
+static KlAst* klparser_finishmap(KlParser* parser, KlLex* lex, KlAst* firstkey, KlAst* firstval);
+static KlAstMapGenerator* klparser_finishmapgenerator(KlParser* parser, KlLex* lex, KlAst** keys, KlAst** vals, size_t npair);
 static KlAstClass* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc id, KlAst* expr, bool preparsed);
-static KlAst* klparser_generatorclass(KlParser* parser, KlLex* lex);
 static void klparser_locallist(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals);
 static void klparser_sharedlist(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals);
 static KlAst* klparser_array(KlParser* parser, KlLex* lex);
@@ -304,15 +307,7 @@ static KlAst* klparser_exprunit(KlParser* parser, KlLex* lex, bool* inparenthesi
       return klast(klparser_array(parser, lex));
     }
     case KLTK_LBRACE: {
-      KlFileOffset begin = kllex_tokbegin(lex);
-      kllex_next(lex);
-      KlAst* ast = kllex_check(lex, KLTK_COLON)
-                 ? klast(klparser_finishmap(parser, lex))
-                 : klparser_generatorclass(parser, lex);
-      KlFileOffset end = kllex_tokend(lex);
-      klparser_match(parser, lex, KLTK_RBRACE);
-      if (kl_likely(ast)) klast_setposition(ast, begin, end);
-      return ast;
+      return klparser_exprbrace(parser, lex);
     }
     case KLTK_LPAREN: {
       KlFileOffset begin = kllex_tokbegin(lex);
@@ -402,101 +397,25 @@ static KlAstExprList* klparser_finishexprlist(KlParser* parser, KlLex* lex, KlAs
   return exprlist;
 }
 
-static KlAstMap* klparser_finishmap(KlParser* parser, KlLex* lex) {
-  kl_assert(kllex_check(lex, KLTK_COLON), "expected ':'");
+static KlAst* klparser_exprbrace(KlParser* parser, KlLex* lex) {
+  kl_assert(kllex_check(lex, KLTK_LBRACE), "");
+  KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
-  KArray keys;
-  KArray vals;
-  if (kl_unlikely(!karray_init(&keys) || !karray_init(&vals))) {
-    karray_destroy(&keys);
-    karray_destroy(&vals);
-    return klparser_error_oom(parser, lex);
-  }
-  if (!kllex_check(lex, KLTK_COLON)) {  /* non-empty */
-    /* parse all key-value pairs */
-    do {
-      KlAst* key = klparser_expr(parser, lex);
-      klparser_match(parser, lex, KLTK_COLON);
-      KlAst* val = klparser_expr(parser, lex);
-      if (kl_likely(key && val)) {
-        klparser_karr_pushast(&keys, key);
-        klparser_karr_pushast(&vals, val);
-      } else {
-        if (key) klast_delete(key);
-        if (val) klast_delete(val);
-      }
-    } while (kllex_trymatch(lex, KLTK_COMMA));
-  }
-  klparser_match(parser, lex, KLTK_COLON);
-  if (kl_unlikely(karray_size(&keys) != karray_size(&vals))) {
-    klparser_destroy_astarray(&keys);
-    klparser_destroy_astarray(&vals);
-    return NULL;
-  }
-  karray_shrink(&keys);
-  karray_shrink(&vals);
-  size_t npair = karray_size(&keys);
-  KlAstMap* map = klast_map_create((KlAst**)karray_steal(&keys), (KlAst**)karray_steal(&vals), npair, ph_filepos, ph_filepos);
-  klparser_oomifnull(map);
-  return map;
+  KlAst* expr = klparser_exprbrace_inner(parser, lex);
+  KlFileOffset end = kllex_tokend(lex);
+  klparser_match(parser, lex, KLTK_RBRACE);
+  klparser_returnifnull(expr);
+  klast_setposition(expr, begin, end);
+  return expr;
 }
 
-static KlAstClass* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc id, KlAst* expr, bool preparsed) {
-  KlCfdArray fields;
-  KArray vals;
-  if (kl_unlikely(!klcfd_init(&fields, 16) || !karray_init(&vals))) {
-    klcfd_destroy(&fields);
-    karray_destroy(&vals);
-    return klparser_error_oom(parser, lex);
+static KlAst* klparser_exprbrace_inner(KlParser* parser, KlLex* lex) {
+  if (kllex_check(lex, KLTK_RBRACE) || kllex_check(lex, KLTK_LOCAL) || kllex_check(lex, KLTK_SHARED)) {  /* is class */
+    return klast(klparser_finishclass(parser, lex, (KlStrDesc) { .id = 0, .length = 0 }, NULL, false));
   }
-  if (preparsed) {
-    /* insert first shared k-v pair */
-    KlAstClassFieldDesc cfd;
-    cfd.shared = true;
-    cfd.name = id;
-    if (kl_unlikely(!klcfd_push_back(&fields, &cfd)))
-      klparser_error_oom(parser, lex);
-    if (kl_unlikely(!karray_push_back(&vals, expr))) {
-      if (expr) klast_delete(expr);
-      klparser_error_oom(parser, lex);
-    }
-    if (kllex_trymatch(lex, KLTK_COMMA))  /* has trailing shared k-v pairs */
-      klparser_sharedlist(parser, lex, &fields, &vals);
-    kllex_trymatch(lex, KLTK_SEMI);
-  }
-  while (!kllex_check(lex, KLTK_RBRACE)) {
-    if (kllex_check(lex, KLTK_LOCAL)) {
-      kllex_next(lex);
-      klparser_locallist(parser, lex, &fields, &vals);
-      kllex_trymatch(lex, KLTK_SEMI);
-    } else if (kl_likely(!kllex_check(lex, KLTK_END))) {
-      kllex_trymatch(lex, KLTK_SHARED);
-      klparser_sharedlist(parser, lex, &fields, &vals);
-      kllex_trymatch(lex, KLTK_SEMI);
-    } else {
-      klparser_error(parser, kllex_inputstream(lex), kllex_tokbegin(lex), kllex_tokend(lex), "end of file");
-      break;
-    }
-  }
-  if (kl_unlikely(klcfd_size(&fields) != karray_size(&vals))) {
-    klcfd_destroy(&fields);
-    klparser_destroy_astarray(&vals);
-    return NULL;
-  }
-  klcfd_shrink(&fields);
-  karray_shrink(&vals);
-  size_t nfield = karray_size(&vals);
-  KlAstClass* klclass = klast_class_create(klcfd_steal(&fields), (KlAst**)karray_steal(&vals), nfield, NULL, ph_filepos, ph_filepos);
-  klparser_oomifnull(klclass);
-  return klclass;
-}
 
-static KlAst* klparser_generatorclass(KlParser* parser, KlLex* lex) {
-  if (kllex_check(lex, KLTK_RBRACE) ||
-      kllex_check(lex, KLTK_LOCAL)  ||
-      kllex_check(lex, KLTK_SHARED)) {  /* is class */
-    KlStrDesc id = { 0, 0 };  /* the value is unimportant here */
-    return klast(klparser_finishclass(parser, lex, id, NULL, false));
+  if (kllex_trymatch(lex, KLTK_COLON)) {  /* empty map */
+    return klparser_finishmap(parser, lex, NULL, NULL);
   }
 
   KlAstExprList* exprlist = klparser_exprlist(parser, lex);
@@ -518,27 +437,188 @@ static KlAst* klparser_generatorclass(KlParser* parser, KlLex* lex) {
     klast_delete(klcast(KlAst*, exprlist));
     KlAst* expr = klparser_expr(parser, lex);
     return klast(klparser_finishclass(parser, lex, id, expr, true));
+  } else if (kllex_trymatch(lex, KLTK_COLON)) {
+    if (kl_unlikely(exprlist->nexpr != 1)) {
+      klparser_error(parser, kllex_inputstream(lex),
+                     klast_begin(exprlist), klast_end(exprlist),
+                     "should be a single expression in map constructor");
+    }
+    KlAst* key = klast_exprlist_stealfirst_and_destroy(exprlist);
+    KlAst* val = klparser_expr(parser, lex);
+    return klparser_finishmap(parser, lex, key, val);
+  } else {
+    /* else is a generator */
+    klparser_match(parser, lex, KLTK_BAR);
+    KlAstYield* yieldexpr = klast_yield_create(exprlist, klast_begin(exprlist), klast_end(exprlist));
+    klparser_oomifnull(yieldexpr);
+    KlAstExprList* single_expr = klparser_singletonexprlist(parser, lex, klast(yieldexpr));
+    klparser_oomifnull(single_expr);
+    KlAstStmtExpr* stmtexpr = klast_stmtexpr_create(single_expr, klast_begin(yieldexpr),  klast_end(yieldexpr));
+    klparser_oomifnull(stmtexpr);
+    KlAstStmtList* generator = klparser_generator(parser, lex, klast(stmtexpr));
+    klparser_returnifnull(generator);
+    KlAstExprList* params = klparser_emptyexprlist(parser, lex, klast_begin(stmtexpr), klast_begin(stmtexpr));
+    if (kl_unlikely(!params)) {
+      klast_delete(generator);
+      return NULL;
+    }
+    KlAstFunc* func = klast_func_create(generator, params, false, false, klast_begin(stmtexpr), klast_end(generator));
+    klparser_oomifnull(func);
+    KlAstPre* asyncexpr = klast_pre_create(KLTK_ASYNC, klast(func), ph_filepos, ph_filepos);
+    klparser_oomifnull(asyncexpr);
+    return klast(asyncexpr);
   }
-  /* else is a generator */
-  klparser_match(parser, lex, KLTK_BAR);
-  KlAstYield* yieldexpr = klast_yield_create(exprlist, klast_begin(exprlist), klast_end(exprlist));
-  klparser_oomifnull(yieldexpr);
-  KlAstExprList* single_expr = klparser_singletonexprlist(parser, lex, klast(yieldexpr));
-  klparser_oomifnull(single_expr);
-  KlAstStmtExpr* stmtexpr = klast_stmtexpr_create(single_expr, klast_begin(yieldexpr),  klast_end(yieldexpr));
-  klparser_oomifnull(stmtexpr);
-  KlAstStmtList* generator = klparser_generator(parser, lex, klast(stmtexpr));
-  klparser_returnifnull(generator);
-  KlAstExprList* params = klparser_emptyexprlist(parser, lex, klast_begin(stmtexpr), klast_begin(stmtexpr));
-  if (kl_unlikely(!params)) {
-    klast_delete(generator);
+}
+
+static KlAst* klparser_finishmap(KlParser* parser, KlLex* lex, KlAst* firstkey, KlAst* firstval) {
+  /* if firstkey is NULL, then the map is not preparsed */
+  KArray keys;
+  KArray vals;
+  if (kl_unlikely(!karray_init(&keys) || !karray_init(&vals))) {
+    karray_destroy(&keys);
+    karray_destroy(&vals);
+    return klparser_error_oom(parser, lex);
+  }
+
+  if (firstkey) {
+    klparser_karr_pushast(&keys, firstkey);
+    klparser_karr_pushast(&vals, firstval);
+    kllex_trymatch(lex, KLTK_COMMA);
+  }
+
+  while (klparser_exprbegin(lex)) {
+    KlAst* key = klparser_expr(parser, lex);
+    klparser_match(parser, lex, KLTK_COLON);
+    KlAst* val = klparser_expr(parser, lex);
+    if (kl_likely(key && val)) {
+      klparser_karr_pushast(&keys, key);
+      klparser_karr_pushast(&vals, val);
+    } else {
+      if (key) klast_delete(key);
+      if (val) klast_delete(val);
+    }
+    kllex_trymatch(lex, KLTK_COMMA);
+  }
+
+  if (kl_unlikely(karray_size(&keys) != karray_size(&vals))) {
+    klparser_destroy_astarray(&keys);
+    klparser_destroy_astarray(&vals);
     return NULL;
   }
-  KlAstFunc* func = klast_func_create(generator, params, false, false, klast_begin(stmtexpr), klast_end(generator));
-  klparser_oomifnull(func);
-  KlAstPre* asyncexpr = klast_pre_create(KLTK_ASYNC, klast(func), ph_filepos, ph_filepos);
-  klparser_oomifnull(asyncexpr);
-  return klast(asyncexpr);
+
+  karray_shrink(&keys);
+  karray_shrink(&vals);
+  size_t npair = karray_size(&keys);
+  KlAst** keys_stolen = (KlAst**)karray_steal(&keys);
+  KlAst** vals_stolen = (KlAst**)karray_steal(&vals);
+
+  if (kllex_check(lex, KLTK_BAR)) { /* is map generator */
+    return klast(klparser_finishmapgenerator(parser, lex, keys_stolen, vals_stolen, npair));
+  } else {  /* a normal map */
+    KlAstMap* map = klast_map_create(keys_stolen, vals_stolen, npair, ph_filepos, ph_filepos);
+    klparser_oomifnull(map);
+    return klast(map);
+  }
+}
+
+static void klparser_mapgenerator_helper_clean(KlAst** keys, KlAst** vals, size_t npair) {
+  for (size_t i = 0; i < npair; ++i) {
+    if (keys[i]) klast_delete(keys[i]);
+    if (vals[i]) klast_delete(vals[i]);
+  }
+  free(keys);
+  free(vals);
+}
+
+static KlAstMapGenerator* klparser_finishmapgenerator(KlParser* parser, KlLex* lex, KlAst** keys, KlAst** vals, size_t npair) {
+  kl_assert(kllex_check(lex, KLTK_BAR), "");
+  KlFileOffset inner_begin = npair == 0 ? kllex_tokbegin(lex) : klast_begin(keys[0]);
+  KlFileOffset inner_end = npair == 0 ? kllex_tokend(lex) : klast_end(vals[npair - 1]);
+  kllex_next(lex);
+
+  KlStrDesc tmpmapid = klparser_newtmpid(parser, lex);
+  for (size_t i = 0; i < npair; ++i) {
+    KlAstIdentifier* mapid = klast_id_create(tmpmapid, inner_begin, inner_begin);
+    if (kl_unlikely(!mapid)) {
+      klparser_mapgenerator_helper_clean(keys, vals, npair);
+      return klparser_error_oom(parser, lex);
+    }
+    keys[i] = klast(klast_post_create(KLTK_INDEX, klast(mapid), keys[i], klast_begin(keys[i]), klast_end(keys[i])));
+    if (kl_unlikely(!keys[i])) {
+      klparser_mapgenerator_helper_clean(keys, vals, npair);
+      return klparser_error_oom(parser, lex);
+    }
+  }
+
+  KlAstExprList* lvals = klast_exprlist_create(keys, npair, inner_begin, inner_end);
+  KlAstExprList* rvals = klast_exprlist_create(vals, npair, inner_begin, inner_end);
+  if (kl_unlikely(!lvals || !rvals)) {
+    if (lvals) klast_delete(lvals);
+    if (rvals) klast_delete(rvals);
+    return klparser_error_oom(parser, lex);
+  }
+  KlAstStmtAssign* inner_stmt = klast_stmtassign_create(lvals, rvals, inner_begin, inner_end);
+  klparser_oomifnull(inner_stmt);
+
+  KlAstStmtList* stmts = klparser_generator(parser, lex, klast(inner_stmt));
+  klparser_returnifnull(stmts);
+  KlAstMapGenerator* mapgen = klast_mapgenerator_create(tmpmapid, stmts, ph_filepos, ph_filepos);
+  klparser_oomifnull(mapgen);
+  return mapgen;
+}
+
+static KlAstClass* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc id, KlAst* expr, bool preparsed) {
+  KlCfdArray fields;
+  KArray vals;
+  if (kl_unlikely(!klcfd_init(&fields, 16) || !karray_init(&vals))) {
+    klcfd_destroy(&fields);
+    karray_destroy(&vals);
+    return klparser_error_oom(parser, lex);
+  }
+
+  if (preparsed) {
+    /* insert first shared k-v pair */
+    KlAstClassFieldDesc cfd;
+    cfd.shared = true;
+    cfd.name = id;
+    if (kl_unlikely(!klcfd_push_back(&fields, &cfd)))
+      klparser_error_oom(parser, lex);
+    if (kl_unlikely(!karray_push_back(&vals, expr))) {
+      if (expr) klast_delete(expr);
+      klparser_error_oom(parser, lex);
+    }
+    if (kllex_trymatch(lex, KLTK_COMMA))  /* has trailing shared k-v pairs */
+      klparser_sharedlist(parser, lex, &fields, &vals);
+    kllex_trymatch(lex, KLTK_SEMI);
+  }
+
+  while (!kllex_check(lex, KLTK_RBRACE)) {
+    if (kllex_check(lex, KLTK_LOCAL)) {
+      kllex_next(lex);
+      klparser_locallist(parser, lex, &fields, &vals);
+      kllex_trymatch(lex, KLTK_SEMI);
+    } else if (kl_likely(!kllex_check(lex, KLTK_END))) {
+      kllex_trymatch(lex, KLTK_SHARED);
+      klparser_sharedlist(parser, lex, &fields, &vals);
+      kllex_trymatch(lex, KLTK_SEMI);
+    } else {
+      klparser_error(parser, kllex_inputstream(lex), kllex_tokbegin(lex), kllex_tokend(lex), "end of file");
+      break;
+    }
+  }
+
+  if (kl_unlikely(klcfd_size(&fields) != karray_size(&vals))) {
+    klcfd_destroy(&fields);
+    klparser_destroy_astarray(&vals);
+    return NULL;
+  }
+
+  klcfd_shrink(&fields);
+  karray_shrink(&vals);
+  size_t nfield = karray_size(&vals);
+  KlAstClass* klclass = klast_class_create(klcfd_steal(&fields), (KlAst**)karray_steal(&vals), nfield, NULL, ph_filepos, ph_filepos);
+  klparser_oomifnull(klclass);
+  return klclass;
 }
 
 static void klparser_locallist(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals) {

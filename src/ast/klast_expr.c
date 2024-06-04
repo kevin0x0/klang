@@ -3,6 +3,7 @@
 
 static void klast_id_destroy(KlAstIdentifier* astid);
 static void klast_map_destroy(KlAstMap* astmap);
+static void klast_mapgenerator_destroy(KlAstMapGenerator* astmapgenerator);
 static void klast_array_destroy(KlAstArray* astarray);
 static void klast_arraygenerator_destroy(KlAstArrayGenerator* astarraygenerator);
 static void klast_class_destroy(KlAstClass* astclass);
@@ -22,6 +23,7 @@ static void klast_where_destroy(KlAstWhere* astwhere);
 
 static const KlAstInfo klast_id_vfunc = { .destructor = (KlAstDelete)klast_id_destroy, .kind = KLAST_EXPR_ID };
 static const KlAstInfo klast_map_vfunc = { .destructor = (KlAstDelete)klast_map_destroy, .kind = KLAST_EXPR_MAP };
+static const KlAstInfo klast_mapgenerator_vfunc = { .destructor = (KlAstDelete)klast_mapgenerator_destroy, .kind = KLAST_EXPR_MAPGEN };
 static const KlAstInfo klast_array_vfunc = { .destructor = (KlAstDelete)klast_array_destroy, .kind = KLAST_EXPR_ARR };
 static const KlAstInfo klast_arraygenerator_vfunc = { .destructor = (KlAstDelete)klast_arraygenerator_destroy, .kind = KLAST_EXPR_ARRGEN };
 static const KlAstInfo klast_class_vfunc = { .destructor = (KlAstDelete)klast_class_destroy, .kind = KLAST_EXPR_CLASS };
@@ -67,10 +69,23 @@ KlAstMap* klast_map_create(KlAst** keys, KlAst** vals, size_t npair, KlFileOffse
   return astmap;
 }
 
+KlAstMapGenerator* klast_mapgenerator_create(KlStrDesc arrid, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
+  KlAstMapGenerator* astmapgenerator = klast_alloc(KlAstMapGenerator);
+  if (kl_unlikely(!astmapgenerator)) {
+    klast_delete(block);
+    return NULL;
+  }
+  astmapgenerator->mapid = arrid;
+  astmapgenerator->block = block;
+  klast_setposition(astmapgenerator, begin, end);
+  klast_init(astmapgenerator, &klast_mapgenerator_vfunc);
+  return astmapgenerator;
+}
+
 KlAstArray* klast_array_create(KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end) {
   KlAstArray* astarray = klast_alloc(KlAstArray);
   if (kl_unlikely(!astarray)) {
-      klast_delete(exprlist);
+    klast_delete(exprlist);
     return NULL;
   }
   astarray->exprlist = exprlist;
@@ -82,7 +97,7 @@ KlAstArray* klast_array_create(KlAstExprList* exprlist, KlFileOffset begin, KlFi
 KlAstArrayGenerator* klast_arraygenerator_create(KlStrDesc arrid, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlAstArrayGenerator* astarraygenerator = klast_alloc(KlAstArrayGenerator);
   if (kl_unlikely(!astarraygenerator)) {
-      klast_delete(block);
+    klast_delete(block);
     return NULL;
   }
   astarraygenerator->arrid = arrid;
@@ -332,6 +347,18 @@ KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset b
 }
 
 
+KlAst* klast_exprlist_stealfirst_and_destroy(KlAstExprList* exprlist) {
+  kl_assert(exprlist->nexpr != 0, "");
+  KlAst* ret = exprlist->exprs[0];
+  KlAst** elems = exprlist->exprs;
+  size_t nelem = exprlist->nexpr;
+  for (size_t i = 1; i < nelem; ++i) {
+    klast_delete(elems[i]);
+  }
+  free(elems);
+  return ret;
+}
+
 
 static void klast_id_destroy(KlAstIdentifier* astid) {
   (void)astid;
@@ -347,6 +374,10 @@ static void klast_map_destroy(KlAstMap* astmap) {
   }
   free(keys);
   free(vals);
+}
+
+static void klast_mapgenerator_destroy(KlAstMapGenerator* astmapgenerator) {
+  klast_delete(astmapgenerator->block);
 }
 
 static void klast_array_destroy(KlAstArray* astarray) {

@@ -24,6 +24,7 @@ typedef enum tagKlAstKind {
   KLAST_EXPR_ARR, KLAST_EXPR_UNIT = KLAST_EXPR_ARR, KLAST_EXPR = KLAST_EXPR_ARR,
   KLAST_EXPR_ARRGEN,
   KLAST_EXPR_MAP,
+  KLAST_EXPR_MAPGEN,
   KLAST_EXPR_CLASS,
   KLAST_EXPR_CONSTANT,
   KLAST_EXPR_ID,
@@ -137,6 +138,12 @@ typedef struct tagKlAstMap {
   KlAst** vals;                     /* values */
   size_t npair;                     /* number of k-v pairs */
 } KlAstMap;
+
+typedef struct tagKlAstMapGenerator {
+  KL_DERIVE_FROM(KlAst, _astbase_);
+  KlStrDesc mapid;                  /* temporary identifier for array */
+  KlAstStmtList* block;             /* code that generates an array */
+} KlAstMapGenerator;
 
 typedef struct tagKlAstArray {
   KL_DERIVE_FROM(KlAst, _astbase_);
@@ -368,6 +375,7 @@ static inline void klast_setposition_raw(KlAst* ast, KlFileOffset begin, KlFileO
 /* expressions */
 KlAstIdentifier* klast_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset end);
 KlAstMap* klast_map_create(KlAst** keys, KlAst** vals, size_t npair, KlFileOffset begin, KlFileOffset end);
+KlAstMapGenerator* klast_mapgenerator_create(KlStrDesc arrid, KlAstStmtList* stmts, KlFileOffset begin, KlFileOffset end);
 KlAstArray* klast_array_create(KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end);
 KlAstArrayGenerator* klast_arraygenerator_create(KlStrDesc arrid, KlAstStmtList* stmts, KlFileOffset begin, KlFileOffset end);
 KlAstClass* klast_class_create(KlAstClassFieldDesc* fields, KlAst** vals, size_t nfield, KlAst* base, KlFileOffset begin, KlFileOffset end);
@@ -388,6 +396,8 @@ KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool v
 KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
 KlAstMatch* klast_match_create(KlAst* matchobj, KlAst** patterns, KlAst** exprs, size_t npattern, KlFileOffset begin, KlFileOffset end);
 KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
+
+KlAst* klast_exprlist_stealfirst_and_destroy(KlAstExprList* exprlist);
 
 static inline bool klast_isboolexpr(KlAst* ast) {
   if (klast_kind(ast) == KLAST_EXPR_PRE) {
