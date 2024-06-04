@@ -456,7 +456,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     }
     case KLOPCODE_INDEXAS: {
       klcode_print_ABC(out, inst);
-      ko_printf(out, "R%u[%d] = R%u", KLINST_ABC_GETB(inst), KLINST_ABC_GETC(inst), KLINST_ABC_GETA(inst));
+      ko_printf(out, "R%u[R%d] = R%u", KLINST_ABC_GETB(inst), KLINST_ABC_GETC(inst), KLINST_ABC_GETA(inst));
       return pc;
     }
     case KLOPCODE_GETFIELDR: {
