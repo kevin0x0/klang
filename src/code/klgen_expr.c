@@ -25,6 +25,7 @@ static void klgen_exprnew(KlGenUnit* gen, KlAstNew* newast, KlCStkId target);
 static void klgen_exprarr(KlGenUnit* gen, KlAstArray* arrast, KlCStkId target);
 static void klgen_exprarrgen(KlGenUnit* gen, KlAstArrayGenerator* arrgenast, KlCStkId target);
 static void klgen_exprmap(KlGenUnit* gen, KlAstMap* mapast, KlCStkId target);
+static void klgen_exprmapgen(KlGenUnit* gen, KlAstMapGenerator* mapgenast, KlCStkId target);
 static void klgen_exprclass(KlGenUnit* gen, KlAstClass* classast, KlCStkId target);
 static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlAstBin* binast, KlCodeVal left, KlCStkId target);
 static KlCodeVal klgen_exprbinrightnonstk(KlGenUnit* gen, KlAstBin* binast, KlCodeVal left, KlCodeVal right, KlCStkId target, KlCStkId oristktop);
@@ -76,6 +77,61 @@ static void klgen_exprarrgen(KlGenUnit* gen, KlAstArrayGenerator* arrgenast, KlC
     klgen_emit(gen, klinst_close(stktop), klgen_astposition(arrgenast));
   if (target != stktop) {
     klgen_emitmove(gen, target, stktop, 1, klgen_astposition(arrgenast));
+    klgen_stackfree(gen, stktop);
+  }
+}
+
+static inline size_t abovelog2(size_t num) {
+  size_t n = 0;
+  while (((size_t)1 << n) < num)
+    ++n;
+  return n;
+}
+
+static void klgen_exprmap(KlGenUnit* gen, KlAstMap* mapast, KlCStkId target) {
+  size_t sizefield = abovelog2(mapast->npair);
+  if (sizefield < 3) sizefield = 3;
+  size_t npair = mapast->npair;
+  KlCStkId stktop = klgen_stackalloc1(gen);
+  if (npair == 0) {
+    klgen_emit(gen, klinst_mkmap(target, stktop, sizefield), klgen_astposition(mapast));
+    if (target != stktop)
+      klgen_stackfree(gen, stktop);
+    return;
+  }
+  klgen_emit(gen, klinst_mkmap(stktop, stktop, sizefield), klgen_astposition(mapast));
+  for (size_t i = 0; i < npair; ++i) {
+    KlCStkId currstktop = klgen_stacktop(gen);
+    KlAst* key = mapast->keys[i];
+    KlAst* val = mapast->vals[i];
+    KlCodeVal keypos = klgen_expr(gen, key);
+    if (keypos.kind == KLVAL_INTEGER && klinst_inrange(keypos.intval, 8)) {
+      KlCodeVal valpos = klgen_expr(gen, val);
+      klgen_putonstack(gen, &valpos, klgen_astposition(val));
+      klgen_emit(gen, klinst_indexasi(valpos.index, target, keypos.intval), klgen_astposition(mapast));
+    } else {
+      klgen_putonstack(gen, &keypos, klgen_astposition(key));
+      KlCodeVal valpos = klgen_expr(gen, val);
+      klgen_putonstack(gen, &valpos, klgen_astposition(val));
+      klgen_emit(gen, klinst_indexas(valpos.index, target, keypos.index), klgen_astposition(mapast));
+    }
+    klgen_stackfree(gen, currstktop);
+  }
+  if (target != stktop) {
+    klgen_emitmove(gen, target, stktop, 1, klgen_astposition(mapast));
+    klgen_stackfree(gen, stktop);
+  }
+}
+
+static void klgen_exprmapgen(KlGenUnit* gen, KlAstMapGenerator* mapgenast, KlCStkId target) {
+  KlCStkId stktop = klgen_stackalloc1(gen);
+  klgen_emit(gen, klinst_mkmap(stktop, stktop, 4), klgen_astposition(mapgenast));
+  klgen_newsymbol(gen, mapgenast->mapid, stktop, klgen_position(klast_begin(mapgenast), klast_begin(mapgenast)));
+  bool needclose = klgen_stmtblockpure(gen, mapgenast->block);
+  if (needclose)
+    klgen_emit(gen, klinst_close(stktop), klgen_astposition(mapgenast));
+  if (target != stktop) {
+    klgen_emitmove(gen, target, stktop, 1, klgen_astposition(mapgenast));
     klgen_stackfree(gen, stktop);
   }
 }
@@ -296,48 +352,6 @@ static void klgen_exprfunc(KlGenUnit* gen, KlAstFunc* funcast, KlCStkId target) 
     klgen_destroy(&newgen);
     if (target == stktop)
       klgen_stackalloc1(gen);
-  }
-}
-
-static inline size_t abovelog2(size_t num) {
-  size_t n = 0;
-  while (((size_t)1 << n) < num)
-    ++n;
-  return n;
-}
-
-static void klgen_exprmap(KlGenUnit* gen, KlAstMap* mapast, KlCStkId target) {
-  size_t sizefield = abovelog2(mapast->npair);
-  if (sizefield < 3) sizefield = 3;
-  size_t npair = mapast->npair;
-  KlCStkId stktop = klgen_stackalloc1(gen);
-  if (npair == 0) {
-    klgen_emit(gen, klinst_mkmap(target, stktop, sizefield), klgen_astposition(mapast));
-    if (target != stktop)
-      klgen_stackfree(gen, stktop);
-    return;
-  }
-  klgen_emit(gen, klinst_mkmap(stktop, stktop, sizefield), klgen_astposition(mapast));
-  for (size_t i = 0; i < npair; ++i) {
-    KlCStkId currstktop = klgen_stacktop(gen);
-    KlAst* key = mapast->keys[i];
-    KlAst* val = mapast->vals[i];
-    KlCodeVal keypos = klgen_expr(gen, key);
-    if (keypos.kind == KLVAL_INTEGER && klinst_inrange(keypos.intval, 8)) {
-      KlCodeVal valpos = klgen_expr(gen, val);
-      klgen_putonstack(gen, &valpos, klgen_astposition(val));
-      klgen_emit(gen, klinst_indexasi(valpos.index, target, keypos.intval), klgen_astposition(mapast));
-    } else {
-      klgen_putonstack(gen, &keypos, klgen_astposition(key));
-      KlCodeVal valpos = klgen_expr(gen, val);
-      klgen_putonstack(gen, &valpos, klgen_astposition(val));
-      klgen_emit(gen, klinst_indexas(valpos.index, target, keypos.index), klgen_astposition(mapast));
-    }
-    klgen_stackfree(gen, currstktop);
-  }
-  if (target != stktop) {
-    klgen_emitmove(gen, target, stktop, 1, klgen_astposition(mapast));
-    klgen_stackfree(gen, stktop);
   }
 }
 
@@ -1063,6 +1077,16 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlAst* ast) {
       klgen_exprarrgen(gen, klcast(KlAstArrayGenerator*, ast), target);
       return klcodeval_stack(target);
     }
+    case KLAST_EXPR_MAP: {
+      KlCStkId target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
+      klgen_exprmap(gen, klcast(KlAstMap*, ast), target);
+      return klcodeval_stack(target);
+    }
+    case KLAST_EXPR_MAPGEN: {
+      KlCStkId target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
+      klgen_exprmapgen(gen, klcast(KlAstMapGenerator*, ast), target);
+      return klcodeval_stack(target);
+    }
     case KLAST_EXPR_MATCH: {
       KlCStkId target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprmatch(gen, klcast(KlAstMatch*, ast), target, true);
@@ -1071,11 +1095,6 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlAst* ast) {
     case KLAST_EXPR_WHERE: {
       KlCStkId target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
       klgen_exprwhere(gen, klcast(KlAstWhere*, ast), 1, target);
-      return klcodeval_stack(target);
-    }
-    case KLAST_EXPR_MAP: {
-      KlCStkId target = klgen_stacktop(gen);   /* here we generate the value on top of the stack */
-      klgen_exprmap(gen, klcast(KlAstMap*, ast), target);
       return klcodeval_stack(target);
     }
     case KLAST_EXPR_CLASS: {
@@ -1151,16 +1170,20 @@ KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlAst* ast, KlCStkId target) {
       klgen_exprarrgen(gen, klcast(KlAstArrayGenerator*, ast), target);
       return klcodeval_stack(target);
     }
+    case KLAST_EXPR_MAP: {
+      klgen_exprmap(gen, klcast(KlAstMap*, ast), target);
+      return klcodeval_stack(target);
+    }
+    case KLAST_EXPR_MAPGEN: {
+      klgen_exprmapgen(gen, klcast(KlAstMapGenerator*, ast), target);
+      return klcodeval_stack(target);
+    }
     case KLAST_EXPR_MATCH: {
       klgen_exprmatch(gen, klcast(KlAstMatch*, ast), target, true);
       return klcodeval_stack(target);
     }
     case KLAST_EXPR_WHERE: {
       klgen_exprwhere(gen, klcast(KlAstWhere*, ast), 1, target);
-      return klcodeval_stack(target);
-    }
-    case KLAST_EXPR_MAP: {
-      klgen_exprmap(gen, klcast(KlAstMap*, ast), target);
       return klcodeval_stack(target);
     }
     case KLAST_EXPR_CLASS: {
