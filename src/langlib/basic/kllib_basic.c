@@ -141,14 +141,14 @@ static void kllib_basic_print_map(KlMap* map, size_t depth) {
   KlMapIter end = klmap_iter_end(map);
   KlMapIter itr = klmap_iter_begin(map);
   if (itr == end) {
-    fputs("{::}", stdout);
+    fputs("{:}", stdout);
     return;
   }
   if (depth++ >= KLLIB_BASIC_PRINT_DEPTH_LIMIT) {
-    fputs("{:...:}", stdout);
+    fputs("{...}", stdout);
     return;
   }
-  fputs("{:", stdout);
+  fputc('{', stdout);
   kllib_basic_print_inner(&itr->key, depth);
   fputc(':', stdout);
   kllib_basic_print_inner(&itr->value, depth);
@@ -159,7 +159,7 @@ static void kllib_basic_print_map(KlMap* map, size_t depth) {
     fputc(':', stdout);
     kllib_basic_print_inner(&itr->value, depth);
   }
-  fputs(":}", stdout);
+  fputc('}', stdout);
 }
 
 static KlException kllib_basic_print(KlState* state) {
