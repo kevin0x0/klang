@@ -429,15 +429,15 @@ static KlAst* klparser_exprbrace_inner(KlParser* parser, KlLex* lex) {
       klparser_error(parser, kllex_inputstream(lex),
                      klast_begin(exprlist), klast_end(exprlist),
                      "should be a single identifier in class definition");
-      klast_delete(klcast(KlAst*, exprlist));
+      klast_delete(exprlist);
       klparser_discarduntil(lex, KLTK_RBRACE);
       return NULL;
     }
     KlStrDesc id = klcast(KlAstIdentifier*, exprlist->exprs[0])->id;
-    klast_delete(klcast(KlAst*, exprlist));
+    klast_delete(exprlist);
     KlAst* expr = klparser_expr(parser, lex);
     return klast(klparser_finishclass(parser, lex, id, expr, true));
-  } else if (kllex_trymatch(lex, KLTK_COLON)) {
+  } else if (kllex_trymatch(lex, KLTK_COLON)) { /* a map? */
     if (kl_unlikely(exprlist->nexpr != 1)) {
       klparser_error(parser, kllex_inputstream(lex),
                      klast_begin(exprlist), klast_end(exprlist),
