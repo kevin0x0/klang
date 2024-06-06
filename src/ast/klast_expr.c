@@ -356,6 +356,7 @@ KlAst* klast_exprlist_stealfirst_and_destroy(KlAstExprList* exprlist) {
     klast_delete(elems[i]);
   }
   free(elems);
+  free(exprlist);
   return ret;
 }
 
