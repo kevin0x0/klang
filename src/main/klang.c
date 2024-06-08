@@ -4,6 +4,7 @@
 #include "include/kio/kifile.h"
 #include "include/kio/kofile.h"
 #include "deps/k/include/os_spec/kfs.h"
+#include "include/string/kstring.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
 #include <stdarg.h>
@@ -26,6 +27,7 @@ typedef struct tagKlBehaviour {
     char* filename;
     const char* stmt;
   };
+  char* corelibpath;
   char** args;
   size_t narg;
   unsigned option;
@@ -82,6 +84,7 @@ int main(int argc, char** argv) {
 
 static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
   behaviour->filename = NULL;
+  behaviour->corelibpath = NULL;
   behaviour->args = NULL;
   behaviour->narg = 0;
   behaviour->stmt = NULL;
@@ -126,6 +129,23 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
       }
       behaviour->args = argv + ++i;
       behaviour->narg = argc - i;
+      break;
+    } else if (kl_match(argv[i], "--corelibpath")) {
+      if (++i == argc) {
+        fprintf(stderr, "expected <directory path> after option: %s", argv[i - 1]);
+        kl_cleanbehaviour(behaviour);
+        return 1;
+      }
+      if (behaviour->corelibpath) {
+        fprintf(stderr, "the core library path is specified more than once: %s.\n", argv[i]);
+        kl_cleanbehaviour(behaviour);
+        return 1;
+      }
+      if (!(behaviour->corelibpath = kstr_copy(argv[i]))) {
+        fprintf(stderr, "out of memory while parsing command line\n");
+        kl_cleanbehaviour(behaviour);
+        return 1;
+      }
       break;
     } else if (kl_isfilename(argv[i])) {
       if (behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)) {
@@ -200,17 +220,40 @@ error_create_vm:
   return failure;
 }
 
+static KlException kl_dopreload_helper_loadlib(KlState* state, const char* libname) {
+  KLAPI_PROTECT(klapi_checkstack(state, 1));
+  KLAPI_PROTECT(klapi_pushstring(state,libname));
+  KLAPI_PROTECT(klapi_concati(state, -1, -2, -1));
+  KLAPI_PROTECT(klapi_loadlib(state, klstring_content(klapi_getstring(state, -1)), NULL));
+  return KL_E_NONE;
+}
+
 static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool) {
   kl_unused(behaviour);
-  KLAPI_PROTECT(klapi_loadlib(state, "./lib/runtime_compiler.so", NULL));
-  KLAPI_PROTECT(klapi_loadlib(state, "./lib/traceback.so", NULL));
-  KLAPI_PROTECT(klapi_loadlib(state, "./lib/basic.so", NULL));
+  KLAPI_PROTECT(klapi_checkstack(state, 1));
+  KLAPI_PROTECT(klapi_pushstring(state, behaviour->corelibpath));
+
+  /* load compiler */
+  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/runtime_compiler.so"));
+  btool->compiler = klapi_getcfunc(state, -3);
+  btool->compileri = klapi_getcfunc(state, -2);
+  btool->bcloader = klapi_getcfunc(state, -1);
+  klapi_pop(state, 4); /* pop 3 results and 1 string */
+
+  /* load traceback */
+  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/traceback.so"));
   btool->traceback = klapi_getcfunc(state, -1);
-  btool->bcloader = klapi_getcfunc(state, -2);
-  btool->compileri = klapi_getcfunc(state, -3);
-  btool->compiler = klapi_getcfunc(state, -4);
-  klapi_pop(state, 4);
+  klapi_pop(state, 2); /* pop 1 result and 1 string */
+
+  /* load basic */
+  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/basic.so"));
+  klapi_pop(state, 1); /* pop 1 string */
+
+  klapi_pop(state, 1);  /* pop corelibpath */
+
   kl_assert(klstack_size(klstate_stack(state)) == 0, "");
+
+  /* create actual error handler */
   KLAPI_PROTECT(klapi_pushstring(state, "traceback"));
   klapi_pushnil(state, 1);
   klapi_pushcfunc(state, btool->traceback);
@@ -368,15 +411,26 @@ static bool kl_matchraw(const char* arg, unsigned nopts, ...) {
 }
 
 static void kl_cleanbehaviour(KlBehaviour* behaviour) {
-  if (behaviour->option & KL_OPTION_IN_FILE) {
+  if (behaviour->option & KL_OPTION_IN_FILE)
     free(behaviour->filename);
-  }
+  if (behaviour->corelibpath)
+    free(behaviour->corelibpath);
 }
 
 static int kl_validatebehaviour(KlBehaviour* behaviour) {
-  if (behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG))
-    return 0;
-  behaviour->option |= KL_OPTION_INTER;
+  if (!(behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)))
+    behaviour->option |= KL_OPTION_INTER;
+
+  if (!behaviour->corelibpath) {
+    if (!(behaviour->corelibpath = kfs_get_bin_dir())) {
+      fprintf(stderr, "out of memory while validating behaviour\n");
+      kl_cleanbehaviour(behaviour);
+      return 1;
+    }
+    size_t pathlen = strlen(behaviour->corelibpath);
+    kl_assert(pathlen > 4, "");
+    strcpy(&behaviour->corelibpath[pathlen - 4], "lib/");
+  }
   return 0;
 }
 
