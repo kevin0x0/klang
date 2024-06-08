@@ -160,6 +160,9 @@ KlException klapi_storeglobal(KlState* state, KlString* varname, int validx);
 KlKFunction* klapi_kfunc_alloc(KlState* state, unsigned codelen, unsigned short nconst,
                               unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam);
 
+/* operator */
+KlException klapi_concat(KlState* state);
+KlException klapi_concati(KlState* state, int result, int left, int right);
 
 /* auxiliary function for library */
 

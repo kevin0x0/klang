@@ -509,7 +509,26 @@ KlKFunction* klapi_kfunc_alloc(KlState* state, unsigned codelen, unsigned short 
 }
 
 
+/*=================================OPERATOR==================================*/
 
+
+KlException klapi_concat(KlState* state) {
+  kl_assert(klapi_framesize(state) >= 2, "must provide two values");
+  KlString* str = klstrpool_string_concat(klstate_strpool(state), klapi_getstring(state, -2), klapi_getstring(state, -1));
+  if (kl_unlikely(!str))
+    return klapi_throw_internal(state, KL_E_OOM, "out of memory while doing concat");
+  klapi_pop(state, 1);
+  klapi_setobj(state, -1, str, KL_STRING);
+  return KL_E_NONE;
+}
+
+KlException klapi_concati(KlState* state, int result, int left, int right) {
+  KlString* str = klstrpool_string_concat(klstate_strpool(state), klapi_getstring(state, left), klapi_getstring(state, right));
+  if (kl_unlikely(!str))
+    return klapi_throw_internal(state, KL_E_OOM, "out of memory while doing concat");
+  klapi_setobj(state, result, str, KL_STRING);
+  return KL_E_NONE;
+}
 
 /*============================LIBRARY LOADER=================================*/
 
