@@ -146,7 +146,11 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
         kl_cleanbehaviour(behaviour);
         return 1;
       }
-      break;
+      size_t len = strlen(behaviour->corelibpath);
+      if (len != 0 && (behaviour->corelibpath[len - 1] == '/'
+                   || behaviour->corelibpath[len - 1] == '\\')) {
+        behaviour->corelibpath[len - 1] = '\0';
+      }
     } else if (kl_isfilename(argv[i])) {
       if (behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)) {
         fprintf(stderr, "the input is specified more than once: %s.\n", argv[i]);
