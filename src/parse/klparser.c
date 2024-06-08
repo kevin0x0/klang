@@ -57,7 +57,7 @@ static inline bool klparser_exprbegin(KlLex* lex);
 /* parser for statement */
 static KlAst* klparser_stmt_nosemi(KlParser* parser, KlLex* lex);
 static KlAst* klparser_stmtexprandassign(KlParser* parser, KlLex* lex);
-static KlAstStmtLocalFunc* klparser_stmtlocalfunction(KlParser* parser, KlLex* lex);
+static KlAstStmtLocalDefinition* klparser_stmtlocaldefinition(KlParser* parser, KlLex* lex);
 static KlAstStmtLet* klparser_stmtlet(KlParser* parser, KlLex* lex);
 static KlAstStmtMatch* klparser_stmtmatch(KlParser* parser, KlLex* lex);
 static KlAstStmtIf* klparser_stmtif(KlParser* parser, KlLex* lex);
@@ -1284,7 +1284,7 @@ KlAstStmtList* klparser_interactive(KlParser* parser, KlLex* lex) {
 KlAst* klparser_stmt(KlParser* parser, KlLex* lex) {
   switch (kllex_tokkind(lex)) {
     case KLTK_LOCAL: {
-      KlAstStmtLocalFunc* stmtlocalfunc = klparser_stmtlocalfunction(parser, lex);
+      KlAstStmtLocalDefinition* stmtlocalfunc = klparser_stmtlocaldefinition(parser, lex);
       klparser_match(parser, lex, KLTK_SEMI);
       return klast(stmtlocalfunc);
     }
@@ -1340,7 +1340,7 @@ KlAst* klparser_stmt(KlParser* parser, KlLex* lex) {
 static KlAst* klparser_stmt_nosemi(KlParser* parser, KlLex* lex) {
   switch (kllex_tokkind(lex)) {
     case KLTK_LOCAL: {
-      KlAstStmtLocalFunc* stmtlocalfunc = klparser_stmtlocalfunction(parser, lex);
+      KlAstStmtLocalDefinition* stmtlocalfunc = klparser_stmtlocaldefinition(parser, lex);
       return klast(stmtlocalfunc);
     }
     case KLTK_LET: {
@@ -1551,7 +1551,7 @@ static KlAst* klparser_stmtexprandassign(KlParser* parser, KlLex* lex) {
   }
 }
 
-static KlAstStmtLocalFunc* klparser_stmtlocalfunction(KlParser* parser, KlLex* lex) {
+static KlAstStmtLocalDefinition* klparser_stmtlocaldefinition(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_LOCAL), "expected 'local'");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
@@ -1561,14 +1561,14 @@ static KlAstStmtLocalFunc* klparser_stmtlocalfunction(KlParser* parser, KlLex* l
   KlFileOffset idend = kllex_tokend(lex);
   KlStrDesc funcid = lex->tok.string;
   kllex_next(lex);
-  KlAst* funcexpr = klparser_exprpre(parser, lex);
-  klparser_returnifnull(funcexpr);
-  if (kl_unlikely(klast_kind(funcexpr) != KLAST_EXPR_FUNC)) {
-    klparser_error(parser, kllex_inputstream(lex), klast_begin(funcexpr), klast_end(funcexpr), "expected function");
-    klast_delete(funcexpr);
+  KlAst* expr = klparser_exprpre(parser, lex);
+  klparser_returnifnull(expr);
+  if (kl_unlikely(klast_kind(expr) != KLAST_EXPR_FUNC && klast_kind(expr) != KLAST_EXPR_CLASS)) {
+    klparser_error(parser, kllex_inputstream(lex), klast_begin(expr), klast_end(expr), "expected function or class");
+    klast_delete(expr);
     return NULL;
   }
-  KlAstStmtLocalFunc* stmtlocalfunc = klast_stmtlocalfunc_create(funcid, idbegin, idend, klcast(KlAstFunc*, funcexpr), begin, klast_end(funcexpr));
+  KlAstStmtLocalDefinition* stmtlocalfunc = klast_stmtlocaldef_create(funcid, idbegin, idend, expr, begin, klast_end(expr));
   klparser_oomifnull(stmtlocalfunc);
   return stmtlocalfunc;
 }

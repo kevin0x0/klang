@@ -95,11 +95,27 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlAst** patterns, size_t
   }
 }
 
-static void klgen_stmtlocalfunc(KlGenUnit* gen, KlAstStmtLocalFunc* localfuncast) {
+static void klgen_stmtlocalclass(KlGenUnit* gen, KlAstStmtLocalDefinition* localdefast) {
+  kl_assert(klast_kind(localdefast->expr) == KLAST_EXPR_CLASS, "");
   KlCStkId stktop = klgen_stacktop(gen);
-  klgen_newsymbol(gen, localfuncast->funcid, stktop, klgen_position(localfuncast->idbegin, localfuncast->idend));
-  klgen_exprtarget_noconst(gen, klast(localfuncast->func), stktop);
+  KlAstClass* klclass = klcast(KlAstClass*, localdefast->expr);
+  klgen_newsymbol(gen, localdefast->id, stktop, klgen_position(localdefast->idbegin, localdefast->idend));
+  if (klclass->baseclass)
+    klgen_emitloadnils(gen, stktop, 1, klgen_astposition(localdefast));
+  klgen_exprtarget_noconst(gen, klast(klclass), stktop);
   kl_assert(klgen_stacktop(gen) == stktop + 1, "");
+}
+
+static void klgen_stmtlocaldef(KlGenUnit* gen, KlAstStmtLocalDefinition* localdefast) {
+  KlAst* expr = localdefast->expr;
+  if (klast_kind(expr) == KLAST_EXPR_FUNC) {
+    KlCStkId stktop = klgen_stacktop(gen);
+    klgen_newsymbol(gen, localdefast->id, stktop, klgen_position(localdefast->idbegin, localdefast->idend));
+    klgen_exprtarget_noconst(gen, klast(localdefast->expr), stktop);
+    kl_assert(klgen_stacktop(gen) == stktop + 1, "");
+  } else {
+    klgen_stmtlocalclass(gen, localdefast);
+  }
 }
 
 static void klgen_stmtlet(KlGenUnit* gen, KlAstStmtLet* letast) {
@@ -734,7 +750,7 @@ void klgen_stmtlist(KlGenUnit* gen, KlAstStmtList* ast) {
     KlAst* stmt = *pstmt;
     switch (klast_kind(stmt)) {
       case KLAST_STMT_LOCALFUNC: {
-        klgen_stmtlocalfunc(gen, klcast(KlAstStmtLocalFunc*, stmt));
+        klgen_stmtlocaldef(gen, klcast(KlAstStmtLocalDefinition*, stmt));
         break;
       }
       case KLAST_STMT_LET: {

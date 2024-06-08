@@ -271,13 +271,13 @@ typedef struct tagKlAstStmtMatch {
   size_t npattern;
 } KlAstStmtMatch;
 
-typedef struct tagKlAstStmtLocalFunc {
+typedef struct tagKlAstStmtLocalDefinition {
   KL_DERIVE_FROM(KlAst, _astbase_);
   KlFileOffset idbegin;
   KlFileOffset idend;
-  KlStrDesc funcid;
-  KlAstFunc* func;
-} KlAstStmtLocalFunc;
+  KlStrDesc id;
+  KlAst* expr;
+} KlAstStmtLocalDefinition;
 
 typedef struct tagKlAstStmtAssign {
   KL_DERIVE_FROM(KlAst, _astbase_);
@@ -422,7 +422,7 @@ static inline void klast_exprlist_shallow_replace(KlAstExprList* exprlist, KlAst
 KlAstStmtList* klast_stmtlist_create(KlAst** stmts, size_t nstmt, KlFileOffset begin, KlFileOffset end);
 KlAstStmtLet* klast_stmtlet_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end);
 KlAstStmtMatch* klast_stmtmatch_create(KlAst* matchobj, KlAst** patterns, KlAstStmtList** stmtlists, size_t npattern, KlFileOffset begin, KlFileOffset end);
-KlAstStmtLocalFunc* klast_stmtlocalfunc_create(KlStrDesc id, KlFileOffset idbegin, KlFileOffset idend, KlAstFunc* func, KlFileOffset begin, KlFileOffset end);
+KlAstStmtLocalDefinition* klast_stmtlocaldef_create(KlStrDesc id, KlFileOffset idbegin, KlFileOffset idend, KlAst* expr, KlFileOffset begin, KlFileOffset end);
 KlAstStmtAssign* klast_stmtassign_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end);
 KlAstStmtExpr* klast_stmtexpr_create(KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end);
 KlAstStmtIf* klast_stmtif_create(KlAst* cond, KlAstStmtList* then_block, KlAstStmtList* else_block, KlFileOffset begin, KlFileOffset end);
