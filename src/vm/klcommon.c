@@ -49,7 +49,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   done = done && (common->string.append = klstrpool_new_string(strpool, "<<"));
   done = done && (common->string.iter = klstrpool_new_string(strpool, "<-"));
 
-  done = done && (common->string.iter = klstrpool_new_string(strpool, "typename"));
+  done = done && (common->string.typename = klstrpool_new_string(strpool, "typename"));
 
 
   KlClass* fallback = klcommon_phonyclass(klmm);
@@ -96,6 +96,7 @@ KlGCObject* klcommon_propagate(KlCommon* common, KlGCObject* gclist) {
   klmm_gcobj_mark(klmm_to_gcobj(common->string.hash), gclist);
   klmm_gcobj_mark(klmm_to_gcobj(common->string.append), gclist);
   klmm_gcobj_mark(klmm_to_gcobj(common->string.iter), gclist);
+  klmm_gcobj_mark(klmm_to_gcobj(common->string.typename), gclist);
 
   klmm_gcobj_mark(klmm_to_gcobj(common->klclass.map), gclist);
   klmm_gcobj_mark(klmm_to_gcobj(common->klclass.array), gclist);
