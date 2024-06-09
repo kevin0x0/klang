@@ -408,7 +408,7 @@ static KlException klexec_callprepare(KlState* state, KlValue* callable, size_t 
       return callback(state, callable, narg);
     return klstate_throw(state, KL_E_TYPE,
            "try to call a non-callable object with type '%s'(method '%s' can not be called from here)",
-           klvalue_typename(klvalue_gettype(callable)), klstring_content(state->common->string.call));
+           klexec_typename(state, callable), klstring_content(state->common->string.call));
   }
 }
 
@@ -451,6 +451,19 @@ KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field) {
   }
 }
 
+const char* klexec_typename(KlState* state, KlValue* val) {
+  if (klvalue_checktype(val, KL_OBJECT) ||
+      klvalue_checktype(val, KL_MAP)    ||
+      klvalue_checktype(val, KL_ARRAY)) {
+    KlValue* typename = klexec_getfield(state, val, state->common->string.typename);
+     return klvalue_checktype(typename, KL_STRING)                ? 
+            klstring_content(klvalue_getobj(typename, KlString*)) :
+            klvalue_typename(klvalue_gettype(val));
+  } else {
+    return klvalue_typename(klvalue_gettype(val));
+  }
+}
+
 static KlException klexec_dopreopmethod(KlState* state, KlValue* a, KlValue* b, KlString* op) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
@@ -461,7 +474,7 @@ static KlException klexec_dopreopmethod(KlState* state, KlValue* a, KlValue* b, 
   KlValue* method = klexec_getfield(state, b, state->common->string.call);
   if (kl_unlikely(klvalue_checktype(method, KL_NIL) || !klexec_is_method(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply prefix '%s' to value with type '%s'",
-                         klstring_content(op), klvalue_typename(klvalue_gettype(b)));
+                         klstring_content(op), klexec_typename(state, b));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, a - klstate_stktop(state));
   if (kl_unlikely(!newci))
@@ -480,7 +493,7 @@ static KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, 
   KlValue* method = klexec_getfield(state, b, op);
   if (kl_unlikely(klvalue_checktype(method, KL_NIL) || !klexec_is_method(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply binary '%s' to values with type '%s' and '%s'",
-                         klstring_content(op), klvalue_typename(klvalue_gettype(b)), klvalue_typename(klvalue_gettype(c)));
+                         klstring_content(op), klexec_typename(state, b), klexec_typename(state, c));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, a - klstate_stktop(state));
   if (kl_unlikely(!newci))
@@ -501,7 +514,7 @@ static KlException klexec_doindexmethod(KlState* state, KlValue* val, KlValue* i
   KlValue* method = klexec_getfield(state, indexable, index);
   if (kl_unlikely(klvalue_checktype(method, KL_NIL) || !klexec_is_method(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s' for key with type '%s'",
-                         klstring_content(index), klvalue_typename(klvalue_gettype(indexable)), klvalue_typename(klvalue_gettype(key)));
+                         klstring_content(index), klexec_typename(state, indexable), klexec_typename(state, key));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, val - klstate_stktop(state));
   if (kl_unlikely(!newci))
@@ -521,7 +534,7 @@ static KlException klexec_doindexasmethod(KlState* state, KlValue* indexable, Kl
   KlValue* method = klexec_getfield(state, indexable, indexas);
   if (kl_unlikely(klvalue_checktype(method, KL_NIL) || !klexec_is_method(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s' for key with type '%s'",
-                         klstring_content(indexas), klvalue_typename(klvalue_gettype(indexable)), klvalue_typename(klvalue_gettype(key)));
+                         klstring_content(indexas), klexec_typename(state, indexable), klexec_typename(state, key));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 0, 0);
   if (kl_unlikely(!newci))
@@ -603,9 +616,9 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
                   !(klvalue_checktype(ctrlvars + 2, KL_INT) ||
                     klvalue_checktype(ctrlvars + 2, KL_NIL)))) {
     return klstate_throw(state, KL_E_TYPE, "expected integer for integer loop, got %s, %s, %s",
-                         klvalue_typename(klvalue_gettype(ctrlvars)),
-                         klvalue_typename(klvalue_gettype(ctrlvars + 1)),
-                         klvalue_typename(klvalue_gettype(ctrlvars + 2)));
+                         klexec_typename(state, ctrlvars),
+                         klexec_typename(state, ctrlvars + 1),
+                         klexec_typename(state, ctrlvars + 2));
   }
   KlInt begin = klvalue_getint(ctrlvars);
   KlInt end = klvalue_getint(ctrlvars + 1);
@@ -1523,7 +1536,7 @@ KlException klexec_execute(KlState* state) {
         if (KLINST_ABTX_GETT(inst)) { /* is stktop base class ? */
           klexec_savestate(stktop + 1, pc);   /* creating class may trigger gc */
           if (kl_unlikely(!klvalue_checktype(stktop, KL_CLASS)))
-            return klstate_throw(state, KL_E_TYPE, "inherit a non-class value, type: %s", klvalue_typename(klvalue_gettype(stktop)));
+            return klstate_throw(state, KL_E_TYPE, "inherit a non-class value, type: %s", klexec_typename(state, stktop));
           KlClass* base = klvalue_getobj(stktop, KlClass*);
           if (kl_unlikely(klclass_isfinal(base)))
             return klstate_throw(state, KL_E_INVLD, "can not inherit this class");
@@ -1620,7 +1633,7 @@ KlException klexec_execute(KlState* state) {
             klexec_savestate(callinfo->top, pc);
             return klstate_throw(state, KL_E_TYPE,
                                  "type error occurred when indexing an array: expected %s, got %s.",
-                                 klvalue_typename(KL_INT), klvalue_typename(klvalue_gettype(key)));
+                                 klvalue_typename(KL_INT), klexec_typename(state, key));
           }
           klarray_index(arr, klvalue_getint(key), val);
         } else {
@@ -1656,7 +1669,7 @@ KlException klexec_execute(KlState* state) {
           if (kl_unlikely(!klvalue_checktype(key, KL_INT))) { /* only integer can index array */
             return klstate_throw(state, KL_E_TYPE,
                                  "type error occurred when indexing an array: expected %s, got %s.",
-                                 klvalue_typename(KL_INT), klvalue_typename(klvalue_gettype(key)));
+                                 klvalue_typename(KL_INT), klexec_typename(state, key));
           }
           KlException exception = klarray_indexas(arr, klvalue_getint(key), val);
           if (kl_unlikely(exception))
@@ -2215,7 +2228,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* klclass = stkbase + KLINST_ABC_GETB(inst);
         klexec_savestate(callinfo->top, pc);
         if (kl_unlikely(!klvalue_checktype(klclass, KL_CLASS)))
-          return klstate_throw(state, KL_E_TYPE, "%s is not a class", klvalue_typename(klvalue_gettype(klclass)));
+          return klstate_throw(state, KL_E_TYPE, "%s is not a class", klexec_typename(state, klclass));
         KlException exception = klclass_new_object(klvalue_getobj(klclass, KlClass*), klstate_getmm(state), stkbase + KLINST_ABC_GETA(inst));
         if (kl_unlikely(exception))
           return klexec_handle_newobject_exception(state, exception);
@@ -2334,7 +2347,7 @@ KlException klexec_execute(KlState* state) {
         if (kl_unlikely(!klvalue_checktype(f, KL_KCLOSURE))) {
           return klstate_throw(state, KL_E_TYPE,
                                "async should be applied to a klang closure, got '%s'",
-                               klvalue_typename(klvalue_gettype(f)));
+                               klexec_typename(state, f));
         }
         KlState* costate = klco_create(state, klvalue_getobj(f, KlKClosure*));
         if (kl_unlikely(!costate)) return klstate_throw_oom(state, "creating a coroutine");
