@@ -445,6 +445,7 @@ static void kl_print_help(void) {
   printf("  -e <code>                   execute the code provided by command line.\n");
   printf("  -u --undump <filename>      load byte code from specified file.\n");
   printf("  -i --interactive            always enter interactive mode.\n");
+  printf("  --corelibpath               where to load the core library.\n");
   printf("if input is not specified, enter interactive mode.\n");
 }
 
