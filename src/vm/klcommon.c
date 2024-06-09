@@ -49,7 +49,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   done = done && (common->string.append = klstrpool_new_string(strpool, "<<"));
   done = done && (common->string.iter = klstrpool_new_string(strpool, "<-"));
 
-  done = done && (common->string.typename = klstrpool_new_string(strpool, "typename"));
+  done = done && (common->string.typename = klstrpool_new_string(strpool, "?"));
 
 
   KlClass* fallback = klcommon_phonyclass(klmm);
