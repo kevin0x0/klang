@@ -253,6 +253,10 @@ static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicT
   KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/basic.so"));
   klapi_pop(state, 1); /* pop 1 string */
 
+  /* load stream */
+  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/stream.so"));
+  klapi_pop(state, 1); /* pop 1 string */
+
   klapi_pop(state, 1);  /* pop corelibpath */
 
   kl_assert(klstack_size(klstate_stack(state)) == 0, "");
@@ -310,7 +314,7 @@ static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicT
       return klapi_throw_internal(state, KL_E_OOM, "can not create input stream");
   } else {
     kl_assert(behaviour->option & KL_OPTION_IN_FILE, "");
-    input = kifile_create(behaviour->filename);
+    input = kifile_create(behaviour->filename, "rb");
     if (kl_unlikely(!input))
       return klapi_throw_internal(state, KL_E_OOM, "can not open file: %s", behaviour->filename);
   }

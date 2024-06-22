@@ -49,7 +49,7 @@ KlClass* klclass_inherit(KlMM* klmm, KlClass* parent) {
   for (KlClassSlot* itr = array, * slot = slotbegin; itr != end; ++itr, ++slot) {
     if ((itr->key = slot->key)) {
       klvalue_setvalue(&itr->value, &slot->value);
-      itr->next = array + (slot->next - slotbegin);
+      itr->next = slot->next ? array + (slot->next - slotbegin) : NULL;
     }
   }
   klclass->constructor = parent->constructor;

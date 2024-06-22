@@ -69,7 +69,7 @@ static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
         ko_delete(behaviour->textoutput);
       bool isfilename = argv[i + 1] && klc_isfilename(argv[i + 1]);
       behaviour->textoutput = isfilename
-        ? kofile_create(argv[i + 1])
+        ? kofile_create(argv[i + 1], "rb")
         : kofile_attach(stdout);
       if (isfilename) ++i;
       if (kl_unlikely(!behaviour->textoutput)) {
@@ -90,7 +90,7 @@ static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
       }
       if (behaviour->dumpoutput)
         ko_delete(behaviour->dumpoutput);
-      behaviour->dumpoutput = kofile_create(argv[++i]);
+      behaviour->dumpoutput = kofile_create(argv[++i], "rb");
       if (kl_unlikely(!behaviour->dumpoutput)) {
         fprintf(stderr, "failed to open file: %s\n", argv[i]);
         klc_cleanbehaviour(behaviour);
@@ -104,7 +104,7 @@ static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
         klc_cleanbehaviour(behaviour);
         return 1;
       }
-      if (kl_unlikely(!(behaviour->input = kifile_create(argv[i])))) {
+      if (kl_unlikely(!(behaviour->input = kifile_create(argv[i], "rb")))) {
         fprintf(stderr, "failed to open file: %s\n", argv[i]);
         klc_cleanbehaviour(behaviour);
         return 1;

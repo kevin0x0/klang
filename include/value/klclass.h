@@ -70,6 +70,7 @@ static inline KlException klclass_newshared(KlClass* klclass, KlMM* klmm, KlStri
 
 static inline void klclass_final(KlClass* klclass);
 static inline bool klclass_isfinal(KlClass* klclass);
+static inline KlUnsigned klclass_nlocal(KlClass* klclass);
 
 static inline void klclass_final(KlClass* klclass) {
   klclass->is_final = true;
@@ -77,6 +78,10 @@ static inline void klclass_final(KlClass* klclass) {
 
 static inline bool klclass_isfinal(KlClass* klclass) {
   return klclass->is_final;
+}
+
+static inline KlUnsigned klclass_nlocal(KlClass* klclass) {
+  return klclass->nlocal;
 }
 
 static inline void* klclass_constructor_data(KlClass* klclass) {

@@ -38,7 +38,9 @@ KLANGLIB_RTCPL_PIC_OBJS = $(OBJ_DIR)kllib_rtcpl.pic.o
 
 KLANGLIB_BASIC_PIC_OBJS = $(OBJ_DIR)kllib_basic.pic.o
 
-KLANGLIBS = $(LIB_DIR)traceback.so $(LIB_DIR)runtime_compiler.so $(LIB_DIR)basic.so
+KLANGLIB_STREAM_PIC_OBJS = $(OBJ_DIR)kllib_stream.pic.o $(OBJ_DIR)kllib_file.pic.o $(OBJ_DIR)kllib_stream_collection.pic.o
+
+KLANGLIBS = $(LIB_DIR)traceback.so $(LIB_DIR)runtime_compiler.so $(LIB_DIR)basic.so $(LIB_DIR)stream.so
 
 
 ifeq ($(PLATFORM), Windows)
@@ -61,6 +63,9 @@ $(LIB_DIR)runtime_compiler.so : $(KLANGLIB_RTCPL_PIC_OBJS) $(LIB_DIR)klang.dll $
 $(LIB_DIR)basic.so : $(KLANGLIB_BASIC_PIC_OBJS) $(LIB_DIR)klang.dll $(DEPS_K_DIR)lib/libk.a | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $^
 
+$(LIB_DIR)stream.so : $(KLANGLIB_STREAM_PIC_OBJS) $(LIB_DIR)klang.dll $(DEPS_K_DIR)lib/libk.a | create_dir
+	$(CC) -shared $(CFLAGS) -o $@ $^
+
 else
 
 all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(BIN_DIR)klang $(KLANGLIBS)
@@ -81,6 +86,9 @@ $(LIB_DIR)runtime_compiler.so : $(KLANGLIB_RTCPL_PIC_OBJS) $(LIB_DIR)libklangc.p
 
 $(LIB_DIR)basic.so : $(KLANGLIB_BASIC_PIC_OBJS) | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $(KLANGLIB_BASIC_PIC_OBJS)
+
+$(LIB_DIR)stream.so : $(KLANGLIB_STREAM_PIC_OBJS) | create_dir
+	$(CC) -shared $(CFLAGS) -o $@ $^
 
 endif
 

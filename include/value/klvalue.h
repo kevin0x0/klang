@@ -27,6 +27,13 @@
 
 #define KLVALUE_NIL_INIT                    { .type = KL_NIL, .value.nilval = 0 }
 
+#define klvalue_nil()                       ((KlValue) { .type = KL_NIL, .value.nilval = 0 })
+#define klvalue_int(val)                    ((KlValue) { .type = KL_INT, .value.intval = (val) })
+#define klvalue_float(val)                  ((KlValue) { .type = KL_FLOAT, .value.floatval = (val) })
+#define klvalue_bool(val)                   ((KlValue) { .type = KL_BOOL, .value.boolval = (val) })
+#define klvalue_cfunc(val)                  ((KlValue) { .type = KL_CFUNCTION, .value.cfunc = (val) })
+#define klvalue_obj(val)                    ((KlValue) { .type = KL_OBJECT, .value.gcobj = klmm_to_gcobj((val)) })
+
 
 typedef enum tagKlType {
   KL_INT = 0, KL_FLOAT,
