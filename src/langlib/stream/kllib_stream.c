@@ -123,7 +123,7 @@ static KlException kllib_istream_readline(KlState* state) {
 static KlException kllib_ostream_writeline(KlState* state) {
   if (klapi_narg(state) == 0)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with at least 1 argument(including 'this')!");
-  if (!kllib_ostream_compatiable(klapi_access(state, -1)))
+  if (!kllib_ostream_compatiable(klapi_accessb(state, 0)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with ostream object!");
   KlOutputStream* ostream = klapi_getobjb(state, 0, KlOutputStream*);
   Ko* ko = ostream->ko;
