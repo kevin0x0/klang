@@ -87,7 +87,7 @@ $(LIB_DIR)runtime_compiler.so : $(KLANGLIB_RTCPL_PIC_OBJS) $(LIB_DIR)libklangc.p
 $(LIB_DIR)basic.so : $(KLANGLIB_BASIC_PIC_OBJS) | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $(KLANGLIB_BASIC_PIC_OBJS)
 
-$(LIB_DIR)stream.so : $(KLANGLIB_STREAM_PIC_OBJS) | create_dir
+$(LIB_DIR)stream.so : $(KLANGLIB_STREAM_PIC_OBJS) $(DEPS_K_DIR)lib/libk.pic.a | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $^
 
 endif

@@ -492,7 +492,7 @@ KlException klapi_return(KlState* state, size_t nret) {
   if (nret < nwanted)
     klexec_setnils(retpos, nwanted - nret);
   if (currci->nret == KLAPI_VARIABLE_RESULTS)
-    klstack_set_top(klstate_stack(state), retpos + nwanted);
+    klstack_set_top(klstate_stack(state), retpos + nwanted - nret);
   return KL_E_NONE;
 }
 

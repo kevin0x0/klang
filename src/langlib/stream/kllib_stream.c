@@ -5,7 +5,6 @@
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include "include/mm/klmm.h"
-#include "include/lang/kltypes.h"
 #include "include/misc/klutils.h"
 #include "include/klapi.h"
 #include "deps/k/include/array/kgarray.h"
@@ -36,7 +35,7 @@ static KlException kllib_ostream_close(KlState* state);
 KlException kllib_istream_createclass(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   KlMM* klmm = klstate_getmm(state);
-  KlClass* istreambase = klclass_create(klmm, klobject_attrarrayoffset(KlInputStream), 3, NULL, kllib_istream_objconstructor);
+  KlClass* istreambase = klclass_create(klmm, 3, klobject_attrarrayoffset(KlInputStream), NULL, kllib_istream_objconstructor);
   if (kl_unlikely(!istreambase))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating class for istreambase");
   klapi_pushobj(state, istreambase, KL_CLASS);
@@ -58,7 +57,7 @@ KlException kllib_istream_createclass(KlState* state) {
 KlException kllib_ostream_createclass(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   KlMM* klmm = klstate_getmm(state);
-  KlClass* ostreambase = klclass_create(klmm, klobject_attrarrayoffset(KlInputStream), 3, NULL, kllib_ostream_objconstructor);
+  KlClass* ostreambase = klclass_create(klmm, 3, klobject_attrarrayoffset(KlInputStream), NULL, kllib_ostream_objconstructor);
   if (kl_unlikely(!ostreambase))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating class for istreambase");
   klapi_pushobj(state, ostreambase, KL_CLASS);
@@ -107,10 +106,17 @@ static KlException kllib_istream_readline(KlState* state) {
   Ki* ki = klapi_getobj(state, -1, KlInputStream*)->ki;
   int ch;
   while ((ch = ki_getc(ki)) != KOF && ch != '\n') {
-    if (kl_unlikely(!klstrbuf_push_back(&buf, ch)))
-      klstrbuf_destroy(&buf);
+    KLAPI_MAYFAIL(klstrbuf_push_back(&buf, ch) ? KL_E_NONE :
+                                                 klapi_throw_internal(state, KL_E_OOM, "out of memory while read a line"),
+                  klstrbuf_destroy(&buf));
+  }
+  size_t len = klstrbuf_size(&buf); 
+  if (len == 0 && ch == KOF) { /* reach the end of stream */
+    klstrbuf_destroy(&buf);
+    return klapi_return(state, 0);
   }
   KLAPI_MAYFAIL(klapi_pushstring_buf(state, klstrbuf_access(&buf, 0), klstrbuf_size(&buf)), klstrbuf_destroy(&buf));
+  klstrbuf_destroy(&buf);
   return klapi_return(state, 1);
 }
 
