@@ -877,7 +877,7 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
 }
 
 #define klexec_bindiv_i(op, a, b, imm) {                                          \
-  if (kl_likely(klvalue_checktype((b), KL_FLOAT))) {                              \
+  if (kl_likely(klvalue_isnumber((b)))) {                                         \
     klvalue_setfloat((a), klop_##op(klvalue_getnumber((b)),                       \
                                     klcast(KlFloat, (imm))));                     \
   } else {                                                                        \
