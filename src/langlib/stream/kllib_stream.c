@@ -95,6 +95,7 @@ void kllib_ostream_set(KlOutputStream* ostream, Ko* ko) {
 }
 
 static KlException kllib_istream_readline(KlState* state) {
+
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with exactly 1 argument('this')!");
   if (!kllib_istream_compatiable(klapi_access(state, -1)))
@@ -105,11 +106,18 @@ static KlException kllib_istream_readline(KlState* state) {
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating string buffer");
   Ki* ki = klapi_getobj(state, -1, KlInputStream*)->ki;
   int ch;
-  while ((ch = ki_getc(ki)) != KOF && ch != '\n') {
+  while ((ch = ki_getc(ki)) != KOF && ch != '\n' && ch != '\r') {
     KLAPI_MAYFAIL(klstrbuf_push_back(&buf, ch) ? KL_E_NONE :
                                                  klapi_throw_internal(state, KL_E_OOM, "out of memory while read a line"),
                   klstrbuf_destroy(&buf));
   }
+  /* finish read nl */
+  if (ch == '\r') {
+    int tmpch = ki_getc(ki);
+    if (tmpch != '\n' && tmpch != KOF)
+      ki_ungetc(ki);
+  }
+
   size_t len = klstrbuf_size(&buf); 
   if (len == 0 && ch == KOF) { /* reach the end of stream */
     klstrbuf_destroy(&buf);

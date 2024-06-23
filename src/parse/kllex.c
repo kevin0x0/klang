@@ -41,7 +41,7 @@ static inline void kllex_discardto(KlLex* lex, char end);
 
 static inline char kllex_finishnl(KlLex* lex, Ki* input) {
   int ch = ki_getc(input);
-  if (ch != '\r' && ch != KOF) ki_ungetc(input);
+  if (ch != '\n' && ch != KOF) ki_ungetc(input);
   ++lex->currline;
   return '\n';
 }
