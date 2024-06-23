@@ -1,0 +1,28 @@
+# matrix class
+local matrix {
+  local a, b;
+  local c, d;
+  constructor = method(a, b, c, d) => {
+    this.a, this.b, this.c, this.d = a, b, c, d;
+  };
+  mul = method m => {
+    this.a, this.b,
+    this.c, this.d = 
+    this.a * m.a + this.b * m.c, this.a * m.b + this.b * m.d,
+    this.c * m.a + this.d * m.c, this.c * m.b + this.d * m.d;
+  };
+  copy = method -> new matrix(this.a, this.b, this.c, this.d);
+};
+
+let one = new matrix(1, 0, 0, 1);
+
+# exponentiation by squaring
+local fastpow(res, base, exp) -> res where repeat: {
+  if exp % 2 == 1: res.mul base;
+  base.mul base;
+} until exp == 0 where exp = exp // 2;
+
+# fibonacci
+local f n -> fastpow(one.copy(), new matrix(1, 1, 1, 0), n).c;
+
+print (f 36);
