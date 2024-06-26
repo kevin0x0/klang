@@ -29,8 +29,6 @@ static KlAst* klparser_exprbin(KlParser* parser, KlLex* lex, int prio);
 
 
 KlAst* klparser_expr(KlParser* parser, KlLex* lex) {
-  if (kllex_check(lex, KLTK_CASE))
-    return klast(klparser_exprmatch(parser, lex));
   KlAst* expr = klparser_exprbin(parser, lex, 0);
   if (kl_unlikely(!expr)) return NULL;
   return kllex_check(lex, KLTK_WHERE) ? klast(klparser_exprfinishwhere(parser, lex, expr)) :
@@ -629,6 +627,9 @@ static KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       func->is_method = true;
       klast_setposition(func, begin, expr->end);
       return klast(func);
+    }
+    case KLTK_CASE: {
+      return klast(klparser_exprmatch(parser, lex));
     }
     case KLTK_ADD: {
       kllex_next(lex);
