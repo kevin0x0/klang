@@ -1,15 +1,15 @@
 #include "include/langlib/stream/kllib_stream.h"
 #include "include/langlib/stream/kllib_strbuf.h"
+#include "include/klapi.h"
 #include "include/value/klclass.h"
 #include "include/value/klstate.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include "include/mm/klmm.h"
 #include "include/misc/klutils.h"
-#include "include/klapi.h"
 #include "deps/k/include/array/kgarray.h"
-#include "include/kio/ki.h"
-#include "include/kio/ko.h"
+#include "deps/k/include/kio/ki.h"
+#include "deps/k/include/kio/ko.h"
 
 kgarray_impl(char, KlStringBuf, klstrbuf, pass_val,);
 

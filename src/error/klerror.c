@@ -1,7 +1,7 @@
 #include "include/error/klerror.h"
 #include "deps/k/include/kio/ki.h"
 #include "deps/k/include/kio/ko.h"
-#include "include/kio/kio_common.h"
+#include "deps/k/include/kio/kio_common.h"
 #include <stdbool.h>
 
 void klerror_init(KlError* klerr, Ko* errout) {

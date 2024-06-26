@@ -1,10 +1,10 @@
 #include "include/parse/klparser_expr.h"
 #include "include/parse/klparser_stmt.h"
 #include "include/parse/klparser_generator.h"
-#include "include/array/karray.h"
 #include "include/parse/klcfdarr.h"
 #include "include/parse/klparser_error.h"
 #include "include/parse/klparser_utils.h"
+#include "deps/k/include/array/karray.h"
 
 
 static KlAstStmtList* klparser_darrowfuncbody(KlParser* parser, KlLex* lex);

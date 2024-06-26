@@ -1,9 +1,9 @@
 #include "include/klapi.h"
 #include "include/lang/klconvert.h"
-#include "include/lib/lib.h"
 #include "include/value/klkfunc.h"
 #include "include/value/klstate.h"
 #include "include/vm/klexception.h"
+#include "deps/k/include/lib/lib.h"
 #include <stddef.h>
 
 

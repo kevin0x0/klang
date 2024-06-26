@@ -1,12 +1,12 @@
-#include "include/kio/ki.h"
 #include "include/klapi.h"
-#include "include/kio/kibuf.h"
-#include "include/kio/kifile.h"
-#include "include/kio/kofile.h"
-#include "deps/k/include/os_spec/kfs.h"
-#include "include/string/kstring.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
+#include "deps/k/include/kio/ki.h"
+#include "deps/k/include/kio/kibuf.h"
+#include "deps/k/include/kio/kifile.h"
+#include "deps/k/include/kio/kofile.h"
+#include "deps/k/include/os_spec/kfs.h"
+#include "deps/k/include/string/kstring.h"
 #include <stdarg.h>
 
 #define KL_OPTION_NORMAL    ((unsigned)0)

@@ -1,8 +1,8 @@
 #include "include/parse/klparser_generator.h"
-#include "include/array/karray.h"
 #include "include/parse/klparser_expr.h"
 #include "include/parse/klparser_stmt.h"
 #include "include/parse/klparser_utils.h"
+#include "deps/k/include/array/karray.h"
 
 static KlAst* klparser_generatorfor(KlParser* parser, KlLex* lex, KlAstExprList* lvals, KlAst* inner_stmt) {
   if (kllex_trymatch(lex, KLTK_ASSIGN)) { /* i = n, m, s */

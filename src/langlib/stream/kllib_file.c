@@ -1,11 +1,11 @@
-#include "include/kio/kifile.h"
-#include "include/kio/kofile.h"
 #include "include/klapi.h"
 #include "include/langlib/stream/kllib_stream.h"
 #include "include/value/klclass.h"
 #include "include/value/klstate.h"
 #include "include/value/klstring.h"
 #include "include/vm/klexception.h"
+#include "deps/k/include/kio/kifile.h"
+#include "deps/k/include/kio/kofile.h"
 
 
 static KlException kllib_ifile_constructor(KlState* state);

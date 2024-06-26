@@ -1,12 +1,12 @@
 #ifndef _KLANG_INCLUDE_LANGLIB_STREAM_KLLIB_STREAM_H_
 #define _KLANG_INCLUDE_LANGLIB_STREAM_KLLIB_STREAM_H_
 
-#include "include/kio/ki.h"
-#include "include/kio/ko.h"
 #include "include/value/klclass.h"
 #include "include/value/klcfunc.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
+#include "deps/k/include/kio/ki.h"
+#include "deps/k/include/kio/ko.h"
 #include <stdbool.h>
 
 typedef struct tagKlInputStream {

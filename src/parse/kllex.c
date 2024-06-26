@@ -1,8 +1,8 @@
 #include "include/parse/kllex.h"
-#include "include/kio/kio_common.h"
 #include "include/lang/kltypes.h"
 #include "include/parse/kltokens.h"
 #include "deps/k/include/kio/ki.h"
+#include "deps/k/include/kio/kio_common.h"
 
 #include <stddef.h>
 #include <stdlib.h>

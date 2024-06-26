@@ -1,10 +1,10 @@
 #ifndef _KLANG_INCLUDE_PARSE_KLPARSER_UTILS_H_
 #define _KLANG_INCLUDE_PARSE_KLPARSER_UTILS_H_
 
-#include "include/array/karray.h"
 #include "include/parse/klparser.h"
 #include "include/parse/klparser_error.h"
 #include "include/parse/klparser_recovery.h"
+#include "deps/k/include/array/karray.h"
 #include <stdbool.h>
 
 #define klparser_karr_pushast(arr, ast)  {              \

@@ -1,10 +1,10 @@
 #include "include/ast/klstrtbl.h"
-#include "include/os_spec/kfs.h"
 #include "include/parse/kllex.h"
 #include "include/parse/klparser.h"
 #include "include/code/klcode.h"
 #include "deps/k/include/kio/kifile.h"
 #include "deps/k/include/kio/kofile.h"
+#include "deps/k/include/os_spec/kfs.h"
 #include <stdarg.h>
 
 #define KLC_OPTION_NORMAL   ((unsigned)0)
