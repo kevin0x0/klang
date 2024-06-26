@@ -1,5 +1,6 @@
 #include "include/parse/klparser_stmt.h"
 #include "include/error/klerror.h"
+#include "include/parse/kllex.h"
 #include "include/parse/klparser_expr.h"
 #include "include/parse/klparser_utils.h"
 
@@ -202,6 +203,7 @@ static KlAstStmtMatch* klparser_stmtmatch(KlParser* parser, KlLex* lex) {
     KlAst* pattern = klparser_expr(parser, lex);
     klparser_match(parser, lex, KLTK_COLON);
     KlAstStmtList* stmtlist = klparser_stmtblock(parser, lex);
+    kllex_trymatch(lex, KLTK_SEMI);
     if (kl_unlikely(!pattern || !stmtlist)) {
       if (pattern) klast_delete(pattern);
       if (stmtlist) klast_delete(stmtlist);
@@ -210,6 +212,7 @@ static KlAstStmtMatch* klparser_stmtmatch(KlParser* parser, KlLex* lex) {
       klparser_karr_pushast(&stmts, stmtlist);
     }
   } while (klparser_exprbegin(lex));
+  klparser_match(parser, lex, KLTK_RBRACE);
   if (kl_unlikely(karray_size(&patterns) != karray_size(&stmts) ||
                   karray_size(&patterns) == 0 ||
                   !matchobj)) {
