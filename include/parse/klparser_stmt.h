@@ -7,7 +7,6 @@
 
 
 KlAst* klparser_stmt(KlParser* parser, KlLex* lex);
-KlAst* klparser_stmt_nosemi(KlParser* parser, KlLex* lex);
 /* do not set file position */
 KlAstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex);
 /* do not set file position */

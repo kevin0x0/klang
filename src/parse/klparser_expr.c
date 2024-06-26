@@ -767,37 +767,7 @@ static KlAstCall* klparser_exprcall(KlParser* parser, KlLex* lex, KlAst* callabl
 
 static KlAstWhere* klparser_exprfinishwhere(KlParser* parser, KlLex* lex, KlAst* expr) {
   kllex_next(lex);
-  KlAstStmtList* block;
-  if (kllex_check(lex, KLTK_LBRACE)) {
-    KlFileOffset begin = kllex_tokbegin(lex);
-    kllex_next(lex);
-    block = klparser_stmtlist(parser, lex);
-    KlFileOffset end = kllex_tokend(lex);
-    klparser_match(parser, lex, KLTK_RBRACE);
-    if (kl_unlikely(!block)) {
-      klast_delete(expr);
-      return NULL;
-    }
-    klast_setposition(block, begin, end);
-  } else {
-    KlAst* stmt = klparser_stmt_nosemi(parser, lex);
-    if (kl_unlikely(!stmt)) {
-      klast_delete(expr);
-      return NULL;
-    }
-    KlAst** stmts = (KlAst**)malloc(1 * sizeof (KlAst*));
-    if (kl_unlikely(!stmts)) {
-      klast_delete(stmt);
-      klast_delete(expr);
-      return klparser_error_oom(parser, lex);
-    }
-    stmts[0] = stmt;
-    block = klast_stmtlist_create(stmts, 1, klast_begin(stmt), klast_end(stmt));
-    if (kl_unlikely(!block)) {
-      klast_delete(expr);
-      return klparser_error_oom(parser, lex);
-    }
-  }
+  KlAstStmtList* block = klparser_stmtblock(parser, lex);
   KlAstWhere* exprwhere = klast_where_create(expr, block, klast_begin(expr), klast_end(block));
   klparser_oomifnull(exprwhere);
   return exprwhere;

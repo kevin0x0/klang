@@ -34,12 +34,9 @@ KlAstStmtList* klparser_interactive(KlParser* parser, KlLex* lex) {
     KlAstStmtReturn* stmtreturn = klast_stmtreturn_create(klcast(KlAstExprList*, exprlist), klast_begin(exprlist), klast_end(exprlist));
     klparser_oomifnull(stmtreturn);
     stmt = klast(stmtreturn);
-  } else if (kl_unlikely(!klparser_exprbegin(lex) && !kllex_check(lex, KLTK_LOCAL))) {
-    klparser_error(parser, kllex_inputstream(lex), kllex_tokbegin(lex), kllex_tokend(lex),
-                   "expected an expression or assignment statement in interactive mode");
-    return NULL;
   } else {
-    stmt = klparser_stmt_nosemi(parser, lex);
+    stmt = klparser_stmt(parser, lex);
+    klparser_check(parser, lex, KLTK_SEMI);
     if (kl_unlikely(!stmt)) return NULL;
     if (klast_kind(stmt) == KLAST_STMT_EXPR) {
       KlAstExprList* exprlist = klast_stmtexpr_steal_exprlist_and_destroy(klcast(KlAstStmtExpr*, stmt));
