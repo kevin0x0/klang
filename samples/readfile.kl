@@ -1,0 +1,11 @@
+-- this demo requires istream.file
+
+let ifile = new istream.file("readfile.kl");
+
+let line = nil;
+while line := ifile.readline():
+  print line;
+
+-- The file will be closed automatically once the ifile object is garbage collected,
+-- but it's generally better to call close() explicitly.
+ifile.close();
