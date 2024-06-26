@@ -76,12 +76,12 @@ KlException kllib_ostream_createclass(KlState* state) {
   return KL_E_NONE;
 }
 
-bool kllib_istream_compatiable(KlValue* val) {
-  return klvalue_checktype(val, KL_OBJECT) && klobject_compatiable(klvalue_getobj(val, KlObject*), kllib_istream_objconstructor);
+bool kllib_istream_compatible(KlValue* val) {
+  return klvalue_checktype(val, KL_OBJECT) && klobject_compatible(klvalue_getobj(val, KlObject*), kllib_istream_objconstructor);
 }
 
-bool kllib_ostream_compatiable(KlValue* val) {
-  return klvalue_checktype(val, KL_OBJECT) && klobject_compatiable(klvalue_getobj(val, KlObject*), kllib_ostream_objconstructor);
+bool kllib_ostream_compatible(KlValue* val) {
+  return klvalue_checktype(val, KL_OBJECT) && klobject_compatible(klvalue_getobj(val, KlObject*), kllib_ostream_objconstructor);
 }
 
 void kllib_istream_set(KlInputStream* istream, Ki* ki) {
@@ -95,16 +95,17 @@ void kllib_ostream_set(KlOutputStream* ostream, Ko* ko) {
 }
 
 static KlException kllib_istream_readline(KlState* state) {
-
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with exactly 1 argument('this')!");
-  if (!kllib_istream_compatiable(klapi_access(state, -1)))
+  if (!kllib_istream_compatible(klapi_access(state, -1)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with istream object!");
+  Ki* ki = klapi_getobj(state, -1, KlInputStream*)->ki;
+  if (kl_unlikely(!ki))
+    return klapi_throw_internal(state, KL_E_INVLD, "uninitialized istream object");
 
   KlStringBuf buf;
   if (kl_unlikely(!klstrbuf_init(&buf, 64)))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating string buffer");
-  Ki* ki = klapi_getobj(state, -1, KlInputStream*)->ki;
   int ch;
   while ((ch = ki_getc(ki)) != KOF && ch != '\n' && ch != '\r') {
     KLAPI_MAYFAIL(klstrbuf_push_back(&buf, ch) ? KL_E_NONE :
@@ -131,7 +132,7 @@ static KlException kllib_istream_readline(KlState* state) {
 static KlException kllib_ostream_writeline(KlState* state) {
   if (klapi_narg(state) == 0)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with at least 1 argument(including 'this')!");
-  if (!kllib_ostream_compatiable(klapi_accessb(state, 0)))
+  if (!kllib_ostream_compatible(klapi_accessb(state, 0)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with ostream object!");
   KlOutputStream* ostream = klapi_getobjb(state, 0, KlOutputStream*);
   Ko* ko = ostream->ko;
@@ -178,7 +179,7 @@ static KlException kllib_ostream_writeline(KlState* state) {
 static KlException kllib_istream_close(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with exactly 1 argument('this')!");
-  if (!kllib_istream_compatiable(klapi_access(state, -1)))
+  if (!kllib_istream_compatible(klapi_access(state, -1)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with istream object!");
   KlInputStream* istream = klapi_getobj(state, -1, KlInputStream*);
   if (istream->ki) {
@@ -191,7 +192,7 @@ static KlException kllib_istream_close(KlState* state) {
 static KlException kllib_ostream_close(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with exactly 1 argument('this')!");
-  if (!kllib_ostream_compatiable(klapi_access(state, -1)))
+  if (!kllib_ostream_compatible(klapi_access(state, -1)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with ostream object!");
   KlOutputStream* ostream = klapi_getobj(state, -1, KlOutputStream*);
   if (ostream->ko) {
