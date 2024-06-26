@@ -1,4 +1,5 @@
 #include "include/parse/klparser_expr.h"
+#include "include/error/klerror.h"
 #include "include/misc/klutils.h"
 #include "include/parse/klparser_stmt.h"
 #include "include/parse/klparser_generator.h"
@@ -490,24 +491,26 @@ static KlAst* klparser_dotchain(KlParser* parser, KlLex* lex) {
 static KlAstNew* klparser_exprnew(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_NEW), "");
 
+  KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
   KlAst* klclass = kllex_check(lex, KLTK_LPAREN)
                  ? klparser_exprunit(parser, lex, NULL)
                  : klparser_dotchain(parser, lex);
   if (kllex_trymatch(lex, KLTK_LPAREN)) { /* has initialization list */
     KlAstExprList* args = klparser_exprlist_mayempty(parser, lex);
+    KlFileOffset end = kllex_tokend(lex);
     klparser_match(parser, lex, KLTK_RPAREN);
     if (kl_unlikely(!klclass || !args)) {
       if (klclass) klast_delete(klclass);
       if (args) klast_delete(args);
       return NULL;
     }
-    KlAstNew* newexpr = klast_new_create(klclass, klcast(KlAstExprList*, args), klast_begin(klclass), klast_end(args));
+    KlAstNew* newexpr = klast_new_create(klclass, klcast(KlAstExprList*, args), begin, end);
     klparser_oomifnull(newexpr);
     return newexpr;
   } else {
     klparser_returnifnull(klclass);
-    KlAstNew* newexpr = klast_new_create(klclass, NULL, klast_begin(klclass), klast_end(klclass));
+    KlAstNew* newexpr = klast_new_create(klclass, NULL, begin, klast_end(klclass));
     klparser_oomifnull(newexpr);
     return newexpr;
   }
