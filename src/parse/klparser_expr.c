@@ -139,9 +139,12 @@ static KlAst* klparser_exprunit(KlParser* parser, KlLex* lex, bool* inparenthesi
       klast_setposition(exprlist, begin, end);
       return klast(exprlist);
     }
+    case KLTK_NEW: {
+      return klast(klparser_exprnew(parser, lex));
+    }
     default: {
       klparser_error(parser, kllex_inputstream(lex), kllex_tokbegin(lex), kllex_tokend(lex),
-                     "expected '(', '{', '[', true, false, identifier, string or integer");
+                     "expected '(', '{', '[', true, false, identifier, string, new or integer");
       return NULL;
     }
   }
@@ -632,9 +635,6 @@ static KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
     case KLTK_ADD: {
       kllex_next(lex);
       return klparser_exprpre(parser, lex);
-    }
-    case KLTK_NEW: {
-      return klast(klparser_exprnew(parser, lex));
     }
     default: {  /* no prefix */
       return klparser_exprpost(parser, lex);
