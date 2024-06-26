@@ -7,8 +7,6 @@
 #include "include/parse/klparser_utils.h"
 
 
-static const KlFileOffset ph_filepos = ~(KlFileOffset)0;
-
 static KlAstStmtList* klparser_darrowfuncbody(KlParser* parser, KlLex* lex);
 static KlAstStmtList* klparser_arrowfuncbody(KlParser* parser, KlLex* lex);
 /* parse all syntactical structure that begin with '{"(class, map, map generator, coroutine generator) */
@@ -273,7 +271,7 @@ static KlAst* klparser_exprbrace_inner(KlParser* parser, KlLex* lex) {
     }
     KlAstFunc* func = klast_func_create(generator, params, false, false, klast_begin(stmtexpr), klast_end(generator));
     klparser_oomifnull(func);
-    KlAstPre* asyncexpr = klast_pre_create(KLTK_ASYNC, klast(func), ph_filepos, ph_filepos);
+    KlAstPre* asyncexpr = klast_pre_create(KLTK_ASYNC, klast(func), KLPARSER_ERROR_PH_FILEPOS, KLPARSER_ERROR_PH_FILEPOS);
     klparser_oomifnull(asyncexpr);
     return klast(asyncexpr);
   }
@@ -324,7 +322,7 @@ static KlAst* klparser_finishmap(KlParser* parser, KlLex* lex, KlAst* firstkey, 
   if (kllex_check(lex, KLTK_BAR)) { /* is map generator */
     return klast(klparser_finishmapgenerator(parser, lex, keys_stolen, vals_stolen, npair));
   } else {  /* a normal map */
-    KlAstMap* map = klast_map_create(keys_stolen, vals_stolen, npair, ph_filepos, ph_filepos);
+    KlAstMap* map = klast_map_create(keys_stolen, vals_stolen, npair, KLPARSER_ERROR_PH_FILEPOS, KLPARSER_ERROR_PH_FILEPOS);
     klparser_oomifnull(map);
     return klast(map);
   }
@@ -371,7 +369,7 @@ static KlAstMapGenerator* klparser_finishmapgenerator(KlParser* parser, KlLex* l
 
   KlAstStmtList* stmts = klparser_generator(parser, lex, klast(inner_stmt));
   klparser_returnifnull(stmts);
-  KlAstMapGenerator* mapgen = klast_mapgenerator_create(tmpmapid, stmts, ph_filepos, ph_filepos);
+  KlAstMapGenerator* mapgen = klast_mapgenerator_create(tmpmapid, stmts, KLPARSER_ERROR_PH_FILEPOS, KLPARSER_ERROR_PH_FILEPOS);
   klparser_oomifnull(mapgen);
   return mapgen;
 }
@@ -425,7 +423,7 @@ static KlAstClass* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc 
   klcfd_shrink(&fields);
   karray_shrink(&vals);
   size_t nfield = karray_size(&vals);
-  KlAstClass* klclass = klast_class_create(klcfd_steal(&fields), (KlAst**)karray_steal(&vals), nfield, NULL, ph_filepos, ph_filepos);
+  KlAstClass* klclass = klast_class_create(klcfd_steal(&fields), (KlAst**)karray_steal(&vals), nfield, NULL, KLPARSER_ERROR_PH_FILEPOS, KLPARSER_ERROR_PH_FILEPOS);
   klparser_oomifnull(klclass);
   return klclass;
 }

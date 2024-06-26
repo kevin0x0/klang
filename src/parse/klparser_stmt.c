@@ -15,9 +15,6 @@ static inline KlAstStmtBreak* klparser_stmtbreak(KlParser* parser, KlLex* lex);
 static inline KlAstStmtContinue* klparser_stmtcontinue(KlParser* parser, KlLex* lex);
 
 
-static const KlFileOffset ph_filepos = ~(KlFileOffset)0;
-
-
 KlAstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex) {
   if (kllex_check(lex, KLTK_LBRACE)) {
     KlFileOffset begin = kllex_tokbegin(lex);
@@ -188,7 +185,7 @@ static KlAst* klparser_stmtinfor(KlParser* parser, KlLex* lex) {
       return NULL;
     }
     KlAst** exprs = exprlist->exprs;
-    KlAstStmtIFor* ifor = klast_stmtifor_create(lvals, exprs[0], exprs[1], nexpr == 3 ? exprs[2] : NULL, block, ph_filepos, klast_end(block));
+    KlAstStmtIFor* ifor = klast_stmtifor_create(lvals, exprs[0], exprs[1], nexpr == 3 ? exprs[2] : NULL, block, KLPARSER_ERROR_PH_FILEPOS, klast_end(block));
     klast_exprlist_shallow_replace(exprlist, NULL, 0);
     klast_delete(exprlist);
     klparser_oomifnull(ifor);
@@ -216,11 +213,11 @@ static KlAst* klparser_stmtinfor(KlParser* parser, KlLex* lex) {
   if (klast_kind(iterable) == KLAST_EXPR_VARARG) {
     /* is variable argument for loop : stmtfor -> for a, b, ... in ... */
     klast_delete(iterable); /* 'iterable' is no longer needed */
-    KlAstStmtVFor* vfor = klast_stmtvfor_create(lvals, block, ph_filepos, klast_end(block));
+    KlAstStmtVFor* vfor = klast_stmtvfor_create(lvals, block, KLPARSER_ERROR_PH_FILEPOS, klast_end(block));
     klparser_oomifnull(vfor);
     return klast(vfor);
   } else {  /* generic for loop : stmtfor -> for a, b, ... in expr */
-    KlAstStmtGFor* gfor = klast_stmtgfor_create(lvals, iterable, block, ph_filepos, klast_end(block));
+    KlAstStmtGFor* gfor = klast_stmtgfor_create(lvals, iterable, block, KLPARSER_ERROR_PH_FILEPOS, klast_end(block));
     klparser_oomifnull(gfor);
     return klast(gfor);
   }
@@ -408,7 +405,7 @@ KlAstStmtList* klparser_stmtlist(KlParser* parser, KlLex* lex) {
   }
   karray_shrink(&stmts);
   size_t nstmt = karray_size(&stmts);
-  KlAstStmtList* stmtlist = klast_stmtlist_create((KlAst**)karray_steal(&stmts), nstmt, ph_filepos, ph_filepos);
+  KlAstStmtList* stmtlist = klast_stmtlist_create((KlAst**)karray_steal(&stmts), nstmt, KLPARSER_ERROR_PH_FILEPOS, KLPARSER_ERROR_PH_FILEPOS);
   klparser_oomifnull(stmtlist);
   return stmtlist;
 }

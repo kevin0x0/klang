@@ -6,6 +6,8 @@
 #include "include/parse/kltokens.h"
 #include <stdbool.h>
 
+#define KLPARSER_ERROR_PH_FILEPOS (~(KlFileOffset)0)
+
 void klparser_error(KlParser* parser, Ki* input, KlFileOffset begin, KlFileOffset end, const char* format, ...);
 void* klparser_error_oom(KlParser* parser, KlLex* lex);
 
