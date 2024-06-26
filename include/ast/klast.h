@@ -398,19 +398,7 @@ KlAstMatch* klast_match_create(KlAst* matchobj, KlAst** patterns, KlAst** exprs,
 KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
 
 KlAst* klast_exprlist_stealfirst_and_destroy(KlAstExprList* exprlist);
-
-static inline bool klast_isboolexpr(KlAst* ast) {
-  if (klast_kind(ast) == KLAST_EXPR_PRE) {
-    return klcast(KlAstPre*, ast)->op == KLTK_NOT;
-  } else if (klast_kind(ast) == KLAST_EXPR_BIN) {
-    return klcast(KlAstBin*, ast)->op == KLTK_AND ||
-           klcast(KlAstBin*, ast)->op == KLTK_OR  ||
-           kltoken_isrelation(klcast(KlAstBin*, ast)->op);
-  } else {
-    return false;
-  }
-}
-
+bool klast_isboolexpr(KlAst* ast);
 
 static inline void klast_exprlist_shallow_replace(KlAstExprList* exprlist, KlAst** exprs, size_t nexpr) {
   free(exprlist->exprs);

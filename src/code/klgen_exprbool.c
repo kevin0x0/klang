@@ -1,8 +1,10 @@
 #include "include/code/klgen_exprbool.h"
+#include "include/ast/klast.h"
 #include "include/code/klcode.h"
 #include "include/code/klcodeval.h"
 #include "include/code/klgen.h"
 #include "include/code/klgen_expr.h"
+#include "include/code/klgen_stmt.h"
 #include <string.h>
 
 
@@ -325,7 +327,7 @@ static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlAstBin* binast, KlCS
   }
 }
 
-KlCodeVal klgen_exprrelation(KlGenUnit* gen, KlAstBin* relast, bool jumpcond) {
+static KlCodeVal klgen_exprrelation(KlGenUnit* gen, KlAstBin* relast, bool jumpcond) {
   KlCStkId oristktop = klgen_stacktop(gen);
   KlCodeVal left = klgen_expr(gen, relast->loperand);
   if (klcodeval_isconstant(left)) {
@@ -342,6 +344,27 @@ KlCodeVal klgen_exprrelation(KlGenUnit* gen, KlAstBin* relast, bool jumpcond) {
   return klgen_pushrelinst(gen, relast, left.index, right.index, jumpcond);
 }
 
+static KlCodeVal klgen_exprwhere_ascondition(KlGenUnit* gen, KlAstWhere* whereast, bool jumpcond) {
+  size_t oristktop = klgen_stacktop(gen);
+  klgen_pushsymtbl(gen);
+  klgen_stmtlist(gen, whereast->block);
+  KlCodeVal jmplist = klgen_exprbool(gen, whereast->expr, jumpcond);
+  bool referenced = gen->symtbl->info.referenced;
+  klgen_popsymtbl(gen);
+  klgen_stackfree(gen, oristktop);
+
+  if (klcodeval_isconstant(jmplist)) {
+    if (referenced)
+      klgen_emit(gen, klinst_close(oristktop), klgen_astposition(whereast));
+    return jmplist;
+  }
+  if (!referenced) return jmplist;
+  klgen_emit(gen, klinst_closejmp(oristktop, 1), klgen_astposition(whereast));
+  klgen_setinstjmppos(gen, jmplist, klgen_currentpc(gen));
+  return klcodeval_jmplist(klgen_emit(gen, klinst_closejmp(oristktop, 0), klgen_astposition(whereast)));
+}
+
+
 KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAst* ast, bool jumpcond) {
   if (klast_kind(ast) == KLAST_EXPR_PRE && klcast(KlAstPre*, ast)->op == KLTK_NOT) {
     return klgen_exprnot(gen, klcast(KlAstPre*, ast), jumpcond);
@@ -354,6 +377,8 @@ KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAst* ast, bool jumpcond) {
     if (kltoken_isrelation(binast->op))
       return klgen_exprrelation(gen, binast, jumpcond);
     /* else is other binary expression, fallthrough */
+  } else if (klast_kind(ast) == KLAST_EXPR_WHERE && klast_isboolexpr(klcast(KlAstWhere*, ast)->expr)) {
+    return klgen_exprwhere_ascondition(gen, klcast(KlAstWhere*, ast), jumpcond);
   } else if (klast_kind(ast) == KLAST_EXPR_LIST) {
     KlAstExprList* exprlist = klcast(KlAstExprList*, ast);
     KlAst* lastelem = exprlist->nexpr == 0 ? NULL : exprlist->exprs[exprlist->nexpr - 1];
