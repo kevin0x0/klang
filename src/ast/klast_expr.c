@@ -11,6 +11,7 @@ static void klast_constant_destroy(KlAstConstant* astconstant);
 static void klast_vararg_destroy(KlAstVararg* astvararg);
 static void klast_exprlist_destroy(KlAstExprList* astexprlist);
 static void klast_bin_destroy(KlAstBin* astbin);
+static void klast_walrus_destroy(KlAstWalrus* astwalrus);
 static void klast_pre_destroy(KlAstPre* astpre);
 static void klast_new_destroy(KlAstNew* astnew);
 static void klast_yield_destroy(KlAstYield* astyield);
@@ -31,6 +32,7 @@ static const KlAstInfo klast_constant_vfunc = { .destructor = (KlAstDelete)klast
 static const KlAstInfo klast_vararg_vfunc = { .destructor = (KlAstDelete)klast_vararg_destroy, .kind = KLAST_EXPR_VARARG };
 static const KlAstInfo klast_exprlist_vfunc = { .destructor = (KlAstDelete)klast_exprlist_destroy, .kind = KLAST_EXPR_LIST };
 static const KlAstInfo klast_bin_vfunc = { .destructor = (KlAstDelete)klast_bin_destroy, .kind = KLAST_EXPR_BIN };
+static const KlAstInfo klast_walrus_vfunc = { .destructor = (KlAstDelete)klast_walrus_destroy, .kind = KLAST_EXPR_WALRUS };
 static const KlAstInfo klast_pre_vfunc = { .destructor = (KlAstDelete)klast_pre_destroy, .kind = KLAST_EXPR_PRE };
 static const KlAstInfo klast_new_vfunc = { .destructor = (KlAstDelete)klast_new_destroy, .kind = KLAST_EXPR_NEW };
 static const KlAstInfo klast_yield_vfunc = { .destructor = (KlAstDelete)klast_yield_destroy, .kind = KLAST_EXPR_YIELD };
@@ -212,6 +214,20 @@ KlAstBin* klast_bin_create(KlTokenKind op, KlAst* loperand, KlAst* roperand, KlF
   klast_setposition(astbin, begin, end);
   klast_init(astbin, &klast_bin_vfunc);
   return astbin;
+}
+
+KlAstWalrus* klast_walrus_create(KlAst* pattern, KlAst* rval, KlFileOffset begin, KlFileOffset end) {
+  KlAstWalrus* astwalrus = klast_alloc(KlAstWalrus);
+  if (kl_unlikely(!astwalrus)) {
+    klast_delete(pattern);
+    klast_delete(rval);
+    return NULL;
+  }
+  astwalrus->pattern = pattern;
+  astwalrus->rval = rval;
+  klast_setposition(astwalrus, begin, end);
+  klast_init(astwalrus, &klast_walrus_vfunc);
+  return astwalrus;
 }
 
 KlAstPre* klast_pre_create(KlTokenKind op, KlAst* operand, KlFileOffset begin, KlFileOffset end) {
@@ -421,6 +437,11 @@ static void klast_exprlist_destroy(KlAstExprList* astexprlist) {
 static void klast_bin_destroy(KlAstBin* astbin) {
   klast_delete(astbin->loperand);
   klast_delete(astbin->roperand);
+}
+
+static void klast_walrus_destroy(KlAstWalrus* astwalrus) {
+  klast_delete(astwalrus->pattern);
+  klast_delete(astwalrus->rval);
 }
 
 static void klast_pre_destroy(KlAstPre* astpre) {

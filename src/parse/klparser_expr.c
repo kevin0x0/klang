@@ -1,4 +1,5 @@
 #include "include/parse/klparser_expr.h"
+#include "include/misc/klutils.h"
 #include "include/parse/klparser_stmt.h"
 #include "include/parse/klparser_generator.h"
 #include "include/parse/klcfdarr.h"
@@ -30,9 +31,20 @@ static KlAst* klparser_exprbin(KlParser* parser, KlLex* lex, int prio);
 
 KlAst* klparser_expr(KlParser* parser, KlLex* lex) {
   KlAst* expr = klparser_exprbin(parser, lex, 0);
-  if (kl_unlikely(!expr)) return NULL;
-  return kllex_check(lex, KLTK_WHERE) ? klast(klparser_exprfinishwhere(parser, lex, expr)) :
-                                        expr;
+  klparser_returnifnull(expr);
+  if (kllex_trymatch(lex, KLTK_WALRUS)) {
+    KlAst* rval = klparser_expr(parser, lex);
+    if (kl_unlikely(!rval)) {
+      klast_delete(expr);
+      return NULL;
+    }
+    KlAstWalrus* walrus = klast_walrus_create(expr, rval, klast_begin(expr), klast_end(rval));
+    klparser_oomifnull(walrus);
+    return klast(walrus);
+  } else {
+    return kllex_check(lex, KLTK_WHERE) ? klast(klparser_exprfinishwhere(parser, lex, expr)) :
+                                          expr;
+  }
 }
 
 KlAstExprList* klparser_emptyexprlist(KlParser* parser, KlLex* lex, KlFileOffset begin, KlFileOffset end) {

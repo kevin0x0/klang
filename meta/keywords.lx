@@ -126,6 +126,9 @@ def arraw(KLTK_ARROW):
 def assign(KLTK_ASSIGN):
   (KLTK_ASSIGN) $=
 
+def walrus(KLTK_WALRUS):
+  (KLTK_WALRUS) $:=
+
 def bar(KL_BAR):
   (KLTK_BAR) $\|
 

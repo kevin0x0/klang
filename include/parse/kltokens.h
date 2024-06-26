@@ -52,6 +52,7 @@ typedef enum tagKlTokenKind {
   KLTK_ARROW,
 
   KLTK_ASSIGN,
+  KLTK_WALRUS,
   KLTK_BAR,
 
   KLTK_COMMENT,

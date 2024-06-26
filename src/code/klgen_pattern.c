@@ -199,10 +199,7 @@ static KlStrDesc klgen_pattern_methodname(KlGenUnit* gen, KlAst* ast) {
 }
 
 static inline bool klgen_pattern_islval(KlAst* lval) {
-  return (klast_kind(lval) == KLAST_EXPR_ID   ||
-          klast_kind(lval) == KLAST_EXPR_DOT  ||
-          (klast_kind(lval) == KLAST_EXPR_POST &&
-           klcast(KlAstPost*, lval)->op == KLTK_INDEX));
+  return klast_islvalue(lval);
 }
 
 static inline bool klgen_pattern_allislval(KlAst** lvals, size_t nlval) {

@@ -18,5 +18,3 @@ bool klast_isboolexpr(KlAst* ast) {
     }
   }
 }
-
-

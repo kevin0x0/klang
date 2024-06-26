@@ -41,6 +41,7 @@ typedef enum tagKlAstKind {
   KLAST_EXPR_FUNC,
 
   KLAST_EXPR_BIN,
+  KLAST_EXPR_WALRUS,
 
   KLAST_EXPR_MATCH,
   KLAST_EXPR_WHERE, KLAST_EXPR_END = KLAST_EXPR_WHERE,
@@ -185,6 +186,12 @@ typedef struct tagKlAstBin {
   KlAst* loperand;
   KlAst* roperand;
 } KlAstBin;
+
+typedef struct tagKlAstWalrus {
+  KL_DERIVE_FROM(KlAst, _astbase_);
+  KlAst* pattern;
+  KlAst* rval;
+} KlAstWalrus;
 
 typedef struct tagKlAstPre {
   KL_DERIVE_FROM(KlAst, _astbase_);
@@ -387,6 +394,7 @@ KlAstConstant* klast_constant_create_nil(KlFileOffset begin, KlFileOffset end);
 KlAstVararg* klast_vararg_create(KlFileOffset begin, KlFileOffset end);
 KlAstExprList* klast_exprlist_create(KlAst** exprs, size_t nexpr, KlFileOffset begin, KlFileOffset end);
 KlAstBin* klast_bin_create(KlTokenKind op, KlAst* loperand, KlAst* roperand, KlFileOffset begin, KlFileOffset end);
+KlAstWalrus* klast_walrus_create(KlAst* pattern, KlAst* rval, KlFileOffset begin, KlFileOffset end);
 KlAstPre* klast_pre_create(KlTokenKind op, KlAst* operand, KlFileOffset begin, KlFileOffset end);
 KlAstNew* klast_new_create(KlAst* klclass, KlAstExprList* args, KlFileOffset begin, KlFileOffset end);
 KlAstYield* klast_yield_create(KlAstExprList* vals, KlFileOffset begin, KlFileOffset end);
@@ -399,6 +407,13 @@ KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset b
 
 KlAst* klast_exprlist_stealfirst_and_destroy(KlAstExprList* exprlist);
 bool klast_isboolexpr(KlAst* ast);
+
+static inline bool klast_islvalue(KlAst* ast) {
+  return (klast_kind(ast) == KLAST_EXPR_ID   ||
+          klast_kind(ast) == KLAST_EXPR_DOT  ||
+          (klast_kind(ast) == KLAST_EXPR_POST &&
+           klcast(KlAstPost*, ast)->op == KLTK_INDEX));
+}
 
 static inline void klast_exprlist_shallow_replace(KlAstExprList* exprlist, KlAst** exprs, size_t nexpr) {
   free(exprlist->exprs);

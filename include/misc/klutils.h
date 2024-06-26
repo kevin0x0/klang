@@ -25,11 +25,13 @@
 #ifdef NDEBUG
 #define kl_assert(expr, info)   ((void)0)
 #define kltodo(message)         ((void)0)
+#define kl_debug(decl, expr)    ((void)0)
 #else
 kl_noreturn void kl_abort(const char* expr, const char* head, int line_no, const char* filename, const char* info);
 
 #define kl_assert(expr, info)           ((void)((expr) || (kl_abort(#expr, "assertion failed", __LINE__, __FILE__, (info)), 0)))
 #define kltodo(message)                 kl_abort(message, "TODO", __LINE__, __FILE__, "")
+#define kl_debug(decl, expr)            decl = (expr)
 
 #endif
 
