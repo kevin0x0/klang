@@ -2335,7 +2335,8 @@ KlException klexec_execute(KlState* state) {
           stkbase = callinfo->base;
           KlInstruction jmp = *pc++;
           kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_TRUEJMP && KLINST_AI_GETA(jmp) == KLINST_AX_GETA(inst) + 1, "");
-          KlValue* testval = stkbase + KLINST_AX_GETA(inst) + 1;
+          /* test the first porgrammer-visible iteration variable */
+          KlValue* testval = stkbase + KLINST_AX_GETA(inst) + 3;
           if (kl_likely(klexec_satisfy(testval, KL_TRUE)))
             pc += KLINST_AI_GETI(jmp);
         }
