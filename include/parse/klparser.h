@@ -18,13 +18,7 @@ typedef struct tagKlParser {
 
 bool klparser_init(KlParser* parser, KlStrTbl* strtbl, const char* inputname, KlError* klerror);
 
-
-
 KlAstStmtList* klparser_file(KlParser* parser, KlLex* lex);
 KlAstStmtList* klparser_interactive(KlParser* parser, KlLex* lex);
-
-
-
-
 
 #endif
