@@ -43,6 +43,7 @@ static const char* const descrition[KLTK_NTOKEN] = {
   [KLTK_ARROW] = "->",
   [KLTK_ASSIGN] = "=",
   [KLTK_BAR] = "|",
+  [KLTK_COMMENT] = "comment",
   [KLTK_MATCH] = "match",
   [KLTK_CASE] = "case",
   [KLTK_OF] = "of",
