@@ -24,8 +24,8 @@ typedef struct tagKlOutputStream {
 
 KlException kllib_istream_createclass(KlState* state);
 KlException kllib_ostream_createclass(KlState* state);
-bool kllib_istream_compatiable(KlValue* val);
-bool kllib_ostream_compatiable(KlValue* val);
+bool kllib_istream_compatible(KlValue* val);
+bool kllib_ostream_compatible(KlValue* val);
 
 void kllib_istream_set(KlInputStream* istream, Ki* ki);
 void kllib_ostream_set(KlOutputStream* ostream, Ko* ko);

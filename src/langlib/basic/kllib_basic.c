@@ -215,7 +215,7 @@ static KlException kllib_basic_map_next(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 3 arguments(1 iteration variable in for loop)");
   KLAPI_PROTECT(klapi_checkframeandset(state, 4));
   KlValue* base = klapi_accessb(state, 0);
-  if (kl_unlikely(!klvalue_checktype(base, KL_MAP) && !(klvalue_checktype(base, KL_OBJECT) && klmap_compatiable(klvalue_getobj(base, KlObject*)))))
+  if (kl_unlikely(!klvalue_checktype(base, KL_MAP) && !(klvalue_checktype(base, KL_OBJECT) && klmap_compatible(klvalue_getobj(base, KlObject*)))))
     return klapi_throw_internal(state, KL_E_TYPE, "expected map");
   KlMap* map = klvalue_getobj(base, KlMap*);
   KlUInt bucketid = klvalue_getuint(base + 1);
@@ -234,7 +234,7 @@ static KlException kllib_basic_arr_next_with_index(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 2 arguments(0 iteration variable in for loop)");
   KLAPI_PROTECT(klapi_checkframeandset(state, 4));
   KlValue* base = klapi_accessb(state, 0);
-  if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY) && !(klvalue_checktype(base, KL_OBJECT) && klarray_compatiable(klvalue_getobj(base, KlObject*)))))
+  if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY) && !(klvalue_checktype(base, KL_OBJECT) && klarray_compatible(klvalue_getobj(base, KlObject*)))))
     return klapi_throw_internal(state, KL_E_TYPE, "expected array");
   KlArray* array = klvalue_getobj(base, KlArray*);
   KlUInt index = klvalue_getuint(base + 1) + 1;
@@ -251,7 +251,7 @@ static KlException kllib_basic_arr_next(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 2 arguments(0 iteration variable in for loop)");
   KLAPI_PROTECT(klapi_checkframeandset(state, 3));
   KlValue* base = klapi_accessb(state, 0);
-  if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY) && !(klvalue_checktype(base, KL_OBJECT) && klarray_compatiable(klvalue_getobj(base, KlObject*)))))
+  if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY) && !(klvalue_checktype(base, KL_OBJECT) && klarray_compatible(klvalue_getobj(base, KlObject*)))))
     return klapi_throw_internal(state, KL_E_TYPE, "expected array");
   KlArray* array = klvalue_getobj(base, KlArray*);
   KlUInt index = klvalue_getuint(base + 1) + 1;
@@ -281,7 +281,7 @@ static KlException kllib_basic_callable_next(KlState* state) {
 static KlException kllib_basic_map_iter(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argmument(this method should be automatically called in iterration loop)");
-  if (!klapi_checktype(state, -1, KL_MAP) && !(klapi_checktype(state, -1, KL_OBJECT) && klmap_compatiable(klapi_getobj(state, -1, KlObject*))))
+  if (!klapi_checktype(state, -1, KL_MAP) && !(klapi_checktype(state, -1, KL_OBJECT) && klmap_compatible(klapi_getobj(state, -1, KlObject*))))
     return klapi_throw_internal(state, KL_E_TYPE, "expected map");
   KlMap* map = klapi_getmap(state, -1);
   if (klmap_size(map) == 0) return klapi_return(state, 0);
@@ -299,7 +299,7 @@ static KlException kllib_basic_map_iter(KlState* state) {
 static KlException kllib_basic_arr_iter(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argmument(this method should be automatically called in iterration loop)");
-  if (!klapi_checktype(state, -1, KL_ARRAY) && !(klapi_checktype(state, -1, KL_OBJECT) && klarray_compatiable(klapi_getobj(state, -1, KlObject*))))
+  if (!klapi_checktype(state, -1, KL_ARRAY) && !(klapi_checktype(state, -1, KL_OBJECT) && klarray_compatible(klapi_getobj(state, -1, KlObject*))))
     return klapi_throw_internal(state, KL_E_TYPE, "expected array");
   KlArray* array = klapi_getarray(state, -1);
   if (klarray_size(array) == 0) return klapi_return(state, 0);

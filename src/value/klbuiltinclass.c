@@ -11,8 +11,8 @@ static KlException klbuiltinclass_array_constructor(KlClass* arrayclass, KlMM* k
   return KL_E_NONE;
 }
 
-bool klarray_compatiable(KlObject* obj) {
-  return klobject_compatiable(obj, klbuiltinclass_array_constructor);
+bool klarray_compatible(KlObject* obj) {
+  return klobject_compatible(obj, klbuiltinclass_array_constructor);
 }
 
 KlClass* klbuiltinclass_array(KlMM* klmm) {
@@ -32,8 +32,8 @@ KlClass* klbuiltinclass_map(KlMM* klmm, KlMapNodePool* mapnodepool) {
   return klclass_create(klmm, 5, klobject_attrarrayoffset(KlMap), mapnodepool, klbuiltinclass_map_constructor);
 }
 
-bool klmap_compatiable(KlObject* obj) {
-  return klobject_compatiable(obj, klbuiltinclass_map_constructor);
+bool klmap_compatible(KlObject* obj) {
+  return klobject_compatible(obj, klbuiltinclass_map_constructor);
 }
 
 static KlException klbuiltinclass_string_constructor(KlClass* klclass, KlMM* klmm, KlValue* value) {

@@ -6,8 +6,8 @@
 #include "include/value/klstring.h"
 
 
-bool klarray_compatiable(KlObject* obj);
-bool klmap_compatiable(KlObject* obj);
+bool klarray_compatible(KlObject* obj);
+bool klmap_compatible(KlObject* obj);
 
 KlClass* klbuiltinclass_array(KlMM* klmm);
 KlClass* klbuiltinclass_map(KlMM* klmm, KlMapNodePool* mapnodepool);

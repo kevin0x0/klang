@@ -40,7 +40,7 @@ KlException kllib_ofile_createclass(KlState* state, KlClass* ostream) {
 static KlException kllib_ifile_constructor(KlState* state) {
   if (klapi_narg(state) < 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "missing arguments");
-  if (!kllib_istream_compatiable(klapi_accessb(state, 0)))
+  if (!kllib_istream_compatible(klapi_accessb(state, 0)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with istream");
   if (!klapi_checktypeb(state, 1, KL_STRING))
     return klapi_throw_internal(state, KL_E_INVLD, "please provide a file path");
@@ -56,7 +56,7 @@ static KlException kllib_ifile_constructor(KlState* state) {
 static KlException kllib_ofile_constructor(KlState* state) {
   if (klapi_narg(state) < 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "missing arguments");
-  if (!kllib_ostream_compatiable(klapi_accessb(state, 0)))
+  if (!kllib_ostream_compatible(klapi_accessb(state, 0)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with ostream");
   if (!klapi_checktypeb(state, 1, KL_STRING))
     return klapi_throw_internal(state, KL_E_INVLD, "please provide a file path");

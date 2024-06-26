@@ -122,7 +122,7 @@ static inline KlClass* klobject_class(KlObject* object);
 static inline size_t klobject_size(KlObject* object);
 static inline KlGCObject* klobject_propagate_nomm(KlObject* object, KlGCObject* gclist);
 static inline void klobject_free(KlObject* object, KlMM* klmm);
-static inline bool klobject_compatiable(KlObject* object, KlObjectConstructor constructor);
+static inline bool klobject_compatible(KlObject* object, KlObjectConstructor constructor);
 
 static inline KlValue* klobject_getfield(KlObject* object, KlString* key) {
   KlClass* klclass = object->klclass;
@@ -158,7 +158,7 @@ static inline void klobject_free(KlObject* object, KlMM* klmm) {
   klmm_free(klmm, klmm_to_gcobj(object), klobject_size(object));
 }
 
-static inline bool klobject_compatiable(KlObject* object, KlObjectConstructor constructor) {
+static inline bool klobject_compatible(KlObject* object, KlObjectConstructor constructor) {
   return object->klclass->constructor == constructor;
 }
 
