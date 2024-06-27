@@ -97,6 +97,7 @@ KlType klapi_gettype(KlState* state, int index);
 KlType klapi_gettypeb(KlState* state, int index);
 void klapi_setframesize(KlState* state, unsigned size);
 void klapi_pop(KlState* state, size_t count);
+void klapi_close(KlState* state, KlValue* bound);
 void klapi_popclose(KlState* state, size_t count);
 
 /* push method */

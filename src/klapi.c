@@ -4,6 +4,7 @@
 #include "include/value/klstate.h"
 #include "include/vm/klexception.h"
 #include "deps/k/include/lib/lib.h"
+#include "include/vm/klexec.h"
 #include <stddef.h>
 
 
@@ -75,10 +76,15 @@ void klapi_pop(KlState* state, size_t count) {
   klstack_move_top(klstate_stack(state), -count);
 }
 
+void klapi_close(KlState* state, KlValue* bound) {
+  kl_assert(klstack_onstack(klstate_stack(state), bound), "pop too many values");
+  klreflist_close(klstate_reflist(state), bound, klstate_getmm(state));
+}
+
 void klapi_popclose(KlState* state, size_t count) {
   kl_assert(count <= klstack_size(klstate_stack(state)), "pop too many values");
   KlValue* bound = klstate_stktop(state) - count;
-  klreflist_close(&state->reflist, bound, klstate_getmm(state));
+  klreflist_close(klstate_reflist(state), bound, klstate_getmm(state));
   klstack_set_top(klstate_stack(state), bound);
 }
 
@@ -450,6 +456,9 @@ KlException klapi_tryscall(KlState* state, int errhandler, KlValue* callable, si
     return KL_E_NONE;
   }
   /* else handle exception */
+  /* close potential references */
+  klapi_close(state, klexec_restorestack(state, retpos_save));
+  /* call error handler */
   exception = klapi_call(state, klexec_restorestack(state, errhandler_save), 0, nret, klexec_restorestack(state, retpos_save));
   if (kl_unlikely(exception)) return exception;
   if (nret != KLAPI_VARIABLE_RESULTS)
@@ -461,12 +470,16 @@ KlException klapi_tryscall(KlState* state, int errhandler, KlValue* callable, si
 KlException klapi_trycall(KlState* state, int errhandler, KlValue* callable, size_t narg, size_t nret, KlValue* respos) {
   ptrdiff_t errhandler_save = klstack_size(klstate_stack(state)) + errhandler;
   ptrdiff_t respos_save = klexec_savestack(state, respos);
+  ptrdiff_t base_save = klexec_savestack(state, klstate_stktop(state) - narg);
   kl_assert(errhandler_save >= 0, "errhandler not provided");
   KlCallInfo* currci = klstate_currci(state);
   KlException exception = klapi_call(state, callable, narg, nret, respos);
   /* if no exception occurred, just return */
   if (kl_likely(!exception)) return exception;
   /* else handle exception */
+  /* close potential references */
+  klapi_close(state, klexec_restorestack(state, base_save));
+  /* call error handler */
   exception = klapi_call(state, klexec_restorestack(state, errhandler_save), 0, nret, klexec_restorestack(state, respos_save));
   if (kl_unlikely(exception)) return exception;
   klapi_exception_clear(state, currci);
