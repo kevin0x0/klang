@@ -328,26 +328,17 @@ KlAstStmtList* klparser_stmtlist(KlParser* parser, KlLex* lex) {
   KArray stmts;
   if (kl_unlikely(!karray_init(&stmts)))
     return klparser_error_oom(parser, lex);
-  while (true) {
-    switch (kllex_tokkind(lex)) {
-      default: {
-        if(!klparser_exprbegin(lex)) break;
-        KL_FALLTHROUGH;
-      }
-      case KLTK_LOCAL: case KLTK_LET: case KLTK_IF: case KLTK_REPEAT: case KLTK_WHILE:
-      case KLTK_MATCH: case KLTK_FOR: case KLTK_RETURN: case KLTK_BREAK: case KLTK_CONTINUE: {
-        KlAst* stmt = klparser_stmt(parser, lex);
-        if (kl_unlikely(!stmt)) continue;
-        if (kl_unlikely(!karray_push_back(&stmts, stmt))) {
-          klast_delete(stmt);
-          klparser_error_oom(parser, lex);
-        }
-        kllex_trymatch(lex, KLTK_SEMI);
-        continue;
-      }
+
+  while (klparser_stmtbegin(lex)) {
+    KlAst* stmt = klparser_stmt(parser, lex);
+    if (kl_unlikely(!stmt)) continue;
+    if (kl_unlikely(!karray_push_back(&stmts, stmt))) {
+      klast_delete(stmt);
+      klparser_error_oom(parser, lex);
     }
-    break;
+    kllex_trymatch(lex, KLTK_SEMI);
   }
+
   karray_shrink(&stmts);
   size_t nstmt = karray_size(&stmts);
   KlAstStmtList* stmtlist = klast_stmtlist_create((KlAst**)karray_steal(&stmts), nstmt, KLPARSER_ERROR_PH_FILEPOS, KLPARSER_ERROR_PH_FILEPOS);

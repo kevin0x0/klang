@@ -34,11 +34,17 @@ KlStrDesc klparser_newtmpid(KlParser* parser, KlLex* lex);
 void klparser_destroy_astarray(KArray* arr);
 
 extern const bool klparser_isexprbegin[KLTK_NTOKEN];
+extern const bool klparser_isstmtbegin[KLTK_NTOKEN];
 static inline bool klparser_exprbegin(KlLex* lex);
+static inline bool klparser_stmtbegin(KlLex* lex);
 
 
 static inline bool klparser_exprbegin(KlLex* lex) {
   return klparser_isexprbegin[kllex_tokkind(lex)];
+}
+
+static inline bool klparser_stmtbegin(KlLex* lex) {
+  return klparser_isstmtbegin[kllex_tokkind(lex)];
 }
 
 static inline bool klparser_match(KlParser* parser, KlLex* lex, KlTokenKind kind) {
