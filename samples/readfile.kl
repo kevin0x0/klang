@@ -1,7 +1,16 @@
 -- this demo requires istream.file
 
-let ifile = new istream.file("readfile.kl");
+-- get filepath from command line
+let filepath = ...;
+if not filepath: {
+  print "usage: klang readfile.kl <filepath>";
+  return;
+}
 
+-- open the file
+let ifile = new istream.file(filepath);
+
+-- read lines and print to stdin
 let line = nil;
 while line := ifile.readline():
   print line;
