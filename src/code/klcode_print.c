@@ -63,8 +63,8 @@ static const char* klcode_get_instname(KlInstruction inst) {
     [KLOPCODE_REFSETFIELDR] = "REFSETFIELDR",
     [KLOPCODE_REFSETFIELDC] = "REFSETFIELDC",
     [KLOPCODE_NEWLOCAL] = "NEWLOCAL",
-    [KLOPCODE_NEWMETHODR] = "NEWMETHODR",
     [KLOPCODE_NEWMETHODC] = "NEWMETHODC",
+    [KLOPCODE_NEWMETHODR] = "NEWMETHODR",
     [KLOPCODE_LOADFALSESKIP] = "LOADFALSESKIP",
     [KLOPCODE_TESTSET] = "TESTSET",
     [KLOPCODE_TRUEJMP] = "TRUEJMP",
@@ -516,8 +516,8 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       return pc;
     }
     case KLOPCODE_NEWMETHODC: {
-      klcode_print_AX(out, inst);
-      ko_printf(out, "R%u.", KLINST_ABC_GETA(inst));
+      klcode_print_ABX(out, inst);
+      ko_printf(out, "method R%u.", KLINST_ABC_GETA(inst));
       klcode_print_string_noquote(code, out, &code->constants[KLINST_ABC_GETC(inst)]);
       ko_printf(out, " = R%u", KLINST_ABC_GETB(inst));
       return pc;

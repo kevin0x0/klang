@@ -1811,7 +1811,7 @@ KlException klexec_execute(KlState* state) {
           value = stkbase + KLINST_ABX_GETB(inst);
           fieldname = constants + KLINST_ABX_GETX(inst);
         }
-        kl_assert(klvalue_checktype(fieldname, KL_STIRNG), "");
+        kl_assert(klvalue_checktype(fieldname, KL_STRING), "");
 
         KlString* keystr = klvalue_getobj(fieldname, KlString*);
         KlClass* klclass = klexec_getclass(state, obj);

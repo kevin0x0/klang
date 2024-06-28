@@ -478,7 +478,7 @@ static void klparser_sharedlist(KlParser* parser, KlLex* lex, KlCfdArray* fields
 static void klparser_classmethod(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals) {
   KlAstClassFieldDesc fielddesc;
   fielddesc.shared = true;
-  fielddesc.ismethod = false;
+  fielddesc.ismethod = true;
   if (kl_unlikely(!klparser_check(parser, lex, KLTK_ID)))
     return;
   fielddesc.name = lex->tok.string;
