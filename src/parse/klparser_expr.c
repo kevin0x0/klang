@@ -19,6 +19,7 @@ static KlAstMapGenerator* klparser_finishmapgenerator(KlParser* parser, KlLex* l
 static KlAstClass* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc id, KlAst* expr, bool preparsed);
 static void klparser_locallist(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals);
 static void klparser_sharedlist(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals);
+static void klparser_classmethod(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals);
 static KlAst* klparser_array(KlParser* parser, KlLex* lex);
 static KlAst* klparser_dotchain(KlParser* parser, KlLex* lex);
 static KlAstNew* klparser_exprnew(KlParser* parser, KlLex* lex);
@@ -228,7 +229,8 @@ static KlAst* klparser_exprbrace(KlParser* parser, KlLex* lex) {
 }
 
 static KlAst* klparser_exprbrace_inner(KlParser* parser, KlLex* lex) {
-  if (kllex_check(lex, KLTK_RBRACE) || kllex_check(lex, KLTK_LOCAL) || kllex_check(lex, KLTK_SHARED)) {  /* is class */
+  if (kllex_check(lex, KLTK_RBRACE) || kllex_check(lex, KLTK_LOCAL) ||
+      kllex_check(lex, KLTK_SHARED) || kllex_check(lex, KLTK_METHOD)) {  /* is class */
     return klast(klparser_finishclass(parser, lex, (KlStrDesc) { .id = 0, .length = 0 }, NULL, false));
   }
 
@@ -280,7 +282,7 @@ static KlAst* klparser_exprbrace_inner(KlParser* parser, KlLex* lex) {
       klast_delete(generator);
       return NULL;
     }
-    KlAstFunc* func = klast_func_create(generator, params, false, false, klast_begin(stmtexpr), klast_end(generator));
+    KlAstFunc* func = klast_func_create(generator, params, false, klast_begin(stmtexpr), klast_end(generator));
     klparser_oomifnull(func);
     KlAstPre* asyncexpr = klast_pre_create(KLTK_ASYNC, klast(func), KLPARSER_ERROR_PH_FILEPOS, KLPARSER_ERROR_PH_FILEPOS);
     klparser_oomifnull(asyncexpr);
@@ -411,9 +413,11 @@ static KlAstClass* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc 
   }
 
   while (!kllex_check(lex, KLTK_RBRACE)) {
-    if (kllex_check(lex, KLTK_LOCAL)) {
-      kllex_next(lex);
+    if (kllex_trymatch(lex, KLTK_LOCAL)) {
       klparser_locallist(parser, lex, &fields, &vals);
+      kllex_trymatch(lex, KLTK_SEMI);
+    } else if (kllex_trymatch(lex, KLTK_METHOD)) {
+      klparser_classmethod(parser, lex, &fields, &vals);
       kllex_trymatch(lex, KLTK_SEMI);
     } else if (kl_likely(!kllex_check(lex, KLTK_END))) {
       kllex_trymatch(lex, KLTK_SHARED);
@@ -442,6 +446,7 @@ static KlAstClass* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc 
 static void klparser_locallist(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals) {
   KlAstClassFieldDesc fielddesc;
   fielddesc.shared = false;
+  fielddesc.ismethod = false;
   do {
     if (kl_unlikely(!klparser_check(parser, lex, KLTK_ID)))
       return;
@@ -451,12 +456,12 @@ static void klparser_locallist(KlParser* parser, KlLex* lex, KlCfdArray* fields,
     }
     kllex_next(lex);
   } while (kllex_trymatch(lex, KLTK_COMMA));
-  return;
 }
 
 static void klparser_sharedlist(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals) {
   KlAstClassFieldDesc fielddesc;
   fielddesc.shared = true;
+  fielddesc.ismethod = false;
   do {
     if (kl_unlikely(!klparser_check(parser, lex, KLTK_ID)))
       return;
@@ -468,7 +473,21 @@ static void klparser_sharedlist(KlParser* parser, KlLex* lex, KlCfdArray* fields
       klparser_error_oom(parser, lex);
     klparser_karr_pushast(vals, val);
   } while (kllex_trymatch(lex, KLTK_COMMA));
-  return;
+}
+
+static void klparser_classmethod(KlParser* parser, KlLex* lex, KlCfdArray* fields, KArray* vals) {
+  KlAstClassFieldDesc fielddesc;
+  fielddesc.shared = true;
+  fielddesc.ismethod = false;
+  if (kl_unlikely(!klparser_check(parser, lex, KLTK_ID)))
+    return;
+  fielddesc.name = lex->tok.string;
+  kllex_next(lex);
+  klparser_match(parser, lex, KLTK_ASSIGN);
+  KlAst* val = klparser_expr(parser, lex);
+  if (kl_unlikely(!klcfd_push_back(fields, &fielddesc)))
+    klparser_error_oom(parser, lex);
+  klparser_karr_pushast(vals, val);
 }
 
 static KlAst* klparser_dotchain(KlParser* parser, KlLex* lex) {
@@ -554,7 +573,7 @@ static KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
         klast_delete(block);
         return NULL;
       }
-      KlAstFunc* func = klast_func_create(block, params, false, false, begin, klast_end(block));
+      KlAstFunc* func = klast_func_create(block, params, false, begin, klast_end(block));
       klparser_oomifnull(func);
       return klast(func);
     }
@@ -567,7 +586,7 @@ static KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
         klast_delete(block);
         return NULL;
       }
-      KlAstFunc* func = klast_func_create(block, params, false, false, begin, klast_end(block));
+      KlAstFunc* func = klast_func_create(block, params, false, begin, klast_end(block));
       klparser_oomifnull(func);
       return klast(func);
     }
@@ -611,37 +630,6 @@ static KlAst* klparser_exprpre(KlParser* parser, KlLex* lex) {
       klclass->baseclass = base;
       klast_setposition(klclass, begin, klast_end(klclass));
       return klast(klclass);
-    }
-    case KLTK_METHOD: {
-      KlFileOffset begin = kllex_tokbegin(lex);
-      kllex_next(lex);
-      KlAst* expr = klparser_exprpre(parser, lex);
-      klparser_returnifnull(expr);
-      if (kl_unlikely(klast_kind(expr) != KLAST_EXPR_FUNC)) {
-        klparser_error(parser, kllex_inputstream(lex), expr->begin, expr->end,
-                       "'method' must be followed by a function construction");
-        return expr;
-      }
-      KlAst* idthis = klast(klast_id_create(parser->string.this, klast_begin(expr), klast_begin(expr)));
-      if (kl_unlikely(!idthis)) {
-        klast_delete(expr);
-        return klparser_error_oom(parser, lex);
-      }
-      KlAstFunc* func = klcast(KlAstFunc*, expr);
-      KlAstExprList* funcparams = func->params;
-      KlAst** newarr = (KlAst**)realloc(funcparams->exprs, (funcparams->nexpr + 1) * sizeof (KlAst*));
-      if (kl_unlikely(!newarr)) {
-        klast_delete(expr);
-        klast_delete(idthis);
-        return klparser_error_oom(parser, lex);
-      }
-      memmove(newarr + 1, newarr, funcparams->nexpr * sizeof (KlAst*));
-      newarr[0] = idthis;   /* add a parameter named 'this' */
-      funcparams->exprs = newarr;
-      ++funcparams->nexpr;
-      func->is_method = true;
-      klast_setposition(func, begin, expr->end);
-      return klast(func);
     }
     case KLTK_CASE: {
       return klast(klparser_exprmatch(parser, lex));
@@ -871,7 +859,7 @@ static KlAst* klparser_exprpost(KlParser* parser, KlLex* lex) {
           klast_delete(block);
           return NULL;
         }
-        KlAstFunc* func = klast_func_create(block, params, vararg, false, klast_begin(params), klast_end(block));
+        KlAstFunc* func = klast_func_create(block, params, vararg, klast_begin(params), klast_end(block));
         klparser_oomifnull(func);
         postexpr = klast(func);
         break;
@@ -890,7 +878,7 @@ static KlAst* klparser_exprpost(KlParser* parser, KlLex* lex) {
           klast_delete(block);
           return NULL;
         }
-        KlAstFunc* func = klast_func_create(block, params, vararg, false, klast_begin(params), klast_end(block));
+        KlAstFunc* func = klast_func_create(block, params, vararg, klast_begin(params), klast_end(block));
         klparser_oomifnull(func);
         postexpr = klast(func);
         break;

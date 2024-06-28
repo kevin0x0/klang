@@ -47,6 +47,7 @@ typedef enum tagKlAstKind {
   KLAST_EXPR_WHERE, KLAST_EXPR_END = KLAST_EXPR_WHERE,
 
   KLAST_STMT_LET, KLAST_STMT = KLAST_STMT_LET,
+  KLAST_STMT_METHOD,
   KLAST_STMT_MATCH,
   KLAST_STMT_LOCALFUNC,
   KLAST_STMT_ASSIGN,
@@ -125,6 +126,7 @@ typedef struct tagKlAstStmtList KlAstStmtList;
 typedef struct tagKlAstClassFieldDesc {
   KlStrDesc name;
   bool shared;
+  bool ismethod;
 } KlAstClassFieldDesc;
 
 typedef struct tagKlAstIdentifier {
@@ -228,7 +230,6 @@ typedef struct tagKlAstFunc {
   KlAstStmtList* block; /* function body */
   KlAstExprList* params;
   bool vararg;          /* has variable argument */
-  bool is_method;
 } KlAstFunc;
 
 typedef struct tagKlAstDot {
@@ -269,6 +270,12 @@ typedef struct tagKlAstStmtLet {
   KlAstExprList* lvals;        /* left values(exprlist) */
   KlAstExprList* rvals;        /* right values(must be exprlist or single value). */
 } KlAstStmtLet;
+
+typedef struct tagKlAstStmtMethod {
+  KL_DERIVE_FROM(KlAst, _astbase_);
+  KlAstDot* lval;
+  KlAst* rval;
+} KlAstStmtMethod;
 
 typedef struct tagKlAstStmtMatch {
   KL_DERIVE_FROM(KlAst, _astbase_);
@@ -400,7 +407,7 @@ KlAstNew* klast_new_create(KlAst* klclass, KlAstExprList* args, KlFileOffset beg
 KlAstYield* klast_yield_create(KlAstExprList* vals, KlFileOffset begin, KlFileOffset end);
 KlAstPost* klast_post_create(KlTokenKind op, KlAst* operand, KlAst* post, KlFileOffset begin, KlFileOffset end);
 KlAstCall* klast_call_create(KlAst* callable, KlAstExprList* args, KlFileOffset begin, KlFileOffset end);
-KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end);
+KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool vararg, KlFileOffset begin, KlFileOffset end);
 KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
 KlAstMatch* klast_match_create(KlAst* matchobj, KlAst** patterns, KlAst** exprs, size_t npattern, KlFileOffset begin, KlFileOffset end);
 KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end);
@@ -424,6 +431,7 @@ static inline void klast_exprlist_shallow_replace(KlAstExprList* exprlist, KlAst
 /* statements */
 KlAstStmtList* klast_stmtlist_create(KlAst** stmts, size_t nstmt, KlFileOffset begin, KlFileOffset end);
 KlAstStmtLet* klast_stmtlet_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end);
+KlAstStmtMethod* klast_stmtmethod_create(KlAstDot* lval, KlAst* rval, KlFileOffset begin, KlFileOffset end);
 KlAstStmtMatch* klast_stmtmatch_create(KlAst* matchobj, KlAst** patterns, KlAstStmtList** stmtlists, size_t npattern, KlFileOffset begin, KlFileOffset end);
 KlAstStmtLocalDefinition* klast_stmtlocaldef_create(KlStrDesc id, KlFileOffset idbegin, KlFileOffset idend, KlAst* expr, KlFileOffset begin, KlFileOffset end);
 KlAstStmtAssign* klast_stmtassign_create(KlAstExprList* lvals, KlAstExprList* rvals, KlFileOffset begin, KlFileOffset end);

@@ -6,6 +6,7 @@
 #include "include/code/klgen_pattern.h"
 #include "include/code/klsymtbl.h"
 #include "include/ast/klast.h"
+#include "include/lang/klinst.h"
 
 
 bool klgen_stmtblock(KlGenUnit *gen, KlAstStmtList *stmtlist) {
@@ -124,6 +125,23 @@ static void klgen_stmtlet(KlGenUnit* gen, KlAstStmtLet* letast) {
   KlCStkId newsymbol_base = klgen_stacktop(gen);
   klgen_deconstruct_to_stktop(gen, lvals->exprs, lvals->nexpr, rvals->exprs, rvals->nexpr, klgen_astposition(rvals));
   klgen_patterns_newsymbol(gen, lvals->exprs, lvals->nexpr, newsymbol_base);
+}
+
+static void klgen_stmtmethod(KlGenUnit* gen, KlAstStmtMethod* methodast) {
+  KlAstDot* lval = methodast->lval;
+  KlAst* rval = methodast->rval;
+  KlCStkId stktop = klgen_stacktop(gen);
+  KlCodeVal val = klgen_expr_onstack(gen, rval);
+  KlCodeVal obj = klgen_expr_onstack(gen, lval->operand);
+  KlCIdx conidx = klgen_newstring(gen, lval->field);
+  if (klinst_inurange(conidx, 8)) {
+    klgen_emit(gen, klinst_newmethodc(obj.index, val.index, conidx), klgen_astposition(methodast));
+  } else {
+    KlCStkId strpos = klgen_stackalloc1(gen);
+    klgen_emit(gen, klinst_loadc(strpos, val.index), klgen_astposition(lval));
+    klgen_emit(gen, klinst_newmethodr(obj.index, val.index, strpos), klgen_astposition(lval));
+  }
+  klgen_stackfree(gen, stktop);
 }
 
 static void klgen_stmt_domatching(KlGenUnit* gen, KlAst* pattern, KlCStkId base, KlCStkId matchobj) {
@@ -755,6 +773,10 @@ void klgen_stmtlist(KlGenUnit* gen, KlAstStmtList* ast) {
       }
       case KLAST_STMT_LET: {
         klgen_stmtlet(gen, klcast(KlAstStmtLet*, stmt));
+        break;
+      }
+      case KLAST_STMT_METHOD: {
+        klgen_stmtmethod(gen, klcast(KlAstStmtMethod*, stmt));
         break;
       }
       case KLAST_STMT_MATCH: {

@@ -4,6 +4,7 @@
 
 
 static void klast_stmtlet_destroy(KlAstStmtLet* stmtlet);
+static void klast_stmtmethod_destroy(KlAstStmtMethod* stmtmethod);
 static void klast_stmtmatch_destroy(KlAstStmtMatch* stmtmatch);
 static void klast_stmtlocalfunc_destroy(KlAstStmtLocalDefinition* stmtlocalfunc);
 static void klast_stmtassign_destroy(KlAstStmtAssign* stmtassign);
@@ -20,6 +21,7 @@ static void klast_stmtbreak_destroy(KlAstStmtBreak* stmtbreak);
 static void klast_stmtcontinue_destroy(KlAstStmtContinue* stmtcontinue);
 
 static const KlAstInfo klast_stmtlet_vfunc = { .destructor = (KlAstDelete)klast_stmtlet_destroy, .kind = KLAST_STMT_LET };
+static const KlAstInfo klast_stmtmethod_vfunc = { .destructor = (KlAstDelete)klast_stmtmethod_destroy, .kind = KLAST_STMT_METHOD };
 static const KlAstInfo klast_stmtmatch_vfunc = { .destructor = (KlAstDelete)klast_stmtmatch_destroy, .kind = KLAST_STMT_MATCH };
 static const KlAstInfo klast_stmtlocaldef_vfunc = { .destructor = (KlAstDelete)klast_stmtlocalfunc_destroy, .kind = KLAST_STMT_LOCALFUNC };
 static const KlAstInfo klast_stmtassign_vfunc = { .destructor = (KlAstDelete)klast_stmtassign_destroy, .kind = KLAST_STMT_ASSIGN };
@@ -48,6 +50,20 @@ KlAstStmtLet* klast_stmtlet_create(KlAstExprList* lvals, KlAstExprList* rvals, K
   klast_setposition(stmtlet, begin, end);
   klast_init(stmtlet, &klast_stmtlet_vfunc);
   return stmtlet;
+}
+
+KlAstStmtMethod* klast_stmtmethod_create(KlAstDot* lval, KlAst* rval, KlFileOffset begin, KlFileOffset end) {
+  KlAstStmtMethod* stmtmethod = klast_alloc(KlAstStmtMethod);
+  if (kl_unlikely(!stmtmethod)) {
+    klast_delete(lval);
+    klast_delete(rval);
+    return NULL;
+  }
+  stmtmethod->lval = lval;
+  stmtmethod->rval = rval;
+  klast_setposition(stmtmethod, begin, end);
+  klast_init(stmtmethod, &klast_stmtmethod_vfunc);
+  return stmtmethod;
 }
 
 KlAstStmtMatch* klast_stmtmatch_create(KlAst* matchobj, KlAst** patterns, KlAstStmtList** stmtlists, size_t npattern, KlFileOffset begin, KlFileOffset end) {
@@ -255,6 +271,11 @@ KlAstStmtContinue* klast_stmtcontinue_create(KlFileOffset begin, KlFileOffset en
 static void klast_stmtlet_destroy(KlAstStmtLet* stmtlet) {
   klast_delete(stmtlet->rvals);
   klast_delete(stmtlet->lvals);
+}
+
+static void klast_stmtmethod_destroy(KlAstStmtMethod* stmtmethod) {
+  klast_delete(stmtmethod->lval);
+  klast_delete(stmtmethod->rval);
 }
 
 static void klast_stmtmatch_destroy(KlAstStmtMatch* stmtmatch) {

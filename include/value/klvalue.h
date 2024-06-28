@@ -7,14 +7,14 @@
 
 #include <stdbool.h>
 
-#define klvalue_collectable(value)          ((value)->type >= KL_COLLECTABLE)
-#define klvalue_dotable(value)              ((value)->type >= KL_DOTABLE && (value)->type <= KL_DOTABLE_END)
-#define klvalue_callable(value)             (((value)->type >= KL_CALLABLEOBJ || (value)->type == KL_CFUNCTION)
-#define klvalue_canrawequal(value)          ((value)->type <= KL_RAWEQUAL)
-#define klvalue_checktype(value, valtype)   ((value)->type == (valtype))
-#define klvalue_isnumber(value)             ((value)->type < KL_NUMBER)
-#define klvalue_isstrornumber(value)        (klvalue_checktype((value), KL_STRING) || klvalue_isnumber((value)))
 #define klvalue_gettype(value)              ((value)->type)
+#define klvalue_collectable(value)          (klvalue_gettype((value)) >= KL_COLLECTABLE)
+#define klvalue_dotable(value)              (klvalue_gettype((value)) >= KL_DOTABLE && klvalue_gettype((value)) <= KL_DOTABLE_END)
+#define klvalue_callable(value)             (klvalue_gettype((value)) >= KL_CALLABLEOBJ || klvalue_gettype((value)) == KL_CFUNCTION)
+#define klvalue_canrawequal(value)          (klvalue_gettype((value)) <= KL_RAWEQUAL)
+#define klvalue_checktype(value, valtype)   (klvalue_gettype((value)) == (valtype))
+#define klvalue_isnumber(value)             (klvalue_gettype((value)) < KL_NUMBER)
+#define klvalue_isstrornumber(value)        (klvalue_checktype((value), KL_STRING) || klvalue_isnumber((value)))
 #define klvalue_sametype(val1, val2)        (klvalue_gettype(val1) == klvalue_gettype(val2))
 
 #define klvalue_getobj(val, type)           ((type)((val)->value.gcobj))
@@ -22,10 +22,11 @@
 
 #define klvalue_equal(v1, v2)               (klvalue_sametype((v1), (v2)) && klvalue_sameinstance((v1), (v2)))
 
-#define klvalue_bothinteger(v1, v2)         ((v1)->type + (v2)->type == KL_INT)
-#define klvalue_bothnumber(v1, v2)          ((v1)->type + (v2)->type <= KL_NUMBER)
+#define klvalue_bothinteger(v1, v2)         (klvalue_gettype(v1) + klvalue_gettype(v2) == KL_INT)
+#define klvalue_bothnumber(v1, v2)          (klvalue_gettype(v1) + klvalue_gettype(v2) <= KL_NUMBER)
 
-#define KLVALUE_NIL_INIT                    { .type = KL_NIL, .value.nilval = 0 }
+#define KLVALUE_NIL_INITWITHTAG(tagval)     { .typewithtag = { .type = KL_NIL, .tag = (tagval) }, .value.nilval = 0 }
+#define KLVALUE_NIL_INIT                    KLVALUE_NIL_INITWITHTAG(0)
 
 #define klvalue_nil()                       ((KlValue) { .type = KL_NIL, .value.nilval = 0 })
 #define klvalue_int(val)                    ((KlValue) { .type = KL_INT, .value.intval = (val) })
@@ -70,7 +71,15 @@ typedef struct tagKlValue {
     void* ud;
     KlUInt uintval;
   } value;
-  KlType type;
+  union {
+    struct {
+      KlType type;
+    };
+    struct {
+      KlType type;
+      KlUnsigned tag;
+    } typewithtag;
+  };
 } KlValue;
 
 const char* klvalue_typename(KlType type);
@@ -154,6 +163,14 @@ static inline void klvalue_setnil(KlValue *val) {
 
 static inline void klvalue_setvalue(KlValue *val, KlValue *other) {
   *val = *other;
+}
+
+static inline KlUnsigned klvalue_gettag(KlValue* val) {
+  return val->typewithtag.tag;
+}
+
+static inline void klvalue_settag(KlValue* val, KlUnsigned tag) {
+  val->typewithtag.tag = tag;
 }
 
 

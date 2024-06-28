@@ -45,7 +45,6 @@ const bool klparser_isexprbegin[KLTK_NTOKEN] = {
   [KLTK_ASYNC] = true,
   [KLTK_CASE] = true,
   [KLTK_INHERIT] = true,
-  [KLTK_METHOD] = true,
   [KLTK_LPAREN] = true,
 };
 
@@ -71,11 +70,11 @@ const bool klparser_isstmtbegin[KLTK_NTOKEN] = {
   [KLTK_ASYNC] = true,
   [KLTK_CASE] = true,
   [KLTK_INHERIT] = true,
-  [KLTK_METHOD] = true,
   [KLTK_LPAREN] = true,
 
   [KLTK_LOCAL] = true,
   [KLTK_LET] = true,
+  [KLTK_METHOD] = true,
   [KLTK_IF] = true,
   [KLTK_REPEAT] = true,
   [KLTK_WHILE] = true,

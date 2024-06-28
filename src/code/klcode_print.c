@@ -48,7 +48,6 @@ static const char* klcode_get_instname(KlInstruction inst) {
     [KLOPCODE_MKMAP] = "MKMAP",
     [KLOPCODE_MKARRAY] = "MKARRAY",
     [KLOPCODE_MKCLOSURE] = "MKCLOSURE",
-    [KLOPCODE_MKMETHOD] = "MKMETHOD",
     [KLOPCODE_APPEND] = "APPEND",
     [KLOPCODE_MKCLASS] = "MKCLASS",
     [KLOPCODE_INDEXI] = "INDEXI",
@@ -64,6 +63,8 @@ static const char* klcode_get_instname(KlInstruction inst) {
     [KLOPCODE_REFSETFIELDR] = "REFSETFIELDR",
     [KLOPCODE_REFSETFIELDC] = "REFSETFIELDC",
     [KLOPCODE_NEWLOCAL] = "NEWLOCAL",
+    [KLOPCODE_NEWMETHODR] = "NEWMETHODR",
+    [KLOPCODE_NEWMETHODC] = "NEWMETHODC",
     [KLOPCODE_LOADFALSESKIP] = "LOADFALSESKIP",
     [KLOPCODE_TESTSET] = "TESTSET",
     [KLOPCODE_TRUEJMP] = "TRUEJMP",
@@ -418,7 +419,6 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
       nelem == KLINST_VARRES ? ko_printf(out, "many elements") : ko_printf(out, "%u elements", nelem);
       return pc;
     }
-    case KLOPCODE_MKMETHOD:
     case KLOPCODE_MKCLOSURE: {
       klcode_print_AX(out, inst);
       return pc;
@@ -508,6 +508,18 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
     case KLOPCODE_NEWLOCAL: {
       klcode_print_AX(out, inst);
       klcode_print_constant(code, out, &code->constants[KLINST_AX_GETX(inst)]);
+      return pc;
+    }
+    case KLOPCODE_NEWMETHODR: {
+      klcode_print_ABC(out, inst);
+      ko_printf(out, "method R%u.R%u = R%u", KLINST_ABC_GETA(inst), KLINST_ABC_GETC(inst), KLINST_ABC_GETB(inst));
+      return pc;
+    }
+    case KLOPCODE_NEWMETHODC: {
+      klcode_print_AX(out, inst);
+      ko_printf(out, "R%u.", KLINST_ABC_GETA(inst));
+      klcode_print_string_noquote(code, out, &code->constants[KLINST_ABC_GETC(inst)]);
+      ko_printf(out, " = R%u", KLINST_ABC_GETB(inst));
       return pc;
     }
     case KLOPCODE_LOADFALSESKIP: {

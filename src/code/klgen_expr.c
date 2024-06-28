@@ -12,7 +12,6 @@
 
 
 
-static inline KlCodeVal klgen_expr_onstack(KlGenUnit* gen, KlAst* ast);
 static inline KlCodeVal klgen_exprlist(KlGenUnit* gen, KlAstExprList* exprlist);
 static inline KlCodeVal klgen_exprlist_target(KlGenUnit* gen, KlAstExprList* exprlist, KlCStkId target);
 static inline void klgen_expryield(KlGenUnit* gen, KlAstYield* yieldast, size_t nwanted);
@@ -30,12 +29,6 @@ static void klgen_exprmapgen(KlGenUnit* gen, KlAstMapGenerator* mapgenast, KlCSt
 static void klgen_exprclass(KlGenUnit* gen, KlAstClass* classast, KlCStkId target);
 static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlAstBin* binast, KlCodeVal left, KlCStkId target);
 static KlCodeVal klgen_exprbinrightnonstk(KlGenUnit* gen, KlAstBin* binast, KlCodeVal left, KlCodeVal right, KlCStkId target, KlCStkId oristktop);
-
-static inline KlCodeVal klgen_expr_onstack(KlGenUnit* gen, KlAst* ast) {
-  KlCodeVal res = klgen_expr(gen, ast);
-  klgen_putonstack(gen, &res, klgen_astposition(ast));
-  return res;
-}
 
 static inline KlCodeVal klgen_exprlist(KlGenUnit* gen, KlAstExprList* exprlist) {
   if (exprlist->nexpr == 0)
@@ -343,9 +336,7 @@ static void klgen_exprfunc(KlGenUnit* gen, KlAstFunc* funcast, KlCStkId target) 
       klcode_delete(funccode);
       klgen_error_fatal(gen, "out of memory");
     }
-    klgen_emit(gen, funcast->is_method ? klinst_mkmethod(target, funcidx)
-                                       : klinst_mkclosure(target, funcidx),
-               klgen_astposition(funcast));
+    klgen_emit(gen, klinst_mkclosure(target, funcidx), klgen_astposition(funcast));
     if (target == stktop)
       klgen_stackalloc1(gen);
   } else {
@@ -367,11 +358,15 @@ static void klgen_exprclasspost(KlGenUnit* gen, KlAstClass* classast, KlCStkId c
       KlCodeVal val = klgen_expr(gen, classast->vals[i]);
       klgen_putonstack(gen, &val, klgen_astposition(classast->vals[i]));
       if (klinst_inurange(conent->index, 8)) {
-        klgen_emit(gen, klinst_setfieldc(val.index, classpos, conent->index), klgen_astposition(classast));
+        KlInstruction inst = field.ismethod ? klinst_newmethodc(classpos, val.index, conent->index)
+                                            : klinst_setfieldc(val.index, classpos, conent->index);
+        klgen_emit(gen, inst, klgen_astposition(classast));
       } else {
         KlCStkId stkid = klgen_stackalloc1(gen);
         klgen_emit(gen, klinst_loadc(stkid, conent->index), klgen_astposition(classast));
-        klgen_emit(gen, klinst_setfieldr(val.index, classpos, stkid), klgen_astposition(classast));
+        KlInstruction inst = field.ismethod ? klinst_newmethodr(classpos, val.index, stkid)
+                                            : klinst_setfieldr(val.index, classpos, stkid);
+        klgen_emit(gen, inst, klgen_astposition(classast));
       }
     } else {
       klgen_emit(gen, klinst_newlocal(classpos, conent->index), klgen_astposition(classast));
