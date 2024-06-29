@@ -55,7 +55,7 @@ struct tagKlObject {
 KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* constructor_data, KlObjectConstructor constructor);
 KlClass* klclass_inherit(KlMM* klmm, KlClass* parent);
 
-KlClassSlot* klclass_find(KlClass* klclass, KlString* key);
+static inline KlClassSlot* klclass_find(KlClass* klclass, KlString* key);
 KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, KlString* key);
 KlClassSlot* glclass_get(KlClass* klclass, KlMM* klmm, KlString* key);
 KlException klclass_newfield(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value);
@@ -111,6 +111,17 @@ static inline KlException klclass_newmethod(KlClass* klclass, KlMM* klmm, KlStri
   return klclass_newfield(klclass, klmm, key, value);
 }
 
+static inline KlClassSlot* klclass_find(KlClass* klclass, KlString* key) {
+  size_t keyindex = klstring_hash(key) & (klclass->capacity - 1);
+  KlClassSlot* slot = &klclass->slots[keyindex];
+  while (slot) {
+    if (slot->key == key)
+      return slot;
+    slot = slot->next;
+  }
+  return NULL;
+}
+
 
 
 
@@ -140,6 +151,18 @@ static inline KlValue* klobject_getfield(KlObject* object, KlString* key) {
     return klobject_attrs(object) + klvalue_getuint(&slot->value);
   } else {
     return &slot->value;
+  }
+}
+
+static inline void klobject_getfieldset(KlObject* object, KlString* key, KlValue* result) {
+  KlClass* klclass = object->klclass;
+  KlClassSlot* slot = klclass_find(klclass, key);
+  if (kl_unlikely(!slot)) {
+    klvalue_setnil(result);
+  } else if (klclass_is_local(slot)) {
+    klvalue_setvalue(result, klobject_attrs(object) + klvalue_getuint(&slot->value));
+  } else {
+    klvalue_setvalue(result, &slot->value);
   }
 }
 

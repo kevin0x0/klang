@@ -659,8 +659,7 @@ static void klexec_getfieldgeneric(KlState* state, KlValue* dotable, KlValue* ke
   if (klvalue_dotable(dotable)) {
     /* values with type KL_OBJECT(including map and array). */
     KlObject* object = klvalue_getobj(dotable, KlObject*);
-    KlValue* field = klobject_getfield(object, keystr);
-    kl_likely(field) ? klvalue_setvalue(val, field) : klvalue_setnil(val);
+    klobject_getfieldset(object, keystr, val);
   } else {  /* other types. search their phony class */
     KlClass* phony = klvalue_checktype(dotable, KL_CLASS)
                    ? klvalue_getobj(dotable, KlClass*)
@@ -683,8 +682,8 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
     if (field) {
       klvalue_setvalue(field, val);
     } else {
-      KlClass* klclass = klobject_class(object);
       klexec_savestktop(state, state->callinfo->top);
+      KlClass* klclass = klobject_class(object);
       KlClassSlot* newslot = klclass_add(klclass, klstate_getmm(state), keystr);
       if (kl_unlikely(!newslot))
         return klstate_throw_oom(state, "adding new field");

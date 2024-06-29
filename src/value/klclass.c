@@ -277,18 +277,6 @@ KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, KlString* key) {
   }
 }
 
-KlClassSlot* klclass_find(KlClass* klclass, struct tagKlString* key) {
-  size_t keyindex = klstring_hash(key) & (klclass->capacity - 1);
-  KlClassSlot* slot = &klclass->slots[keyindex];
-  if (klclass_isfree(slot)) return NULL;
-  while (slot) {
-    if (slot->key == key)
-      return slot;
-    slot = slot->next;
-  }
-  return NULL;
-}
-
 static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
   KlClassSlot* slots = klclass->slots;
