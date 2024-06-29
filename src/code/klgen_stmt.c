@@ -581,7 +581,7 @@ static void klgen_stmtreturn(KlGenUnit* gen, KlAstStmtReturn* returnast) {
   KlCStkId stktop = klgen_stacktop(gen);
   if (res->nexpr == 1) {
     KlCodeVal retval;
-    size_t nres = klgen_trytakeall(gen, res->exprs[0], &retval);
+    size_t nres = klgen_expr_inreturn(gen, res->exprs[0], &retval);
     kl_assert(retval.kind == KLVAL_STACK, "");
     if (klgen_needclose(gen, gen->reftbl, NULL))
       klgen_emit(gen, klinst_close(0), klgen_astposition(returnast));

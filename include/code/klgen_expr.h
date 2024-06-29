@@ -12,6 +12,7 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlAst* ast);
 static inline KlCodeVal klgen_expr_onstack(KlGenUnit* gen, KlAst* ast);
 KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlAst* ast, KlCStkId target);
 void klgen_exprlist_raw(KlGenUnit* gen, KlAst** asts, size_t nast, size_t nwanted, KlFilePosition filepos);
+size_t klgen_exprwhere_inreturn(KlGenUnit* gen, KlAstWhere* whereast, KlCodeVal* respos);
 void klgen_multival(KlGenUnit* gen, KlAst* ast, size_t nval, KlCStkId target);
 /* try to generate code for expressions that can have variable number of results.
  * the results may not on the top of stack.
@@ -21,7 +22,7 @@ void klgen_multival(KlGenUnit* gen, KlAst* ast, size_t nval, KlCStkId target);
  *  return a;
  * in this case, this function does not generate code that moves 'a' to top of stack.
  * */
-size_t klgen_trytakeall(KlGenUnit* gen, KlAst* ast, KlCodeVal* val);
+size_t klgen_expr_inreturn(KlGenUnit* gen, KlAst* ast, KlCodeVal* val);
 /* try to generate code for expressions that can have variable number of results */
 size_t klgen_takeall(KlGenUnit* gen, KlAst* ast, KlCStkId target);
 size_t klgen_passargs(KlGenUnit* gen, KlAstExprList* args);

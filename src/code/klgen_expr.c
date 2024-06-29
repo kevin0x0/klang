@@ -270,6 +270,17 @@ static size_t klgen_exprwhere(KlGenUnit* gen, KlAstWhere* whereast, size_t nwant
   return nwanted;
 }
 
+size_t klgen_exprwhere_inreturn(KlGenUnit* gen, KlAstWhere* whereast, KlCodeVal* respos) {
+  size_t oristktop = klgen_stacktop(gen);
+  klgen_pushsymtbl(gen);
+  klgen_stmtlist(gen, whereast->block);
+  size_t nres = klgen_expr_inreturn(gen, whereast->expr, respos);
+  if (gen->symtbl->info.referenced)
+    klgen_emit(gen, klinst_close(oristktop), klgen_astposition(whereast));
+  klgen_popsymtbl(gen);
+  return nres;
+}
+
 /* deconstruct parameters */
 static void klgen_exprfunc_deconstruct_params(KlGenUnit* gen, KlAstExprList* funcparams) {
   kl_assert(klgen_stacktop(gen) == 0, "");
@@ -528,7 +539,7 @@ void klgen_multival(KlGenUnit* gen, KlAst* ast, size_t nval, KlCStkId target) {
   }
 }
 
-size_t klgen_trytakeall(KlGenUnit* gen, KlAst* ast, KlCodeVal* val) {
+size_t klgen_expr_inreturn(KlGenUnit* gen, KlAst* ast, KlCodeVal* val) {
   switch (klast_kind(ast)) {
     case KLAST_EXPR_YIELD: {
       KlCStkId stktop = klgen_stacktop(gen);
@@ -543,10 +554,7 @@ size_t klgen_trytakeall(KlGenUnit* gen, KlAst* ast, KlCodeVal* val) {
       return KLINST_VARRES;
     }
     case KLAST_EXPR_WHERE: {
-      KlCStkId stktop = klgen_stacktop(gen);
-      size_t nres = klgen_exprwhere(gen, klcast(KlAstWhere*, ast), KLINST_VARRES, stktop);
-      *val = klcodeval_stack(stktop);
-      return nres;
+      return klgen_exprwhere_inreturn(gen, klcast(KlAstWhere*, ast), val);
     }
     case KLAST_EXPR_VARARG: {
       KlCStkId stktop = klgen_stacktop(gen);
