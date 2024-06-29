@@ -154,6 +154,18 @@ static inline KlValue* klobject_getfield(KlObject* object, KlString* key) {
   }
 }
 
+static inline bool klobject_setfield(KlObject* object, KlString* key, KlValue* value) {
+  KlClass* klclass = object->klclass;
+  KlClassSlot* slot = klclass_find(klclass, key);
+  if (kl_unlikely(!slot)) return false;
+  if (klclass_is_local(slot)) {
+    klvalue_setvalue(klobject_attrs(object) + klvalue_getuint(&slot->value), value);
+  } else {
+    klvalue_setvalue(&slot->value, value);
+  }
+  return true;
+}
+
 static inline void klobject_getfieldset(KlObject* object, KlString* key, KlValue* result) {
   KlClass* klclass = object->klclass;
   KlClassSlot* slot = klclass_find(klclass, key);

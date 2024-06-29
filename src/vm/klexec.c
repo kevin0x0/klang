@@ -675,36 +675,65 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
   kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
 
   KlString* keystr = klvalue_getobj(key, KlString*);
-  if (klvalue_dotable(dotable)) {
-    /* values with type KL_OBJECT(including map and array). */
-    KlObject* object = klvalue_getobj(dotable, KlObject*);
-    KlValue* field = klobject_getfield(object, keystr);
-    if (field) {
-      klvalue_setvalue(field, val);
-    } else {
-      klexec_savestktop(state, state->callinfo->top);
-      KlClass* klclass = klobject_class(object);
-      KlClassSlot* newslot = klclass_add(klclass, klstate_getmm(state), keystr);
-      if (kl_unlikely(!newslot))
-        return klstate_throw_oom(state, "adding new field");
-      klvalue_setvalue(&newslot->value, val);
-      klvalue_settag(&newslot->value, KLCLASS_TAG_NORMAL);
-    }
-  } else {  /* other types. search their phony class */
-    KlClass* phony;
-    if (klvalue_checktype(dotable, KL_CLASS)) {
-      phony = klvalue_getobj(dotable, KlClass*);
-    } else if (kl_likely(!klvalue_checktype(dotable, KL_NIL))) {
-      phony = state->common->klclass.phony[klvalue_gettype(dotable)];
-    } else {
+  switch (klvalue_gettype(dotable)) {
+    case KL_NIL: {
       return klstate_throw(state, KL_E_INVLD, "can not set field of nil class");
     }
-    klexec_savestktop(state, state->callinfo->top);
-    KlException exception = klclass_newshared(phony, klstate_getmm(state), keystr, val);
-    if (kl_unlikely(exception))
-      return klexec_handle_newshared_exception(state, exception, keystr);
+    case KL_MAP:
+    case KL_ARRAY:
+    case KL_OBJECT: {
+      /* values with type KL_OBJECT(including map and array). */
+      KlObject* object = klvalue_getobj(dotable, KlObject*);
+      if (!klobject_setfield(object, keystr, val)) {
+        klexec_savestktop(state, state->callinfo->top);
+        KlClass* klclass = klobject_class(object);
+        KlClassSlot* newslot = klclass_add(klclass, klstate_getmm(state), keystr);
+        if (kl_unlikely(!newslot))
+          return klstate_throw_oom(state, "adding new field");
+        klvalue_setvalue(&newslot->value, val);
+        klvalue_settag(&newslot->value, KLCLASS_TAG_NORMAL);
+      }
+      return KL_E_NONE;
+    } 
+    default: {
+      KlClass* klclass = klvalue_checktype(dotable, KL_CLASS)
+                       ? klvalue_getobj(dotable, KlClass*)
+                       : state->common->klclass.phony[klvalue_gettype(dotable)];
+      klexec_savestktop(state, state->callinfo->top);
+      KlException exception = klclass_newshared(klclass, klstate_getmm(state), keystr, val);
+      if (kl_unlikely(exception))
+        return klexec_handle_newshared_exception(state, exception, keystr);
+      return KL_E_NONE;
+    }
   }
-  return KL_E_NONE;
+  // KlString* keystr = klvalue_getobj(key, KlString*);
+  // if (klvalue_dotable(dotable)) {
+  //   /* values with type KL_OBJECT(including map and array). */
+  //   KlObject* object = klvalue_getobj(dotable, KlObject*);
+  //   if (!klobject_setfield(object, keystr, val)) {
+  //     klexec_savestktop(state, state->callinfo->top);
+  //     KlClass* klclass = klobject_class(object);
+  //     KlClassSlot* newslot = klclass_add(klclass, klstate_getmm(state), keystr);
+  //     if (kl_unlikely(!newslot))
+  //       return klstate_throw_oom(state, "adding new field");
+  //     klvalue_setvalue(&newslot->value, val);
+  //     klvalue_settag(&newslot->value, KLCLASS_TAG_NORMAL);
+  //   }
+  // } else {  /* other types. search their phony class */
+  //   KlClass* phony;
+  //   if (klvalue_checktype(dotable, KL_CLASS)) {
+  //     phony = klvalue_getobj(dotable, KlClass*);
+  //   } else if (kl_likely(!klvalue_checktype(dotable, KL_NIL))) {
+  //     phony = state->common->klclass.phony[klvalue_gettype(dotable)];
+  //   } else {
+  //     return klstate_throw(state, KL_E_INVLD, "can not set field of nil class");
+  //   }
+  //   klexec_savestktop(state, state->callinfo->top);
+  //   KlException exception = klclass_newshared(phony, klstate_getmm(state), keystr, val);
+  //   if (kl_unlikely(exception))
+  //     return klexec_handle_newshared_exception(state, exception, keystr);
+  // }
+  // return KL_E_NONE;
 }
 
 
