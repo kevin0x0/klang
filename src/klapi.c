@@ -621,11 +621,22 @@ KlState* klapi_new_state(KlMM* klmm) {
 /*=============================VALUE OPERATION===============================*/
 
 
-KlException klapi_class_newshared(KlState* state, KlClass* klclass, KlString* fieldname) {
+KlException klapi_class_newshared_normal(KlState* state, KlClass* klclass, KlString* fieldname) {
   kl_assert(klapi_framesize(state) >= 1, "you must push a value on top of stack");
-  KlException exception = klclass_newshared(klclass, klstate_getmm(state), fieldname, klapi_access(state, -1));
+  KlException exception = klclass_newshared_normal(klclass, klstate_getmm(state), fieldname, klapi_access(state, -1));
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when setting a new shared field: %s", klstring_content(fieldname));
+  } else if (exception == KL_E_INVLD) {
+    return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
+  }
+  return KL_E_NONE;
+}
+
+KlException klapi_class_newshared_method(KlState* state, KlClass* klclass, KlString* fieldname) {
+  kl_assert(klapi_framesize(state) >= 1, "you must push a value on top of stack");
+  KlException exception = klclass_newshared_method(klclass, klstate_getmm(state), fieldname, klapi_access(state, -1));
+  if (exception == KL_E_OOM) {
+    return klstate_throw(state, exception, "out of memory when setting a new method field: %s", klstring_content(fieldname));
   } else if (exception == KL_E_INVLD) {
     return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
   }

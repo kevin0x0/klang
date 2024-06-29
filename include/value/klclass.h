@@ -57,7 +57,6 @@ KlClass* klclass_inherit(KlMM* klmm, KlClass* parent);
 
 static inline KlClassSlot* klclass_find(KlClass* klclass, KlString* key);
 KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, KlString* key);
-KlClassSlot* glclass_get(KlClass* klclass, KlMM* klmm, KlString* key);
 KlException klclass_newfield(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value);
 
 KlException klclass_default_constructor(KlClass* klclass, KlMM* klmm, KlValue* value);
@@ -66,8 +65,8 @@ KlObject* klclass_objalloc(KlClass* klclass, KlMM* klmm);
 static inline KlException klclass_new_object(KlClass* klclass, KlMM* klmm, KlValue* value);
 
 static inline KlException klclass_newlocal(KlClass* klclass, KlMM* klmm, KlString* key);
-static inline KlException klclass_newshared(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value);
-static inline KlException klclass_newmethod(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value);
+static inline KlException klclass_newshared_normal(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value);
+static inline KlException klclass_newshared_method(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value);
 
 
 static inline void klclass_final(KlClass* klclass);
@@ -101,12 +100,12 @@ static inline KlException klclass_newlocal(KlClass* klclass, KlMM* klmm, KlStrin
   return klclass_newfield(klclass, klmm, key, &localid);
 }
 
-static inline KlException klclass_newshared(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value) {
+static inline KlException klclass_newshared_normal(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value) {
   klvalue_settag(value, KLCLASS_TAG_NORMAL);
   return klclass_newfield(klclass, klmm, key, value);
 }
 
-static inline KlException klclass_newmethod(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value) {
+static inline KlException klclass_newshared_method(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value) {
   klvalue_settag(value, KLCLASS_TAG_METHOD);
   return klclass_newfield(klclass, klmm, key, value);
 }
@@ -190,7 +189,7 @@ static inline bool klobject_getmethod(KlObject* object, KlString* key, KlValue* 
     return false;
   } else {
     klvalue_setvalue(result, &slot->value);
-    return true;
+    return klvalue_gettag(&slot->value) & KLCLASS_TAG_METHOD;
   }
 }
 

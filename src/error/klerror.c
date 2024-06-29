@@ -129,7 +129,7 @@ static bool klerror_helper_showline_withcurl(KlError* klerr, Ki* input, KlFileOf
     ++curroffset;
   }
   ko_putc(err, '\n');
-  if (ch != KOF && (ch = ki_getc(input)) != '\r' && ch != KOF)
+  if (ch != KOF && (ch = ki_getc(input)) != '\n' && ch != KOF)
     ki_ungetc(input);
   return true;
 }

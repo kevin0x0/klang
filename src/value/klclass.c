@@ -139,53 +139,6 @@ static KlClassSlot* klclass_add_after_rehash(KlClass* klclass, KlString* key) {
   }
 }
 
-KlClassSlot* klclass_get(KlClass* klclass, KlMM* klmm, KlString* key) {
-  size_t mask = klclass->capacity - 1;
-  size_t index = klstring_hash(key) & mask;
-  KlClassSlot* slots = klclass->slots;
-  KlClassSlot* slot = &slots[index];
-  if (!slot->key) { /* slot is empty */
-    slot->key = key;
-    return slot;
-  }
-  /* this slot is not empty */
-  /* find */
-  KlClassSlot* findslot = slot;
-  while (findslot) {
-    if (findslot->key == key)
-      return findslot;
-    findslot = findslot->next;
-  }
-
-  /* not found, insert new one */
-  KlClassSlot* newslot = klclass_getfreeslot(klclass);
-  if (!newslot) { /* no slot */
-    if (kl_unlikely(!klclass_rehash(klclass, klmm)))
-      return NULL;
-    return klclass_add_after_rehash(klclass, key);
-  }
-  size_t oldindex = klstring_hash(slot->key) & mask;
-  if (oldindex == index) {
-    newslot->key = key;
-    newslot->next = slot->next;
-    slot->next = newslot;
-    return newslot;
-  } else {
-    newslot->key = slot->key;
-    klvalue_setvalue(&newslot->value, &slot->value);
-    newslot->next = slot->next;
-    /* correct link */
-    KlClassSlot* prevslot = &slots[oldindex];
-    while (prevslot->next != slot)
-      prevslot = prevslot->next;
-    prevslot->next = newslot;
-
-    slot->key = key;
-    slot->next = NULL;
-    return slot;
-  }
-}
-
 KlException klclass_newfield(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value) {
   size_t mask = klclass->capacity - 1;
   size_t index = klstring_hash(key) & mask;

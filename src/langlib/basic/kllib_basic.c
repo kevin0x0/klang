@@ -3,6 +3,7 @@
 #include "include/value/klarray.h"
 #include "include/value/klcfunc.h"
 #include "include/value/klmap.h"
+#include "include/value/klstate.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include <stdio.h>
@@ -19,13 +20,16 @@ static KlException kllib_basic_callable_next(KlState* state);
 static KlException kllib_basic_map_iter(KlState* state);
 static KlException kllib_basic_arr_iter(KlState* state);
 static KlException kllib_basic_callable_iter(KlState* state);
+static KlException kllib_basic_map_weak(KlState* state);
 
 static KlException kllib_basic_init_globalvar(KlState* state);
 static KlException kllib_basic_init_iter(KlState* state);
+static KlException kllib_basic_init_map(KlState* state);
 
 KlException kllib_init(KlState* state) {
   KLAPI_PROTECT(kllib_basic_init_globalvar(state));
   KLAPI_PROTECT(kllib_basic_init_iter(state));
+  KLAPI_PROTECT(kllib_basic_init_map(state));
   return klapi_return(state, 0);
 }
 
@@ -63,16 +67,25 @@ static KlException kllib_basic_init_globalvar(KlState* state) {
 }
 
 static KlException kllib_basic_init_iter(KlState* state) {
+  KLAPI_PROTECT(klapi_checkstack(state, 1));
   klapi_pushcfunc(state, kllib_basic_map_iter);
-  KLAPI_PROTECT(klapi_class_newshared(state, state->common->klclass.map, state->common->string.iter));
+  KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.map, state->common->string.iter));
   klapi_setcfunc(state, -1, kllib_basic_arr_iter);
-  KLAPI_PROTECT(klapi_class_newshared(state, state->common->klclass.array, state->common->string.iter));
+  KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.array, state->common->string.iter));
   klapi_setcfunc(state, -1, kllib_basic_callable_iter);
-  KLAPI_PROTECT(klapi_class_newshared(state, state->common->klclass.phony[KL_COROUTINE], state->common->string.iter));
+  KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_COROUTINE], state->common->string.iter));
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
 
+static KlException kllib_basic_init_map(KlState* state) {
+  KLAPI_PROTECT(klapi_checkstack(state, 2));
+  KLAPI_PROTECT(klapi_pushstring(state, "weak"));
+  klapi_pushcfunc(state, kllib_basic_map_weak);
+  KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.map, klapi_getstring(state, -2)));
+  klapi_pop(state, 1);
+  return KL_E_NONE;
+}
 
 static void kllib_basic_print_inner(KlState* state, KlValue* val, size_t depth) {
   switch (klvalue_gettype(val)) {
@@ -324,7 +337,7 @@ static KlException kllib_basic_callable_iter(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argmument(this method should be automatically called in iterration loop)");
   if (klapi_nres(state) < 4)
-    return klapi_throw_internal(state, KL_E_ARGNO, "expected at least 4 returned value");
+    return klapi_throw_internal(state, KL_E_INVLD, "expected at least 4 returned value");
   if (klapi_nres(state) == KLAPI_VARIABLE_RESULTS)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected fixed number of returned values");
   KLAPI_PROTECT(klapi_checkstack(state, 2));
@@ -336,4 +349,26 @@ static KlException kllib_basic_callable_iter(KlState* state) {
     return klapi_return(state, 0);
   klapi_setcfunc(state, -klapi_framesize(state), kllib_basic_callable_next);
   return klapi_return(state, klapi_nres(state));
+}
+
+static KlException kllib_basic_map_weak(KlState* state) {
+  if (klapi_narg(state) != 2)
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argmument(this method should be automatically called in iterration loop)");
+  if (!klapi_checktype(state, -2, KL_MAP) && !(klapi_checktype(state, -2, KL_OBJECT) && klmap_compatible(klapi_getobj(state, -2, KlObject*))))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected map");
+  if (!klapi_checktype(state, -1, KL_STRING))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected string(\"k\", \"v\", \"kv\")");
+  KlMap* map = klapi_getobj(state, -2, KlMap*);
+  KlString* option = klapi_getstring(state, -1);
+  if (strcmp(klstring_content(option), "k") == 0) {
+    klmap_assignoption(map, KLMAP_OPT_WEAKKEY);
+  } else if (strcmp(klstring_content(option), "v") == 0) {
+    klmap_assignoption(map, KLMAP_OPT_WEAKVAL);
+  } else if (strcmp(klstring_content(option), "kv") == 0) {
+    klmap_assignoption(map, KLMAP_OPT_WEAKKEY | KLMAP_OPT_WEAKVAL);
+  } else {
+    return klapi_throw_internal(state, KL_E_INVLD, "expected string \"k\", \"v\" or \"kv\", got %s", klstring_content(option));
+  }
+  klapi_pop(state, 1);
+  return klapi_return(state, 1);
 }

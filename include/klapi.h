@@ -186,7 +186,8 @@ KlValue* klapi_getref(KlState* state, unsigned short refidx);
  */
 KlException klapi_loadlib(KlState* state, const char* libpath, const char* entryfunction);
 
-KlException klapi_class_newshared(KlState* state, KlClass* klclass, KlString* fieldname);
+KlException klapi_class_newshared_normal(KlState* state, KlClass* klclass, KlString* fieldname);
+KlException klapi_class_newshared_method(KlState* state, KlClass* klclass, KlString* fieldname);
 KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fieldname);
 
 

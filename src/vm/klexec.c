@@ -700,7 +700,7 @@ static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlVa
                        ? klvalue_getobj(dotable, KlClass*)
                        : state->common->klclass.phony[klvalue_gettype(dotable)];
       klexec_savestktop(state, state->callinfo->top);
-      KlException exception = klclass_newshared(klclass, klstate_getmm(state), keystr, val);
+      KlException exception = klclass_newshared_normal(klclass, klstate_getmm(state), keystr, val);
       if (kl_unlikely(exception))
         return klexec_handle_newshared_exception(state, exception, keystr);
       return KL_E_NONE;
@@ -1844,7 +1844,7 @@ KlException klexec_execute(KlState* state) {
         KlString* keystr = klvalue_getobj(fieldname, KlString*);
         KlClass* klclass = klexec_getclass(state, obj);
         klexec_savestate(callinfo->top, pc);  /* add new field */
-        KlException exception = klclass_newmethod(klclass, klstate_getmm(state), keystr, value);
+        KlException exception = klclass_newshared_method(klclass, klstate_getmm(state), keystr, value);
         if (kl_unlikely(exception))
           return klexec_handle_newshared_exception(state, exception, keystr);
         break;
