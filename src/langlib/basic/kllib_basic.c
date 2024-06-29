@@ -231,12 +231,12 @@ static KlException kllib_basic_map_next(KlState* state) {
   if (kl_unlikely(!klvalue_checktype(base, KL_MAP) && !(klvalue_checktype(base, KL_OBJECT) && klmap_compatible(klvalue_getobj(base, KlObject*)))))
     return klapi_throw_internal(state, KL_E_TYPE, "expected map");
   KlMap* map = klvalue_getobj(base, KlMap*);
-  KlUInt bucketid = klvalue_getuint(base + 1);
+  KlUInt bucketid = klvalue_getint(base + 1);
   if (kl_unlikely(!klmap_validbucket(map, bucketid)))
     return klapi_throw_internal(state, KL_E_INVLD, "the for loop is broken");
   KlMapIter itr = klmap_bucketnext(map, bucketid, base + 2);
   if (kl_unlikely(!itr)) return klapi_return(state, 0);
-  klvalue_setuint(base + 1, klmap_bucketid(map, itr));
+  klvalue_setint(base + 1, klmap_bucketid(map, itr));
   klvalue_setvalue(base + 2, &itr->key);
   klvalue_setvalue(base + 3, &itr->value);
   return klapi_return(state, 4);
@@ -250,10 +250,10 @@ static KlException kllib_basic_arr_next_with_index(KlState* state) {
   if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY) && !(klvalue_checktype(base, KL_OBJECT) && klarray_compatible(klvalue_getobj(base, KlObject*)))))
     return klapi_throw_internal(state, KL_E_TYPE, "expected array");
   KlArray* array = klvalue_getobj(base, KlArray*);
-  KlUInt index = klvalue_getuint(base + 1) + 1;
+  KlUInt index = klvalue_getint(base + 1) + 1;
   if (kl_unlikely(index >= klarray_size(array)))
     return klapi_return(state, 0);
-  klvalue_setuint(base + 1, index);
+  klvalue_setint(base + 1, klcast(KlInt, index));
   klvalue_setint(base + 2, klcast(KlInt, index));
   klvalue_setvalue(base + 3, klarray_access(array, index));
   return klapi_return(state, 4);
@@ -267,10 +267,10 @@ static KlException kllib_basic_arr_next(KlState* state) {
   if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY) && !(klvalue_checktype(base, KL_OBJECT) && klarray_compatible(klvalue_getobj(base, KlObject*)))))
     return klapi_throw_internal(state, KL_E_TYPE, "expected array");
   KlArray* array = klvalue_getobj(base, KlArray*);
-  KlUInt index = klvalue_getuint(base + 1) + 1;
+  KlUInt index = klvalue_getint(base + 1) + 1;
   if (kl_unlikely(index >= klarray_size(array)))
     return klapi_return(state, 0);
-  klvalue_setuint(base + 1, index);
+  klvalue_setint(base + 1, index);
   klvalue_setvalue(base + 2, klarray_access(array, index));
   klapi_setframesize(state, 3);
   return klapi_return(state, 3);
@@ -301,7 +301,7 @@ static KlException kllib_basic_map_iter(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 4));
   KlMapIter itr = klmap_iter_begin(map);
   klapi_pushobj(state, map, KL_MAP);
-  klapi_pushuint(state, klmap_bucketid(map, itr));
+  klapi_pushint(state, klmap_bucketid(map, itr));
   klapi_pushvalue(state, &itr->key);
   klapi_pushvalue(state, &itr->value);
   klapi_setcfunc(state, -5, kllib_basic_map_next);
@@ -318,7 +318,7 @@ static KlException kllib_basic_arr_iter(KlState* state) {
   if (klarray_size(array) == 0) return klapi_return(state, 0);
   KLAPI_PROTECT(klapi_checkstack(state, 4));
   klapi_pushobj(state, array, KL_ARRAY);
-  klapi_pushuint(state, 0);
+  klapi_pushint(state, 0);
   if (klapi_nres(state) == 4) {
     klapi_pushvalue(state, klarray_access(array, 0));
     klapi_setcfunc(state, -4, kllib_basic_arr_next);
