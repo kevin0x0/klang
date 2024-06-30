@@ -9,9 +9,6 @@ typedef struct tagKlParser {
   const char* inputname;
   KlStrTbl* strtbl;
   KlError* klerror;
-  struct {
-    KlStrDesc this;
-  } string;
   unsigned incid;
 } KlParser;
 

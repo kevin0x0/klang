@@ -9,13 +9,6 @@ bool klparser_init(KlParser* parser, KlStrTbl* strtbl, const char* inputname, Kl
   parser->inputname = inputname;
   parser->incid = 0;
   parser->klerror = klerror;
-
-  int thislen = strlen("this");
-  char* this = klstrtbl_allocstring(strtbl, thislen);
-  if (kl_unlikely(!this)) return false;
-  memcpy(this, "this", thislen * sizeof (char));
-  parser->string.this.id = klstrtbl_pushstring(strtbl, thislen);
-  parser->string.this.length = thislen;
   return true;
 }
 
