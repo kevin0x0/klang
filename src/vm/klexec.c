@@ -452,8 +452,13 @@ static bool klexec_getmethod(KlState* state, KlValue* object, KlString* field, K
                    ? klvalue_getobj(object, KlClass*)
                    : state->common->klclass.phony[klvalue_gettype(object)];
     KlClassSlot* slot = klclass_find(phony, field);
-    slot && klclass_is_shared(slot) ? klvalue_setvalue(result, &slot->value) : klvalue_setnil(result);
-    return klvalue_gettag(&slot->value) & KLCLASS_TAG_METHOD;
+    if (slot && klclass_is_shared(slot)) {
+      klvalue_setvalue(result, &slot->value);
+      return klvalue_gettag(&slot->value) & KLCLASS_TAG_METHOD;
+    } else {
+      klvalue_setnil(result);
+      return false;
+    }
   }
 }
 

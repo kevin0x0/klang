@@ -772,6 +772,10 @@ static KlAstCall* klparser_exprcall(KlParser* parser, KlLex* lex, KlAst* callabl
 static KlAstWhere* klparser_exprfinishwhere(KlParser* parser, KlLex* lex, KlAst* expr) {
   kllex_next(lex);
   KlAstStmtList* block = klparser_stmtblock(parser, lex);
+  if (kl_unlikely(!block)) {
+    klast_delete(expr);
+    return NULL;
+  }
   KlAstWhere* exprwhere = klast_where_create(expr, block, klast_begin(expr), klast_end(block));
   klparser_oomifnull(exprwhere);
   return exprwhere;
