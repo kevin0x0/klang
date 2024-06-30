@@ -546,24 +546,23 @@ KlException klapi_concati(KlState* state, int result, int left, int right) {
 /*============================LIBRARY LOADER=================================*/
 
 
-KlException klapi_loadlib(KlState* state, const char* libpath, const char* entryfunction) {
+KlException klapi_loadlib(KlState* state, int result, const char* entryfunction) {
   /* open library */
-  KLib handle = klib_dlopen(libpath);
+  KlString* libpath = klapi_getstring(state, -1);
+  KLib handle = klib_dlopen(klstring_content(libpath));
   if (kl_unlikely(klib_failed(handle))) 
-    return klstate_throw(state, KL_E_INVLD, "can not open library: %s", libpath);
+    return klstate_throw(state, KL_E_INVLD, "can not open library: %s", klstring_content(libpath));
 
   /* find entry point */
   entryfunction = entryfunction ? entryfunction : "kllib_init";
   KlCFunction* init = (KlCFunction*)klib_dlsym(handle, entryfunction);
   if (kl_unlikely(!init)) {
     klib_dlclose(handle);
-    return klstate_throw(state, KL_E_INVLD, "can not find entry point: %s", entryfunction);
+    return klstate_throw(state, KL_E_INVLD, "can not find entry point: %s in library: ", entryfunction, klstring_content(libpath));
   }
 
   /* call the entry function */
-  KlValue callable;
-  klvalue_setcfunc(&callable, init);
-  return klapi_call(state, &callable, 0, KLAPI_VARIABLE_RESULTS, klapi_stacktop(state));
+  return klapi_call(state, &klvalue_cfunc(init), 1, KLAPI_VARIABLE_RESULTS, klapi_stacktop(state) - 1 + result);
 }
 
 
@@ -621,11 +620,22 @@ KlState* klapi_new_state(KlMM* klmm) {
 /*=============================VALUE OPERATION===============================*/
 
 
-KlException klapi_class_newshared(KlState* state, KlClass* klclass, KlString* fieldname) {
+KlException klapi_class_newshared_normal(KlState* state, KlClass* klclass, KlString* fieldname) {
   kl_assert(klapi_framesize(state) >= 1, "you must push a value on top of stack");
-  KlException exception = klclass_newshared(klclass, klstate_getmm(state), fieldname, klapi_access(state, -1));
+  KlException exception = klclass_newshared_normal(klclass, klstate_getmm(state), fieldname, klapi_access(state, -1));
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when setting a new shared field: %s", klstring_content(fieldname));
+  } else if (exception == KL_E_INVLD) {
+    return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
+  }
+  return KL_E_NONE;
+}
+
+KlException klapi_class_newshared_method(KlState* state, KlClass* klclass, KlString* fieldname) {
+  kl_assert(klapi_framesize(state) >= 1, "you must push a value on top of stack");
+  KlException exception = klclass_newshared_method(klclass, klstate_getmm(state), fieldname, klapi_access(state, -1));
+  if (exception == KL_E_OOM) {
+    return klstate_throw(state, exception, "out of memory when setting a new method field: %s", klstring_content(fieldname));
   } else if (exception == KL_E_INVLD) {
     return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
   }

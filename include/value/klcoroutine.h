@@ -37,7 +37,6 @@ static inline KlGCObject* klco_propagate(KlCoroutine* co, KlGCObject* gclist);
 
 static inline KlCoStatus klco_status(KlCoroutine* co);
 static inline void klco_setstatus(KlCoroutine* co, KlCoStatus status);
-static inline bool klco_ismethod(KlCoroutine* co);
 static inline void klco_allow_yield(KlCoroutine* co, bool allow);
 static inline bool klco_yield_allowed(KlCoroutine* co);
 static inline bool klco_valid(KlCoroutine* co);
@@ -49,10 +48,6 @@ static inline KlCoStatus klco_status(KlCoroutine* co) {
 
 static inline void klco_setstatus(KlCoroutine* co, KlCoStatus status) {
   co->status = status;
-}
-
-static inline bool klco_ismethod(KlCoroutine* co) {
-  return klclosure_ismethod(co->kclo);
 }
 
 static inline void klco_allow_yield(KlCoroutine* co, bool allow) {

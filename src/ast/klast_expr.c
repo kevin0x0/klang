@@ -298,7 +298,7 @@ KlAstCall* klast_call_create(KlAst* callable, KlAstExprList* args, KlFileOffset 
   return astcall;
 }
 
-KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool vararg, bool is_method, KlFileOffset begin, KlFileOffset end) {
+KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool vararg, KlFileOffset begin, KlFileOffset end) {
   KlAstFunc* astfunc = klast_alloc(KlAstFunc);
   if (kl_unlikely(!astfunc)) {
     klast_delete(block);
@@ -308,7 +308,6 @@ KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool v
   astfunc->block = block;
   astfunc->params = params;
   astfunc->vararg = vararg;
-  astfunc->is_method = is_method;
   klast_setposition(astfunc, begin, end);
   klast_init(astfunc, &klast_func_vfunc);
   return astfunc;

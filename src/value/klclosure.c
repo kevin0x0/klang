@@ -39,7 +39,6 @@ KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, 
     *ref = newref;
   }
 
-  kclo->status = KLCLO_STATUS_NORM;
   klmm_gcobj_enable(klmm, klmm_to_gcobj(kclo), &klkclo_gcvfunc);
   return kclo;
 }
@@ -81,7 +80,6 @@ KlCClosure* klcclosure_create(KlMM* klmm, KlCFunction* cfunc, KlValue* stkbase, 
     *ref = newref;
   }
 
-  cclo->status = KLCLO_STATUS_NORM;
   klmm_gcobj_enable(klmm, klmm_to_gcobj(cclo), &klcclo_gcvfunc);
   return cclo;
 }

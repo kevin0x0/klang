@@ -29,8 +29,10 @@ KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* co
     klmm_free(klmm, klclass, sizeof (KlClass));
     return NULL;
   }
-  for (size_t i = 0; i < klclass->capacity; ++i)
+  for (size_t i = 0; i < klclass->capacity; ++i) {
     klclass->slots[i].key = NULL;
+    klclass->slots[i].next = NULL;
+  }
   klmm_gcobj_enable(klmm, klmm_to_gcobj(klclass), &klclass_gcvfunc);
   return klclass;
 }
@@ -50,6 +52,8 @@ KlClass* klclass_inherit(KlMM* klmm, KlClass* parent) {
     if ((itr->key = slot->key)) {
       klvalue_setvalue(&itr->value, &slot->value);
       itr->next = slot->next ? array + (slot->next - slotbegin) : NULL;
+    } else {
+      itr->next = NULL;
     }
   }
   klclass->constructor = parent->constructor;
@@ -74,8 +78,10 @@ static bool klclass_rehash(KlClass* klclass, KlMM* klmm) {
     return false;
   }
 
-  for (size_t i = 0; i < new_capacity; ++i)
+  for (size_t i = 0; i < new_capacity; ++i) {
     klclass->slots[i].key = NULL;
+    klclass->slots[i].next = NULL;
+  }
 
   klclass->capacity = new_capacity;
   klclass->lastfree = new_capacity; /* reset lastfree */
@@ -106,60 +112,11 @@ static KlClassSlot* klclass_add_after_rehash(KlClass* klclass, KlString* key) {
   KlClassSlot* slot = &slots[index];
   if (!slot->key) { /* slot is empty */
     slot->key = key;
-    slot->next = NULL;
     return slot;
   }
   /* this slot is not empty */
   /* just insert, no need to check whether this key is duplicated */
   KlClassSlot* newslot = klclass_getfreeslot(klclass);
-  size_t oldindex = klstring_hash(slot->key) & mask;
-  if (oldindex == index) {
-    newslot->key = key;
-    newslot->next = slot->next;
-    slot->next = newslot;
-    return newslot;
-  } else {
-    newslot->key = slot->key;
-    klvalue_setvalue(&newslot->value, &slot->value);
-    newslot->next = slot->next;
-    /* correct link */
-    KlClassSlot* prevslot = &slots[oldindex];
-    while (prevslot->next != slot)
-      prevslot = prevslot->next;
-    prevslot->next = newslot;
-
-    slot->key = key;
-    slot->next = NULL;
-    return slot;
-  }
-}
-
-KlClassSlot* klclass_get(KlClass* klclass, KlMM* klmm, KlString* key) {
-  size_t mask = klclass->capacity - 1;
-  size_t index = klstring_hash(key) & mask;
-  KlClassSlot* slots = klclass->slots;
-  KlClassSlot* slot = &slots[index];
-  if (!slot->key) { /* slot is empty */
-    slot->key = key;
-    slot->next = NULL;
-    return slot;
-  }
-  /* this slot is not empty */
-  /* find */
-  KlClassSlot* findslot = slot;
-  while (findslot) {
-    if (findslot->key == key)
-      return findslot;
-    findslot = findslot->next;
-  }
-
-  /* not found, insert new one */
-  KlClassSlot* newslot = klclass_getfreeslot(klclass);
-  if (!newslot) { /* no slot */
-    if (kl_unlikely(!klclass_rehash(klclass, klmm)))
-      return NULL;
-    return klclass_add_after_rehash(klclass, key);
-  }
   size_t oldindex = klstring_hash(slot->key) & mask;
   if (oldindex == index) {
     newslot->key = key;
@@ -189,7 +146,6 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, KlString* key, KlValu
   KlClassSlot* slot = &slots[index];
   if (!slot->key) { /* slot is empty */
     slot->key = key;
-    slot->next = NULL;
     klvalue_setvalue(&slot->value, value);
     return KL_E_NONE;
   }
@@ -245,7 +201,6 @@ KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, KlString* key) {
   KlClassSlot* slots = klclass->slots;
   if (!slots[keyindex].key) {
     slots[keyindex].key = key;
-    slots[keyindex].next = NULL;
     return &slots[keyindex];
   }
   KlClassSlot* newslot = klclass_getfreeslot(klclass);
@@ -275,18 +230,6 @@ KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, KlString* key) {
     slots[keyindex].next = NULL;
     return &slots[keyindex];
   }
-}
-
-KlClassSlot* klclass_find(KlClass* klclass, struct tagKlString* key) {
-  size_t keyindex = klstring_hash(key) & (klclass->capacity - 1);
-  KlClassSlot* slot = &klclass->slots[keyindex];
-  if (klclass_isfree(slot)) return NULL;
-  while (slot) {
-    if (slot->key == key)
-      return slot;
-    slot = slot->next;
-  }
-  return NULL;
 }
 
 static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist) {

@@ -43,13 +43,13 @@ KlException kllib_istream_createclass(KlState* state) {
   /* set virtual method for istreambase */
   KlValue nil = KLVALUE_NIL_INIT;
   KLAPI_PROTECT(klapi_pushstring(state, "get"));
-  KLAPI_PROTECT(klclass_newshared(istreambase, klmm, klapi_getstring(state, -1), &nil));
+  KLAPI_PROTECT(klclass_newshared_method(istreambase, klmm, klapi_getstring(state, -1), &nil));
   KLAPI_PROTECT(klapi_setstring(state, -1, "read"));
-  KLAPI_PROTECT(klclass_newshared(istreambase, klmm, klapi_getstring(state, -1), &nil));
+  KLAPI_PROTECT(klclass_newshared_method(istreambase, klmm, klapi_getstring(state, -1), &nil));
   KLAPI_PROTECT(klapi_setstring(state, -1, "readline"));
-  KLAPI_PROTECT(klclass_newshared(istreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_istream_readline)));
+  KLAPI_PROTECT(klclass_newshared_method(istreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_istream_readline)));
   KLAPI_PROTECT(klapi_setstring(state, -1, "close"));
-  KLAPI_PROTECT(klclass_newshared(istreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_istream_close)));
+  KLAPI_PROTECT(klclass_newshared_method(istreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_istream_close)));
   klapi_pop(state, 1); /* pop string */
   return KL_E_NONE;
 }
@@ -65,13 +65,13 @@ KlException kllib_ostream_createclass(KlState* state) {
   /* set virtual method for ostreambase */
   KlValue nil = KLVALUE_NIL_INIT;
   KLAPI_PROTECT(klapi_pushstring(state, "put"));
-  KLAPI_PROTECT(klclass_newshared(ostreambase, klmm, klapi_getstring(state, -1), &nil));
+  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &nil));
   KLAPI_PROTECT(klapi_setstring(state, -1, "write"));
-  KLAPI_PROTECT(klclass_newshared(ostreambase, klmm, klapi_getstring(state, -1), &nil));
+  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &nil));
   KLAPI_PROTECT(klapi_setstring(state, -1, "writeline"));
-  KLAPI_PROTECT(klclass_newshared(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostream_writeline)));
+  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostream_writeline)));
   KLAPI_PROTECT(klapi_setstring(state, -1, "close"));
-  KLAPI_PROTECT(klclass_newshared(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostream_close)));
+  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostream_close)));
   klapi_pop(state, 1); /* pop string */
   return KL_E_NONE;
 }

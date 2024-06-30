@@ -6,6 +6,7 @@
 
 static KlAst* klparser_stmtexprandassign(KlParser* parser, KlLex* lex);
 static KlAstStmtLocalDefinition* klparser_stmtlocaldefinition(KlParser* parser, KlLex* lex);
+static KlAstStmtMethod* klparser_stmtmethod(KlParser* parser, KlLex* lex);
 static KlAstStmtMatch* klparser_stmtmatch(KlParser* parser, KlLex* lex);
 static KlAstStmtIf* klparser_stmtif(KlParser* parser, KlLex* lex);
 static KlAst* klparser_stmtfor(KlParser* parser, KlLex* lex);
@@ -48,6 +49,10 @@ KlAst* klparser_stmt(KlParser* parser, KlLex* lex) {
     case KLTK_LET: {
       KlAstStmtLet* stmtlet = klparser_stmtlet(parser, lex);
       return klast(stmtlet);
+    }
+    case KLTK_METHOD: {
+      KlAstStmtMethod* stmtmethod = klparser_stmtmethod(parser, lex);
+      return klast(stmtmethod);
     }
     case KLTK_MATCH: {
       KlAstStmtMatch* stmtmatch = klparser_stmtmatch(parser, lex);
@@ -182,6 +187,29 @@ KlAstStmtLet* klparser_stmtlet(KlParser* parser, KlLex* lex) {
   KlAstStmtLet* stmtlet = klast_stmtlet_create(lvals, exprlist, begin, klast_end(exprlist));
   klparser_oomifnull(stmtlet);
   return stmtlet;
+}
+
+static KlAstStmtMethod* klparser_stmtmethod(KlParser* parser, KlLex* lex) {
+  kl_assert(kllex_check(lex, KLTK_METHOD), "expected 'method'");
+  KlFileOffset begin = kllex_tokbegin(lex);
+  kllex_next(lex);
+  KlAst* lval = klparser_expr(parser, lex);
+  klparser_match(parser, lex, KLTK_ASSIGN);
+  KlAst* rval = klparser_expr(parser, lex);
+  if (kl_unlikely(!lval || !rval)) {
+    if (lval) klast_delete(lval);
+    if (rval) klast_delete(rval);
+    return NULL;
+  }
+  if (klast_kind(lval) != KLAST_EXPR_DOT) {
+    klparser_error(parser, kllex_inputstream(lex), klast_begin(lval), klast_end(lval), "should be a '.' expression");
+    klast_delete(lval);
+    klast_delete(rval);
+    return NULL;
+  }
+  KlAstStmtMethod* stmtmethod = klast_stmtmethod_create(klcast(KlAstDot*, lval), rval, begin, klast_end(rval));
+  klparser_oomifnull(stmtmethod);
+  return stmtmethod;
 }
 
 static KlAstStmtMatch* klparser_stmtmatch(KlParser* parser, KlLex* lex) {

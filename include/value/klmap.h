@@ -41,6 +41,9 @@ KlMap* klmap_create(KlClass* mapclass, size_t capacity, KlMapNodePool* nodepool)
 
 static inline size_t klmap_size(KlMap* map);
 static inline size_t klmap_capacity(KlMap* map);
+static inline void klmap_assignoption(KlMap* map, unsigned option);
+static inline void klmap_setoption(KlMap* map, unsigned bit);
+static inline void klmap_clroption(KlMap* map, unsigned bit);
 
 KlMapIter klmap_insert(KlMap* map, KlValue* key, KlValue* value);
 KlMapIter klmap_erase(KlMap* map, KlMapIter iter);
@@ -102,6 +105,18 @@ static inline size_t klmap_size(KlMap* map) {
 
 static inline size_t klmap_capacity(KlMap* map) {
   return map->capacity;
+}
+
+static inline void klmap_assignoption(KlMap* map, unsigned option) {
+  map->option = option;
+}
+
+static inline void klmap_setoption(KlMap* map, unsigned bit) {
+  map->option |= bit;
+}
+
+static inline void klmap_clroption(KlMap* map, unsigned bit) {
+  map->option &= ~bit;
 }
 
 static inline KlMapIter klmap_iter_next(KlMapIter current) {

@@ -228,7 +228,7 @@ static KlException kl_dopreload_helper_loadlib(KlState* state, const char* libna
   KLAPI_PROTECT(klapi_checkstack(state, 1));
   KLAPI_PROTECT(klapi_pushstring(state,libname));
   KLAPI_PROTECT(klapi_concati(state, -1, -2, -1));
-  KLAPI_PROTECT(klapi_loadlib(state, klstring_content(klapi_getstring(state, -1)), NULL));
+  KLAPI_PROTECT(klapi_loadlib(state, 0, NULL));
   return KL_E_NONE;
 }
 
@@ -239,23 +239,25 @@ static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicT
 
   /* load compiler */
   KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/runtime_compiler.so"));
+  klapi_pop(state, 1); /* pop evaluate, not used here */
   btool->compiler = klapi_getcfunc(state, -3);
   btool->compileri = klapi_getcfunc(state, -2);
   btool->bcloader = klapi_getcfunc(state, -1);
-  klapi_pop(state, 4); /* pop 3 results and 1 string */
+  klapi_pop(state, 3); /* pop 3 results */
 
   /* load traceback */
   KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/traceback.so"));
   btool->traceback = klapi_getcfunc(state, -1);
-  klapi_pop(state, 2); /* pop 1 result and 1 string */
+  klapi_pop(state, 1); /* pop 1 result */
 
   /* load basic */
   KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/basic.so"));
-  klapi_pop(state, 1); /* pop 1 string */
 
   /* load stream */
   KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/stream.so"));
-  klapi_pop(state, 1); /* pop 1 string */
+
+  /* load rtcpl_wrapper */
+  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/rtcpl_wrapper.so"));
 
   klapi_pop(state, 1);  /* pop corelibpath */
 

@@ -162,6 +162,13 @@ static unsigned kllib_tb_helper_locateline(FILE* input, long offset) {
     if (ch == EOF) break;
     if (kl_isnl(ch)) {
       ++currline;
+      if (ch == '\r') {
+        if ((ch = fgetc(input)) != '\n') {
+          ungetc(ch, input);
+        } else {
+          ++curroff;
+        }
+      }
       lineoff = curroff;
       if (lineoff < 0) {
         lineoff = 0;
@@ -224,6 +231,10 @@ static bool kllib_tb_helper_showline_withcurl(KlFmtConfig* fmt, FILE* err, FILE*
     if (ch == EOF) break;
     ch = fgetc(input);
     ++curroffset;
+  }
+  if (ch == '\r') {
+    if ((ch = fgetc(input)) != '\n')
+      ungetc(ch, input);
   }
   fputc('\n', err);
   return true;

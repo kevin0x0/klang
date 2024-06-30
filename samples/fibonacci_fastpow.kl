@@ -2,16 +2,16 @@
 local matrix {
   local a, b;
   local c, d;
-  constructor = method(a, b, c, d) => {
+  method constructor = (this, a, b, c, d) => {
     this.a, this.b, this.c, this.d = a, b, c, d;
   };
-  mul = method m => {
+  method mul = (this, m) => {
     this.a, this.b,
     this.c, this.d = 
     this.a * m.a + this.b * m.c, this.a * m.b + this.b * m.d,
     this.c * m.a + this.d * m.c, this.c * m.b + this.d * m.d;
   };
-  copy = method -> new matrix(this.a, this.b, this.c, this.d);
+  method copy = this -> new matrix(this.a, this.b, this.c, this.d);
 };
 
 let one = new matrix(1, 0, 0, 1);

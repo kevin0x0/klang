@@ -19,7 +19,7 @@ KlException kllib_ifile_createclass(KlState* state, KlClass* istream) {
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating ifile class");
   klapi_pushobj(state, ifile, KL_CLASS);
   KLAPI_PROTECT(klapi_pushstring(state, "constructor"));
-  KLAPI_PROTECT(klclass_newfield(ifile, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_ifile_constructor)));
+  KLAPI_PROTECT(klclass_newshared_method(ifile, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_ifile_constructor)));
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
@@ -32,7 +32,7 @@ KlException kllib_ofile_createclass(KlState* state, KlClass* ostream) {
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating ofile class");
   klapi_pushobj(state, ofile, KL_CLASS);
   KLAPI_PROTECT(klapi_pushstring(state, "constructor"));
-  KLAPI_PROTECT(klclass_newfield(ofile, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_ofile_constructor)));
+  KLAPI_PROTECT(klclass_newshared_method(ofile, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_ofile_constructor)));
   klapi_pop(state, 1);
   return KL_E_NONE;
 }

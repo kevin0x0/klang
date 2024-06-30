@@ -6,11 +6,11 @@ local next(next, end) => {
 let Range = {
   local begin;
   local end;
-  constructor = method(begin, end) => {
+  method constructor = (this, begin, end) => {
     this.begin = begin;
     this.end = end;
   };
-  '<-' = method => {
+  method '<-' = this => {
     if this.begin >= this.end: return;
     return next, this.begin + 1, this.end, this.begin;
   }
