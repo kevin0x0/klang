@@ -11,16 +11,19 @@ static KlException kllib_rtcpl_compiler(KlState* state);
 static KlException kllib_rtcpl_compileri(KlState* state);
 /* byte code loader */
 static KlException kllib_rtcpl_bcloader(KlState* state);
+/* evaluate expression */
+static KlException kllib_rtcpl_evaluate(KlState* state);
 
 KlException kllib_init(KlState* state);
 
 
 KlException kllib_init(KlState* state) {
-  KLAPI_PROTECT(klapi_allocstack(state, 3));
-  klapi_setcfunc(state, -3, kllib_rtcpl_compiler);
-  klapi_setcfunc(state, -2, kllib_rtcpl_compileri);
-  klapi_setcfunc(state, -1, kllib_rtcpl_bcloader);
-  return klapi_return(state, 3);
+  KLAPI_PROTECT(klapi_allocstack(state, 4));
+  klapi_setcfunc(state, -4, kllib_rtcpl_compiler);
+  klapi_setcfunc(state, -3, kllib_rtcpl_compileri);
+  klapi_setcfunc(state, -2, kllib_rtcpl_bcloader);
+  klapi_setcfunc(state, -1, kllib_rtcpl_evaluate);
+  return klapi_return(state, 4);
 }
 
 static KlException kllib_rtcpl_do_compile(KlState* state, KlAstStmtList* (*parse)(KlParser*, KlLex*)) {
@@ -108,6 +111,10 @@ static KlException kllib_rtcpl_compiler(KlState* state) {
 
 static KlException kllib_rtcpl_compileri(KlState* state) {
   return kllib_rtcpl_do_compile(state, klparser_interactive);
+}
+
+static KlException kllib_rtcpl_evaluate(KlState* state) {
+  return kllib_rtcpl_do_compile(state, klparser_evaluate);
 }
 
 static KlException kllib_rtcpl_bcloader(KlState* state) {

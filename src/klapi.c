@@ -546,24 +546,23 @@ KlException klapi_concati(KlState* state, int result, int left, int right) {
 /*============================LIBRARY LOADER=================================*/
 
 
-KlException klapi_loadlib(KlState* state, const char* libpath, const char* entryfunction) {
+KlException klapi_loadlib(KlState* state, int result, const char* entryfunction) {
   /* open library */
-  KLib handle = klib_dlopen(libpath);
+  KlString* libpath = klapi_getstring(state, -1);
+  KLib handle = klib_dlopen(klstring_content(libpath));
   if (kl_unlikely(klib_failed(handle))) 
-    return klstate_throw(state, KL_E_INVLD, "can not open library: %s", libpath);
+    return klstate_throw(state, KL_E_INVLD, "can not open library: %s", klstring_content(libpath));
 
   /* find entry point */
   entryfunction = entryfunction ? entryfunction : "kllib_init";
   KlCFunction* init = (KlCFunction*)klib_dlsym(handle, entryfunction);
   if (kl_unlikely(!init)) {
     klib_dlclose(handle);
-    return klstate_throw(state, KL_E_INVLD, "can not find entry point: %s", entryfunction);
+    return klstate_throw(state, KL_E_INVLD, "can not find entry point: %s in library: ", entryfunction, klstring_content(libpath));
   }
 
   /* call the entry function */
-  KlValue callable;
-  klvalue_setcfunc(&callable, init);
-  return klapi_call(state, &callable, 0, KLAPI_VARIABLE_RESULTS, klapi_stacktop(state));
+  return klapi_call(state, &klvalue_cfunc(init), 1, KLAPI_VARIABLE_RESULTS, klapi_stacktop(state) - 1 + result);
 }
 
 

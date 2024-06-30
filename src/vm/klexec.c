@@ -330,15 +330,12 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
 KlException klexec_tailcall(KlState* state, KlValue* callable, size_t narg) {
   KlCallInfo* newci = state->callinfo;
   newci->retoff += newci->base - (klstate_stktop(state) - narg);
-  bool yieldallowance_save = klco_yield_allowed(&state->coinfo);
-  klco_allow_yield(&state->coinfo, false);
   klexec_pop_callinfo(state);
   KlException exception = klexec_callprepare(state, callable, narg, NULL);
   if (newci == state->callinfo) {  /* to be executed klang call */
     state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
     exception = klexec_execute(state);
   }
-  klco_allow_yield(&state->coinfo, yieldallowance_save);
   klexec_push_callinfo(state);
   return exception;
 }
