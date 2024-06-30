@@ -58,6 +58,7 @@ KlAstStmtList* klparser_evaluate(KlParser* parser, KlLex* lex) {
     klast_delete(stmt);
     return NULL;
   }
+  klparser_match(parser, lex, KLTK_END);
   KlAstExprList* exprlist = klast_stmtexpr_steal_exprlist_and_destroy(klcast(KlAstStmtExpr*, stmt));
   KlAstStmtReturn* stmtreturn = klast_stmtreturn_create(klcast(KlAstExprList*, exprlist), klast_begin(exprlist), klast_end(exprlist));
   klparser_oomifnull(stmtreturn);
