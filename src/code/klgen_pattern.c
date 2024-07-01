@@ -309,6 +309,14 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
         target = klgen_pattern(gen, vals[i], target, emitter);
       return target;
     }
+    case KLAST_EXPR_WALRUS: {
+      kl_assert(klgen_stacktop(gen) > 0, "");
+      KlAstWalrus* walrus = klcast(KlAstWalrus*, pattern);
+      KlCStkId copyobj = klgen_stackalloc1(gen);
+      klgen_emitmove(gen, copyobj, copyobj - 1, 1, klgen_astposition(walrus));
+      target = klgen_pattern(gen, walrus->rval, target, emitter);
+      return klgen_pattern(gen, walrus->pattern, target, emitter);
+    }
     case KLAST_EXPR_BIN: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlStrDesc methodname = klgen_pattern_methodname(gen, pattern);
@@ -465,6 +473,14 @@ static void klgen_pattern_fast(KlGenUnit* gen, KlAst* pattern, KlPatternEmitter*
       klgen_pattern_fast(gen, vals[npair - 1], emitter);
       return;
     }
+    case KLAST_EXPR_WALRUS: {
+      kl_assert(klgen_stacktop(gen) > 0, "");
+      KlAstWalrus* walrus = klcast(KlAstWalrus*, pattern);
+      KlCStkId copyobj = klgen_stackalloc1(gen);
+      klgen_emitmove(gen, copyobj, copyobj - 1, 1, klgen_astposition(walrus));
+      klgen_pattern_fast(gen, walrus->rval, emitter);
+      return;
+    }
     case KLAST_EXPR_BIN: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlStrDesc methodname = klgen_pattern_methodname(gen, pattern);
@@ -576,6 +592,12 @@ static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
       }
       return klgen_pattern_fast_check(gen, vals[nval - 1]);
     }
+    case KLAST_EXPR_WALRUS: {
+      KlAstWalrus* walrus = klcast(KlAstWalrus*, pattern);
+      if (!klgen_pattern_islval(walrus->pattern))
+        return false;
+      return klgen_pattern_fast_check(gen, walrus->rval);
+    }
     case KLAST_EXPR_BIN: {
       KlAstBin* bin = klcast(KlAstBin*, pattern);
       if (!klgen_pattern_islval(bin->loperand))
@@ -681,6 +703,9 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
         count += klgen_pattern_count_result(gen, vals[i]);
       return count;
     }
+    case KLAST_EXPR_WALRUS: {
+      return klgen_pattern_count_result(gen, klcast(KlAstWalrus*, pattern)->rval) + 1;
+    }
     case KLAST_EXPR_BIN: {
       KlAstBin* bin = klcast(KlAstBin*, pattern);
       return klgen_pattern_count_result(gen, bin->loperand) +
@@ -747,6 +772,12 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
       size_t nval = map->npair;
       for (size_t i = nval; i-- > 0;)
         klgen_pattern_do_assignment(gen, vals[i]);
+      break;
+    }
+    case KLAST_EXPR_WALRUS: {
+      KlAstWalrus* walrus = klcast(KlAstWalrus*, pattern);
+      klgen_pattern_do_assignment(gen, walrus->rval);
+      klgen_pattern_do_assignment(gen, walrus->pattern);
       break;
     }
     case KLAST_EXPR_BIN: {
@@ -831,6 +862,11 @@ KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, KlCStkId base) 
       for (size_t i = 0; i < nval; ++i)
         base = klgen_pattern_newsymbol(gen, vals[i], base);
       return base;
+    }
+    case KLAST_EXPR_WALRUS: {
+      KlAstWalrus* walrus = klcast(KlAstWalrus*, pattern);
+      base = klgen_pattern_newsymbol(gen, walrus->pattern, base);
+      return klgen_pattern_newsymbol(gen, walrus->rval, base);
     }
     case KLAST_EXPR_BIN: {
       KlAstBin* bin = klcast(KlAstBin*, pattern);
