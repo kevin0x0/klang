@@ -9,7 +9,7 @@
 
 KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAst* ast, bool jumpcond);
 KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlAst* ast, KlCStkId target);
-void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, KlCPC jmppos);
+void klgen_jumpto(KlGenUnit* gen, KlCodeVal jmplist, KlCPC jmppos);
 
 
 static inline void klgen_setoffset(KlGenUnit* gen, KlInstruction* jmpinst, int offset) {

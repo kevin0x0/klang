@@ -219,14 +219,14 @@ static void klgen_exprmatch(KlGenUnit* gen, KlAstMatch* matchast, KlCStkId targe
     }
     klgen_popsymtbl(gen);
 
-    klgen_setinstjmppos(gen, jmpinfo.terminatelist, klgen_currentpc(gen));
+    klgen_jumpto(gen, jmpinfo.terminatelist, klgen_getjmptarget(gen));
     gen->jmpinfo.jumpinfo = jmpinfo.prev;
     kl_assert(jmpinfo.truelist.kind == KLVAL_NONE && jmpinfo.falselist.kind == KLVAL_NONE, "");
     klgen_stackfree(gen, currstktop);
   }
   if (needresult)
     klgen_emitloadnils(gen, target, 1, klgen_astposition(matchast));
-  klgen_setinstjmppos(gen, jmpoutlist, klgen_currentpc(gen));
+  klgen_jumpto(gen, jmpoutlist, klgen_getjmptarget(gen));
   klgen_stackfree(gen, oristktop == target ? target + 1 : oristktop);
 }
 

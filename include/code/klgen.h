@@ -11,9 +11,9 @@
 #include <setjmp.h>
 
 
-kgarray_decl(KlCode*, KlCodeArray, klcodearr, pass_val,)
-kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val,)
-kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val,)
+kgarray_decl(KlCode*, KlCodeArray, klcodearr, pass_val,);
+kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val,);
+kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val,);
 
 
 typedef struct tagKlGenJumpInfo KlGenJumpInfo;
@@ -45,7 +45,7 @@ struct tagKlGenUnit {
   KlSymTbl* reftbl;           /* table that records references to upper klang function */
   KlConTbl* contbl;           /* constant table */
   KlSymTblPool* symtblpool;   /* object pool */
-  KlCodeArray subfunc;     /* functions created inside this function */
+  KlCodeArray subfunc;        /* functions created inside this function */
   KlInstArray code;
   KlFPArray position;         /* position information (for debug) */
   KlStrTbl* strtbl;
@@ -54,10 +54,11 @@ struct tagKlGenUnit {
   bool vararg;                /* has variable arguments */
   struct {
     KlGenJumpInfo* jumpinfo;  /* information needed by code generator that evaluates boolean expression as a single value */
-    KlCodeVal* continuelist;   /* continue jmplist. continue is not allowed if NULL */
+    KlCodeVal* continuelist;  /* continue jmplist. continue is not allowed if NULL */
     KlSymTbl* continue_scope; /* the scope that start a scope that allows continue */
-    KlCodeVal* breaklist;      /* break jmplist. break is not allowed if NULL */
+    KlCodeVal* breaklist;     /* break jmplist. break is not allowed if NULL */
     KlSymTbl* break_scope;    /* the scope that start a scope that allows break */
+    bool isjmptarget;            /* current instruction is jump target of some instruction */
   } jmpinfo;
   KlGenUnit* prev;
   jmp_buf jmppos;
@@ -89,6 +90,12 @@ static inline KlCIdx klgen_newinteger(KlGenUnit* gen, KlCInt val);
 static inline KlConEntry* klgen_searchinteger(KlGenUnit* gen, KlCInt val);
 
 
+/* mark current pc a potential target of some jump instruction */
+static inline void klgen_markjmptarget(KlGenUnit* gen);
+/* unmark current pc a potential target of some jump instruction */
+static inline void klgen_unmarkjmptarget(KlGenUnit* gen);
+/* get current pc as target of some instructions, this will mark current pc is a jmppos */
+static inline KlCPC klgen_getjmptarget(KlGenUnit* gen);
 void klgen_loadval(KlGenUnit* gen, KlCStkId target, KlCodeVal val, KlFilePosition position);
 static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
 static inline void klgen_putonstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
@@ -148,23 +155,8 @@ static inline void klgen_stackfree(KlGenUnit* gen, KlCStkId stkid) {
   gen->stksize = stkid;
 }
 
-static inline void klgen_stackpreserve(KlGenUnit* gen, KlCStkId stkid) {
-  if (gen->stksize <= stkid)
-    gen->stksize = stkid + 1;
-}
-
 static inline KlCPC klgen_currentpc(KlGenUnit* gen) {
   return klinstarr_size(&gen->code);
-}
-
-static inline void klgen_popinst(KlGenUnit* gen, size_t npop) {
-  klinstarr_pop_back(&gen->code, npop);
-  if (gen->config->posinfo)
-    klfparr_pop_back(&gen->position, npop);
-}
-
-static inline void klgen_popinstto(KlGenUnit* gen, KlCPC to) {
-  klgen_popinst(gen, klgen_currentpc(gen) - to);
 }
 
 static inline KlFilePosition klgen_position(KlFileOffset begin, KlFileOffset end) {
@@ -175,12 +167,26 @@ static inline KlFilePosition klgen_position(KlFileOffset begin, KlFileOffset end
 #define klgen_astposition(ast) klgen_position(klast_begin(ast), klast_end(ast))
 
 
+static inline void klgen_markjmptarget(KlGenUnit* gen) {
+  gen->jmpinfo.isjmptarget = true;
+}
+
+static inline void klgen_unmarkjmptarget(KlGenUnit* gen) {
+  gen->jmpinfo.isjmptarget = false;
+}
+
+static inline KlCPC klgen_getjmptarget(KlGenUnit* gen) {
+  klgen_markjmptarget(gen);
+  return klgen_currentpc(gen);
+}
+
 static inline KlCPC klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position) {
-  KlCPC pc = klinstarr_size(&gen->code);
+  KlCPC pc = klgen_currentpc(gen);
   if (kl_unlikely(!klinstarr_push_back(&gen->code, inst)))
     klgen_error_fatal(gen, "out of memory");
   if (gen->config->posinfo)
     klfparr_push_back(&gen->position, position);
+  klgen_unmarkjmptarget(gen);
   return pc;
 }
 

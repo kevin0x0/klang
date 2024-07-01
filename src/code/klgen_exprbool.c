@@ -22,7 +22,7 @@ static inline int klgen_getoffset(KlInstruction jmpinst) {
   }
 }
 
-void klgen_setinstjmppos(KlGenUnit* gen, KlCodeVal jmplist, KlCPC jmppos) {
+void klgen_jumpto(KlGenUnit* gen, KlCodeVal jmplist, KlCPC jmppos) {
   if (jmplist.kind == KLVAL_NONE) return;
   KlInstruction* pc = klinstarr_access(&gen->code, jmplist.jmplist.head);
   KlInstruction* end = klinstarr_access(&gen->code, jmplist.jmplist.tail);
@@ -360,7 +360,7 @@ static KlCodeVal klgen_exprwhere_ascondition(KlGenUnit* gen, KlAstWhere* whereas
   }
   if (!referenced) return jmplist;
   klgen_emit(gen, klinst_closejmp(oristktop, 1), klgen_astposition(whereast));
-  klgen_setinstjmppos(gen, jmplist, klgen_currentpc(gen));
+  klgen_jumpto(gen, jmplist, klgen_getjmptarget(gen));
   return klcodeval_jmplist(klgen_emit(gen, klinst_closejmp(oristktop, 0), klgen_astposition(whereast)));
 }
 
@@ -423,7 +423,7 @@ KlCodeVal klgen_expror(KlGenUnit* gen, KlAstBin* orast, bool jumpcond) {
   if (jumpcond) {
     return klgen_mergejmplist(gen, ljmp, rjmp);
   } else {
-    klgen_setinstjmppos(gen, ljmp, klgen_currentpc(gen));
+    klgen_jumpto(gen, ljmp, klgen_getjmptarget(gen));
     return rjmp;
   }
 }
@@ -445,7 +445,7 @@ KlCodeVal klgen_exprand(KlGenUnit* gen, KlAstBin* andast, bool jumpcond) {
     klgen_stackfree(gen, stktop);
   }
   if (jumpcond) {
-    klgen_setinstjmppos(gen, ljmp, klgen_currentpc(gen));
+    klgen_jumpto(gen, ljmp, klgen_getjmptarget(gen));
     return rjmp;
   } else {
     return klgen_mergejmplist(gen, ljmp, rjmp);
@@ -484,7 +484,7 @@ static KlCodeVal klgen_exprorset(KlGenUnit* gen, KlAstBin* orast, KlCStkId targe
       klgen_stackfree(gen, stktop);
     }
     /* else true, fall through */
-    klgen_setinstjmppos(gen, ljmp, klgen_currentpc(gen));
+    klgen_jumpto(gen, ljmp, klgen_getjmptarget(gen));
     return klcodeval_none();
   }
 }
@@ -505,7 +505,7 @@ static KlCodeVal klgen_exprandset(KlGenUnit* gen, KlAstBin* andast, KlCStkId tar
       klgen_stackfree(gen, stktop);
     }
     /* else false, fall through */
-    klgen_setinstjmppos(gen, ljmp, klgen_currentpc(gen));
+    klgen_jumpto(gen, ljmp, klgen_getjmptarget(gen));
     return klcodeval_none();
   } else {
     KlCodeVal lval = klgen_exprboolset(gen, andast->loperand, target, false);
@@ -575,17 +575,17 @@ static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlAst* ast, KlCStkId target, 
 
 static void klgen_finishexprboolvalraw(KlGenUnit* gen, KlCStkId target, KlFilePosition pos) {
   KlGenJumpInfo* jumpinfo = gen->jmpinfo.jumpinfo;
-  KlCPC falsepos = klgen_emit(gen, klinst_loadfalseskip(target), pos);
-  KlCPC truepos = klgen_emit(gen, klinst_loadbool(target, true), pos);
-  klgen_setinstjmppos(gen, jumpinfo->falselist, falsepos);
-  klgen_setinstjmppos(gen, jumpinfo->truelist, truepos);
-  klgen_setinstjmppos(gen, jumpinfo->terminatelist, klgen_currentpc(gen));
+  klgen_jumpto(gen, jumpinfo->falselist, klgen_getjmptarget(gen));
+  klgen_emit(gen, klinst_loadfalseskip(target), pos);
+  klgen_jumpto(gen, jumpinfo->truelist, klgen_getjmptarget(gen));
+  klgen_emit(gen, klinst_loadbool(target, true), pos);
+  klgen_jumpto(gen, jumpinfo->terminatelist, klgen_getjmptarget(gen));
 }
 
 static void klgen_finishexprboolvalraw_afterload(KlGenUnit* gen, KlCStkId target, KlFilePosition pos) {
   if (gen->jmpinfo.jumpinfo->truelist.kind == KLVAL_NONE &&
       gen->jmpinfo.jumpinfo->falselist.kind == KLVAL_NONE) {
-    klgen_setinstjmppos(gen, gen->jmpinfo.jumpinfo->terminatelist, klgen_currentpc(gen));
+    klgen_jumpto(gen, gen->jmpinfo.jumpinfo->terminatelist, klgen_getjmptarget(gen));
   } else {
     KlCodeVal jmp = klcodeval_jmplist(klgen_emit(gen, klinst_jmp(0), pos));
     klgen_mergejmplist_maynone(gen, &gen->jmpinfo.jumpinfo->terminatelist, jmp);
