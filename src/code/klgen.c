@@ -311,9 +311,10 @@ void klgen_emitmove(KlGenUnit* gen, KlCStkId target, KlCStkId from, size_t nmove
       KlCStkId prev_target = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETA(*previnst) : KLINST_ABX_GETA(*previnst);
       KlCStkId prev_from = prev_opcode == KLOPCODE_MOVE ? KLINST_ABC_GETB(*previnst) : KLINST_ABX_GETB(*previnst);
       size_t prev_nmove = prev_opcode == KLOPCODE_MOVE ? 1 : KLINST_ABX_GETX(*previnst);
-      if (prev_from + target == from + prev_target &&
+      if (prev_from + target == from + prev_target &&                     /* same move length */
           ((from <= prev_from && prev_from <= from + nmove) ||
-          (prev_from <= from && from <= prev_from + prev_nmove))) {
+          (prev_from <= from && from <= prev_from + prev_nmove)) &&       /* continuous move */
+          (prev_target >= from + nmove || prev_target + nmove <= from)) { /* previous move does not modify source data of this move */
         KlCStkId new_target = prev_target < target ? prev_target : target;
         KlCStkId new_from = prev_from < from ? prev_from : from;
         size_t new_nmove = prev_target + prev_nmove > target + nmove
