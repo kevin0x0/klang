@@ -445,19 +445,28 @@ KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field) {
 }
 
 static bool klexec_getmethod(KlState* state, KlValue* object, KlString* field, KlValue* result) {
-  if (klvalue_dotable(object)) {
-    return klobject_getmethod(klvalue_getobj(object, KlObject*), field, result);
-  } else {
-    KlClass* phony = klvalue_checktype(object, KL_CLASS)
-                   ? klvalue_getobj(object, KlClass*)
-                   : state->common->klclass.phony[klvalue_gettype(object)];
-    KlClassSlot* slot = klclass_find(phony, field);
-    if (slot && klclass_is_shared(slot)) {
-      klvalue_setvalue(result, &slot->value);
-      return klvalue_gettag(&slot->value) & KLCLASS_TAG_METHOD;
-    } else {
-      klvalue_setnil(result);
+  switch (klvalue_gettype(object)) {
+    case KL_OBJECT:
+    case KL_MAP:
+    case KL_ARRAY: {
+      return klobject_getmethod(klvalue_getobj(object, KlObject*), field, result);
+    }
+    case KL_CLASS: {
+      KlClass* klclass = klvalue_getobj(object, KlClass*);
+      KlClassSlot* slot = klclass_find(klclass, field);
+      slot && klclass_is_shared(slot) ? klvalue_setvalue(result, &slot->value) : klvalue_setnil(result);
       return false;
+    }
+    default: {
+      KlClass* klclass = state->common->klclass.phony[klvalue_gettype(object)];
+      KlClassSlot* slot = klclass_find(klclass, field);
+      if (slot && klclass_is_shared(slot)) {
+        klvalue_setvalue(result, &slot->value);
+        return klvalue_gettag(&slot->value) & KLCLASS_TAG_METHOD;
+      } else {
+        klvalue_setnil(result);
+        return false;
+      }
     }
   }
 }
