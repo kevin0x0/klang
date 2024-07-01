@@ -313,7 +313,7 @@ void klgen_emitmove(KlGenUnit* gen, KlCStkId target, KlCStkId from, size_t nmove
 
   KlInstruction* previnst = klinstarr_back(&gen->code);
   KlOpcode prev_opcode = KLINST_GET_OPCODE(*previnst);
-  if (gen->jmpinfo.isjmptarget ||  /* is a entry point of current basic block? */
+  if (gen->jmpinfo.isjmptarget ||  /* is entry point of current basic block? */
       (prev_opcode != KLOPCODE_MOVE && prev_opcode != KLOPCODE_MULTIMOVE)) {
     klgen_emit(gen, nmove == 1 ? klinst_move(target, from) : klinst_multimove(target, from, nmove), position);
     return;
