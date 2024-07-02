@@ -1564,7 +1564,7 @@ KlException klexec_execute(KlState* state) {
         size_t nelem = KLINST_ABX_GETX(inst);
         if (nelem == KLEXEC_VARIABLE_RESULTS) {
           nelem = klstate_stktop(state) - first;
-          klexec_savestate(first + nelem, pc);  /* creating array may trigger gc */
+          klexec_savepc(callinfo, pc);          /* creating array may trigger gc */
         } else {
           klexec_savestate(callinfo->top, pc);  /* creating array may trigger gc */
         }
