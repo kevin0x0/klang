@@ -677,35 +677,7 @@ static KlAstExprList* klparser_correctfuncparams(KlParser* parser, KlLex* lex, K
 static KlAstStmtList* klparser_darrowfuncbody(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_DARROW), "");
   kllex_next(lex);
-  if (kllex_check(lex, KLTK_LPAREN)) {
-    KlFileOffset begin = kllex_tokbegin(lex);
-    kllex_next(lex);
-    KlAstExprList* exprlist = klparser_exprlist(parser, lex);
-    KlFileOffset end = kllex_tokend(lex);
-    klparser_match(parser, lex, KLTK_RPAREN);
-    klparser_returnifnull(exprlist);
-    KlAstStmtReturn* stmtreturn = klast_stmtreturn_create(exprlist, begin, end);
-    klparser_oomifnull(stmtreturn);
-    KlAst** stmts = (KlAst**)malloc(sizeof (KlAst**));
-    if (kl_unlikely(!stmts)) {
-      klast_delete(stmtreturn);
-      return klparser_error_oom(parser, lex);
-    }
-    stmts[0] = klast(stmtreturn);
-    KlAstStmtList* block = klast_stmtlist_create(stmts, 1, klast_begin(stmtreturn), klast_end(stmtreturn));
-    klparser_oomifnull(block);
-    return block;
-  } else {
-    klparser_check(parser, lex, KLTK_LBRACE);
-    KlFileOffset begin = kllex_tokbegin(lex);
-    kllex_next(lex);
-    KlAstStmtList* block = klparser_stmtlist(parser, lex);
-    KlFileOffset end = kllex_tokend(lex);
-    klparser_match(parser, lex, KLTK_RBRACE);
-    klparser_returnifnull(block);
-    klast_setposition(block, begin, end);
-    return block;
-  }
+  return klparser_stmtblock(parser, lex);
 }
 
 static KlAstStmtList* klparser_arrowfuncbody(KlParser* parser, KlLex* lex) {
