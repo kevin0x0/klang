@@ -1,0 +1,26 @@
+local matrix {
+  local a, b;
+  local c, d;
+  method constructor = (self, a, b, c, d) =>
+    self.a, self.b, self.c, self.d = a, b, c, d;
+
+  method mul = (self := { a = a, b = b, c = c, d = d },
+                        { a = u, b = v, c = x, d = y }) =>
+    self.a, self.b, self.c, self.d = 
+    a * u + b * x, a * v + b * y,
+    c * u + d * x, c * v + d * y;
+
+  method copy = { a = a, b = b, c = c, d = d } ->
+    new matrix(a, b, c, d);
+};
+
+let one = new matrix(1, 0, 0, 1);
+
+local fastpow(res, base, exp) -> res where repeat: {
+  if exp % 2 == 1: res.mul base;
+  base.mul base;
+} until exp == 0 where exp = exp // 2;
+
+local f n -> fastpow(one.copy(), new matrix(1, 1, 1, 0), n).c;
+
+print ("fibonacci(36) = " .. f 36);
