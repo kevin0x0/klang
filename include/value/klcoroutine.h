@@ -33,16 +33,16 @@ typedef struct tagKlCoroutine {
 
 void klco_init(KlCoroutine* co, KlKClosure* kclo);
 KlState* klco_create(KlState* state, KlKClosure* kclo);
-static inline KlGCObject* klco_propagate(KlCoroutine* co, KlGCObject* gclist);
+static inline KlGCObject* klco_propagate(const KlCoroutine* co, KlGCObject* gclist);
 
-static inline KlCoStatus klco_status(KlCoroutine* co);
+static inline KlCoStatus klco_status(const KlCoroutine* co);
 static inline void klco_setstatus(KlCoroutine* co, KlCoStatus status);
 static inline void klco_allow_yield(KlCoroutine* co, bool allow);
-static inline bool klco_yield_allowed(KlCoroutine* co);
-static inline bool klco_valid(KlCoroutine* co);
+static inline bool klco_yield_allowed(const KlCoroutine* co);
+static inline bool klco_valid(const KlCoroutine* co);
 static inline void klco_yield(KlCoroutine* co, KlValue* yieldvals, size_t nyield, size_t nwanted);
 
-static inline KlCoStatus klco_status(KlCoroutine* co) {
+static inline KlCoStatus klco_status(const KlCoroutine* co) {
   return co->status;
 }
 
@@ -55,11 +55,11 @@ static inline void klco_allow_yield(KlCoroutine* co, bool allow) {
   co->allow_yield = allow;
 }
 
-static inline bool klco_yield_allowed(KlCoroutine* co) {
+static inline bool klco_yield_allowed(const KlCoroutine* co) {
   return co->allow_yield;
 }
 
-static inline bool klco_valid(KlCoroutine* co) {
+static inline bool klco_valid(const KlCoroutine* co) {
   return co->kclo != NULL;
 }
 
@@ -72,7 +72,7 @@ kl_noreturn static inline void klco_yield(KlCoroutine* co, KlValue* yieldvals, s
   longjmp(co->yieldpos, KLCOJMP_YIELDED);
 }
 
-static KlGCObject* klco_propagate(KlCoroutine* co, KlGCObject* gclist) {
+static KlGCObject* klco_propagate(const KlCoroutine* co, KlGCObject* gclist) {
   if (co->kclo)
     klmm_gcobj_mark(klmm_to_gcobj(co->kclo), gclist);
   return gclist;

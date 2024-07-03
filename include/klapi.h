@@ -42,9 +42,9 @@
 
 #define klapi_kfunc_initdone(state, kfunc)            klkfunc_initdone(klstate_getmm((state)), (kfunc))
 #define klapi_kfunc_initabort(state, kfunc)           klkfunc_initabort(klstate_getmm((state)), (kfunc))
-#define klapi_kfunc_insts(state, kfunc)               klkfunc_insts((kfunc))
-#define klapi_kfunc_constants(state, kfunc)           klkfunc_constants((kfunc))
-#define klapi_kfunc_refinfo(state, kfunc)             klkfunc_refinfo((kfunc))
+#define klapi_kfunc_insts(state, kfunc)               klkfunc_setinsts((kfunc))
+#define klapi_kfunc_constants(state, kfunc)           klkfunc_setconstants((kfunc))
+#define klapi_kfunc_refinfo(state, kfunc)             klkfunc_setrefinfo((kfunc))
 #define klapi_kfunc_subfunc(state, kfunc)             klkfunc_subfunc((kfunc))
 #define klapi_kfunc_posinfo(state, kfunc)             klkfunc_posinfo((kfunc))
 #define klapi_kfunc_srcfile(state, kfunc)             klkfunc_srcfile((kfunc))

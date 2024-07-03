@@ -22,9 +22,9 @@ typedef struct tagKlStrTbl {
 KlStrTbl* klstrtbl_create(void);
 void klstrtbl_delete(KlStrTbl* strtbl);
 
-static inline size_t klstrtbl_residual(KlStrTbl* strtbl);
-static inline size_t klstrtbl_capacity(KlStrTbl* strtbl);
-static inline size_t klstrtbl_size(KlStrTbl* strtbl);
+static inline size_t klstrtbl_residual(const KlStrTbl* strtbl);
+static inline size_t klstrtbl_capacity(const KlStrTbl* strtbl);
+static inline size_t klstrtbl_size(const KlStrTbl* strtbl);
 
 char* klstrtbl_concat(KlStrTbl* strtbl, KlStrDesc left, KlStrDesc right);
 
@@ -35,20 +35,20 @@ static inline char* klstrtbl_allocstring(KlStrTbl* strtbl, size_t size);
 static inline size_t klstrtbl_pushstring(KlStrTbl* strtbl, size_t length);
 static inline char* klstrtbl_newstring(KlStrTbl* strtbl, const char* str);
 /* get offset(id) of a string in the string table. */
-static inline size_t klstrtbl_stringid(KlStrTbl* strtbl, const char* str);
+static inline size_t klstrtbl_stringid(const KlStrTbl* strtbl, const char* str);
 /* get string by offset(id). */
-static inline char* klstrtbl_getstring(KlStrTbl* strtbl, size_t id);
+static inline char* klstrtbl_getstring(const KlStrTbl* strtbl, size_t id);
 
 
-static inline size_t klstrtbl_residual(KlStrTbl* strtbl) {
+static inline size_t klstrtbl_residual(const KlStrTbl* strtbl) {
   return strtbl->end - strtbl->curr;
 }
 
-static inline size_t klstrtbl_capacity(KlStrTbl* strtbl) {
+static inline size_t klstrtbl_capacity(const KlStrTbl* strtbl) {
   return strtbl->end - strtbl->stack;
 }
 
-static inline size_t klstrtbl_size(KlStrTbl* strtbl) {
+static inline size_t klstrtbl_size(const KlStrTbl* strtbl) {
   return strtbl->curr - strtbl->stack;
 }
 
@@ -77,13 +77,13 @@ static inline char* klstrtbl_newstring(KlStrTbl* strtbl, const char* str) {
   return mystr;
 }
 
-static inline size_t klstrtbl_stringid(KlStrTbl* strtbl, const char* str) {
+static inline size_t klstrtbl_stringid(const KlStrTbl* strtbl, const char* str) {
   kl_assert(str >= strtbl->stack && str <= strtbl->curr, "klstrtbl_stringid(): invalid string");
 
   return str - strtbl->stack;
 }
 
-static inline char* klstrtbl_getstring(KlStrTbl* strtbl, size_t id) {
+static inline char* klstrtbl_getstring(const KlStrTbl* strtbl, size_t id) {
   kl_assert(id <= klstrtbl_size(strtbl), "klstrtbl_stringid(): invalid string");
 
   return strtbl->stack + id;

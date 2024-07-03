@@ -1,7 +1,7 @@
 #include "include/code/klcode.h"
 #include "include/misc/klutils.h"
 
-static void klcode_print_prefix(KlCode* code, Ko* out, KlInstruction* pc, const char* name) {
+static void klcode_print_prefix(const KlCode* code, Ko* out, KlInstruction* pc, const char* name) {
   code->posinfo ? ko_printf(out, "(%4u, %4u) [%03u] %-15s", code->posinfo[pc - code->code].begin, code->posinfo[pc - code->code].end, pc - code->code, name)
                  : ko_printf(out, "(no position info) [%03u] %-15s", pc - code->code, name);
 }
@@ -169,7 +169,7 @@ static void klcode_print_I(Ko* out, KlInstruction inst) {
   ko_printf(out, "| %4d %4s %4s %4s | ", (signed)KLINST_I_GETI(inst), "", "", "");
 }
 
-static void klcode_print_constant(KlCode* code, Ko* out, KlConstant* constant) {
+static void klcode_print_constant(const KlCode* code, Ko* out, KlConstant* constant) {
   switch (constant->type) {
     case KLC_INT: {
       ko_printf(out, "%zd", constant->intval);
@@ -197,12 +197,12 @@ static void klcode_print_constant(KlCode* code, Ko* out, KlConstant* constant) {
   }
 }
 
-static void klcode_print_string_noquote(KlCode* code, Ko* out, KlConstant* constant) {
+static void klcode_print_string_noquote(const KlCode* code, Ko* out, KlConstant* constant) {
   kl_assert(constant->type == KLC_STRING, "");
   ko_printf(out, "%.*s", constant->string.length, klstrtbl_getstring(code->strtbl, constant->string.id));
 }
 
-static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruction* pc) {
+static KlInstruction* klcode_print_instruction(const KlCode* code, Ko* out, KlInstruction* pc) {
   KlInstruction inst = *pc++;
   klcode_print_prefix(code, out, pc - 1, klcode_get_instname(inst));
   uint8_t opcode = KLINST_GET_OPCODE(inst);
@@ -900,7 +900,7 @@ static KlInstruction* klcode_print_instruction(KlCode* code, Ko* out, KlInstruct
   }
 }
 
-static void klcode_print_reftbl(KlCode* code, Ko* out) {
+static void klcode_print_reftbl(const KlCode* code, Ko* out) {
   ko_printf(out, "%u references:\n", code->nref);
   for (size_t i = 0; i < code->nref; ++i)
     ko_printf(out, "reference %4zu: from %10s, index = %u\n", i, code->refinfo[i].on_stack ? "stack" : "ref table", (unsigned)code->refinfo[i].index);
@@ -911,14 +911,14 @@ typedef struct tagKlCodePrintInfo {
   struct tagKlCodePrintInfo* upper;
 } KlCodePrintInfo;
 
-static void klcode_print_printinfo(KlCodePrintInfo* printinfo, Ko* out) {
+static void klcode_print_printinfo(const KlCodePrintInfo* printinfo, Ko* out) {
   if (printinfo) {
     klcode_print_printinfo(printinfo->upper, out);
     ko_printf(out, ":%zu", printinfo->idx);
   }
 }
 
-void klcode_print_function(KlCode* code, Ko* out, KlCodePrintInfo* printinfo) {
+void klcode_print_function(const KlCode* code, Ko* out, KlCodePrintInfo* printinfo) {
   KlInstruction* pc = code->code;
   KlInstruction* end = code->code + code->codelen;
   ko_printf(out, "function(top");
@@ -951,7 +951,7 @@ void klcode_print_function(KlCode* code, Ko* out, KlCodePrintInfo* printinfo) {
   }
 }
 
-void klcode_print(KlCode* code, Ko* out) {
+void klcode_print(const KlCode* code, Ko* out) {
   ko_printf(out, "source file: %.*s\n", code->srcfile.length, klstrtbl_getstring(code->strtbl, code->srcfile.id));
   klcode_print_function(code, out, NULL);
 }

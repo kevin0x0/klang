@@ -41,11 +41,11 @@ void kllex_delete(KlLex* lex);
 
 void kllex_next(KlLex* lex);
 static inline void kllex_setcurrtok(KlLex* lex, KlTokenKind kind, KlFileOffset begin, KlFileOffset end);
-static inline bool kllex_hasleadingblank(KlLex* lex);
+static inline bool kllex_hasleadingblank(const KlLex* lex);
 static inline bool kllex_trymatch(KlLex* lex, KlTokenKind kind);
-static inline bool kllex_check(KlLex* lex, KlTokenKind kind);
-static inline KlTokenKind kllex_tokkind(KlLex* lex);
-static inline Ki* kllex_inputstream(KlLex* lex);
+static inline bool kllex_check(const KlLex* lex, KlTokenKind kind);
+static inline KlTokenKind kllex_tokkind(const KlLex* lex);
+static inline Ki* kllex_inputstream(const KlLex* lex);
 
 
 
@@ -55,7 +55,7 @@ static inline void kllex_setcurrtok(KlLex* lex, KlTokenKind kind, KlFileOffset b
   lex->tok.end = end;
 }
 
-static inline bool kllex_hasleadingblank(KlLex* lex) {
+static inline bool kllex_hasleadingblank(const KlLex* lex) {
   return lex->tok.hasleadingblank;
 }
 
@@ -67,15 +67,15 @@ static inline bool kllex_trymatch(KlLex* lex, KlTokenKind kind) {
   return false;
 }
 
-static inline bool kllex_check(KlLex* lex, KlTokenKind kind) {
+static inline bool kllex_check(const KlLex* lex, KlTokenKind kind) {
   return kllex_tokkind(lex) == kind;
 }
 
-static inline KlTokenKind kllex_tokkind(KlLex* lex) {
+static inline KlTokenKind kllex_tokkind(const KlLex* lex) {
   return lex->tok.kind;
 }
 
-static inline Ki* kllex_inputstream(KlLex* lex) {
+static inline Ki* kllex_inputstream(const KlLex* lex) {
   return lex->input;
 }
 

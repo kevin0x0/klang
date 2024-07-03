@@ -87,7 +87,7 @@ static inline KlCIdx klgen_newconstant(KlGenUnit* gen, KlConstant* constant);
 static inline KlCIdx klgen_newstring(KlGenUnit* gen, KlStrDesc str);
 static inline KlCIdx klgen_newfloat(KlGenUnit* gen, KlCFloat val);
 static inline KlCIdx klgen_newinteger(KlGenUnit* gen, KlCInt val);
-static inline KlConEntry* klgen_searchinteger(KlGenUnit* gen, KlCInt val);
+static inline KlConEntry* klgen_searchinteger(const KlGenUnit* gen, KlCInt val);
 
 
 /* mark current pc a potential target of some jump instruction */
@@ -131,7 +131,7 @@ static inline KlCIdx klgen_newinteger(KlGenUnit* gen, KlCInt val) {
   return klgen_newconstant(gen, &(KlConstant) { .type = KLC_INT, .intval = val });
 }
 
-static inline KlConEntry* klgen_searchinteger(KlGenUnit* gen, KlCInt val) {
+static inline KlConEntry* klgen_searchinteger(const KlGenUnit* gen, KlCInt val) {
   return klcontbl_search(gen->contbl, &(KlConstant){ .type = KLC_INT, .intval = val });
 }
 
@@ -155,13 +155,12 @@ static inline void klgen_stackfree(KlGenUnit* gen, KlCStkId stkid) {
   gen->stksize = stkid;
 }
 
-static inline KlCPC klgen_currentpc(KlGenUnit* gen) {
+static inline KlCPC klgen_currentpc(const KlGenUnit* gen) {
   return klinstarr_size(&gen->code);
 }
 
 static inline KlFilePosition klgen_position(KlFileOffset begin, KlFileOffset end) {
-  KlFilePosition position = { .begin = begin, .end = end };
-  return position;
+  return (KlFilePosition) { .begin = begin, .end = end };
 }
 
 #define klgen_astposition(ast) klgen_position(klast_begin(ast), klast_end(ast))

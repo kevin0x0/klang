@@ -63,8 +63,8 @@ typedef enum tagKlUnDumpError {
   KLUNDUMP_ERROR_OOM,
 } KlUnDumpError;
 
-bool klcode_dump(KlCode* code, Ko* file);
+bool klcode_dump(const KlCode* code, Ko* file);
 KlCode* klcode_undump(Ki* file, KlStrTbl* strtbl, KlUnDumpError* error);
-void klcode_print(KlCode* code, Ko* out);
+void klcode_print(const KlCode* code, Ko* out);
 
 #endif

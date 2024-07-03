@@ -19,7 +19,7 @@ static const KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_prop
 static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* elem);
 static inline void klmap_init_head_tail(KlMapNode* head, KlMapNode* tail);
 
-static inline size_t klmap_gethash(KlValue* key) {
+static inline size_t klmap_gethash(const KlValue* key) {
   switch (klvalue_gettype(key)) {
     case KL_STRING: {
       return klstring_hash(klvalue_getobj(key, KlString*));
@@ -162,7 +162,7 @@ void klmap_makeempty(KlMap* map) {
   map->size = 0;
 }
 
-KlMapIter klmap_insert(KlMap* map, KlValue* key, KlValue* value) {
+KlMapIter klmap_insert(KlMap* map, const KlValue* key, const KlValue* value) {
   if (kl_unlikely(map->size >= map->capacity && !klmap_expand(map)))
     return NULL;
 
@@ -184,7 +184,7 @@ KlMapIter klmap_insert(KlMap* map, KlValue* key, KlValue* value) {
   return new_node;
 }
 
-KlMapIter klmap_search(KlMap* map, KlValue* key) {
+KlMapIter klmap_search(const KlMap* map, const KlValue* key) {
   size_t mask = map->capacity - 1;
   size_t index = mask & klmap_gethash(key);
   KlMapNode* node = map->array[index];
@@ -210,7 +210,7 @@ KlMapIter klmap_bucketnext(KlMap* map, size_t bucketid, KlValue* key) {
   return NULL;
 }
 
-KlMapIter klmap_searchstring(KlMap* map, KlString* str) {
+KlMapIter klmap_searchstring(const KlMap* map, const KlString* str) {
   size_t mask = map->capacity - 1;
   size_t index = mask & klstring_hash(str);
   KlMapNode* node = map->array[index];
@@ -224,7 +224,7 @@ KlMapIter klmap_searchstring(KlMap* map, KlString* str) {
   return NULL;
 }
 
-KlMapIter klmap_insertstring(KlMap* map, KlString* str, KlValue* val) {
+KlMapIter klmap_insertstring(KlMap* map, const KlString* str, const KlValue* val) {
   if (kl_unlikely(map->size >= map->capacity && !klmap_expand(map)))
     return NULL;
 

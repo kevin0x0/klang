@@ -97,7 +97,7 @@ static inline void klmm_init(KlMM* klmm, size_t limit);
 void klmm_destroy(KlMM* klmm);
 
 static inline void klmm_register_root(KlMM* klmm, KlGCObject* root);
-static inline KlGCObject* klmm_get_root(KlMM* klmm);
+static inline KlGCObject* klmm_get_root(const KlMM* klmm);
 
 
 static inline void* klmm_alloc(KlMM* klmm, size_t size);
@@ -141,7 +141,7 @@ static inline void klmm_register_root(KlMM* klmm, KlGCObject* root) {
   klmm->root = root;
 }
 
-static inline KlGCObject* klmm_get_root(KlMM* klmm) {
+static inline KlGCObject* klmm_get_root(const KlMM* klmm) {
   return klmm->root;
 }
 

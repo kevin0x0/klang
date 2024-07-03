@@ -209,7 +209,7 @@ KlString* klstrpool_string_concat_cstyle(KlStrPool* strpool, const char* str1, c
   return klstrpool_insert(strpool, klstr);
 }
 
-KlString* klstrpool_string_concat(KlStrPool* strpool, KlString* str1, KlString* str2) {
+KlString* klstrpool_string_concat(KlStrPool* strpool, const KlString* str1, const KlString* str2) {
   KlMM* klmm = klstrpool_getmm(strpool);
   KlString* klstr = klstring_create_concat(klmm, klstring_content(str1), str1->length, klstring_content(str2), str2->length);
   if (!klstr) return NULL;

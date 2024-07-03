@@ -43,7 +43,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
 static inline void klcommon_delete(KlCommon* common, KlMM* klmm);
 static inline void klcommon_pin(KlCommon* common);
 static inline void klcommon_unpin(KlCommon* common, KlMM* klmm);
-KlGCObject* klcommon_propagate(KlCommon* common, KlGCObject* gclist);
+KlGCObject* klcommon_propagate(const KlCommon* common, KlGCObject* gclist);
 
 static inline void klcommon_delete(KlCommon* common, KlMM* klmm) {
   klmm_free(klmm, common, sizeof (KlCommon));

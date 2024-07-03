@@ -37,7 +37,7 @@ KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* co
   return klclass;
 }
 
-KlClass* klclass_inherit(KlMM* klmm, KlClass* parent) {
+KlClass* klclass_inherit(KlMM* klmm, const KlClass* parent) {
   KlClassSlot* array = (KlClassSlot*)klmm_alloc(klmm, parent->capacity * sizeof (KlClassSlot));
   KlClass* klclass = (KlClass*)klmm_alloc(klmm, sizeof (KlClass));
   if (kl_unlikely(!array || !klclass)) {
@@ -105,7 +105,7 @@ static KlClassSlot* klclass_getfreeslot(KlClass* klclass) {
   return NULL;
 }
 
-static KlClassSlot* klclass_add_after_rehash(KlClass* klclass, KlString* key) {
+static KlClassSlot* klclass_add_after_rehash(KlClass* klclass, const KlString* key) {
   size_t mask = klclass->capacity - 1;
   size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
@@ -139,7 +139,7 @@ static KlClassSlot* klclass_add_after_rehash(KlClass* klclass, KlString* key) {
   }
 }
 
-KlException klclass_newfield(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value) {
+KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, const KlValue* value) {
   size_t mask = klclass->capacity - 1;
   size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
@@ -195,7 +195,7 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, KlString* key, KlValu
   }
 }
 
-KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, KlString* key) {
+KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, const KlString* key) {
   size_t mask = klclass->capacity - 1;
   size_t keyindex = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;

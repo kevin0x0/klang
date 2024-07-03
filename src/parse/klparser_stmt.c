@@ -310,7 +310,6 @@ static KlAstStmtIf* klparser_stmtif(KlParser* parser, KlLex* lex) {
   kllex_trymatch(lex, KLTK_COLON);
   KlAstStmtList* then_block = NULL;
   then_block = klparser_stmtblock(parser, lex);
-  kllex_trymatch(lex, KLTK_SEMI);
   KlAstStmtList* else_block = NULL;
   if (kllex_trymatch(lex, KLTK_ELSE)) {     /* else block */
     kllex_trymatch(lex, KLTK_COLON);

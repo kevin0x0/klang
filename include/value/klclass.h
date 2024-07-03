@@ -18,11 +18,11 @@
 typedef struct tagKlClassSlot KlClassSlot;
 typedef struct tagKlClass KlClass;
 typedef struct tagKlObject KlObject;
-typedef KlException (*KlObjectConstructor)(KlClass* klclass, KlMM* klmm, KlValue* value);
+typedef KlException (*KlObjectConstructor)(KlClass* klclass, KlMM* klmm, KlValue* result);
 
 struct tagKlClassSlot {
   KlValue value;
-  KlString* key;
+  const KlString* key;
   KlClassSlot* next;
 };
 
@@ -53,20 +53,20 @@ struct tagKlObject {
 
 
 KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* constructor_data, KlObjectConstructor constructor);
-KlClass* klclass_inherit(KlMM* klmm, KlClass* parent);
+KlClass* klclass_inherit(KlMM* klmm, const KlClass* parent);
 
-static inline KlClassSlot* klclass_find(KlClass* klclass, KlString* key);
-KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, KlString* key);
-KlException klclass_newfield(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value);
+static inline KlClassSlot* klclass_find(const KlClass* klclass, const KlString* key);
+KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, const KlString* key);
+KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, const KlValue* value);
 
 KlException klclass_default_constructor(KlClass* klclass, KlMM* klmm, KlValue* value);
 static inline void* klclass_constructor_data(KlClass* klclass);
 KlObject* klclass_objalloc(KlClass* klclass, KlMM* klmm);
 static inline KlException klclass_new_object(KlClass* klclass, KlMM* klmm, KlValue* value);
 
-static inline KlException klclass_newlocal(KlClass* klclass, KlMM* klmm, KlString* key);
-static inline KlException klclass_newshared_normal(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value);
-static inline KlException klclass_newshared_method(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value);
+static inline KlException klclass_newlocal(KlClass* klclass, KlMM* klmm, const KlString* key);
+static inline KlException klclass_newshared_normal(KlClass* klclass, KlMM* klmm, const KlString* key, KlValue* value);
+static inline KlException klclass_newshared_method(KlClass* klclass, KlMM* klmm, const KlString* key, KlValue* value);
 
 
 static inline void klclass_final(KlClass* klclass);
@@ -93,24 +93,24 @@ static inline KlException klclass_new_object(KlClass* klclass, KlMM* klmm, KlVal
   return klclass->constructor(klclass, klmm, value);
 }
 
-static inline KlException klclass_newlocal(KlClass* klclass, KlMM* klmm, KlString* key) {
+static inline KlException klclass_newlocal(KlClass* klclass, KlMM* klmm, const KlString* key) {
   KlValue localid;
   klvalue_setuint(&localid, klclass->nlocal++);
   /* if failed, we don't decrease the klclass->nlocal */
   return klclass_newfield(klclass, klmm, key, &localid);
 }
 
-static inline KlException klclass_newshared_normal(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value) {
+static inline KlException klclass_newshared_normal(KlClass* klclass, KlMM* klmm, const KlString* key, KlValue* value) {
   klvalue_settag(value, KLCLASS_TAG_NORMAL);
   return klclass_newfield(klclass, klmm, key, value);
 }
 
-static inline KlException klclass_newshared_method(KlClass* klclass, KlMM* klmm, KlString* key, KlValue* value) {
+static inline KlException klclass_newshared_method(KlClass* klclass, KlMM* klmm, const KlString* key, KlValue* value) {
   klvalue_settag(value, KLCLASS_TAG_METHOD);
   return klclass_newfield(klclass, klmm, key, value);
 }
 
-static inline KlClassSlot* klclass_find(KlClass* klclass, KlString* key) {
+static inline KlClassSlot* klclass_find(const KlClass* klclass, const KlString* key) {
   size_t keyindex = klstring_hash(key) & (klclass->capacity - 1);
   KlClassSlot* slot = &klclass->slots[keyindex];
   while (slot) {
@@ -134,15 +134,15 @@ static inline KlClassSlot* klclass_find(KlClass* klclass, KlString* key) {
 
 
 
-static inline KlValue* klobject_getfield(KlObject* object, KlString* key);
-static inline bool klobject_getmethod(KlObject* object, KlString* key, KlValue* result);
-static inline KlClass* klobject_class(KlObject* object);
-static inline size_t klobject_size(KlObject* object);
-static inline KlGCObject* klobject_propagate_nomm(KlObject* object, KlGCObject* gclist);
+static inline KlValue* klobject_getfield(const KlObject* object, const KlString* key);
+static inline bool klobject_getmethod(const KlObject* object, const KlString* key, KlValue* result);
+static inline KlClass* klobject_class(const KlObject* object);
+static inline size_t klobject_size(const KlObject* object);
+static inline KlGCObject* klobject_propagate_nomm(const KlObject* object, KlGCObject* gclist);
 static inline void klobject_free(KlObject* object, KlMM* klmm);
-static inline bool klobject_compatible(KlObject* object, KlObjectConstructor constructor);
+static inline bool klobject_compatible(const KlObject* object, KlObjectConstructor constructor);
 
-static inline KlValue* klobject_getfield(KlObject* object, KlString* key) {
+static inline KlValue* klobject_getfield(const KlObject* object, const KlString* key) {
   KlClass* klclass = object->klclass;
   KlClassSlot* slot = klclass_find(klclass, key);
   if (kl_unlikely(!slot)) return NULL;
@@ -177,7 +177,7 @@ static inline void klobject_getfieldset(KlObject* object, KlString* key, KlValue
   }
 }
 
-static inline bool klobject_getmethod(KlObject* object, KlString* key, KlValue* result) {
+static inline bool klobject_getmethod(const KlObject* object, const KlString* key, KlValue* result) {
   KlClass* klclass = object->klclass;
   KlClassSlot* slot = klclass_find(klclass, key);
   if (kl_unlikely(!slot)) {
@@ -193,15 +193,15 @@ static inline bool klobject_getmethod(KlObject* object, KlString* key, KlValue* 
   }
 }
 
-static inline KlClass* klobject_class(KlObject* object) {
+static inline KlClass* klobject_class(const KlObject* object) {
   return object->klclass;
 }
 
-static inline size_t klobject_size(KlObject* object) {
+static inline size_t klobject_size(const KlObject* object) {
   return object->size;
 }
 
-static inline KlGCObject* klobject_propagate_nomm(KlObject* object, KlGCObject* gclist) {
+static inline KlGCObject* klobject_propagate_nomm(const KlObject* object, KlGCObject* gclist) {
   klmm_gcobj_mark(klmm_to_gcobj(object->klclass), gclist);
   KlValue* attrs = klobject_attrs(object);
   size_t nlocal = object->klclass->nlocal;
@@ -216,7 +216,7 @@ static inline void klobject_free(KlObject* object, KlMM* klmm) {
   klmm_free(klmm, klmm_to_gcobj(object), klobject_size(object));
 }
 
-static inline bool klobject_compatible(KlObject* object, KlObjectConstructor constructor) {
+static inline bool klobject_compatible(const KlObject* object, KlObjectConstructor constructor) {
   return object->klclass->constructor == constructor;
 }
 

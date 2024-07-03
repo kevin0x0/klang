@@ -13,7 +13,7 @@ KlRef* klref_new(KlRef** reflist, KlMM* klmm, KlValue* stkval) {
   return newref;
 }
 
-void klreflist_close(KlRef** reflist, KlValue* bound, KlMM* klmm) {
+void klreflist_close(KlRef** reflist, const KlValue* bound, KlMM* klmm) {
   KlRef* ref = *reflist;
   while (ref->pval >= bound) {
     KlRef* next = ref->open.next;

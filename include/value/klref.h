@@ -27,9 +27,9 @@ struct tagKlRef {
 
 static inline KlRef* klreflist_create(KlMM* klmm);
 static inline void klreflist_delete(KlRef* reflist, KlMM* klmm);
-void klreflist_close(KlRef** reflist, KlValue* bound, KlMM* klmm);
+void klreflist_close(KlRef** reflist, const KlValue* bound, KlMM* klmm);
 
-static inline bool klref_closed(KlRef* ref);
+static inline bool klref_closed(const KlRef* ref);
 
 KlRef* klref_new(KlRef** reflist, KlMM* klmm, KlValue* stkval);
 static inline KlRef* klref_get(KlRef** reflist, KlMM* klmm, KlValue* stkval);
@@ -38,7 +38,7 @@ static inline void klref_delete(KlRef* ref, KlMM* klmm);
 static inline void klref_pin(KlRef* ref);
 static inline void klref_unpin(KlRef* ref, KlMM* klmm);
 
-static inline KlGCObject* klref_propagate(KlRef* ref, KlGCObject* gclist);
+static inline KlGCObject* klref_propagate(const KlRef* ref, KlGCObject* gclist);
 
 static inline void klreflist_correct(KlRef* reflist, ptrdiff_t diff);
 
@@ -64,7 +64,7 @@ static inline void klreflist_delete(KlRef* reflist, KlMM* klmm) {
   }
 }
 
-static inline bool klref_closed(KlRef* ref) {
+static inline bool klref_closed(const KlRef* ref) {
   return ref->pval == &ref->closed.val;
 }
 
@@ -89,7 +89,7 @@ static inline void klref_unpin(KlRef* ref, KlMM* klmm) {
     klref_delete(ref, klmm);
 }
 
-static inline KlGCObject* klref_propagate(KlRef* ref, KlGCObject* gclist) {
+static inline KlGCObject* klref_propagate(const KlRef* ref, KlGCObject* gclist) {
   if (klvalue_collectable(&ref->closed.val))
     klmm_gcobj_mark(klvalue_getgcobj(&ref->closed.val), gclist);
   return gclist;

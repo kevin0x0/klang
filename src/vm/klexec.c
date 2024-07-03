@@ -23,10 +23,10 @@
 
 
 
-static KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback);
+static KlException klexec_callprepare(KlState* state, const KlValue* callable, size_t narg, KlCallPrepCallBack callback);
 static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff);
 static KlCallInfo* klexec_alloc_callinfo(KlState* state);
-static bool klexec_getmethod(KlState* state, KlValue* object, KlString* field, KlValue* result);
+static bool klexec_getmethod(const KlState* state, const KlValue* object, const KlString* field, KlValue* result);
 
 static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff) {
   KlCallInfo* callinfo = state->callinfo->next ? state->callinfo->next : klexec_alloc_callinfo(state);
@@ -39,7 +39,7 @@ static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int r
 
 
 
-static KlException klexec_handle_newshared_exception(KlState* state, KlException exception, KlString* key) {
+static KlException klexec_handle_newshared_exception(KlState* state, KlException exception, const KlString* key) {
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when setting a new field: %s", klstring_content(key));
   } else {
@@ -51,7 +51,7 @@ static KlException klexec_handle_newshared_exception(KlState* state, KlException
   return KL_E_NONE;
 }
 
-static KlException klexec_handle_newlocal_exception(KlState* state, KlException exception, KlString* key) {
+static KlException klexec_handle_newlocal_exception(KlState* state, KlException exception, const KlString* key) {
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when adding a new field: %s", klstring_content(key));
   } else {
@@ -73,7 +73,7 @@ static KlException klexec_handle_newobject_exception(KlState* state, KlException
   }
 }
 
-static KlException klexec_handle_arrayindexas_exception(KlState* state, KlException exception, KlArray* arr, KlValue* key) {
+static KlException klexec_handle_arrayindexas_exception(KlState* state, KlException exception, const KlArray* arr, const KlValue* key) {
   if (exception == KL_E_RANGE) {
     return klstate_throw(state, exception,
                          "index out of range: index = %zd, array size = %zu.",
@@ -83,7 +83,7 @@ static KlException klexec_handle_arrayindexas_exception(KlState* state, KlExcept
   return KL_E_NONE;
 }
 
-static KlClass* klexec_getclass(KlState* state, KlValue* obj) {
+static KlClass* klexec_getclass(const KlState* state, const KlValue* obj) {
   return klvalue_checktype(obj, KL_CLASS) ? klvalue_getobj(obj, KlClass*)                  :
          klvalue_dotable(obj)             ? klobject_class(klvalue_getobj(obj, KlObject*)) :
                                             klstate_common(state)->klclass.phony[klvalue_gettype(obj)];
@@ -98,7 +98,7 @@ static KlCallInfo* klexec_alloc_callinfo(KlState* state) {
   return callinfo;
 }
 
-static KlException klexec_co_startcall(KlState* state, KlValue* callable, size_t narg, size_t nret) {
+static KlException klexec_co_startcall(KlState* state, const KlValue* callable, size_t narg, size_t nret) {
   kl_assert(narg != KLEXEC_VARIABLE_RESULTS, "arguments can not have variable number of results");
 
   KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
@@ -309,7 +309,7 @@ static KlException klexec_co_call(KlState* costate, KlState* caller, size_t narg
   return KL_E_NONE;
 }
 
-KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos) {
+KlException klexec_call(KlState* state, const KlValue* callable, size_t narg, size_t nret, KlValue* respos) {
   kl_assert(nret <= KLEXEC_VARIABLE_RESULTS, "number of returned values should be in range [0, 255) or KLAPI_VARIABLE_RESULTS");
   kl_assert(klstack_onstack(klstate_stack(state), respos), "'respos' should be a position on stack");
 
@@ -327,7 +327,7 @@ KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t n
   return exception;
 }
 
-KlException klexec_tailcall(KlState* state, KlValue* callable, size_t narg) {
+KlException klexec_tailcall(KlState* state, const KlValue* callable, size_t narg) {
   KlCallInfo* newci = state->callinfo;
   newci->retoff += newci->base - (klstate_stktop(state) - narg);
   klexec_pop_callinfo(state);
@@ -343,7 +343,7 @@ KlException klexec_tailcall(KlState* state, KlValue* callable, size_t narg) {
 /* Prepare for calling a callable object (C function, C closure, klang closure).
  * Also perform the actual call for C function and C closure.
  */
-static KlException klexec_callprepare(KlState* state, KlValue* callable, size_t narg, KlCallPrepCallBack callback) {
+static KlException klexec_callprepare(KlState* state, const KlValue* callable, size_t narg, KlCallPrepCallBack callback) {
   if (kl_likely(klvalue_checktype(callable, KL_KCLOSURE))) {          /* is a klang closure ? */
     /* get closure in advance, in case of dangling pointer due to stack grow */
     KlKClosure* kclo = klvalue_getobj(callable, KlKClosure*);
@@ -403,7 +403,7 @@ static KlException klexec_callprepare(KlState* state, KlValue* callable, size_t 
   }
 }
 
-static KlException klexec_callprep_callback_for_call(KlState* state, KlValue* callable, size_t narg) {
+static KlException klexec_callprep_callback_for_call(KlState* state, const KlValue* callable, size_t narg) {
   KlCallInfo* callinfo = klexec_newed_callinfo(state);
   KlValue method;
   bool ismethod = klexec_getmethod(state, callable, state->common->string.call, &method);
@@ -416,7 +416,7 @@ static KlException klexec_callprep_callback_for_call(KlState* state, KlValue* ca
   return klexec_callprepare(state, &method, narg, NULL);
 }
 
-static KlException klexec_callprep_callback_for_method(KlState* state, KlValue* callable, size_t narg) {
+static KlException klexec_callprep_callback_for_method(KlState* state, const KlValue* callable, size_t narg) {
   KlCallInfo* callinfo = klexec_newed_callinfo(state);
   KlValue method;
   bool ismethod = klexec_getmethod(state, callable, state->common->string.call, &method);
@@ -428,8 +428,8 @@ static KlException klexec_callprep_callback_for_method(KlState* state, KlValue* 
   return klexec_callprepare(state, &method, narg, NULL);
 }
 
-KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field) {
-  static KlValue nil = KLVALUE_NIL_INIT;
+static const KlValue* klexec_getfield(const KlState* state, const KlValue* object, const KlString* field) {
+  static const KlValue nil = KLVALUE_NIL_INIT;
   if (klvalue_dotable(object)) {
     KlObject* obj = klvalue_getobj(object, KlObject*);
     KlValue* val = klobject_getfield(obj, field);
@@ -444,7 +444,7 @@ KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field) {
   }
 }
 
-static bool klexec_getmethod(KlState* state, KlValue* object, KlString* field, KlValue* result) {
+static bool klexec_getmethod(const KlState* state, const KlValue* object, const KlString* field, KlValue* result) {
   switch (klvalue_gettype(object)) {
     case KL_OBJECT:
     case KL_MAP:
@@ -471,11 +471,11 @@ static bool klexec_getmethod(KlState* state, KlValue* object, KlString* field, K
   }
 }
 
-const char* klexec_typename(KlState* state, KlValue* val) {
+const char* klexec_typename(const KlState* state, const KlValue* val) {
   if (klvalue_checktype(val, KL_OBJECT) ||
       klvalue_checktype(val, KL_MAP)    ||
       klvalue_checktype(val, KL_ARRAY)) {
-    KlValue* typename = klexec_getfield(state, val, state->common->string.typename);
+    const KlValue* typename = klexec_getfield(state, val, state->common->string.typename);
      return klvalue_checktype(typename, KL_STRING)                ? 
             klstring_content(klvalue_getobj(typename, KlString*)) :
             klvalue_typename(klvalue_gettype(val));
@@ -484,14 +484,14 @@ const char* klexec_typename(KlState* state, KlValue* val) {
   }
 }
 
-static KlException klexec_dopreopmethod(KlState* state, KlValue* a, KlValue* b, KlString* op) {
+static KlException klexec_dopreopmethod(KlState* state, const KlValue* a, const KlValue* b, const KlString* op) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
   kl_assert(klstack_onstack(klstate_stack(state), a), "'a' must be on stack");
   kl_assert(klstack_residual(klstate_stack(state)) >= 1, "stack size not enough for calling prefix operator");
 
-  KlValue* method = klexec_getfield(state, b, state->common->string.call);
+  const KlValue* method = klexec_getfield(state, b, state->common->string.call);
   if (kl_unlikely(klvalue_checktype(method, KL_NIL) || !klvalue_callable(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply prefix '%s' to value with type '%s'",
                          klstring_content(op), klexec_typename(state, b));
@@ -503,14 +503,14 @@ static KlException klexec_dopreopmethod(KlState* state, KlValue* a, KlValue* b, 
   return klexec_callprepare(state, method, 1, NULL);
 }
 
-static KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, KlValue* c, KlString* op) {
+static KlException klexec_dobinopmethod(KlState* state, KlValue* a, const KlValue* b, const KlValue* c, const KlString* op) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
   kl_assert(klstack_onstack(klstate_stack(state), a), "'a' must be on stack");
   kl_assert(klstack_residual(klstate_stack(state)) >= 2, "stack size not enough for calling binary operator");
 
-  KlValue* method = klexec_getfield(state, b, op);
+  const KlValue* method = klexec_getfield(state, b, op);
   if (kl_unlikely(klvalue_checktype(method, KL_NIL) || !klvalue_callable(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply binary '%s' to values with type '%s' and '%s'",
                          klstring_content(op), klexec_typename(state, b), klexec_typename(state, c));
@@ -523,7 +523,7 @@ static KlException klexec_dobinopmethod(KlState* state, KlValue* a, KlValue* b, 
   return klexec_callprepare(state, method, 2, NULL);
 }
 
-static KlException klexec_doindexmethod(KlState* state, KlValue* val, KlValue* indexable, KlValue* key) {
+static KlException klexec_doindexmethod(KlState* state, KlValue* val, const KlValue* indexable, const KlValue* key) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
@@ -531,7 +531,7 @@ static KlException klexec_doindexmethod(KlState* state, KlValue* val, KlValue* i
   kl_assert(klstack_residual(klstate_stack(state)) >= 1, "stack size not enough for calling binary operator");
 
   KlString* index = state->common->string.index;
-  KlValue* method = klexec_getfield(state, indexable, index);
+  const KlValue* method = klexec_getfield(state, indexable, index);
   if (kl_unlikely(klvalue_checktype(method, KL_NIL) || !klvalue_callable(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s' for key with type '%s'",
                          klstring_content(index), klexec_typename(state, indexable), klexec_typename(state, key));
@@ -544,14 +544,14 @@ static KlException klexec_doindexmethod(KlState* state, KlValue* val, KlValue* i
   return klexec_callprepare(state, method, 2, NULL);
 }
 
-static KlException klexec_doindexasmethod(KlState* state, KlValue* indexable, KlValue* key, KlValue* val) {
+static KlException klexec_doindexasmethod(KlState* state, const KlValue* indexable, const KlValue* key, const KlValue* val) {
   /* Stack is guaranteed extra capacity for calling this operator.
    * See klexec_callprepare and klexec_methodprepare.
    */
   kl_assert(klstack_residual(klstate_stack(state)) >= 2, "stack size not enough for calling indexas operator");
 
   KlString* indexas = state->common->string.indexas;
-  KlValue* method = klexec_getfield(state, indexable, indexas);
+  const KlValue* method = klexec_getfield(state, indexable, indexas);
   if (kl_unlikely(klvalue_checktype(method, KL_NIL) || !klvalue_callable(method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s' for key with type '%s'",
                          klstring_content(indexas), klexec_typename(state, indexable), klexec_typename(state, key));
@@ -565,7 +565,7 @@ static KlException klexec_doindexasmethod(KlState* state, KlValue* indexable, Kl
   return klexec_callprepare(state, method, 3, NULL);
 }
 
-static KlException klexec_dolt(KlState* state, KlValue* a, KlValue* b, KlValue* c) {
+static KlException klexec_dolt(KlState* state, KlValue* a, const KlValue* b, const KlValue* c) {
   if (klvalue_checktype(b, KL_STRING) && klvalue_checktype(c, KL_STRING)) {
     int res = klstring_compare(klvalue_getobj(b, KlString*), klvalue_getobj(c, KlString*));
     klvalue_setbool(a, res < 0);
@@ -574,7 +574,7 @@ static KlException klexec_dolt(KlState* state, KlValue* a, KlValue* b, KlValue* 
   return klexec_dobinopmethod(state, a, b, c, state->common->string.lt);
 }
 
-static KlException klexec_dole(KlState* state, KlValue* a, KlValue* b, KlValue* c) {
+static KlException klexec_dole(KlState* state, KlValue* a, const KlValue* b, const KlValue* c) {
   if (klvalue_checktype(b, KL_STRING) && klvalue_checktype(c, KL_STRING)) {
     int res = klstring_compare(klvalue_getobj(b, KlString*), klvalue_getobj(c, KlString*));
     klvalue_setbool(a, res <= 0);
@@ -583,7 +583,7 @@ static KlException klexec_dole(KlState* state, KlValue* a, KlValue* b, KlValue* 
   return klexec_dobinopmethod(state, a, b, c, state->common->string.le);
 }
 
-static KlException klexec_dogt(KlState* state, KlValue* a, KlValue* b, KlValue* c) {
+static KlException klexec_dogt(KlState* state, KlValue* a, const KlValue* b, const KlValue* c) {
   if (klvalue_checktype(b, KL_STRING) && klvalue_checktype(c, KL_STRING)) {
     int res = klstring_compare(klvalue_getobj(b, KlString*), klvalue_getobj(c, KlString*));
     klvalue_setbool(a, res > 0);
@@ -592,7 +592,7 @@ static KlException klexec_dogt(KlState* state, KlValue* a, KlValue* b, KlValue* 
   return klexec_dobinopmethod(state, a, b, c, state->common->string.gt);
 }
 
-static KlException klexec_doge(KlState* state, KlValue* a, KlValue* b, KlValue* c) {
+static KlException klexec_doge(KlState* state, KlValue* a, const KlValue* b, const KlValue* c) {
   if (klvalue_checktype(b, KL_STRING) && klvalue_checktype(c, KL_STRING)) {
     int res = klstring_compare(klvalue_getobj(b, KlString*), klvalue_getobj(c, KlString*));
     klvalue_setbool(a, res >= 0);
@@ -602,7 +602,7 @@ static KlException klexec_doge(KlState* state, KlValue* a, KlValue* b, KlValue* 
 }
 
 
-static KlString* klexec_doconcat(KlState* state, KlValue* b, KlValue* c) {
+static KlString* klexec_doconcat(KlState* state, const KlValue* b, const KlValue* c) {
 #define KLEXEC_STRING_BUFSIZE (100)
   char buf1[KLEXEC_STRING_BUFSIZE];
   char buf2[KLEXEC_STRING_BUFSIZE];
@@ -662,7 +662,7 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
   return KL_E_NONE;
 }
 
-static void klexec_getfieldgeneric(KlState* state, KlValue* dotable, KlValue* key, KlValue* val) {
+static void klexec_getfieldgeneric(KlState* state, const KlValue* dotable, const KlValue* key, KlValue* val) {
   /* this is ensured by klang compiler */
   kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
 
@@ -681,7 +681,7 @@ static void klexec_getfieldgeneric(KlState* state, KlValue* dotable, KlValue* ke
   }
 }
 
-static KlException klexec_setfieldgeneric(KlState* state, KlValue* dotable, KlValue* key, KlValue* val) {
+static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable, const KlValue* key, KlValue* val) {
   /* this is ensured by klang compiler */
   kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
 
@@ -1093,8 +1093,8 @@ KlException klexec_execute(KlState* state) {
 
   KlCallInfo* callinfo = state->callinfo;
   KlKClosure* closure = klcast(KlKClosure*, callinfo->callable.clo);
-  KlInstruction* pc = callinfo->savedpc;
-  KlValue* constants = klkfunc_constants(klcast(KlKClosure*, callinfo->callable.clo)->kfunc);
+  const KlInstruction* pc = callinfo->savedpc;
+  const KlValue* constants = klkfunc_constants(klcast(KlKClosure*, callinfo->callable.clo)->kfunc);
   KlValue* stkbase = callinfo->base;
   kl_assert(klcast(size_t, klexec_savestack(state, callinfo->top)) <= klstack_capacity(klstate_stack(state)), "stack size not enough");
 
@@ -1243,42 +1243,42 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_ADDC: {
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         KlValue* b = stkbase + KLINST_ABX_GETB(inst);
-        KlValue* c = constants + KLINST_ABX_GETX(inst);
+        const KlValue* c = constants + KLINST_ABX_GETX(inst);
         klexec_binop(add, a, b, c);
         break;
       }
       case KLOPCODE_SUBC: {
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         KlValue* b = stkbase + KLINST_ABX_GETB(inst);
-        KlValue* c = constants + KLINST_ABX_GETX(inst);
+        const KlValue* c = constants + KLINST_ABX_GETX(inst);
         klexec_binop(sub, a, b, c);
         break;
       }
       case KLOPCODE_MULC: {
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         KlValue* b = stkbase + KLINST_ABX_GETB(inst);
-        KlValue* c = constants + KLINST_ABX_GETX(inst);
+        const KlValue* c = constants + KLINST_ABX_GETX(inst);
         klexec_binop(mul, a, b, c);
         break;
       }
       case KLOPCODE_DIVC: {
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         KlValue* b = stkbase + KLINST_ABX_GETB(inst);
-        KlValue* c = constants + KLINST_ABX_GETX(inst);
+        const KlValue* c = constants + KLINST_ABX_GETX(inst);
         klexec_bindiv(div, a, b, c);
         break;
       }
       case KLOPCODE_MODC: {
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         KlValue* b = stkbase + KLINST_ABX_GETB(inst);
-        KlValue* c = constants + KLINST_ABX_GETX(inst);
+        const KlValue* c = constants + KLINST_ABX_GETX(inst);
         klexec_binmod(mod, a, b, c);
         break;
       }
       case KLOPCODE_IDIVC: {
         KlValue* a = stkbase + KLINST_ABC_GETA(inst);
         KlValue* b = stkbase + KLINST_ABC_GETB(inst);
-        KlValue* c = constants + KLINST_ABC_GETC(inst);
+        const KlValue* c = constants + KLINST_ABC_GETC(inst);
         klexec_binidiv(idiv, a, b, c);
         break;
       }
@@ -1473,7 +1473,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_LOADC: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
-        KlValue* c = constants + KLINST_AX_GETX(inst);
+        const KlValue* c = constants + KLINST_AX_GETX(inst);
         klvalue_setvalue(a, c);
         break;
       }
@@ -1760,7 +1760,7 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_GETFIELDC: {
         KlValue* val = stkbase + KLINST_ABX_GETA(inst);
         KlValue* dotable = stkbase + KLINST_ABX_GETB(inst);
-        KlValue* key = constants + KLINST_ABX_GETX(inst);
+        const KlValue* key = constants + KLINST_ABX_GETX(inst);
         klexec_getfieldgeneric(state, dotable, key, val);
         break;
       }
@@ -1778,7 +1778,7 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_SETFIELDC: {
         KlValue* val = stkbase + KLINST_ABX_GETA(inst);
         KlValue* dotable = stkbase + KLINST_ABX_GETB(inst);
-        KlValue* key = constants + KLINST_ABX_GETX(inst);
+        const KlValue* key = constants + KLINST_ABX_GETX(inst);
         KlException exception = klexec_setfieldgeneric(state, dotable, key, val);
         if (kl_unlikely(exception)) {
           klexec_savepc(callinfo, pc);
@@ -1795,7 +1795,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_REFGETFIELDC: {
         KlValue* val = stkbase + KLINST_AXY_GETA(inst);
-        KlValue* key = constants + KLINST_AXY_GETX(inst);
+        const KlValue* key = constants + KLINST_AXY_GETX(inst);
         KlValue* dotable = klref_getval(klkclosure_getref(closure, KLINST_AXY_GETY(inst)));
         klexec_getfieldgeneric(state, dotable, key, val);
         break;
@@ -1813,7 +1813,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_REFSETFIELDC: {
         KlValue* val = stkbase + KLINST_AXY_GETA(inst);
-        KlValue* key = constants + KLINST_AXY_GETX(inst);
+        const KlValue* key = constants + KLINST_AXY_GETX(inst);
         KlValue* dotable = klref_getval(klkclosure_getref(closure, KLINST_AXY_GETY(inst)));
         KlException exception = klexec_setfieldgeneric(state, dotable, key, val);
         if (kl_unlikely(exception)) {
@@ -1824,7 +1824,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_NEWLOCAL: {
         KlValue* classval = stkbase + KLINST_AX_GETA(inst);
-        KlValue* fieldname = constants + KLINST_AX_GETX(inst);
+        const KlValue* fieldname = constants + KLINST_AX_GETX(inst);
         kl_assert(klvalue_checktype(classval, KL_CLASS), "NEWLOCAL should applied to a class");
         kl_assert(klvalue_checktype(fieldname, KL_STRING), "expected string to index field");
 
@@ -1840,7 +1840,7 @@ KlException klexec_execute(KlState* state) {
       case KLOPCODE_NEWMETHODR: {
         KlValue* obj;
         KlValue* value;
-        KlValue* fieldname;
+        const KlValue* fieldname;
         if (opcode == KLOPCODE_NEWMETHODR) {
           obj = stkbase + KLINST_ABC_GETA(inst);
           value = stkbase + KLINST_ABC_GETB(inst);
@@ -1916,7 +1916,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_HASFIELD: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
-        KlValue* field = constants + KLINST_AX_GETX(inst);
+        const KlValue* field = constants + KLINST_AX_GETX(inst);
         kl_assert(klvalue_checktype(field, KL_STRING), "");
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction extra = *pc++;
@@ -2005,7 +2005,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_EQC: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
-        KlValue* b = constants + KLINST_AX_GETX(inst);
+        const KlValue* b = constants + KLINST_AX_GETX(inst);
         kl_assert(klvalue_canrawequal(b), "something wrong in EQC");
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
@@ -2016,7 +2016,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_NEC: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
-        KlValue* b = constants + KLINST_AX_GETX(inst);
+        const KlValue* b = constants + KLINST_AX_GETX(inst);
         kl_assert(klvalue_canrawequal(b), "something wrong in NEC");
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
@@ -2027,7 +2027,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_LTC: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
-        KlValue* b = constants + KLINST_AX_GETX(inst);
+        const KlValue* b = constants + KLINST_AX_GETX(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         bool cond = KLINST_XI_GETX(condjmp);
@@ -2037,7 +2037,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_GTC: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
-        KlValue* b = constants + KLINST_AX_GETX(inst);
+        const KlValue* b = constants + KLINST_AX_GETX(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         bool cond = KLINST_XI_GETX(condjmp);
@@ -2047,7 +2047,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_LEC: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
-        KlValue* b = constants + KLINST_AX_GETX(inst);
+        const KlValue* b = constants + KLINST_AX_GETX(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         bool cond = KLINST_XI_GETX(condjmp);
@@ -2057,7 +2057,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_GEC: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
-        KlValue* b = constants + KLINST_AX_GETX(inst);
+        const KlValue* b = constants + KLINST_AX_GETX(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
         KlInstruction condjmp = *pc++;
         bool cond = KLINST_XI_GETX(condjmp);
@@ -2127,7 +2127,7 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_MATCH: {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
-        KlValue* b = constants + KLINST_AX_GETX(inst);
+        const KlValue* b = constants + KLINST_AX_GETX(inst);
         bool matched = klvalue_sametype(a, b)   ? klvalue_sameinstance(a, b) :
                        klvalue_bothnumber(a, b) ? klvalue_getnumber(a) == klvalue_getnumber(b) :
                                                   false;

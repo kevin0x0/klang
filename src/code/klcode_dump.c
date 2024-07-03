@@ -44,22 +44,22 @@ struct tagKlCodeDumpState {
 };
 
 kl_noreturn static void klcode_dump_failure(KlCodeDumpState* state);
-static void klcode_dump_code(KlCodeDumpState* state, KlCode* code);
-static void klcode_dumpobj(KlCodeDumpState* state, void* obj, size_t size);
+static void klcode_dump_code(KlCodeDumpState* state, const KlCode* code);
+static void klcode_dumpobj(KlCodeDumpState* state, const void* obj, size_t size);
 static void klcode_dump_globalheader(KlCodeDumpState* state);
-static void klcode_dump_codeheader(KlCodeDumpState* state, KlCodeHeader* header);
-static void klcode_dump_refinfo(KlCodeDumpState* state, KlCRefInfo* refinfo, size_t nref);
+static void klcode_dump_codeheader(KlCodeDumpState* state, const KlCodeHeader* header);
+static void klcode_dump_refinfo(KlCodeDumpState* state, const KlCRefInfo* refinfo, size_t nref);
 static void klcode_dumpinteger(KlCodeDumpState* state, KlCInt val);
 static void klcode_dumpfloat(KlCodeDumpState* state, KlCFloat val);
 static void klcode_dumpbool(KlCodeDumpState* state, KlCBool val);
 static void klcode_dumpnil(KlCodeDumpState* state);
-static void klcode_dumpstring(KlCodeDumpState* state, KlStrTbl* strtbl, KlStrDesc str);
-static void klcode_dump_constants(KlCodeDumpState* state, KlStrTbl* strtbl, KlConstant* constants, size_t nconst);
-static void klcode_dump_instructions(KlCodeDumpState* state, KlInstruction* inst, size_t codelen);
+static void klcode_dumpstring(KlCodeDumpState* state, const KlStrTbl* strtbl, KlStrDesc str);
+static void klcode_dump_constants(KlCodeDumpState* state, const KlStrTbl* strtbl, const KlConstant* constants, size_t nconst);
+static void klcode_dump_instructions(KlCodeDumpState* state, const KlInstruction* inst, size_t codelen);
 static void klcode_dump_posinfo(KlCodeDumpState* state, KlFilePosition* posinfo, size_t npos);
 
 
-bool klcode_dump(KlCode* code, Ko* file) {
+bool klcode_dump(const KlCode* code, Ko* file) {
   KlCodeDumpState dumpstate = {
     .file = file,
   };
@@ -73,7 +73,7 @@ bool klcode_dump(KlCode* code, Ko* file) {
   }
 }
 
-static void klcode_dumpobj(KlCodeDumpState* state, void* obj, size_t size) {
+static void klcode_dumpobj(KlCodeDumpState* state, const void* obj, size_t size) {
   if (kl_unlikely(ko_write(state->file, obj, size) != size))
     klcode_dump_failure(state);
 }
@@ -101,12 +101,12 @@ static void klcode_dump_globalheader(KlCodeDumpState* state) {
     klcode_dump_failure(state);
 }
 
-static void klcode_dump_codeheader(KlCodeDumpState* state, KlCodeHeader* header) {
+static void klcode_dump_codeheader(KlCodeDumpState* state, const KlCodeHeader* header) {
   if (kl_unlikely(sizeof (KlCodeHeader) != ko_write(state->file, header, sizeof (KlCodeHeader))))
     klcode_dump_failure(state);
 }
 
-static void klcode_dump_code(KlCodeDumpState* state, KlCode* code) {
+static void klcode_dump_code(KlCodeDumpState* state, const KlCode* code) {
   KlCodeHeader header = {
     .nref = code->nref,
     .nconst = code->nconst,
@@ -127,7 +127,7 @@ static void klcode_dump_code(KlCodeDumpState* state, KlCode* code) {
     klcode_dump_code(state, code->nestedfunc[i]);
 }
 
-static void klcode_dump_refinfo(KlCodeDumpState* state, KlCRefInfo* refinfo, size_t nref) {
+static void klcode_dump_refinfo(KlCodeDumpState* state, const KlCRefInfo* refinfo, size_t nref) {
   size_t writesize = ko_write(state->file, refinfo, nref * sizeof (KlCRefInfo));
   if (kl_unlikely(writesize != nref * sizeof (KlCRefInfo)))
     klcode_dump_failure(state);
@@ -152,14 +152,14 @@ static void klcode_dumpnil(KlCodeDumpState* state) {
   ko_putc(state->file, KLC_NIL);    /* type tag */
 }
 
-static void klcode_dumpstring(KlCodeDumpState* state, KlStrTbl* strtbl, KlStrDesc str) {
+static void klcode_dumpstring(KlCodeDumpState* state, const KlStrTbl* strtbl, KlStrDesc str) {
   Ko* file = state->file;
   ko_putc(file, KLC_STRING); /* type tag */
   ko_write(file, &(unsigned) { str.length }, sizeof (unsigned));
   ko_write(file, klstrtbl_getstring(strtbl, str.id), str.length * sizeof (char));
 }
 
-static void klcode_dump_constants(KlCodeDumpState* state, KlStrTbl* strtbl, KlConstant* constants, size_t nconst) {
+static void klcode_dump_constants(KlCodeDumpState* state, const KlStrTbl* strtbl, const KlConstant* constants, size_t nconst) {
   for (size_t i = 0; i < nconst; ++i) {
     switch (constants[i].type) {
       case KLC_INT: {
@@ -190,7 +190,7 @@ static void klcode_dump_constants(KlCodeDumpState* state, KlStrTbl* strtbl, KlCo
   }
 }
 
-static void klcode_dump_instructions(KlCodeDumpState* state, KlInstruction* inst, size_t codelen) {
+static void klcode_dump_instructions(KlCodeDumpState* state, const KlInstruction* inst, size_t codelen) {
   size_t writesize = ko_write(state->file, inst, codelen * sizeof (KlInstruction));
   if (kl_unlikely(writesize != codelen * sizeof (KlInstruction)))
     klcode_dump_failure(state);

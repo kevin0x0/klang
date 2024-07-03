@@ -85,39 +85,39 @@ typedef struct tagKlValue {
 const char* klvalue_typename(KlType type);
 
 
-static inline KlInt klvalue_getnil(KlValue* val) {
+static inline KlInt klvalue_getnil(const KlValue* val) {
   return val->value.nilval;
 }
 
-static inline KlInt klvalue_getint(KlValue* val) {
+static inline KlInt klvalue_getint(const KlValue* val) {
   return val->value.intval;
 }
 
-static inline KlUInt klvalue_getuint(KlValue* val) {
+static inline KlUInt klvalue_getuint(const KlValue* val) {
   return val->value.uintval;
 }
 
-static inline KlFloat klvalue_getfloat(KlValue* val) {
+static inline KlFloat klvalue_getfloat(const KlValue* val) {
   return val->value.floatval;
 }
 
-static inline KlFloat klvalue_getnumber(KlValue* val) {
+static inline KlFloat klvalue_getnumber(const KlValue* val) {
   return klvalue_checktype(val, KL_INT) ? klcast(KlFloat, val->value.intval) : val->value.floatval;
 }
 
-static inline KlBool klvalue_getbool(KlValue* val) {
+static inline KlBool klvalue_getbool(const KlValue* val) {
   return val->value.boolval;
 }
 
-static inline KlCFunction* klvalue_getcfunc(KlValue* val) {
+static inline KlCFunction* klvalue_getcfunc(const KlValue* val) {
   return val->value.cfunc;
 }
 
-static inline KlGCObject* klvalue_getgcobj(KlValue* val) {
+static inline KlGCObject* klvalue_getgcobj(const KlValue* val) {
   return val->value.gcobj;
 }
 
-static inline void* klvalue_getuserdata(KlValue* val) {
+static inline void* klvalue_getuserdata(const KlValue* val) {
   return val->value.ud;
 }
 
@@ -161,11 +161,11 @@ static inline void klvalue_setnil(KlValue *val) {
   val->type = KL_NIL;
 }
 
-static inline void klvalue_setvalue(KlValue *val, KlValue *other) {
+static inline void klvalue_setvalue(KlValue *val, const KlValue *other) {
   *val = *other;
 }
 
-static inline KlUnsigned klvalue_gettag(KlValue* val) {
+static inline KlUnsigned klvalue_gettag(const KlValue* val) {
   return val->typewithtag.tag;
 }
 
@@ -174,7 +174,7 @@ static inline void klvalue_settag(KlValue* val, KlUnsigned tag) {
 }
 
 
-static inline bool klvalue_sameinstance(KlValue* val1, KlValue* val2) {
+static inline bool klvalue_sameinstance(const KlValue* val1, const KlValue* val2) {
   kl_assert(klvalue_sametype(val1, val2), "must call this function with two values with same type");
   switch (klvalue_gettype(val1)) {
     case KL_INT: {

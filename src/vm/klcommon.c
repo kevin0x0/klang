@@ -74,7 +74,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   return common;
 }
 
-KlGCObject* klcommon_propagate(KlCommon* common, KlGCObject* gclist) {
+KlGCObject* klcommon_propagate(const KlCommon* common, KlGCObject* gclist) {
   klmm_gcobj_mark(klmm_to_gcobj(common->string.len), gclist);
   klmm_gcobj_mark(klmm_to_gcobj(common->string.neg), gclist);
   klmm_gcobj_mark(klmm_to_gcobj(common->string.add), gclist);

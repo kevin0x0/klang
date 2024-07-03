@@ -35,38 +35,38 @@ KlString* klstrpool_new_string(KlStrPool* strpool, const char* str);
 KlString* klstrpool_new_string_buf(KlStrPool* strpool, const char* buf, size_t buflen);
 
 KlString* klstrpool_string_concat_cstyle(KlStrPool* strpool, const char* str1, const char* str2);
-KlString* klstrpool_string_concat(KlStrPool* strpool, KlString* str1, KlString* str2);
+KlString* klstrpool_string_concat(KlStrPool* strpool, const KlString* str1, const KlString* str2);
 
 
-static inline KlMM* klstrpool_getmm(KlStrPool* strpool) {
+static inline KlMM* klstrpool_getmm(const KlStrPool* strpool) {
   return strpool->klmm;
 }
 
-static inline size_t klstring_hash(KlString* klstr);
-static inline const char* klstring_content(KlString* klstr);
-static inline size_t klstring_size(KlString* klstr);
-static inline size_t klstring_length(KlString* klstr);
+static inline size_t klstring_hash(const KlString* klstr);
+static inline const char* klstring_content(const KlString* klstr);
+static inline size_t klstring_size(const KlString* klstr);
+static inline size_t klstring_length(const KlString* klstr);
 
-static inline int klstring_compare(KlString* str1, KlString* str2);
+static inline int klstring_compare(const KlString* str1, const KlString* str2);
 
 
-static inline size_t klstring_hash(KlString* klstr) {
+static inline size_t klstring_hash(const KlString* klstr) {
   return klstr->hash;
 }
 
-static inline const char* klstring_content(KlString* klstr) {
+static inline const char* klstring_content(const KlString* klstr) {
   return klstr->strhead;
 }
 
-static inline size_t klstring_size(KlString* klstr) {
+static inline size_t klstring_size(const KlString* klstr) {
   return sizeof (KlString) + 1 + klstring_length(klstr);
 }
 
-static inline size_t klstring_length(KlString* klstr) {
+static inline size_t klstring_length(const KlString* klstr) {
   return klstr->length;
 }
 
-static inline int klstring_compare(KlString* str1, KlString* str2) {
+static inline int klstring_compare(const KlString* str1, const KlString* str2) {
   return str1 == str2 ? 0 : strcmp(klstring_content(str1), klstring_content(str2));
 }
 #endif

@@ -17,20 +17,20 @@ typedef struct tagKlKFuncFilePosition {
 typedef struct tagKlKFunction KlKFunction;
 struct tagKlKFunction {
   KL_DERIVE_FROM(KlGCObject, _gcbase_);
-  KlInstruction* code;      /* code executed by klang virtual machine */
-  KlValue* constants;       /* constants table */
-  KlRefInfo* refinfo;       /* reference information */
-  KlKFunction** subfunc;    /* sub-functions, functions defined in this function */
+  KlInstruction* code;        /* code executed by klang virtual machine */
+  KlValue* constants;         /* constants table */
+  KlRefInfo* refinfo;         /* reference information */
+  KlKFunction** subfunc;      /* sub-functions, functions defined in this function */
   struct {
     KlKFuncFilePosition* posinfo;
     KlString* srcfile;
   } debuginfo;
-  unsigned codelen;         /* code length */
-  unsigned short nconst;    /* number of constants */
-  unsigned short nref;      /* number of references */
-  unsigned short nsubfunc;  /* number of sub-functions */
-  KlUByte framesize;        /* stack size needed by this klang function. (including parameters) */
-  KlUByte nparam;           /* number of parameters (including 'this' if it is method) */
+  unsigned codelen;           /* code length */
+  unsigned short nconst;      /* number of constants */
+  unsigned short nref;        /* number of references */
+  unsigned short nsubfunc;    /* number of sub-functions */
+  KlUByte framesize;          /* stack size needed by this klang function. (including parameters) */
+  KlUByte nparam;             /* number of parameters (including 'this' if it is method) */
 };
 
 /* allocate memory and initialize some fields, but do not initialize the constants and refinfo.
@@ -43,30 +43,40 @@ void klkfunc_initdone(KlMM* klmm, KlKFunction* kfunc);
 /* init failed, clean resources */
 void klkfunc_initabort(KlMM* klmm, KlKFunction* kfunc);
 
-static inline KlInstruction* klkfunc_insts(KlKFunction* kfunc);
-static inline KlValue* klkfunc_constants(KlKFunction* kfunc);
-static inline KlRefInfo* klkfunc_refinfo(KlKFunction* kfunc);
+static inline KlInstruction* klkfunc_setinsts(KlKFunction* kfunc);
+static inline KlValue* klkfunc_setconstants(KlKFunction* kfunc);
+static inline KlRefInfo* klkfunc_setrefinfo(KlKFunction* kfunc);
+static inline const KlValue* klkfunc_constants(const KlKFunction* kfunc);
+static inline const KlRefInfo* klkfunc_refinfo(const KlKFunction* kfunc);
 static inline KlKFunction** klkfunc_subfunc(KlKFunction* kfunc);
 static inline KlKFuncFilePosition* klkfunc_posinfo(KlKFunction* kfunc);
-static inline KlString* klkfunc_srcfile(KlKFunction* kfunc);
-static inline KlInstruction* klkfunc_entrypoint(KlKFunction* kfunc);
-static inline size_t klkfunc_codelen(KlKFunction* kfunc);
-static inline size_t klkfunc_framesize(KlKFunction* kfunc);
-static inline size_t klkfunc_nparam(KlKFunction* kfunc);
+static inline const KlString* klkfunc_srcfile(const KlKFunction* kfunc);
+static inline const KlInstruction* klkfunc_entrypoint(const KlKFunction* kfunc);
+static inline size_t klkfunc_codelen(const KlKFunction* kfunc);
+static inline size_t klkfunc_framesize(const KlKFunction* kfunc);
+static inline size_t klkfunc_nparam(const KlKFunction* kfunc);
 
 static inline void klkfunc_setsrcfile(KlKFunction* kfunc, KlString* srcfile);
 /* the 'posinfo' must be allocated by klmm */
 static inline void klkfunc_setposinfo(KlKFunction* kfunc, KlKFuncFilePosition* posinfo);
 
-static inline KlInstruction* klkfunc_insts(KlKFunction* kfunc) {
+static inline KlInstruction* klkfunc_setinsts(KlKFunction* kfunc) {
   return kfunc->code;
 }
 
-static inline KlValue* klkfunc_constants(KlKFunction* kfunc) {
+static inline KlValue* klkfunc_setconstants(KlKFunction* kfunc) {
   return kfunc->constants;
 }
 
-static inline KlRefInfo* klkfunc_refinfo(KlKFunction* kfunc) {
+static inline const KlValue* klkfunc_constants(const KlKFunction* kfunc) {
+  return kfunc->constants;
+}
+
+static inline KlRefInfo* klkfunc_setrefinfo(KlKFunction* kfunc) {
+  return kfunc->refinfo;
+}
+
+static inline const KlRefInfo* klkfunc_refinfo(const KlKFunction* kfunc) {
   return kfunc->refinfo;
 }
 
@@ -78,23 +88,23 @@ static inline KlKFuncFilePosition* klkfunc_posinfo(KlKFunction* kfunc) {
   return kfunc->debuginfo.posinfo;
 }
 
-static inline KlString* klkfunc_srcfile(KlKFunction* kfunc) {
-  return   kfunc->debuginfo.srcfile;
+static inline const KlString* klkfunc_srcfile(const KlKFunction* kfunc) {
+  return kfunc->debuginfo.srcfile;
 }
 
-static inline KlInstruction* klkfunc_entrypoint(KlKFunction* kfunc) {
+static inline const KlInstruction* klkfunc_entrypoint(const KlKFunction* kfunc) {
   return kfunc->code;
 }
 
-static inline size_t klkfunc_codelen(KlKFunction* kfunc) {
+static inline size_t klkfunc_codelen(const KlKFunction* kfunc) {
   return kfunc->codelen;
 }
 
-static inline size_t klkfunc_framesize(KlKFunction* kfunc) {
+static inline size_t klkfunc_framesize(const KlKFunction* kfunc) {
   return kfunc->framesize;
 }
 
-static inline size_t klkfunc_nparam(KlKFunction* kfunc) {
+static inline size_t klkfunc_nparam(const KlKFunction* kfunc) {
   return kfunc->nparam;
 }
 

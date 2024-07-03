@@ -2,7 +2,7 @@
 #include "deps/k/include/array/karray.h"
 #include <stdlib.h>
 
-static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
+static inline size_t klcontbl_hashing(const KlStrTbl* strtbl, const KlConstant* con) {
   switch (con->type) {
     case KLC_INT: {
       return (con->intval << 8) + con->intval;
@@ -38,7 +38,7 @@ static inline size_t klcontbl_hashing(KlStrTbl* strtbl, KlConstant* con) {
     }
   }
 }
-static inline bool klcontbl_constant_equal(KlStrTbl* strtbl, KlConstant* con1, KlConstant* con2) {
+static inline bool klcontbl_constant_equal(const KlStrTbl* strtbl, const KlConstant* con1, const KlConstant* con2) {
   if (con1->type != con2->type) return false;
   switch (con1->type) {
     case KLC_INT: {
@@ -176,7 +176,7 @@ void klcontbl_delete(KlConTbl* contbl) {
   free(contbl);
 }
 
-void klcontbl_setconstants(KlConTbl* contbl, KlConstant* constants) {
+void klcontbl_setconstants(const KlConTbl* contbl, KlConstant* constants) {
   for (size_t i = 0; i < karray_size(&contbl->entries); ++i) {
     KlConEntry* conent = (KlConEntry*)karray_access(&contbl->entries, i);
     constants[i] = conent->con;
@@ -205,7 +205,7 @@ KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
   return newconentry;
 }
 
-KlConEntry* klcontbl_search(KlConTbl* contbl, KlConstant* constant) {
+KlConEntry* klcontbl_search(const KlConTbl* contbl, const KlConstant* constant) {
   size_t hash = klcontbl_hashing(contbl->strtbl, constant);
   size_t index = (contbl->capacity - 1) & hash;
   KlConEntry* conentry = contbl->array[index];

@@ -4,8 +4,8 @@
 #include <string.h>
 
 
-static KlGCObject* klkclosure_propagate(KlKClosure* kclo, KlMM* klmm, KlGCObject* gclist);
-static KlGCObject* klcclosure_propagate(KlCClosure* cclo, KlMM* klmm, KlGCObject* gclist);
+static KlGCObject* klkclosure_propagate(const KlKClosure* kclo, KlMM* klmm, KlGCObject* gclist);
+static KlGCObject* klcclosure_propagate(const KlCClosure* cclo, KlMM* klmm, KlGCObject* gclist);
 static void klkclosure_delete(KlKClosure* kclo, KlMM* klmm);
 static void klcclosure_delete(KlCClosure* cclo, KlMM* klmm);
 
@@ -13,15 +13,15 @@ static const KlGCVirtualFunc klkclo_gcvfunc = { .destructor = (KlGCDestructor)kl
 static const KlGCVirtualFunc klcclo_gcvfunc = { .destructor = (KlGCDestructor)klcclosure_delete, .propagate = (KlGCProp)klcclosure_propagate, .after = NULL };
 
 
-KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, KlRef** openreflist, KlRef** refs) {
+KlKClosure* klkclosure_create(KlMM* klmm, KlKFunction* kfunc, KlValue* stkbase, KlRef** openreflist, KlRef* const* refs) {
   KlKClosure* kclo = (KlKClosure*)klmm_alloc(klmm, sizeof (KlKClosure) + sizeof (KlRef*) * kfunc->nref);
   if (kl_unlikely(!kclo)) return NULL;
   kclo->kfunc = kfunc;
   unsigned short nref = kfunc->nref;
   kclo->nref = nref;
-  KlRefInfo* refinfo = kfunc->refinfo;
+  const KlRefInfo* refinfo = kfunc->refinfo;
   KlRef** ref = kclo->refs;
-  KlRefInfo* end = refinfo + nref;
+  const KlRefInfo* end = refinfo + nref;
   for (; refinfo != end; ++refinfo, ++ref) {
     if (!refinfo->on_stack) {       /* not on the stack */
       *ref = refs[refinfo->index];  /* in parent closure */
@@ -51,7 +51,7 @@ static void klkclosure_delete(KlKClosure* kclo, KlMM* klmm) {
   klmm_free(klmm, kclo, sizeof (KlKClosure) + sizeof (KlRef*) * kclo->nref);
 }
 
-static KlGCObject* klkclosure_propagate(KlKClosure* kclo, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* klkclosure_propagate(const KlKClosure* kclo, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
   klmm_gcobj_mark(klmm_to_gcobj(kclo->kfunc), gclist);
   for (size_t i = 0; i < kclo->nref; ++i) {
@@ -92,7 +92,7 @@ static void klcclosure_delete(KlCClosure* cclo, KlMM* klmm) {
   klmm_free(klmm, cclo, sizeof (KlKClosure) + sizeof (KlRef*) * cclo->nref);
 }
 
-static KlGCObject* klcclosure_propagate(KlCClosure* cclo, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* klcclosure_propagate(const KlCClosure* cclo, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
   for (size_t i = 0; i < cclo->nref; ++i) {
     if (klref_closed(cclo->refs[i]))

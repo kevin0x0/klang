@@ -15,16 +15,15 @@
 #define klexec_satisfy(val, cond)           ((klvalue_checktype((val), KL_BOOL) && klvalue_getbool((val)) == (cond)) || (!klvalue_checktype((val), KL_BOOL) && klvalue_checktype((val), KL_NIL) != (cond)))
 
 
-typedef KlException (*KlCallPrepCallBack)(KlState* state, KlValue* callable, size_t narg);
+typedef KlException (*KlCallPrepCallBack)(KlState* state, const KlValue* callable, size_t narg);
 
 KlException klexec_execute(KlState* state);
-KlException klexec_call(KlState* state, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
-KlValue* klexec_getfield(KlState* state, KlValue* object, KlString* field);
-const char* klexec_typename(KlState* state, KlValue* val);
-KlException klexec_tailcall(KlState* state, KlValue* callable, size_t narg);
+KlException klexec_call(KlState* state, const KlValue* callable, size_t narg, size_t nret, KlValue* respos);
+const char* klexec_typename(const KlState* state, const KlValue* val);
+KlException klexec_tailcall(KlState* state, const KlValue* callable, size_t narg);
 
 static inline void klexec_pop_callinfo(KlState* state);
-static inline KlCallInfo* klexec_newed_callinfo(KlState* state);
+static inline KlCallInfo* klexec_newed_callinfo(const KlState* state);
 static inline void klexec_setnils(KlValue* vals, size_t nnil);
 
 
@@ -36,7 +35,7 @@ static inline void klexec_push_callinfo(KlState* state) {
   state->callinfo = state->callinfo->next;
 }
 
-static inline KlCallInfo* klexec_newed_callinfo(KlState* state) {
+static inline KlCallInfo* klexec_newed_callinfo(const KlState* state) {
   return state->callinfo->next;
 }
 

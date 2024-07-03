@@ -23,8 +23,8 @@ static void kllib_tb_printKframe_nosrcfile(KlFmtConfig* fmt, FILE* err, long beg
 static void kllib_tb_printKframe_openfilefailure(KlFmtConfig* fmt, FILE* err, const char* inputname, long begin, long end);
 static void kllib_tb_printKframe(KlFmtConfig* fmt, FILE* err, FILE* input, const char* inputname, long begin, long end);
 
-static void kllib_tb_printframe(KlFmtConfig* fmt, FILE* err, KlCallInfo* callinfo);
-static void kllib_tb_dotraceback(KlFmtConfig* fmt, FILE* err, KlCallInfo* from, KlCallInfo* end);
+static void kllib_tb_printframe(KlFmtConfig* fmt, FILE* err, const KlCallInfo* callinfo);
+static void kllib_tb_dotraceback(KlFmtConfig* fmt, FILE* err, const KlCallInfo* from, const KlCallInfo* end);
 static KlException kllib_tb_main(KlState* state);
 
 KlException kllib_init(KlState* state) {
@@ -60,7 +60,7 @@ static KlException kllib_tb_main(KlState* state) {
   return klapi_return(state, 0);
 }
 
-static void kllib_tb_dotraceback(KlFmtConfig* fmt, FILE* err, KlCallInfo* from, KlCallInfo* end) {
+static void kllib_tb_dotraceback(KlFmtConfig* fmt, FILE* err, const KlCallInfo* from, const KlCallInfo* end) {
   unsigned count = 0;
   while (from != end && count++ < fmt->maxframe) {
     kllib_tb_printframe(fmt, err, from);
@@ -71,14 +71,14 @@ static void kllib_tb_dotraceback(KlFmtConfig* fmt, FILE* err, KlCallInfo* from, 
     fprintf(err, "%stoo many frames...\n", fmt->promptmsg);
 }
 
-static void kllib_tb_printframe(KlFmtConfig* fmt, FILE* err, KlCallInfo* callinfo) {
+static void kllib_tb_printframe(KlFmtConfig* fmt, FILE* err, const KlCallInfo* callinfo) {
   if (!(callinfo->status & KLSTATE_CI_STATUS_KCLO)) {
     kllib_tb_printCframe(fmt, err);
     return;
   }
   KlKFunction* kfunc = klcast(KlKClosure*, callinfo->callable.clo)->kfunc;
   KlKFuncFilePosition* posinfo = klkfunc_posinfo(kfunc);
-  KlString* srcfile = klkfunc_srcfile(kfunc);
+  const KlString* srcfile = klkfunc_srcfile(kfunc);
   if (!posinfo && !srcfile) {
     kllib_tb_printKframe_noany(fmt, err);
     return;
