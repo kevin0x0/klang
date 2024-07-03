@@ -16,7 +16,7 @@ struct tagKlString {
   KlUnsigned length;
   size_t hash;
   KlString* next;
-  char strhead[];
+  char content[];
 };
 
 struct tagKlStrPool {
@@ -55,7 +55,7 @@ static inline size_t klstring_hash(const KlString* klstr) {
 }
 
 static inline const char* klstring_content(const KlString* klstr) {
-  return klstr->strhead;
+  return klstr->content;
 }
 
 static inline size_t klstring_size(const KlString* klstr) {

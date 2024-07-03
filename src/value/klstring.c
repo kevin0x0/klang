@@ -23,7 +23,7 @@ static KlString* klstring_create(KlMM* klmm, const char* str) {
   KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len + 1);
   if (kl_unlikely(!klstr)) return NULL;
 
-  memcpy(klstr->strhead, str, len + 1);
+  memcpy(klstr->content, str, len + 1);
   klstr->length = len;
   return klstr;
 }
@@ -33,8 +33,8 @@ static KlString* klstring_create_buf(KlMM* klmm, const char* buf, size_t buflen)
   KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + buflen + 1);
   if (kl_unlikely(!klstr)) return NULL;
 
-  memcpy(klstr->strhead, buf, buflen);
-  klstr->strhead[buflen] = '\0';
+  memcpy(klstr->content, buf, buflen);
+  klstr->content[buflen] = '\0';
   klstr->length = buflen;
   return klstr;
 }
@@ -44,8 +44,8 @@ static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len
   KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len1 + len2 + 1);
   if (kl_unlikely(!klstr)) return NULL;
 
-  memcpy(klstr->strhead, str1, len1);
-  memcpy(klstr->strhead + len1, str2, len2 + 1);
+  memcpy(klstr->content, str1, len1);
+  memcpy(klstr->content + len1, str2, len2 + 1);
   klstr->length = len1 + len2;
   return klstr;
 }
@@ -140,7 +140,7 @@ static KlString* klstrpool_search_buf(KlStrPool* strpool, const char* buf, size_
   KlString* node = strpool->array[index];
   while (node) {
     if (hash == node->hash &&
-        strncmp(buf, node->strhead, buflen) == 0)
+        strncmp(buf, node->content, buflen) == 0)
       return node;
     node = node->next;
   }
@@ -153,7 +153,7 @@ static KlString* klstrpool_search(KlStrPool* strpool, const char* str, size_t ha
   KlString* node = strpool->array[index];
   while (node) {
     if (hash == node->hash &&
-        strcmp(str, node->strhead) == 0)
+        strcmp(str, node->content) == 0)
       return node;
     node = node->next;
   }
