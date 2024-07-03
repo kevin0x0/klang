@@ -13,6 +13,14 @@ static inline KlAstExprList* klparser_exprlist_mayempty(KlParser* parser, KlLex*
 KlAstExprList* klparser_finishexprlist(KlParser* parser, KlLex* lex, KlAst* expr);
 static inline KlAstExprList* klparser_exprlist(KlParser* parser, KlLex* lex);
 
+extern const bool klparser_isexprbegin[KLTK_NTOKEN];
+static inline bool klparser_exprbegin(KlLex* lex);
+
+
+static inline bool klparser_exprbegin(KlLex* lex) {
+  return klparser_isexprbegin[kllex_tokkind(lex)];
+}
+
 static inline KlAstExprList* klparser_exprlist(KlParser* parser, KlLex* lex) {
   KlAst* headexpr = klparser_expr(parser, lex);
   return headexpr == NULL ? NULL : klparser_finishexprlist(parser, lex, headexpr);

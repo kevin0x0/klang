@@ -409,3 +409,40 @@ static KlAstStmtReturn* klparser_stmtreturn(KlParser* parser, KlLex* lex) {
   klparser_oomifnull(stmtreturn);
   return stmtreturn;
 }
+
+const bool klparser_isstmtbegin[KLTK_NTOKEN] = {
+  [KLTK_ARROW] = true,
+  [KLTK_DARROW] = true,
+  [KLTK_VARARG] = true,
+  [KLTK_LEN] = true,
+  [KLTK_MINUS] = true,
+  [KLTK_ADD] = true,
+  [KLTK_NOT] = true,
+  [KLTK_NEW] = true,
+  [KLTK_INT] = true,
+  [KLTK_INTDOT] = true,
+  [KLTK_FLOAT] = true,
+  [KLTK_STRING] = true,
+  [KLTK_BOOLVAL] = true,
+  [KLTK_NIL] = true,
+  [KLTK_ID] = true,
+  [KLTK_LBRACKET] = true,
+  [KLTK_LBRACE] = true,
+  [KLTK_YIELD] = true,
+  [KLTK_ASYNC] = true,
+  [KLTK_CASE] = true,
+  [KLTK_INHERIT] = true,
+  [KLTK_LPAREN] = true,
+
+  [KLTK_LOCAL] = true,
+  [KLTK_LET] = true,
+  [KLTK_METHOD] = true,
+  [KLTK_IF] = true,
+  [KLTK_REPEAT] = true,
+  [KLTK_WHILE] = true,
+  [KLTK_MATCH] = true,
+  [KLTK_FOR] = true,
+  [KLTK_RETURN] = true,
+  [KLTK_BREAK] = true,
+  [KLTK_CONTINUE] = true,
+};

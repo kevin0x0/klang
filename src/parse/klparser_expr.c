@@ -938,3 +938,28 @@ static KlAst* klparser_exprbin(KlParser* parser, KlLex* lex, int prio) {
   return klast(left);
 }
 
+const bool klparser_isexprbegin[KLTK_NTOKEN] = {
+  [KLTK_ARROW] = true,
+  [KLTK_DARROW] = true,
+  [KLTK_VARARG] = true,
+  [KLTK_LEN] = true,
+  [KLTK_MINUS] = true,
+  [KLTK_ADD] = true,
+  [KLTK_NOT] = true,
+  [KLTK_NEW] = true,
+  [KLTK_INT] = true,
+  [KLTK_INTDOT] = true,
+  [KLTK_FLOAT] = true,
+  [KLTK_STRING] = true,
+  [KLTK_BOOLVAL] = true,
+  [KLTK_NIL] = true,
+  [KLTK_ID] = true,
+  [KLTK_LBRACKET] = true,
+  [KLTK_LBRACE] = true,
+  [KLTK_YIELD] = true,
+  [KLTK_ASYNC] = true,
+  [KLTK_CASE] = true,
+  [KLTK_INHERIT] = true,
+  [KLTK_LPAREN] = true,
+};
+
