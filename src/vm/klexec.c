@@ -2222,7 +2222,7 @@ KlException klexec_execute(KlState* state) {
         klvalue_setvalue(b + nwanted + 1, b);
         for (size_t i = 0; i < nwanted; ++i) {
           if (kl_likely(klvalue_canrawequal(key + i))) {
-            KlMapIter itr = klmap_search(map, key + i);
+            KlMapConstIter itr = klmap_search(map, key + i);
             itr ? klvalue_setvalue(a + i, &itr->value) : klvalue_setnil(a + i);
           } else {
             klvalue_setint(b + nwanted + 2, i); /* save current index for pmappost */
@@ -2283,14 +2283,16 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_PMOBJ:
       case KLOPCODE_PBOBJ: {
-        KlValue* obj = stkbase + KLINST_ABX_GETB(inst);
+        KlValue* objonstk = stkbase + KLINST_ABX_GETB(inst);
+        KlValue* field = objonstk + 1;
+        KlValue obj;
+        klvalue_setvalue(&obj, objonstk);
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         size_t nwanted = KLINST_ABX_GETX(inst);
-        KlValue* field = obj + 1;
         for (size_t i = 0; i < nwanted; ++i) {
           kl_assert(klvalue_checktype(field + i, KL_STRING), "");
           KlString* fieldname = klvalue_getobj(field + i, KlString*);
-          klvalue_setvalue(a + i, klexec_getfield(state, obj, fieldname));
+          klvalue_setvalue(a + i, klexec_getfield(state, &obj, fieldname));
         }
         break;
       }
