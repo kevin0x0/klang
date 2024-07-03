@@ -2,16 +2,15 @@
 local matrix {
   local a, b;
   local c, d;
-  method constructor = (this, a, b, c, d) => {
-    this.a, this.b, this.c, this.d = a, b, c, d;
-  };
-  method mul = (this, m) => {
-    this.a, this.b,
-    this.c, this.d = 
-    this.a * m.a + this.b * m.c, this.a * m.b + this.b * m.d,
-    this.c * m.a + this.d * m.c, this.c * m.b + this.d * m.d;
-  };
-  method copy = this -> new matrix(this.a, this.b, this.c, this.d);
+  method constructor = (self, a, b, c, d) =>
+    self.a, self.b, self.c, self.d = a, b, c, d;
+
+  method mul = (self, m) =>
+    self.a, self.b, self.c, self.d = 
+    self.a * m.a + self.b * m.c, self.a * m.b + self.b * m.d,
+    self.c * m.a + self.d * m.c, self.c * m.b + self.d * m.d;
+
+  method copy = self -> new matrix(self.a, self.b, self.c, self.d);
 };
 
 let one = new matrix(1, 0, 0, 1);
@@ -25,4 +24,4 @@ local fastpow(res, base, exp) -> res where repeat: {
 -- fibonacci
 local f n -> fastpow(one.copy(), new matrix(1, 1, 1, 0), n).c;
 
-print (f 36);
+print ("fibonacci(36) = " .. f 36);
