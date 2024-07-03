@@ -1,7 +1,0 @@
-let gcd = (a, b) -> a == 0 ? b : gcd(b % a, a);
-print(gcd(4, 5));
-
-if a <= 2: {
-  let c = max(a, b);
-  return c.power(a - b);
-}
