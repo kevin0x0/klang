@@ -1,4 +1,5 @@
 #include "include/klapi.h"
+#include "include/value/klcoroutine.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
 #include "deps/k/include/kio/ki.h"
@@ -397,11 +398,26 @@ static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
 
 static KlException kl_errhandler(KlState* state) {
   KlException exception = klapi_currexception(state);
-  if (exception == KL_E_USER || exception == KL_E_LINK) {
-    fprintf(stderr, "|| user defined exception and exception thrown across coroutine is currently not completely supported\n");
+  if (exception == KL_E_USER) {
+    fprintf(stderr, "|| user defined exception currently is not completely supported\n");
+    klapi_throw_internal(state, KL_E_NONE, "");
+    KlValue* traceback = klapi_getref(state, 0);
+    return klapi_tailcall(state, traceback, 0);
+  }
+
+  if (exception == KL_E_LINK) {
+    KlState* costate = klstate_exception_source(state);
+    klco_setstatus(&costate->coinfo, KLCO_RUNNING);
+    klco_allow_yield(&costate->coinfo, false);
+    KLAPI_MAYFAIL(klapi_scall(costate, &klvalue_obj(klstate_currci(state)->callable.clo, KL_CCLOSURE), 0, 0),
+                  klco_setstatus(&costate->coinfo, KLCO_DEAD));
+    klco_setstatus(&costate->coinfo, KLCO_DEAD);
+    fprintf(stderr, "::\n");
+    fprintf(stderr, "|| exception thrown across coroutine(see above). the coroutine is called from here:\n");
   } else {
     fprintf(stderr, "|| exception message: %s\n", klapi_exception_message(state));
   }
+
   klapi_throw_internal(state, KL_E_NONE, "");
   KlValue* traceback = klapi_getref(state, 0);
   return klapi_tailcall(state, traceback, 0);
