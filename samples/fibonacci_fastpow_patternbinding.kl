@@ -1,7 +1,7 @@
 local matrix {
   local a, b;
   local c, d;
-  method constructor = (self, a, b, c, d) =>
+  method init = (self, a, b, c, d) =>
     self.a, self.b, self.c, self.d = a, b, c, d;
 
   method mul = (self := { a = a, b = b, c = c, d = d },
