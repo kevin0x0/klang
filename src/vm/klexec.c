@@ -214,23 +214,22 @@ static KlException klexec_co_resume(KlState* costate, KlState* caller, size_t na
   kl_assert(klstack_size(klstate_stack(caller)) >= narg, "not enough number of argument");
   kl_assert(costate->coinfo.kclo != NULL, "no executable");
 
-  if (kl_unlikely(klstate_checkframe(costate, narg))) {
+  size_t nwanted = costate->coinfo.nwanted;
+  if (nwanted == KLEXEC_VARIABLE_RESULTS)
+    nwanted = narg;
+
+  if (kl_unlikely(klstate_checkframe(costate, nwanted))) {
     klco_setstatus(&costate->coinfo, KLCO_DEAD);
     return klstate_throw_link(caller, costate);
   }
 
   /* move arguments to execution environment of coroutine */
-  kl_assert(klstack_residual(klstate_stack(costate)) >= costate->coinfo.nwanted, "not enough number of argument");
   KlValue* argbase = klstate_getval(caller, -narg);
   KlValue* costktop = klstate_stktop(costate);
-  kl_assert(KLINST_VARRES == 255 && narg < KLINST_VARRES, "");
-  size_t nwanted = costate->coinfo.nwanted;
   size_t ncopy = narg < nwanted ? narg : nwanted;
   KlValue* argpos = argbase;
   while (ncopy--)
     klvalue_setvalue(costktop++, argpos++);
-  if (nwanted == KLINST_VARRES)
-    nwanted = narg;
   if (narg < nwanted)
     klexec_setnils(costktop, nwanted - narg);
   klstack_set_top(klstate_stack(costate), klstate_stktop(costate) + nwanted);
@@ -336,8 +335,9 @@ KlException klexec_tailcall(KlState* state, const KlValue* callable, size_t narg
     state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
     exception = klexec_execute(state);
   }
+  if (kl_unlikely(exception)) return exception;
   klexec_push_callinfo(state);
-  return exception;
+  return KL_E_NONE;
 }
 
 /* Prepare for calling a callable object (C function, C closure, klang closure).
@@ -1406,8 +1406,7 @@ KlException klexec_execute(KlState* state) {
         size_t nres = KLINST_AX_GETX(inst);
         if (nres == KLEXEC_VARIABLE_RESULTS)
           nres = klstate_stktop(state) - res;
-        kl_assert(KLEXEC_VARIABLE_RESULTS == 255, "");
-        size_t ncopy = nres < nret ? nres : nret;
+        size_t ncopy = nret == KLEXEC_VARIABLE_RESULTS ? nres : nres < nret ? nres : nret;
         KlValue* retpos = stkbase + callinfo->retoff;
         while (ncopy--) /* copy results to their position. */
           klvalue_setvalue(retpos++, res++);
