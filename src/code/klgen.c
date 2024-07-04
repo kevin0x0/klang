@@ -50,7 +50,7 @@ bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings) {
   newstring(pattern_neg, "pattern u-");
   newstring(pattern_concat, "pattern ..");
   newstring(itermethod, "<-");
-  newstring(constructor, "constructor");
+  newstring(init, "init");
   return true;
 #undef newstring
 }

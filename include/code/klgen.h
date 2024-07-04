@@ -26,7 +26,7 @@ struct tagKlGenJumpInfo {
 };
 
 typedef struct tagKlGUCommonString {
-  KlStrDesc constructor;
+  KlStrDesc init;
   KlStrDesc itermethod;
   KlStrDesc pattern_add;
   KlStrDesc pattern_sub;

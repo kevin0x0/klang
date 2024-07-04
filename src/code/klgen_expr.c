@@ -1051,7 +1051,7 @@ static void klgen_exprnew(KlGenUnit* gen, KlAstNew* newast, KlCStkId target) {
     KlCStkId stktop = klgen_stackalloc1(gen);
     klgen_emitmove(gen, stktop, target, 1, klgen_astposition(newast));
     size_t narg = klgen_passargs(gen, newast->args);
-    KlCIdx conidx = klgen_newstring(gen, gen->strings->constructor);
+    KlCIdx conidx = klgen_newstring(gen, gen->strings->init);
     klgen_emitmethod(gen, stktop, conidx, narg, 0, stktop, klgen_astposition(newast));
   }
   klgen_stackfree(gen, oristktop == target ? target + 1 : oristktop);
