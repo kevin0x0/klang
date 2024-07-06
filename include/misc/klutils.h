@@ -20,7 +20,7 @@
 #define kl_unused(param)                ((void)(param))
 
 
-#define KL_DERIVE_FROM(base, prefix)    KL_DERIVE_FROM_##base(prefix)
+#define KL_DERIVE_FROM(base, prefix)    base prefix
 
 #ifdef NDEBUG
 #define kl_assert(expr, info)   ((void)0)

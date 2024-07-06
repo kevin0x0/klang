@@ -32,7 +32,7 @@
     gcobj->next_reachable = (gclist);                           \
     (gclist) = gcobj;                                           \
   }                                                             \
-  gcobj->gc_state |= KLGC_MARKED;                               \
+  klmm_to_gcobjgeneric(gcobj)->gc_state |= KLGC_MARKED;         \
 }
 
 
@@ -52,32 +52,21 @@ typedef struct tagKlGCVirtualFunc {
 } KlGCVirtualFunc;
 
 
-
-#define KL_DERIVE_FROM_KlGCObjectDelegate(prefix) KlGCStat prefix##gc_state
-
-#define KL_DERIVE_FROM_KlGCObject(prefix)                                                   \
-  KL_DERIVE_FROM_KlGCObjectDelegate(prefix);                                                \
-  KlGCObject* prefix##next;             /* link all objects */                              \
-  const KlGCVirtualFunc* prefix##virtualfunc;                                               \
-  union {                                                                                   \
-    KlGCObject* prefix##next_reachable; /* link all accessible object in the same level */  \
-    KlGCObject* prefix##next_after;     /* next object in after list */                     \
-  }
-
-
-
-
 /* the pointer of this struct can point to any collectable object */
-typedef struct tagKlGCObjectGeneric {
-  KL_DERIVE_FROM(KlGCObjectDelegate, );
-} KlGCObjectGeneric;
+typedef struct tagKlGCObjectDelegate KlGCObjectGeneric;
 
 typedef struct tagKlGCObjectDelegate {
-  KL_DERIVE_FROM(KlGCObjectDelegate, );
+  KlGCStat gc_state;
 } KlGCObjectDelegate;
 
 struct tagKlGCObject {
-  KL_DERIVE_FROM(KlGCObject, );
+  KL_DERIVE_FROM(KlGCObjectDelegate, base);
+  KlGCObject* next;             /* link all objects */
+  const KlGCVirtualFunc* virtualfunc;
+  union {
+    KlGCObject* next_reachable; /* link all accessible object in the same level */
+    KlGCObject* next_after;     /* next object in after list */
+  };
 };
 
 
@@ -195,7 +184,7 @@ static inline void klmm_gcobj_aftersweep(KlMM* klmm, KlGCObject* obj) {
 
 static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, const KlGCVirtualFunc* vfunc) {
   gcobj->virtualfunc = vfunc;
-  gcobj->gc_state = KLGC_NORM | KLGC_INLIST;
+  gcobj->base.gc_state = KLGC_NORM | KLGC_INLIST;
   gcobj->next = klmm->allgc;
   klmm->allgc = gcobj;
 }

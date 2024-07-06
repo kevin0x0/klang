@@ -93,12 +93,10 @@ typedef enum tagKlCType {
 typedef struct tagKlAstInfo KlAstInfo;
 
 
-/* this serves as the base class of abstract syntax tree node,
- * and will be contained to the header of any other node.
- */
-#define KL_DERIVE_FROM_KlAst(prefix)  const KlAstInfo* prefix##info; KlFileOffset prefix##begin; KlFileOffset prefix##end
 typedef struct tagKlAst {
-  KL_DERIVE_FROM(KlAst, );
+  const KlAstInfo* info;
+  KlFileOffset begin;
+  KlFileOffset end;
 } KlAst;
 
 typedef void (*KlAstDelete)(KlAst* ast);

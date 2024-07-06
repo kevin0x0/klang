@@ -38,17 +38,13 @@ struct tagKlClass {
   bool is_final;
 };
 
-#define KL_DERIVE_FROM_KlObject(prefix)         \
-  KL_DERIVE_FROM_KlGCObject(prefix##_gcbase_);  \
-  KlClass* prefix##klclass;                     \
-  KlValue* prefix##attrs;                       \
-  size_t prefix##size
-
-#define KLOBJECT_TAIL                         KlValue _klobject_valarray
+#define KLOBJECT_TAIL                         KlValue _klobject_valarray[]
 
 struct tagKlObject {
-  KL_DERIVE_FROM(KlObject, );
-  KLOBJECT_TAIL;
+  KL_DERIVE_FROM(KlGCObject, _gcbase_);
+  KlClass* klclass;
+  KlValue* attrs;
+  size_t size;
 };
 
 
@@ -124,13 +120,17 @@ static inline KlClassSlot* klclass_find(const KlClass* klclass, const KlString* 
 
 
 
+struct tagKlObjectInstance {
+  KL_DERIVE_FROM(KlObject, _gcbase_);
+  KLOBJECT_TAIL;
+};
 
 #define klobject_attrarrayoffset(type)        (offsetof (type, _klobject_valarray))
 
 #define klobject_attrs_by_class(obj, klclass) (klcast(KlValue*, klcast(char*, (obj)) + (klclass)->attroffset))
 #define klobject_attrs(obj)                   ((obj)->attrs)
 
-#define KLOBJECT_DEFAULT_ATTROFF              (klobject_attrarrayoffset(struct tagKlObject))
+#define KLOBJECT_DEFAULT_ATTROFF              (klobject_attrarrayoffset(struct tagKlObjectInstance))
 
 
 

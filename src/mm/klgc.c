@@ -53,7 +53,7 @@ KlGCObject* klmm_gc_start(KlGCObject* root, KlGCObject* list) {
   (void)list;
   KlGCObject* gclist = NULL;
   klmm_gc_link(gclist, root);
-  root->gc_state |= KLGC_MARKED;
+  root->base.gc_state |= KLGC_MARKED;
   return gclist;
 }
 
