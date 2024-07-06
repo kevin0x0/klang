@@ -11,9 +11,9 @@
 #include <setjmp.h>
 
 
-kgarray_decl(KlCode*, KlCodeArray, klcodearr, pass_val,);
-kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val,);
-kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val,);
+kgarray_decl(KlCode*, KlCodeArray, klcodearr, pass_val, );
+kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val, );
+kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val, );
 
 
 typedef struct tagKlGenJumpInfo KlGenJumpInfo;
@@ -58,7 +58,7 @@ struct tagKlGenUnit {
     KlSymTbl* continue_scope; /* the scope that start a scope that allows continue */
     KlCodeVal* breaklist;     /* break jmplist. break is not allowed if NULL */
     KlSymTbl* break_scope;    /* the scope that start a scope that allows break */
-    bool isjmptarget;            /* current instruction is jump target of some instruction */
+    bool isjmptarget;         /* current instruction is jump target of some instruction */
   } jmpinfo;
   KlGenUnit* prev;
   jmp_buf jmppos;
@@ -96,14 +96,6 @@ static inline void klgen_markjmptarget(KlGenUnit* gen);
 static inline void klgen_unmarkjmptarget(KlGenUnit* gen);
 /* get current pc as target of some instructions, this will mark current pc is a jmppos */
 static inline KlCPC klgen_getjmptarget(KlGenUnit* gen);
-void klgen_loadval(KlGenUnit* gen, KlCStkId target, KlCodeVal val, KlFilePosition position);
-static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
-static inline void klgen_putonstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position);
-static inline KlCPC klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position);
-void klgen_emitloadnils(KlGenUnit* gen, KlCStkId target, size_t nnil, KlFilePosition position);
-void klgen_emitmove(KlGenUnit* gen, KlCStkId target, KlCStkId from, size_t nval, KlFilePosition position);
-void klgen_emitmethod(KlGenUnit* gen, KlCStkId obj, KlCStkId method, size_t narg, size_t nret, KlCStkId retpos, KlFilePosition position);
-void klgen_emitcall(KlGenUnit* gen, KlCStkId callable, size_t narg, size_t nret, KlCStkId retpos, KlFilePosition position);
 
 
 kl_noreturn void klgen_error_fatal(KlGenUnit* gen, const char* message);
@@ -177,32 +169,6 @@ static inline void klgen_unmarkjmptarget(KlGenUnit* gen) {
 static inline KlCPC klgen_getjmptarget(KlGenUnit* gen) {
   klgen_markjmptarget(gen);
   return klgen_currentpc(gen);
-}
-
-static inline KlCPC klgen_emit(KlGenUnit* gen, KlInstruction inst, KlFilePosition position) {
-  KlCPC pc = klgen_currentpc(gen);
-  if (kl_unlikely(!klinstarr_push_back(&gen->code, inst)))
-    klgen_error_fatal(gen, "out of memory");
-  if (gen->config->posinfo)
-    klfparr_push_back(&gen->position, position);
-  klgen_unmarkjmptarget(gen);
-  return pc;
-}
-
-static inline void klgen_putonstack(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position) {
-  if (val->kind == KLVAL_STACK) return;
-  KlCStkId stkid = klgen_stackalloc1(gen);
-  klgen_loadval(gen, stkid, *val, position);
-  val->kind = KLVAL_STACK;
-  val->index = stkid;
-}
-
-static inline void klgen_putonstktop(KlGenUnit* gen, KlCodeVal* val, KlFilePosition position) {
-  KlCStkId stkid = klgen_stacktop(gen);
-  klgen_putonstack(gen, val, position);
-  if (val->index != stkid)
-    klgen_emit(gen, klinst_move(stkid, val->index), position);
-  klgen_stackfree(gen, stkid + 1);
 }
 
 #endif
