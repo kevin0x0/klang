@@ -12,10 +12,12 @@ static void klast_vararg_destroy(KlAstVararg* astvararg);
 static void klast_exprlist_destroy(KlAstExprList* astexprlist);
 static void klast_bin_destroy(KlAstBin* astbin);
 static void klast_walrus_destroy(KlAstWalrus* astwalrus);
+static void klast_async_destroy(KlAstAsync* astasync);
 static void klast_pre_destroy(KlAstPre* astpre);
 static void klast_new_destroy(KlAstNew* astnew);
 static void klast_yield_destroy(KlAstYield* astyield);
-static void klast_post_destroy(KlAstPost* astpost);
+static void klast_index_destroy(KlAstIndex* astpost);
+static void klast_append_destroy(KlAstAppend* astappend);
 static void klast_call_destroy(KlAstCall* astcall);
 static void klast_dot_destroy(KlAstDot* astdot);
 static void klast_func_destroy(KlAstFunc* astfunc);
@@ -33,10 +35,12 @@ static const KlAstInfo klast_vararg_vfunc = { .destructor = (KlAstDelete)klast_v
 static const KlAstInfo klast_exprlist_vfunc = { .destructor = (KlAstDelete)klast_exprlist_destroy, .kind = KLAST_EXPR_LIST };
 static const KlAstInfo klast_bin_vfunc = { .destructor = (KlAstDelete)klast_bin_destroy, .kind = KLAST_EXPR_BIN };
 static const KlAstInfo klast_walrus_vfunc = { .destructor = (KlAstDelete)klast_walrus_destroy, .kind = KLAST_EXPR_WALRUS };
+static const KlAstInfo klast_async_vfunc = { .destructor = (KlAstDelete)klast_async_destroy, .kind = KLAST_EXPR_ASYNC };
 static const KlAstInfo klast_pre_vfunc = { .destructor = (KlAstDelete)klast_pre_destroy, .kind = KLAST_EXPR_PRE };
 static const KlAstInfo klast_new_vfunc = { .destructor = (KlAstDelete)klast_new_destroy, .kind = KLAST_EXPR_NEW };
 static const KlAstInfo klast_yield_vfunc = { .destructor = (KlAstDelete)klast_yield_destroy, .kind = KLAST_EXPR_YIELD };
-static const KlAstInfo klast_post_vfunc = { .destructor = (KlAstDelete)klast_post_destroy, .kind = KLAST_EXPR_POST };
+static const KlAstInfo klast_post_vfunc = { .destructor = (KlAstDelete)klast_index_destroy, .kind = KLAST_EXPR_INDEX };
+static const KlAstInfo klast_append_vfunc = { .destructor = (KlAstDelete)klast_append_destroy, .kind = KLAST_EXPR_APPEND };
 static const KlAstInfo klast_call_vfunc = { .destructor = (KlAstDelete)klast_call_destroy, .kind = KLAST_EXPR_CALL };
 static const KlAstInfo klast_dot_vfunc = { .destructor = (KlAstDelete)klast_dot_destroy, .kind = KLAST_EXPR_DOT };
 static const KlAstInfo klast_func_vfunc = { .destructor = (KlAstDelete)klast_func_destroy, .kind = KLAST_EXPR_FUNC };
@@ -230,6 +234,18 @@ KlAstWalrus* klast_walrus_create(KlAst* pattern, KlAst* rval, KlFileOffset begin
   return astwalrus;
 }
 
+KlAstAsync* klast_async_create(KlAst* operand, KlFileOffset begin, KlFileOffset end) {
+  KlAstAsync* astasync = klast_alloc(KlAstAsync);
+  if (kl_unlikely(!astasync)) {
+    klast_delete(operand);
+    return NULL;
+  }
+  astasync->callable = operand;
+  klast_setposition(astasync, begin, end);
+  klast_init(astasync, &klast_async_vfunc);
+  return astasync;
+}
+
 KlAstPre* klast_pre_create(KlTokenKind op, KlAst* operand, KlFileOffset begin, KlFileOffset end) {
   KlAstPre* astpre = klast_alloc(KlAstPre);
   if (kl_unlikely(!astpre)) {
@@ -269,19 +285,32 @@ KlAstYield* klast_yield_create(KlAstExprList* vals, KlFileOffset begin, KlFileOf
   return astyield;
 }
 
-KlAstPost* klast_post_create(KlTokenKind op, KlAst* operand, KlAst* post, KlFileOffset begin, KlFileOffset end) {
-  KlAstPost* astpost = klast_alloc(KlAstPost);
+KlAstIndex* klast_index_create(KlAst* operand, KlAst* index, KlFileOffset begin, KlFileOffset end) {
+  KlAstIndex* astpost = klast_alloc(KlAstIndex);
   if (kl_unlikely(!astpost)) {
     klast_delete(operand);
-    klast_delete(post);
+    klast_delete(index);
     return NULL;
   }
-  astpost->operand = operand;
-  astpost->post = post;
-  astpost->op = op;
+  astpost->indexable = operand;
+  astpost->index = index;
   klast_setposition(astpost, begin, end);
   klast_init(astpost, &klast_post_vfunc);
   return astpost;
+}
+
+KlAstAppend* klast_append_create(KlAst* array, KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end) {
+  KlAstAppend* astappend = klast_alloc(KlAstAppend);
+  if (kl_unlikely(!astappend)) {
+    klast_delete(array);
+    klast_delete(exprlist);
+    return NULL;
+  }
+  astappend->array = array;
+  astappend->exprlist = exprlist;
+  klast_setposition(astappend, begin, end);
+  klast_init(astappend, &klast_append_vfunc);
+  return astappend;
 }
 
 KlAstCall* klast_call_create(KlAst* callable, KlAstExprList* args, KlFileOffset begin, KlFileOffset end) {
@@ -443,6 +472,10 @@ static void klast_walrus_destroy(KlAstWalrus* astwalrus) {
   klast_delete(astwalrus->rval);
 }
 
+static void klast_async_destroy(KlAstAsync* astasync) {
+  klast_delete(astasync->callable);
+}
+
 static void klast_pre_destroy(KlAstPre* astpre) {
   klast_delete(astpre->operand);
 }
@@ -456,9 +489,14 @@ static void klast_yield_destroy(KlAstYield* astyield) {
   klast_delete(astyield->vals);
 }
 
-static void klast_post_destroy(KlAstPost* astpost) {
-  klast_delete(astpost->operand);
-  klast_delete(astpost->post);
+static void klast_index_destroy(KlAstIndex* astpost) {
+  klast_delete(astpost->indexable);
+  klast_delete(astpost->index);
+}
+
+static void klast_append_destroy(KlAstAppend* astappend) {
+  klast_delete(astappend->array);
+  klast_delete(astappend->exprlist);
 }
 
 static void klast_call_destroy(KlAstCall* astcall) {

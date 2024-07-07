@@ -35,7 +35,8 @@ typedef enum tagKlAstKind {
   KLAST_EXPR_NEW,
   KLAST_EXPR_YIELD,
 
-  KLAST_EXPR_POST,
+  KLAST_EXPR_INDEX,
+  KLAST_EXPR_APPEND,
   KLAST_EXPR_CALL,
   KLAST_EXPR_DOT,
   KLAST_EXPR_FUNC,
@@ -43,6 +44,7 @@ typedef enum tagKlAstKind {
   KLAST_EXPR_BIN,
   KLAST_EXPR_WALRUS,
 
+  KLAST_EXPR_ASYNC,
   KLAST_EXPR_MATCH,
   KLAST_EXPR_WHERE, KLAST_EXPR_END = KLAST_EXPR_WHERE,
 
@@ -193,6 +195,11 @@ typedef struct tagKlAstWalrus {
   KlAst* rval;
 } KlAstWalrus;
 
+typedef struct tagKlAstAsync {
+  KL_DERIVE_FROM(KlAst, _astbase_);
+  KlAst* callable;
+} KlAstAsync;
+
 typedef struct tagKlAstPre {
   KL_DERIVE_FROM(KlAst, _astbase_);
   KlTokenKind op;
@@ -210,12 +217,17 @@ typedef struct tagKlAstYield {
   KlAstExprList* vals;
 } KlAstYield;
 
-typedef struct tagKlAstPost {
+typedef struct tagKlAstIndex {
   KL_DERIVE_FROM(KlAst, _astbase_);
-  KlTokenKind op;
-  KlAst* operand;
-  KlAst* post;
-} KlAstPost;
+  KlAst* indexable;
+  KlAst* index;
+} KlAstIndex;
+
+typedef struct tagKlAstAppend {
+  KL_DERIVE_FROM(KlAst, _astbase_);
+  KlAst* array;
+  KlAstExprList* exprlist;
+} KlAstAppend;
 
 typedef struct tagKlAstCall {
   KL_DERIVE_FROM(KlAst, _astbase_);
@@ -235,11 +247,6 @@ typedef struct tagKlAstDot {
   KlAst* operand;
   KlStrDesc field;
 } KlAstDot;
-
-typedef struct tagKlAstDo {
-  KL_DERIVE_FROM(KlAst, _astbase_);
-  KlAstStmtList* stmtlist;
-} KlAstDo;
 
 typedef struct tagKlAstMatch {
   KL_DERIVE_FROM(KlAst, _astbase_);
@@ -400,10 +407,12 @@ KlAstVararg* klast_vararg_create(KlFileOffset begin, KlFileOffset end);
 KlAstExprList* klast_exprlist_create(KlAst** exprs, size_t nexpr, KlFileOffset begin, KlFileOffset end);
 KlAstBin* klast_bin_create(KlTokenKind op, KlAst* loperand, KlAst* roperand, KlFileOffset begin, KlFileOffset end);
 KlAstWalrus* klast_walrus_create(KlAst* pattern, KlAst* rval, KlFileOffset begin, KlFileOffset end);
+KlAstAsync* klast_async_create(KlAst* callable, KlFileOffset begin, KlFileOffset end);
 KlAstPre* klast_pre_create(KlTokenKind op, KlAst* operand, KlFileOffset begin, KlFileOffset end);
 KlAstNew* klast_new_create(KlAst* klclass, KlAstExprList* args, KlFileOffset begin, KlFileOffset end);
 KlAstYield* klast_yield_create(KlAstExprList* vals, KlFileOffset begin, KlFileOffset end);
-KlAstPost* klast_post_create(KlTokenKind op, KlAst* operand, KlAst* post, KlFileOffset begin, KlFileOffset end);
+KlAstIndex* klast_index_create(KlAst* operand, KlAst* index, KlFileOffset begin, KlFileOffset end);
+KlAstAppend* klast_append_create(KlAst* array, KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end);
 KlAstCall* klast_call_create(KlAst* callable, KlAstExprList* args, KlFileOffset begin, KlFileOffset end);
 KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool vararg, KlFileOffset begin, KlFileOffset end);
 KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end);
@@ -414,10 +423,9 @@ KlAst* klast_exprlist_stealfirst_and_destroy(KlAstExprList* exprlist);
 bool klast_isboolexpr(KlAst* ast);
 
 static inline bool klast_islvalue(KlAst* ast) {
-  return (klast_kind(ast) == KLAST_EXPR_ID   ||
-          klast_kind(ast) == KLAST_EXPR_DOT  ||
-          (klast_kind(ast) == KLAST_EXPR_POST &&
-           klcast(KlAstPost*, ast)->op == KLTK_INDEX));
+  return klast_kind(ast) == KLAST_EXPR_ID   ||
+         klast_kind(ast) == KLAST_EXPR_DOT  ||
+         klast_kind(ast) == KLAST_EXPR_INDEX;
 }
 
 static inline void klast_exprlist_shallow_replace(KlAstExprList* exprlist, KlAst** exprs, size_t nexpr) {
