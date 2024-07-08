@@ -1569,7 +1569,8 @@ KlException klexec_execute(KlState* state) {
         }
         if (kl_unlikely(!klvalue_checktype(a, KL_ARRAY)))
           return klstate_throw(state, KL_E_TYPE, "can only append to an array");
-        klarray_push_back(klvalue_getobj(a, KlArray*), klstate_getmm(state), first, nelem);
+        if (kl_unlikely(!klarray_push_back(klvalue_getobj(a, KlArray*), klstate_getmm(state), first, nelem)))
+          return klstate_throw_oom(state, "appending");
         break;
       }
       case KLOPCODE_MKCLASS: {
