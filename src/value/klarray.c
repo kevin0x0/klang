@@ -1,7 +1,6 @@
 #include "include/value/klarray.h"
 #include "include/misc/klutils.h"
 #include "include/value/klclass.h"
-#include "include/vm/klexception.h"
 
 #include <stdlib.h>
 
@@ -20,8 +19,8 @@ KlArray* klarray_create(KlClass* arrayclass, KlMM* klmm, size_t capacity) {
     klobject_free(klcast(KlObject*, array), klmm);
     return NULL;
   }
-  array->end = array->begin + capacity;
-  array->current = array->begin;
+  array->capacity = capacity;
+  array->size = 0;
   klmm_gcobj_enable(klmm, klmm_to_gcobj(array), &klarray_gcvfunc);
   return array;
 }
@@ -31,16 +30,15 @@ static void klarray_delete(KlArray* array, KlMM* klmm) {
   klobject_free(klcast(KlObject*, array), klmm);
 }
 
-bool klarray_check_capacity(KlArray* array, KlMM* klmm, size_t new_capacity) {
+bool klarray_grow(KlArray* array, KlMM* klmm, size_t new_capacity) {
+  kl_assert((klarray_capacity(array) < new_capacity), "");
+
   new_capacity = new_capacity == 0 ? 4 : new_capacity;
-  if (klarray_capacity(array) >= new_capacity)
-    return true;
   new_capacity = klarray_capacity(array) * 2 > new_capacity ? klarray_capacity(array) * 2 : new_capacity;
   KlValue* new_array = (KlValue*)klmm_realloc(klmm, array->begin, sizeof (KlValue) * new_capacity, sizeof (KlValue) * klarray_capacity(array));
   if (!new_array) return false;
-  array->current = new_array + (array->current - array->begin);
   array->begin = new_array;
-  array->end = new_array + new_capacity;
+  array->capacity = new_capacity;
   return true;
 }
 

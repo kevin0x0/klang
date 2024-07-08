@@ -1606,7 +1606,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           KlValue key;
           klvalue_setint(&key, index);
-          if (klvalue_checktype(indexable, KL_MAP)) {  /* is map? */
+          if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
             KlMapIter itr = klmap_search(map, &key);
             itr ? klvalue_setvalue(val, &itr->value) : klvalue_setnil(val);
@@ -1642,7 +1642,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           KlValue key;
           klvalue_setint(&key, index);
-          if (klvalue_checktype(indexable, KL_MAP)) {  /* is map? */
+          if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
             KlMapIter itr = klmap_search(map, &key);
             if (itr) {
@@ -1683,7 +1683,7 @@ KlException klexec_execute(KlState* state) {
           }
           klarray_index(arr, klvalue_getint(key), val);
         } else {
-          if (klvalue_checktype(indexable, KL_MAP)) {  /* is map? */
+          if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
             if (klvalue_canrawequal(key)) {
               KlMapIter itr = klmap_search(map, key);
