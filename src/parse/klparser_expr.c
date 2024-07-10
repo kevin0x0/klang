@@ -363,7 +363,7 @@ static KlAst* klparser_exprbrace_inner(KlParser* parser, KlLex* lex) {
     }
     KlAstFunc* func = klast_func_create(generator, params, false, klast_begin(stmtexpr), klast_end(generator));
     klparser_oomifnull(func);
-    KlAstPre* asyncexpr = klast_pre_create(KLTK_ASYNC, klast(func), KLPARSER_ERROR_PH_FILEPOS, KLPARSER_ERROR_PH_FILEPOS);
+    KlAstAsync* asyncexpr = klast_async_create(klast(func), KLPARSER_ERROR_PH_FILEPOS, KLPARSER_ERROR_PH_FILEPOS);
     klparser_oomifnull(asyncexpr);
     return klast(asyncexpr);
   }

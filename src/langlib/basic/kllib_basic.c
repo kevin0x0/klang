@@ -342,7 +342,7 @@ static KlException kllib_basic_callable_iter(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "expected fixed number of returned values");
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   klapi_pushvalue(state, klapi_access(state, -1));
-  klapi_pushint(state, 0);  /* this value doesn't matter, any value except nil and false will be OK. */
+  klapi_pushvalue(state, klapi_access(state, -1));
   size_t nval = klapi_nres(state) - 3;
   KLAPI_PROTECT(klapi_scall(state, klapi_access(state, -2), 0, nval));
   if (klapi_checktype(state, -nval, KL_NIL))

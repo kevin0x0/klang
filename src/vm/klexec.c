@@ -2404,7 +2404,7 @@ KlException klexec_execute(KlState* state) {
           /* stack may have grown. restore stkbase. */
           stkbase = callinfo->base;
           KlInstruction jmp = *pc++;
-          kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_TRUEJMP && KLINST_AI_GETA(jmp) == KLINST_AX_GETA(inst) + 1, "");
+          kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_TRUEJMP && KLINST_AI_GETA(jmp) == KLINST_AX_GETA(inst) + 3, "");
           /* test the first porgrammer-visible iteration variable */
           KlValue* testval = stkbase + KLINST_AX_GETA(inst) + 3;
           if (kl_likely(klexec_satisfy(testval, KL_TRUE)))
