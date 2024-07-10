@@ -19,14 +19,17 @@ static const KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_prop
 static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* elem);
 static inline void klmap_init_head_tail(KlMapNode* head, KlMapNode* tail);
 
+static inline size_t klmap_getinthash(KlInt key) {
+  return (key << 16) ^ key;
+}
+
 static inline size_t klmap_gethash(const KlValue* key) {
   switch (klvalue_gettype(key)) {
     case KL_STRING: {
       return klstring_hash(klvalue_getobj(key, KlString*));
     }
     case KL_INT: {
-      KlInt val = klvalue_getint(key);
-      return (val << 16) ^ val;
+      return klmap_getinthash(klvalue_getint(key));
     }
     case KL_NIL: {
       return klvalue_getnil(key);
@@ -191,6 +194,19 @@ KlMapIter klmap_search(const KlMap* map, const KlValue* key) {
   if (!node) return NULL;
   do {
     if (klvalue_equal(key, &node->key))
+      return node;
+    node = node->next;
+  } while (node != &map->tail && (node->hash & mask) == index);
+  return NULL;
+}
+
+KlMapIter klmap_searchint(const KlMap* map, KlInt key) {
+  size_t mask = map->capacity - 1;
+  size_t index = mask & klmap_getinthash(key);
+  KlMapNode* node = map->array[index];
+  if (!node) return NULL;
+  do {
+    if (klvalue_checktype(&node->value, KL_INT) && klvalue_getint(&node->value) == key)
       return node;
     node = node->next;
   } while (node != &map->tail && (node->hash & mask) == index);

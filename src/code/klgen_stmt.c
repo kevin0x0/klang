@@ -37,46 +37,48 @@ bool klgen_stmtblockpure(KlGenUnit* gen, KlAstStmtList* stmtlist) {
 static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlAst** patterns, size_t npattern, KlAst** rvals, size_t nrval, KlFilePosition filepos) {
   size_t nfastassign = 0;
   for (; nfastassign < npattern; ++nfastassign) {
-    if (klast_kind(patterns[nfastassign]) != KLAST_EXPR_ID)
+    if (!klast_islvalue(patterns[nfastassign]))
       break;
   }
   if (nfastassign == npattern) {
     klgen_exprlist_raw(gen, rvals, nrval, nfastassign, filepos);
-  } else {  /* now nfastassign < npattern */
-    if (nfastassign == npattern - 1) {
-      klgen_exprlist_raw(gen, rvals, nrval, npattern, filepos);
-      if (klgen_pattern_fastbinding(gen, patterns[npattern - 1]))
-        return;
-      size_t nreserved = klgen_pattern_count_result(gen, patterns[npattern - 1]);
-      kl_assert(klgen_stacktop(gen) > 0, "");
-      KlCStkId lastval = klgen_stacktop(gen) - 1;
-      if (nreserved != 0) {
-        klgen_emitmove(gen, lastval + nreserved, lastval, 1, filepos);
-        klgen_stackalloc(gen, nreserved);
-      }
-      klgen_pattern_binding(gen, patterns[npattern - 1], lastval + nreserved);
-    } else if (nfastassign <= nrval) {
-      klgen_exprlist_raw(gen, rvals, nfastassign, nfastassign, filepos);
-      size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
+    return;
+  }
+
+  /* now nfastassign < npattern */
+  if (nfastassign == npattern - 1) {
+    klgen_exprlist_raw(gen, rvals, nrval, npattern, filepos);
+    if (klgen_pattern_fastbinding(gen, patterns[npattern - 1]))
+      return;
+    size_t nreserved = klgen_pattern_count_result(gen, patterns[npattern - 1]);
+    kl_assert(klgen_stacktop(gen) > 0, "");
+    KlCStkId lastval = klgen_stacktop(gen) - 1;
+    if (nreserved != 0) {
+      klgen_emitmove(gen, lastval + nreserved, lastval, 1, filepos);
       klgen_stackalloc(gen, nreserved);
-      KlCStkId target = klgen_stacktop(gen);
-      klgen_exprlist_raw(gen, rvals + nfastassign, nrval - nfastassign, npattern - nfastassign, filepos);
-      size_t count = npattern;
-      while (count-- > nfastassign)
-        target = klgen_pattern_binding(gen, patterns[count], target);
-    } else {
-      KlCStkId oristktop = klgen_stacktop(gen);
-      klgen_exprlist_raw(gen, rvals, nrval, npattern, filepos);
-      size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
-      if (nreserved != 0) {
-        klgen_stackalloc(gen, nreserved);
-        klgen_emitmove(gen, oristktop + nfastassign + nreserved, oristktop + nfastassign, npattern - nfastassign, filepos);
-      }
-      KlCStkId target = oristktop + nfastassign + nreserved;
-      size_t count = npattern;
-      while (count-- > nfastassign)
-        target = klgen_pattern_binding(gen, patterns[count], target);
     }
+    klgen_pattern_binding(gen, patterns[npattern - 1], lastval + nreserved);
+  } else if (nfastassign <= nrval) {
+    klgen_exprlist_raw(gen, rvals, nfastassign, nfastassign, filepos);
+    size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
+    klgen_stackalloc(gen, nreserved);
+    KlCStkId target = klgen_stacktop(gen);
+    klgen_exprlist_raw(gen, rvals + nfastassign, nrval - nfastassign, npattern - nfastassign, filepos);
+    size_t count = npattern;
+    while (count-- > nfastassign)
+      target = klgen_pattern_binding(gen, patterns[count], target);
+  } else {
+    KlCStkId oristktop = klgen_stacktop(gen);
+    klgen_exprlist_raw(gen, rvals, nrval, npattern, filepos);
+    size_t nreserved = klgen_patterns_count_result(gen, patterns + nfastassign, npattern - nfastassign);
+    if (nreserved != 0) {
+      klgen_stackalloc(gen, nreserved);
+      klgen_emitmove(gen, oristktop + nfastassign + nreserved, oristktop + nfastassign, npattern - nfastassign, filepos);
+    }
+    KlCStkId target = oristktop + nfastassign + nreserved;
+    size_t count = npattern;
+    while (count-- > nfastassign)
+      target = klgen_pattern_binding(gen, patterns[count], target);
   }
 }
 

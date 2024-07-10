@@ -73,11 +73,11 @@ static KlException klexec_handle_newobject_exception(KlState* state, KlException
   }
 }
 
-static KlException klexec_handle_arrayindexas_exception(KlState* state, KlException exception, const KlArray* arr, const KlValue* key) {
+static KlException klexec_handle_arrayindexas_exception(KlState* state, KlException exception, const KlArray* arr, KlInt key) {
   if (exception == KL_E_RANGE) {
     return klstate_throw(state, exception,
                          "index out of range: index = %zd, array size = %zu.",
-                         klvalue_getint(key), klarray_size(arr));
+                         key, klarray_size(arr));
   }
   kl_assert(false, "control flow should not reach here");
   return KL_E_NONE;
@@ -476,9 +476,9 @@ const char* klexec_typename(const KlState* state, const KlValue* val) {
       klvalue_checktype(val, KL_MAP)    ||
       klvalue_checktype(val, KL_ARRAY)) {
     const KlValue* typename = klexec_getfield(state, val, state->common->string.typename);
-     return klvalue_checktype(typename, KL_STRING)                ? 
-            klstring_content(klvalue_getobj(typename, KlString*)) :
-            klvalue_typename(klvalue_gettype(val));
+    return klvalue_checktype(typename, KL_STRING)                ? 
+           klstring_content(klvalue_getobj(typename, KlString*)) :
+           klvalue_typename(klvalue_gettype(val));
   } else {
     return klvalue_typename(klvalue_gettype(val));
   }
@@ -1600,18 +1600,16 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_ABI_GETA(inst);
         KlValue* indexable = stkbase + KLINST_ABI_GETB(inst);
         KlInt index = KLINST_ABI_GETI(inst);
-        if (klvalue_checktype(indexable, KL_ARRAY)) {       /* is array? */
+        if (kl_likely(klvalue_checktype(indexable, KL_ARRAY))) {       /* is array? */
           KlArray* arr = klvalue_getobj(indexable, KlArray*);
           klarray_index(arr, index, val);
+        } else if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
+          KlMap* map = klvalue_getobj(indexable, KlMap*);
+          KlMapIter itr = klmap_searchint(map, index);
+          itr ? klvalue_setvalue(val, &itr->value) : klvalue_setnil(val);
         } else {
           KlValue key;
           klvalue_setint(&key, index);
-          if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
-            KlMap* map = klvalue_getobj(indexable, KlMap*);
-            KlMapIter itr = klmap_search(map, &key);
-            itr ? klvalue_setvalue(val, &itr->value) : klvalue_setnil(val);
-            break;
-          } 
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_doindexmethod(state, val, indexable, &key);
           if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
@@ -1630,31 +1628,31 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_ABI_GETA(inst);
         KlValue* indexable = stkbase + KLINST_ABI_GETB(inst);
         KlInt index = KLINST_ABI_GETI(inst);
-        if (klvalue_checktype(indexable, KL_ARRAY)) {         /* is array? */
+        if (kl_likely(klvalue_checktype(indexable, KL_ARRAY))) {         /* is array? */
           KlArray* arr = klvalue_getobj(indexable, KlArray*);
           KlException exception = klarray_indexas(arr, index, val);
           if (kl_unlikely(exception)) {
-            KlValue key;
-            klvalue_setint(&key, index);
             klexec_savestate(callinfo->top, pc);
-            return klexec_handle_arrayindexas_exception(state, exception, arr, &key);
+            return klexec_handle_arrayindexas_exception(state, exception, arr, index);
           }
         } else {
-          KlValue key;
-          klvalue_setint(&key, index);
           if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
-            KlMapIter itr = klmap_search(map, &key);
+            KlMapIter itr = klmap_searchint(map, index);
             if (itr) {
               klvalue_checktype(val, KL_NIL) ? klmap_erase(map, itr)
                                              : klvalue_setvalue(&itr->value, val);
             } else if (!klvalue_checktype(val, KL_NIL)) {
+              KlValue key;
+              klvalue_setint(&key, index);
               klexec_savestate(callinfo->top, pc);
               if (kl_unlikely(!klmap_insert(map, &key, val)))
                 return klstate_throw_oom(state, "inserting a k-v pair to a map");
             }
             break;
           }
+          KlValue key;
+          klvalue_setint(&key, index);
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_doindexasmethod(state, indexable, &key, val);
           if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
@@ -1673,14 +1671,14 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_ABC_GETA(inst);
         KlValue* indexable = stkbase + KLINST_ABC_GETB(inst);
         KlValue* key = stkbase + KLINST_ABC_GETC(inst);
-        if (klvalue_checktype(indexable, KL_ARRAY)) {       /* is array? */
-          KlArray* arr = klvalue_getobj(indexable, KlArray*);
+        if (kl_likely(klvalue_checktype(indexable, KL_ARRAY))) {       /* is array? */
           if (kl_unlikely(!klvalue_checktype(key, KL_INT))) { /* only integer can index array */
-            klexec_savestate(callinfo->top, pc);
+            klexec_savepc(callinfo, pc);
             return klstate_throw(state, KL_E_TYPE,
                                  "type error occurred when indexing an array: expected %s, got %s.",
                                  klvalue_typename(KL_INT), klexec_typename(state, key));
           }
+          KlArray* arr = klvalue_getobj(indexable, KlArray*);
           klarray_index(arr, klvalue_getint(key), val);
         } else {
           if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
@@ -1709,7 +1707,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_ABC_GETA(inst);
         KlValue* indexable = stkbase + KLINST_ABC_GETB(inst);
         KlValue* key = stkbase + KLINST_ABC_GETC(inst);
-        if (klvalue_checktype(indexable, KL_ARRAY)) {         /* is array? */
+        if (kl_likely(klvalue_checktype(indexable, KL_ARRAY))) {         /* is array? */
           KlArray* arr = klvalue_getobj(indexable, KlArray*);
           klexec_savestate(callinfo->top, pc);
           if (kl_unlikely(!klvalue_checktype(key, KL_INT))) { /* only integer can index array */
@@ -1719,7 +1717,7 @@ KlException klexec_execute(KlState* state) {
           }
           KlException exception = klarray_indexas(arr, klvalue_getint(key), val);
           if (kl_unlikely(exception))
-            return klexec_handle_arrayindexas_exception(state, exception, arr, key);
+            return klexec_handle_arrayindexas_exception(state, exception, arr, klvalue_getint(key));
         } else {
           if (klvalue_checktype(indexable, KL_MAP)) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
