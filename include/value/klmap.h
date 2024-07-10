@@ -49,6 +49,7 @@ static inline void klmap_clroption(KlMap* map, unsigned bit);
 KlMapIter klmap_insert(KlMap* map, const KlValue* key, const KlValue* value);
 KlMapIter klmap_erase(KlMap* map, KlMapIter iter);
 KlMapIter klmap_search(const KlMap* map, const KlValue* key);
+KlMapIter klmap_searchint(const KlMap* map, KlInt key);
 KlMapIter klmap_searchstring(const KlMap* map, const KlString* str);
 KlMapIter klmap_insertstring(KlMap* map, const KlString* str, const KlValue* val);
 void klmap_makeempty(KlMap* map);
