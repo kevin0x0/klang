@@ -4,8 +4,9 @@
 
 
 /* array */
-static KlException klbuiltinclass_array_constructor(KlClass* arrayclass, KlMM* klmm, KlValue* value) {
-  KlArray* arr = klarray_create(arrayclass, klmm, 1);
+static KlException klbuiltinclass_array_constructor(KlClass* klclass, KlMM* klmm, KlValue* value) {
+  kl_unused(klclass);
+  KlArray* arr = klarray_create(klmm, 1);
   if (kl_unlikely(!arr)) return KL_E_OOM;
   klvalue_setobj(value, arr, KL_ARRAY);
   return KL_E_NONE;
@@ -16,7 +17,7 @@ bool klarray_compatible(KlObject* obj) {
 }
 
 KlClass* klbuiltinclass_array(KlMM* klmm) {
-  KlClass* klclass = klclass_create(klmm, 5, klobject_attrarrayoffset(KlArray), NULL, klbuiltinclass_array_constructor);
+  KlClass* klclass = klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klbuiltinclass_array_constructor);
   if (kl_unlikely(!klclass)) return NULL;
   klclass_final(klclass);
   return klclass;

@@ -31,7 +31,6 @@ typedef struct tagKlCommon {
     KlString* typename;
   } string;
   struct {
-    KlClass* array;
     KlClass* phony[KL_NTYPE];
   } klclass;
   size_t ref_count;

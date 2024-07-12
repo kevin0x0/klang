@@ -3,22 +3,20 @@
 
 #include "include/misc/klutils.h"
 #include "include/mm/klmm.h"
-#include "include/value/klclass.h"
 #include "include/value/klvalue.h"
 
 #include <stddef.h>
 
 typedef struct tagKlArray {
-  KL_DERIVE_FROM(KlObject, _objectbase_);
+  KL_DERIVE_FROM(KlGCObject, _gcbase_);
   KlValue* begin;
   size_t size;
   size_t capacity;
-  KLOBJECT_TAIL;
 } KlArray;
 
 typedef KlValue* KlArrayIter;
 
-KlArray* klarray_create(KlClass* arrayclass, KlMM* klmm, size_t capacity);
+KlArray* klarray_create(KlMM* klmm, size_t capacity);
 
 bool klarray_grow(KlArray* array, KlMM* klmm, size_t capacity);
 

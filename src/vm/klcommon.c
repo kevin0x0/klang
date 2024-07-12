@@ -57,7 +57,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool) {
   for (KlType type = 0; type < KL_NTYPE; ++type)
     common->klclass.phony[type] = fallback;
 
-  done = done && (common->klclass.array = klbuiltinclass_array(klmm));
+  done = done && (common->klclass.phony[KL_ARRAY] = klbuiltinclass_array(klmm));
   done = done && (common->klclass.phony[KL_MAP] = klbuiltinclass_map(klmm));
   done = done && (common->klclass.phony[KL_STRING] = klbuiltinclass_string(klmm, strpool));
   done = done && (common->klclass.phony[KL_INT] = klbuiltinclass_int(klmm));
@@ -98,7 +98,6 @@ KlGCObject* klcommon_propagate(const KlCommon* common, KlGCObject* gclist) {
   klmm_gcobj_mark(klmm_to_gcobj(common->string.iter), gclist);
   klmm_gcobj_mark(klmm_to_gcobj(common->string.typename), gclist);
 
-  klmm_gcobj_mark(klmm_to_gcobj(common->klclass.array), gclist);
   for (KlType type = 0; type < KL_NTYPE; ++type)
     klmm_gcobj_mark(klmm_to_gcobj(common->klclass.phony[type]), gclist);
   return gclist;

@@ -144,7 +144,7 @@ KlException klapi_pushmap(KlState* state, size_t capacity) {
 
 KlException klapi_pusharray(KlState* state, size_t capacity) {
   kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
-  KlArray* array = klarray_create(state->common->klclass.array, klstate_getmm(state), capacity);
+  KlArray* array = klarray_create(klstate_getmm(state), capacity);
   if (!array) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)array, KL_ARRAY);
   return KL_E_NONE;
@@ -203,7 +203,7 @@ KlException klapi_setmap(KlState* state, int index, size_t capacity) {
 
 KlException klapi_setarray(KlState* state, int index, size_t capacity) {
   KlValue* val = klapi_access(state, index);
-  KlArray* array = klarray_create(state->common->klclass.array, klstate_getmm(state), capacity);
+  KlArray* array = klarray_create(klstate_getmm(state), capacity);
   if (!array) return klstate_throw(state, KL_E_OOM, "out of momery");
   klvalue_setobj(val, array, KL_ARRAY);
   return KL_E_NONE;

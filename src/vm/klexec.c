@@ -1533,7 +1533,7 @@ KlException klexec_execute(KlState* state) {
           nelem = klstate_stktop(state) - first;
         /* now stack top is first + nelem */
         klexec_savestate(first + nelem, pc);  /* creating array may trigger gc */
-        KlArray* arr = klarray_create(state->common->klclass.array, klstate_getmm(state), nelem);
+        KlArray* arr = klarray_create(klstate_getmm(state), nelem);
         if (kl_unlikely(!arr))
           return klstate_throw_oom(state, "creating an array");
         /* fill this array with values on stack */
