@@ -232,7 +232,7 @@ static KlException kllib_basic_map_next(KlState* state) {
     return klapi_throw_internal(state, KL_E_TYPE, "expected map");
   KlMap* map = klvalue_getobj(base, KlMap*);
   size_t index = klvalue_getint(base + 1);
-  if (kl_unlikely(klmap_iter_valid(map, index)))
+  if (kl_unlikely(!klmap_iter_valid(map, index)))
     return klapi_throw_internal(state, KL_E_INVLD, "the for loop is broken");
   index = klmap_iter_next(map, index);
   if (kl_unlikely(index == klmap_iter_end(map)))

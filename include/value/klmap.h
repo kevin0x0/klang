@@ -148,7 +148,7 @@ static inline KlMapSlot* klmap_searchint(const KlMap* map, KlInt key) {
 }
 
 static inline bool klmap_iter_valid(const KlMap* map, size_t index) {
-  return index == klmap_capacity(map) || (index < klmap_capacity(map) && !klmap_emptyslot(&map->slots[index]));
+  return index < klmap_capacity(map) && !klmap_emptyslot(&map->slots[index]);
 }
 
 static inline size_t klmap_iter_begin(const KlMap* map) {

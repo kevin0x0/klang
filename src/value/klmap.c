@@ -46,20 +46,18 @@ KlMap* klmap_create(KlMM* klmm, size_t capacity) {
 }
 
 static bool klmap_rehash(KlMap* map, KlMM* klmm) {
-  KlMapSlot* oldslots = map->slots;
-  KlMapSlot* endslots = oldslots + map->capacity;
   size_t new_capacity = map->capacity * 2;
   KlMapSlot* slots = (KlMapSlot*)klmm_alloc(klmm, new_capacity * sizeof (KlMapSlot)); 
-  if (kl_unlikely(!slots)) {
-    map->slots = oldslots;
-    return false;
-  }
-  map->slots = slots;
+  if (kl_unlikely(!slots)) return false;
+
   for (size_t i = 0; i < new_capacity; ++i) {
     klvalue_settag(&slots[i].key, KLMAP_KEYTAG_EMPTY);
-    map->slots[i].next = NULL;
+    slots[i].next = NULL;
   }
 
+  KlMapSlot* oldslots = map->slots;
+  KlMapSlot* endslots = oldslots + map->capacity;
+  map->slots = slots;
   map->capacity = new_capacity;
   map->lastfree = new_capacity; /* reset lastfree */
   for (KlMapSlot* slot = oldslots; slot != endslots; ++slot)
@@ -91,6 +89,7 @@ static void klmap_insert_rehash(KlMap* map, const KlValue* key, const KlValue* v
     klvalue_setvalue_withtag(&slot->key, key, KLMAP_KEYTAG_MASTER);
     klvalue_setvalue(&slot->value, value);
     slot->hash = hash;
+    return;
   }
   /* this slot is not empty */
   /* just insert, no need to check whether this key is duplicated */
@@ -386,9 +385,9 @@ static void klmap_post(KlMap* map, KlMM* klmm) {
   KlMapSlot* slots = map->slots;
   KlMapSlot* end = slots + map->capacity;
   for (KlMapSlot* slot = slots; slot != end; ++slot) {
-    if (klmap_emptyslot(slot)) continue;
-    if ((klvalue_collectable(&slot->key) && klmm_gcobj_isdead(klvalue_getgcobj(&slot->key))) ||
-        (klvalue_collectable(&slot->value) && klmm_gcobj_isdead(klvalue_getgcobj(&slot->value)))) {
+    while (!klmap_emptyslot(slot) &&
+            ((klvalue_collectable(&slot->key) && klmm_gcobj_isdead(klvalue_getgcobj(&slot->key))) ||
+             (klvalue_collectable(&slot->value) && klmm_gcobj_isdead(klvalue_getgcobj(&slot->value))))) {
       klmap_erase(map, slot);
     }
   }
