@@ -1,6 +1,5 @@
 #include "include/value/klarray.h"
 #include "include/misc/klutils.h"
-#include "include/value/klclass.h"
 
 #include <stdlib.h>
 
@@ -12,11 +11,11 @@ static void klarray_delete(KlArray* array, KlMM* klmm);
 static const KlGCVirtualFunc klarray_gcvfunc = { .destructor = (KlGCDestructor)klarray_delete, .propagate = (KlGCProp)klarray_propagate };
 
 
-KlArray* klarray_create(KlClass* arrayclass, KlMM* klmm, size_t capacity) {
-  KlArray* array = (KlArray*)klclass_objalloc(arrayclass, klmm);
+KlArray* klarray_create(KlMM* klmm, size_t capacity) {
+  KlArray* array = (KlArray*)klmm_alloc(klmm, sizeof (KlArray));
   if (kl_unlikely(!array)) return NULL;
   if (kl_unlikely(!(array->begin = (KlValue*)klmm_alloc(klmm, sizeof (KlValue) * capacity)))) {
-    klobject_free(klcast(KlObject*, array), klmm);
+    klmm_free(klmm, array, sizeof (KlArray));
     return NULL;
   }
   array->capacity = capacity;
@@ -27,7 +26,7 @@ KlArray* klarray_create(KlClass* arrayclass, KlMM* klmm, size_t capacity) {
 
 static void klarray_delete(KlArray* array, KlMM* klmm) {
   klmm_free(klmm, array->begin, klarray_capacity(array) * sizeof (KlValue));
-  klobject_free(klcast(KlObject*, array), klmm);
+  klmm_free(klmm, array, sizeof (KlArray));
 }
 
 bool klarray_grow(KlArray* array, KlMM* klmm, size_t new_capacity) {
@@ -51,5 +50,5 @@ static KlGCObject* klarray_propagate(KlArray* array, KlMM* klmm, KlGCObject* gcl
     if (klvalue_collectable(itr))
       klmm_gcobj_mark(klvalue_getgcobj(itr), gclist);
   }
-  return klobject_propagate_nomm(klcast(KlObject*, array), gclist);
+  return gclist;
 }
