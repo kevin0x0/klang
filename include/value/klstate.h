@@ -59,7 +59,6 @@ typedef struct tagKlState {
   KlCommon* common;                 /* store some gcobjects that are often used */
   KlRef* reflist;                   /* all open references */
   KlStrPool* strpool;               /* maintain all strings */
-  KlMapNodePool* mapnodepool;       /* used by KlMap when inserting a new k-v pair */
   KlCallInfo* callinfo;             /* call information of the closure in execution */
   KlMap* global;                    /* store global variables */
   KlCallInfo baseci;                /* the bottom of callinfo stack, never actually used. */
@@ -68,7 +67,7 @@ typedef struct tagKlState {
 
 
 
-KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlMapNodePool* mapnodepool, KlKClosure* kclo);
+KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlKClosure* kclo);
 
 static inline KlMM* klstate_getmm(const KlState* state);
 static inline const KlCallInfo* klstate_baseci(const KlState* state);
@@ -78,7 +77,6 @@ static inline KlStack* klstate_stack(KlState* state);
 static inline KlCommon* klstate_common(const KlState* state);
 static inline KlMap* klstate_global(const KlState* state);
 static inline KlStrPool* klstate_strpool(const KlState* state);
-static inline KlMapNodePool* klstate_mapnodepool(const KlState* state);
 static inline KlRef** klstate_reflist(KlState* state);
 
 static inline size_t klstate_getnarg(const KlState* state);
@@ -133,10 +131,6 @@ static inline KlMap* klstate_global(const KlState* state) {
 
 static inline KlStrPool* klstate_strpool(const KlState* state) {
   return state->strpool;
-}
-
-static inline KlMapNodePool* klstate_mapnodepool(const KlState* state) {
-  return state->mapnodepool;
 }
 
 static inline KlRef** klstate_reflist(KlState* state) {

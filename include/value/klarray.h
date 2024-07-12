@@ -38,8 +38,8 @@ static inline KlException klarray_indexas(KlArray* array, size_t index, const Kl
 //static inline KlValue* klarray_set_from_top(KlArray* array, size_t index);
 static inline KlValue* klarray_raw(KlArray* array);
 
-static inline KlArrayIter klarray_iter_begin(KlArray* array);
-static inline KlArrayIter klarray_iter_end(KlArray* array);
+static inline KlArrayIter klarray_iter_begin(const KlArray* array);
+static inline KlArrayIter klarray_iter_end(const KlArray* array);
 static inline KlArrayIter klarray_iter_next(KlArrayIter itr);
 static inline KlValue* klarray_iter_get(KlArray* array, KlArrayIter itr);
 
@@ -109,15 +109,15 @@ static inline KlValue* klarray_raw(KlArray* array) {
   return array->begin;
 }
 
-static inline KlArrayIter klarray_iter_begin(KlArray* array) {
+static inline KlArrayIter klarray_iter_begin(const KlArray* array) {
   return array->begin;
 }
 
-static inline KlArrayIter klarray_iter_end(KlArray* array) {
+static inline KlArrayIter klarray_iter_end(const KlArray* array) {
   return array->begin + array->size;
 }
 
-static inline KlArrayIter klarray_iter_next(KlArrayIter itr) {
+static inline KlArrayIter klarray_iter_next(const KlArrayIter itr) {
   return itr + 1;
 }
 

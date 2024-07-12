@@ -1289,8 +1289,6 @@ KlException klexec_execute(KlState* state) {
           klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klarray_size(klvalue_getobj(b, KlArray*)));
         } else if (kl_likely(klvalue_checktype(b, KL_STRING))) {
           klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klstring_length(klvalue_getobj(b, KlString*)));
-        } else if (kl_likely(klvalue_checktype(b, KL_MAP))) {
-          klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klmap_size(klvalue_getobj(b, KlMap*)));
         } else {
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_dopreopmethod(state, stkbase + KLINST_ABC_GETA(inst), b, state->common->string.len);
