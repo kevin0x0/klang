@@ -174,12 +174,12 @@ static inline size_t klmap_iter_end(const KlMap* map) {
 }
 
 static inline const KlValue* klmap_iter_getvalue(const KlMap* map, size_t index) {
-  kl_assert(&klmap_emptyslot(&map->slots[index]), "not a valid index");
+  kl_assert(!klmap_emptyslot(&map->slots[index]), "not a valid index");
   return &map->slots[index].value;
 }
 
 static inline const KlValue* klmap_iter_getkey(const KlMap* map, size_t index) {
-  kl_assert(&klmap_emptyslot(&map->slots[index]), "not a valid index");
+  kl_assert(!klmap_emptyslot(&map->slots[index]), "not a valid index");
   return &map->slots[index].key;
 }
 
