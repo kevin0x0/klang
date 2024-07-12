@@ -48,12 +48,15 @@ static inline void klmap_assignoption(KlMap* map, unsigned option);
 static inline void klmap_setoption(KlMap* map, unsigned bit);
 static inline void klmap_clroption(KlMap* map, unsigned bit);
 
+static inline size_t klmap_getinthash(KlInt key);
+static inline size_t klmap_gethash(const KlValue* key);
+
 bool klmap_insert(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value);
 bool klmap_insert_new(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value);
 bool klmap_insertstring(KlMap* map, KlMM* klmm, const KlString* str, const KlValue* value);
-KlMapSlot* klmap_search(const KlMap* map, const KlValue* key);
-KlMapSlot* klmap_searchint(const KlMap* map, KlInt key);
-KlMapSlot* klmap_searchstring(const KlMap* map, const KlString* str);
+static inline KlMapSlot* klmap_search(const KlMap* map, const KlValue* key);
+static inline KlMapSlot* klmap_searchint(const KlMap* map, KlInt key);
+static inline KlMapSlot* klmap_searchstring(const KlMap* map, const KlString* str);
 void klmap_erase(KlMap* map, KlMapSlot* slot);
 void klmap_makeempty(KlMap* map);
 
@@ -66,6 +69,83 @@ static inline const KlValue* klmap_iter_getkey(const KlMap* map, size_t index);
 
 static inline void klmap_index(const KlMap* map, const KlValue* key, KlValue* val);
 static inline bool klmap_indexas(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* val);
+
+
+static inline size_t klmap_getinthash(KlInt key) {
+  return (key << 16) ^ key;
+}
+
+static inline size_t klmap_gethash(const KlValue* key) {
+  switch (klvalue_gettype(key)) {
+    case KL_STRING: {
+      return klstring_hash(klvalue_getobj(key, KlString*));
+    }
+    case KL_INT: {
+      return klmap_getinthash(klvalue_getint(key));
+    }
+    case KL_NIL: {
+      return klvalue_getnil(key);
+    }
+    case KL_BOOL: {
+      return klvalue_getbool(key);
+    }
+    case KL_FLOAT: {
+      /* NOT PORTABLE */
+      kl_static_assert(sizeof (KlFloat) == sizeof (KlInt), "");
+      union {
+        size_t hash;
+        KlFloat floatval;
+      } num;
+      num.floatval = klvalue_getfloat(key);
+      /* +0.0 and -0.0 is equal but have difference binary representations */
+      return num.floatval == 0.0 ? 0 : num.hash;
+    }
+    case KL_CFUNCTION: {
+      return ((uintptr_t)klvalue_getcfunc(key) >> 3);
+    }
+    default: {
+      return ((uintptr_t)klvalue_getgcobj(key) >> 3);
+    }
+  }
+}
+
+static inline KlMapSlot* klmap_search(const KlMap* map, const KlValue* key) {
+  size_t hash = klmap_gethash(key);
+  KlMapSlot* slot = &map->slots[hash & (map->capacity - 1)];
+  if (!klmap_masterslot(slot)) return NULL;
+  do {
+    if (hash == slot->hash && klvalue_equal(&slot->key, key))
+      return slot;
+    slot = slot->next;
+  } while (slot);
+  return NULL;
+}
+
+static inline KlMapSlot* klmap_searchstring(const KlMap* map, const KlString* str) {
+  size_t hash = klstring_hash(str);
+  KlMapSlot* slot = &map->slots[hash & (map->capacity - 1)];
+  if (!klmap_masterslot(slot)) return NULL;
+  do {
+    if (klvalue_checktype(&slot->key, KL_STRING) &&
+        klvalue_getobj(&slot->key, KlString*) == str)
+      return slot;
+    slot = slot->next;
+  } while (slot);
+  return NULL;
+}
+
+static inline KlMapSlot* klmap_searchint(const KlMap* map, KlInt key) {
+  size_t hash = klmap_getinthash(key);
+  KlMapSlot* slot = &map->slots[hash & (map->capacity - 1)];
+  if (!klmap_masterslot(slot)) return NULL;
+  do {
+    if (klvalue_checktype(&slot->key, KL_INT) &&
+        klvalue_getint(&slot->key) == key)
+      return slot;
+    slot = slot->next;
+  } while (slot);
+  return NULL;
+}
 
 static inline bool klmap_iter_valid(const KlMap* map, size_t index) {
   return index == klmap_capacity(map) || (index < klmap_capacity(map) && !klmap_emptyslot(&map->slots[index]));

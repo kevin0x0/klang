@@ -25,44 +25,6 @@ static void klmap_correctlastfree(KlMap* map, size_t newemptyslotindex) {
     map->lastfree = newemptyslotindex + 1;
 }
 
-static inline size_t klmap_getinthash(KlInt key) {
-  return (key << 16) ^ key;
-}
-
-static inline size_t klmap_gethash(const KlValue* key) {
-  switch (klvalue_gettype(key)) {
-    case KL_STRING: {
-      return klstring_hash(klvalue_getobj(key, KlString*));
-    }
-    case KL_INT: {
-      return klmap_getinthash(klvalue_getint(key));
-    }
-    case KL_NIL: {
-      return klvalue_getnil(key);
-    }
-    case KL_BOOL: {
-      return klvalue_getbool(key);
-    }
-    case KL_FLOAT: {
-      /* NOT PORTABLE */
-      kl_static_assert(sizeof (KlFloat) == sizeof (KlInt), "");
-      union {
-        size_t hash;
-        KlFloat floatval;
-      } num;
-      num.floatval = klvalue_getfloat(key);
-      /* +0.0 and -0.0 is equal but have difference binary representations */
-      return num.floatval == 0.0 ? 0 : num.hash;
-    }
-    case KL_CFUNCTION: {
-      return ((uintptr_t)klvalue_getcfunc(key) >> 3);
-    }
-    default: {
-      return ((uintptr_t)klvalue_getgcobj(key) >> 3);
-    }
-  }
-}
-
 
 KlMap* klmap_create(KlMM* klmm, size_t capacity) {
   KlMap* map = (KlMap*)klmm_alloc(klmm, sizeof (KlMap));
@@ -329,44 +291,6 @@ bool klmap_insert_new(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue*
     slot->next = NULL;
     return true;
   }
-}
-
-KlMapSlot* klmap_search(const KlMap* map, const KlValue* key) {
-  size_t hash = klmap_gethash(key);
-  KlMapSlot* slot = &map->slots[hash & (map->capacity - 1)];
-  if (!klmap_masterslot(slot)) return NULL;
-  do {
-    if (hash == slot->hash && klvalue_equal(&slot->key, key))
-      return slot;
-    slot = slot->next;
-  } while (slot);
-  return NULL;
-}
-
-KlMapSlot* klmap_searchstring(const KlMap* map, const KlString* str) {
-  size_t hash = klstring_hash(str);
-  KlMapSlot* slot = &map->slots[hash & (map->capacity - 1)];
-  if (!klmap_masterslot(slot)) return NULL;
-  do {
-    if (klvalue_checktype(&slot->key, KL_STRING) &&
-        klvalue_getobj(&slot->key, KlString*) == str)
-      return slot;
-    slot = slot->next;
-  } while (slot);
-  return NULL;
-}
-
-KlMapSlot* klmap_searchint(const KlMap* map, KlInt key) {
-  size_t hash = klmap_getinthash(key);
-  KlMapSlot* slot = &map->slots[hash & (map->capacity - 1)];
-  if (!klmap_masterslot(slot)) return NULL;
-  do {
-    if (klvalue_checktype(&slot->key, KL_INT) &&
-        klvalue_getint(&slot->key) == key)
-      return slot;
-    slot = slot->next;
-  } while (slot);
-  return NULL;
 }
 
 static KlGCObject* klmap_propagate_nonweak(KlMap* map, KlGCObject* gclist) {
