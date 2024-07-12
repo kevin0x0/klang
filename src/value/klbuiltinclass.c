@@ -21,15 +21,16 @@ KlClass* klbuiltinclass_array(KlMM* klmm) {
 
 /* map */
 static KlException klbuiltinclass_map_constructor(KlClass* klclass, KlMM* klmm, KlValue* value) {
+  kl_unused(klclass);
   kl_unused(klmm);
-  KlMap* map = klmap_create(klclass, 3, klcast(KlMapNodePool*, klclass_constructor_data(klclass)));
+  KlMap* map = klmap_create(klmm, 3);
   if (kl_unlikely(!map)) return KL_E_OOM;
   klvalue_setobj(value, map, KL_MAP);
   return KL_E_NONE;
 }
 
-KlClass* klbuiltinclass_map(KlMM* klmm, KlMapNodePool* mapnodepool) {
-  return klclass_create(klmm, 5, klobject_attrarrayoffset(KlMap), mapnodepool, klbuiltinclass_map_constructor);
+KlClass* klbuiltinclass_map(KlMM* klmm) {
+  return klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klbuiltinclass_map_constructor);
 }
 
 bool klmap_compatible(KlObject* obj) {

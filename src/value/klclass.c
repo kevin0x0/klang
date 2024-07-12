@@ -152,7 +152,7 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, 
   /* this slot is not empty */
   /* find */
   KlClassSlot* findslot = slot;
-  while (findslot) {
+  do {
     if (findslot->key == key) {
       if (klclass_is_local(findslot)) /* local field can not be overwritten */
         return KL_E_INVLD;
@@ -160,7 +160,7 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, 
       return KL_E_NONE;
     }
     findslot = findslot->next;
-  }
+  } while (findslot);
 
   /* not found, insert new one */
   KlClassSlot* newslot = klclass_getfreeslot(klclass);

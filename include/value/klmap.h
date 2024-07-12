@@ -2,7 +2,6 @@
 #define _KLANG_INCLUDE_KLMAP_H_
 
 #include "include/mm/klmm.h"
-#include "include/value/klclass.h"
 #include "include/value/klvalue.h"
 #include "include/value/klstring.h"
 
@@ -12,33 +11,29 @@
 #define KLMAP_OPT_WEAKKEY   (klbit(0))
 #define KLMAP_OPT_WEAKVAL   (klbit(1))
 
-typedef struct tagKlMapNode KlMapNode;
-typedef KlMapNode* KlMapIter;
-typedef const KlMapNode* KlMapConstIter;
+#define klmap_slot_setvalue(slot, val)  klvalue_setvalue(&(slot)->value, (val))
+
+typedef struct tagKlMapSlot KlMapSlot;
 typedef struct tagKlMapNodePool KlMapNodePool;
 
-struct tagKlMapNode {
-  KlMapNode* next;
-  KlMapNode* prev;
+struct tagKlMapSlot {
   KlValue key;
   KlValue value;
+  KlMapSlot* next;
   size_t hash;
 };
 
 typedef struct tagKlMap {
-  KL_DERIVE_FROM(KlObject, _objectbase_);
-  KlMapNode head;
-  KlMapNode tail;
-  KlMapNode** array;
-  KlMapNodePool* nodepool;
+  KL_DERIVE_FROM(KlGCObject, _gcbase_);
+  KlMapSlot* slots;
+  size_t lastfree;
   size_t capacity;
   size_t size;
   unsigned option;
-  KLOBJECT_TAIL;
 } KlMap;
 
 
-KlMap* klmap_create(KlClass* mapclass, size_t capacity, KlMapNodePool* nodepool);
+KlMap* klmap_create(KlMM* klmm, size_t capacity);
 
 static inline size_t klmap_size(const KlMap* map);
 static inline size_t klmap_capacity(const KlMap* map);
@@ -46,62 +41,32 @@ static inline void klmap_assignoption(KlMap* map, unsigned option);
 static inline void klmap_setoption(KlMap* map, unsigned bit);
 static inline void klmap_clroption(KlMap* map, unsigned bit);
 
-KlMapIter klmap_insert(KlMap* map, const KlValue* key, const KlValue* value);
-KlMapIter klmap_erase(KlMap* map, KlMapIter iter);
-KlMapIter klmap_search(const KlMap* map, const KlValue* key);
-KlMapIter klmap_searchint(const KlMap* map, KlInt key);
-KlMapIter klmap_searchstring(const KlMap* map, const KlString* str);
-KlMapIter klmap_insertstring(KlMap* map, const KlString* str, const KlValue* val);
+bool klmap_insert(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value);
+bool klmap_insert_new(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value);
+KlMapSlot* klmap_search(const KlMap* map, const KlValue* key);
+KlMapSlot* klmap_searchint(const KlMap* map, KlInt key);
+KlMapSlot* klmap_searchstring(const KlMap* map, const KlString* str);
+KlMapSlot* klmap_insertstring(KlMap* map, KlMM* klmm, const KlString* str, const KlValue* val);
+void klmap_erase(KlMap* map, KlMapSlot* slot);
 void klmap_makeempty(KlMap* map);
-static inline void klmap_index(const KlMap* map, const KlValue* key, KlValue* val);
-static inline bool klmap_indexas(KlMap* map, const KlValue* key, const KlValue* val);
 
-static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* node);
-static inline size_t klmap_bucketid(const KlMap* map, KlMapIter itr);
-static inline KlMapIter klmap_getbucket(KlMap* map, size_t bucketid);
-static inline bool klmap_validbucket(const KlMap* map, size_t bucketid);
-KlMapIter klmap_bucketnext(KlMap* map, size_t bucketid, KlValue* key);
-static inline KlMapIter klmap_iter_begin(KlMap* map);
-static inline KlMapIter klmap_iter_end(KlMap* map);
-static inline KlMapIter klmap_iter_next(KlMapIter current);
-static inline KlMapConstIter klmap_constiter_begin(const KlMap* map);
-static inline KlMapConstIter klmap_constiter_end(const KlMap* map);
-static inline KlMapConstIter klmap_constiter_next(KlMapConstIter current);
+static inline void klmap_index(const KlMap* map, const KlValue* key, KlValue* val);
+static inline bool klmap_indexas(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* val);
+
 
 static inline void klmap_index(const KlMap* map, const KlValue* key, KlValue* val) {
-  KlMapIter iter = klmap_search(map, key);
-  iter ? klvalue_setnil(val) : klvalue_setvalue(val, &iter->value);
+  const KlMapSlot* slot = klmap_search(map, key);
+  slot ? klvalue_setvalue(val, &slot->value) : klvalue_setnil(val);
 }
 
-static inline bool klmap_indexas(KlMap* map, const KlValue* key, const KlValue* val) {
-  KlMapIter iter = klmap_search(map, key);
-  if (iter) {
-    if (kl_unlikely(!klmap_insert(map, key, val)))
-      return false;
+static inline bool klmap_indexas(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* val) {
+  KlMapSlot* slot = klmap_search(map, key);
+  if (slot) {
+    klvalue_setvalue(&slot->value, val);
+    return true;
   } else {
-    klvalue_setvalue(&iter->value, val);
+    return klmap_insert_new(map, klmm, key, val);
   }
-  return true;
-}
-
-static inline size_t klmap_bucketid(const KlMap* map, KlMapIter itr) {
-  return (map->capacity - 1) & itr->hash;
-}
-
-static inline KlMapIter klmap_getbucket(KlMap* map, size_t bucketid) {
-  return map->array[bucketid];
-}
-
-static inline bool klmap_validbucket(const KlMap* map, size_t bucketid) {
-  return bucketid < map->capacity && map->array[bucketid] != NULL;
-}
-
-static inline KlMapIter klmap_iter_begin(KlMap* map) {
-  return map->head.next;
-}
-
-static inline KlMapIter klmap_iter_end(KlMap* map) {
-  return &map->tail;
 }
 
 static inline size_t klmap_size(const KlMap* map) {
@@ -124,88 +89,6 @@ static inline void klmap_clroption(KlMap* map, unsigned bit) {
   map->option &= ~bit;
 }
 
-static inline KlMapIter klmap_iter_next(KlMapIter current) {
-  return current->next;
-}
 
-static inline KlMapConstIter klmap_constiter_begin(const KlMap* map) {
-  return map->head.next;
-}
-
-static inline KlMapConstIter klmap_constiter_end(const KlMap* map) {
-  return &map->tail;
-}
-
-static inline KlMapConstIter klmap_constiter_next(KlMapConstIter current) {
-  return current->next;
-}
-
-
-
-struct tagKlMapNodePool {
-  KlMM* klmm;
-  KlMapNode* nodes;
-  size_t available;
-  size_t pincount;
-};
-
-
-KlMapNodePool* klmapnodepool_create(KlMM* klmm);
-static inline void klmapnodepool_pin(KlMapNodePool* nodepool);
-static inline void klmapnodepool_unpin(KlMapNodePool* nodepool);
-void klmapnodepool_delete(KlMapNodePool* nodepool);
-
-static inline KlMM* klmapnodepool_getmm(KlMapNodePool* nodepool);
-
-static inline KlMapNode* klmapnodepool_alloc(KlMapNodePool* nodepool);
-static inline void klmapnodepool_free(KlMapNodePool* nodepool, KlMapNode* node);
-static inline void klmapnodepool_freelist(KlMapNodePool* nodepool, KlMapNode* head, KlMapNode* tail, size_t count);
-void klmapnodepool_shrink(KlMapNodePool* nodepool);
-
-static inline void klmapnodepool_unpin(KlMapNodePool* nodepool) {
-  if (--nodepool->pincount)
-    return;
-  klmapnodepool_delete(nodepool);
-}
-
-static inline void klmapnodepool_pin(KlMapNodePool* nodepool) {
-  ++nodepool->pincount;
-}
-
-static inline KlMM* klmapnodepool_getmm(KlMapNodePool* nodepool) {
-  return nodepool->klmm;
-}
-
-static inline KlMapNode* klmapnodepool_alloc(KlMapNodePool* nodepool) {
-  KlMapNode* node = nodepool->nodes;
-  if (!node)
-    return (KlMapNode*)klmm_alloc(nodepool->klmm, sizeof (KlMapNode));
-  nodepool->nodes = node->next;
-  --nodepool->available;
-  return node;
-}
-
-static inline void klmapnodepool_free(KlMapNodePool* nodepool, KlMapNode* node) {
-  node->next = nodepool->nodes;
-  nodepool->nodes = node;
-  ++nodepool->available;
-}
-
-static inline void klmapnodepool_freelist(KlMapNodePool* nodepool, KlMapNode* head, KlMapNode* tail, size_t count) {
-  tail->next = nodepool->nodes;
-  nodepool->nodes = head;
-  nodepool->available += count;
-}
-
-
-
-
-
-static inline void klmap_node_insert(KlMapNode* insertpos, KlMapNode* node) {
-  node->prev = insertpos->prev;
-  insertpos->prev->next = node;
-  node->next = insertpos;
-  insertpos->prev = node;
-}
 
 #endif
