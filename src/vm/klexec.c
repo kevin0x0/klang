@@ -689,7 +689,6 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     case KL_NIL: {
       return klstate_throw(state, KL_E_INVLD, "can not set field of nil class");
     }
-    case KL_ARRAY:
     case KL_OBJECT: {
       /* values with type KL_OBJECT(including map and array). */
       KlObject* object = klvalue_getobj(dotable, KlObject*);
@@ -704,10 +703,16 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
       }
       return KL_E_NONE;
     } 
+    case KL_CLASS: {
+      KlClass* klclass = klvalue_getobj(dotable, KlClass*);
+      klexec_savestktop(state, state->callinfo->top);
+      KlException exception = klclass_newshared_normal(klclass, klstate_getmm(state), keystr, val);
+      if (kl_unlikely(exception))
+        return klexec_handle_newshared_exception(state, exception, keystr);
+      return KL_E_NONE;
+    }
     default: {
-      KlClass* klclass = klvalue_checktype(dotable, KL_CLASS)
-                       ? klvalue_getobj(dotable, KlClass*)
-                       : state->common->klclass.phony[klvalue_gettype(dotable)];
+      KlClass* klclass = state->common->klclass.phony[klvalue_gettype(dotable)];
       klexec_savestktop(state, state->callinfo->top);
       KlException exception = klclass_newshared_normal(klclass, klstate_getmm(state), keystr, val);
       if (kl_unlikely(exception))
