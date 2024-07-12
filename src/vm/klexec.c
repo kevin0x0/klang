@@ -667,7 +667,6 @@ static void klexec_getfieldgeneric(KlState* state, const KlValue* dotable, const
 
   KlString* keystr = klvalue_getobj(key, KlString*);
   if (klvalue_checktype(dotable, KL_OBJECT)) {
-    /* values with type KL_OBJECT(including map and array). */
     KlObject* object = klvalue_getobj(dotable, KlObject*);
     klobject_getfieldset(object, keystr, val);
   } else {  /* other types. search their phony class */
