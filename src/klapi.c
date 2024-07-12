@@ -136,7 +136,7 @@ KlException klapi_pushstring_buf(KlState* state, const char* buf, size_t buflen)
 
 KlException klapi_pushmap(KlState* state, size_t capacity) {
   kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
-  KlMap* map = klmap_create(state->common->klclass.map, capacity, state->mapnodepool);
+  KlMap* map = klmap_create(klstate_getmm(state), capacity);
   if (!map) return klstate_throw(state, KL_E_OOM, "out of momery");
   klstack_pushgcobj(klstate_stack(state), (KlGCObject*)map, KL_MAP);
   return KL_E_NONE;
@@ -160,7 +160,7 @@ void klapi_pushgcobj(KlState* state, KlGCObject* gcobj, KlType type) {
   klstack_pushgcobj(&state->stack, gcobj, type);
 }
 
-void klapi_pushvalue(KlState* state, KlValue* val) {
+void klapi_pushvalue(KlState* state, const KlValue* val) {
   kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushvalue(&state->stack, val);
 }
@@ -195,7 +195,7 @@ KlException klapi_setstring(KlState* state, int index, const char* str) {
 
 KlException klapi_setmap(KlState* state, int index, size_t capacity) {
   KlValue* val = klapi_access(state, index);
-  KlMap* map = klmap_create(state->common->klclass.map, capacity, state->mapnodepool);
+  KlMap* map = klmap_create(klstate_getmm(state), capacity);
   if (!map) return klstate_throw(state, KL_E_OOM, "out of momery");
   klvalue_setobj(val, map, KL_MAP);
   return KL_E_NONE;
@@ -219,7 +219,7 @@ void klapi_setgcobj(KlState* state, int index, KlGCObject* gcobj, KlType type) {
   klvalue_setgcobj(val, gcobj, type);
 }
 
-void klapi_setvalue(KlState* state, int index, KlValue* other) {
+void klapi_setvalue(KlState* state, int index, const KlValue* other) {
   KlValue* val = klapi_access(state, index);
   klvalue_setvalue(val, other);
 }
@@ -333,17 +333,17 @@ KlValue* klapi_getref(KlState* state, unsigned short refidx) {
 
 void klapi_loadglobal(KlState* state) {
   KlString* varname = klapi_getstring(state, -1);
-  KlMapIter itr = klmap_searchstring(state->global, varname);
-  itr ? klapi_setvalue(state, -1, &itr->value) : klapi_setnil(state, -1);
+  KlMapSlot* slot = klmap_searchstring(state->global, varname);
+  slot ? klapi_setvalue(state, -1, &slot->value) : klapi_setnil(state, -1);
 }
 
 KlException klapi_storeglobal(KlState* state, KlString* varname, int validx) {
-  KlMapIter itr = klmap_searchstring(state->global, varname);
-  if (!itr) {
-    if (kl_unlikely(!klmap_insertstring(state->global, varname, klapi_access(state, validx))))
+  KlMapSlot* slot = klmap_searchstring(state->global, varname);
+  if (!slot) {
+    if (kl_unlikely(!klmap_insertstring(state->global, klstate_getmm(state), varname, klapi_access(state, validx))))
       return KL_E_OOM;
   } else {
-    klvalue_setvalue(&itr->value, klapi_access(state, validx));
+    klvalue_setvalue(&slot->value, klapi_access(state, validx));
   }
   return KL_E_NONE;
 }
@@ -573,46 +573,34 @@ KlException klapi_loadlib(KlState* state, int result, const char* entryfunction)
 KlState* klapi_new_state(KlMM* klmm) {
   klmm_stopgc(klmm);  /* disable gc */
 
-  KlMapNodePool* mapnodepool = klmapnodepool_create(klmm);
-  if (!mapnodepool) {
-    klmm_restartgc(klmm);
-    return NULL;
-  }
-  klmapnodepool_pin(mapnodepool);
-
   KlStrPool* strpool = klstrpool_create(klmm, 32);
   if (!strpool) {
     klmm_restartgc(klmm);
-    klmapnodepool_unpin(mapnodepool);
     return NULL;
   }
 
-  KlCommon* common = klcommon_create(klmm, strpool, mapnodepool);
+  KlCommon* common = klcommon_create(klmm, strpool);
   if (!common) {
     klmm_restartgc(klmm);
-    klmapnodepool_unpin(mapnodepool);
     return NULL;
   }
   klcommon_pin(common);
 
-  KlMap* global = klmap_create(common->klclass.map, 5, mapnodepool);
+  KlMap* global = klmap_create(klmm, 5);
   if (!global) {
     klmm_restartgc(klmm);
-    klmapnodepool_unpin(mapnodepool);
     klcommon_unpin(common, klmm);
     return NULL;
   }
 
-  KlState* state = klstate_create(klmm, global, common, strpool, mapnodepool, NULL);
+  KlState* state = klstate_create(klmm, global, common, strpool, NULL);
   if (!state) {
     klmm_restartgc(klmm);
-    klmapnodepool_unpin(mapnodepool);
     klcommon_unpin(common, klmm);
     return NULL;
   }
   klmm_register_root(klmm, klmm_to_gcobj(state));
   klmm_restartgc(klmm);
-  klmapnodepool_unpin(mapnodepool);
   klcommon_unpin(common, klmm);
   return state;
 }

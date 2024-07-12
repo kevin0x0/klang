@@ -109,11 +109,11 @@ static inline KlException klclass_newshared_method(KlClass* klclass, KlMM* klmm,
 static inline KlClassSlot* klclass_find(const KlClass* klclass, const KlString* key) {
   size_t keyindex = klstring_hash(key) & (klclass->capacity - 1);
   KlClassSlot* slot = &klclass->slots[keyindex];
-  while (slot) {
+  do {
     if (slot->key == key)
       return slot;
     slot = slot->next;
-  }
+  } while (slot);
   return NULL;
 }
 

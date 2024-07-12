@@ -165,6 +165,12 @@ static inline void klvalue_setvalue(KlValue *val, const KlValue *other) {
   *val = *other;
 }
 
+static inline void klvalue_setvalue_withtag(KlValue *val, const KlValue *other, KlUnsigned tag) {
+  val->value = other->value;
+  val->typewithtag.type = other->typewithtag.type;
+  val->typewithtag.tag = tag;
+}
+
 static inline KlUnsigned klvalue_gettag(const KlValue* val) {
   return val->typewithtag.tag;
 }

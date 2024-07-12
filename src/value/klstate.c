@@ -13,7 +13,7 @@ static const KlGCVirtualFunc klstate_gcvfunc = { .propagate = (KlGCProp)klstate_
 static void klstate_correct_callinfo(KlState* state, ptrdiff_t diff);
 
 
-KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlMapNodePool* mapnodepool, KlKClosure* kclo) {
+KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlKClosure* kclo) {
   KlState* state = (KlState*)klmm_alloc(klmm, sizeof (KlState));
   if (!state) return NULL;
 
@@ -36,8 +36,6 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
   state->klmm = klmm;
   state->strpool = strpool;
   state->global = global;
-  state->mapnodepool = mapnodepool;
-  klmapnodepool_pin(mapnodepool);
   state->common = common;
   klcommon_pin(common);
   state->callinfo = NULL;
@@ -57,7 +55,6 @@ static void klstate_delete(KlState* state, KlMM* klmm) {
   klstack_destroy(klstate_stack(state), klmm);
   klreflist_delete(state->reflist, klmm);
   klthrow_destroy(&state->throwinfo, klmm);
-  klmapnodepool_unpin(state->mapnodepool);
   klcommon_unpin(state->common, klmm);
   KlCallInfo* ci = state->baseci.next;
   while (ci) {
@@ -83,7 +80,6 @@ static KlGCObject* klstate_propagate(KlState* state, KlMM* klmm, KlGCObject* gcl
 
   klmm_gcobj_mark((KlGCObject*)state->global, gclist);
   klmm_gcobj_mark((KlGCObject*)state->strpool, gclist);
-  klmapnodepool_shrink(state->mapnodepool); /* shrink nodepool once for each iteration of gc */
   return gclist;
 }
 

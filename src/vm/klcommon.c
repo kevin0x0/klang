@@ -21,7 +21,7 @@ static KlClass* klcommon_phonyclass(KlMM* klmm) {
 }
 
 
-KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnodepool) {
+KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool) {
   KlCommon* common = (KlCommon*)klmm_alloc(klmm, sizeof (KlCommon));
   if (kl_unlikely(!common)) return NULL;
   common->ref_count = 0;
@@ -57,7 +57,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool, KlMapNodePool* mapnode
   for (KlType type = 0; type < KL_NTYPE; ++type)
     common->klclass.phony[type] = fallback;
 
-  done = done && (common->klclass.map = klbuiltinclass_map(klmm, mapnodepool));
+  done = done && (common->klclass.map = klbuiltinclass_map(klmm));
   done = done && (common->klclass.array = klbuiltinclass_array(klmm));
   done = done && (common->klclass.phony[KL_STRING] = klbuiltinclass_string(klmm, strpool));
   done = done && (common->klclass.phony[KL_INT] = klbuiltinclass_int(klmm));

@@ -1,4 +1,5 @@
 #include "include/vm/klexec.h"
+#include "include/value/klmap.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klstack.h"
 #include "include/value/klarray.h"
@@ -1288,8 +1289,6 @@ KlException klexec_execute(KlState* state) {
           klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klarray_size(klvalue_getobj(b, KlArray*)));
         } else if (kl_likely(klvalue_checktype(b, KL_STRING))) {
           klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klstring_length(klvalue_getobj(b, KlString*)));
-        } else if (kl_likely(klvalue_checktype(b, KL_MAP))) {
-          klvalue_setint(stkbase + KLINST_ABC_GETA(inst), klmap_size(klvalue_getobj(b, KlMap*)));
         } else {
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_dopreopmethod(state, stkbase + KLINST_ABC_GETA(inst), b, state->common->string.len);
@@ -1492,8 +1491,8 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         kl_assert(klvalue_checktype(constants + KLINST_AX_GETX(inst), KL_STRING), "something wrong in code generation");
         KlString* varname = klvalue_getobj(constants + KLINST_AX_GETX(inst), KlString*);
-        KlMapIter itr = klmap_searchstring(state->global, varname);
-        itr ? klvalue_setvalue(a, &itr->value) : klvalue_setnil(a);
+        KlMapSlot* slot = klmap_searchstring(state->global, varname);
+        slot ? klvalue_setvalue(a, &slot->value) : klvalue_setnil(a);
         break;
       }
       case KLOPCODE_STOREREF: {
@@ -1506,12 +1505,12 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         kl_assert(klvalue_checktype(constants + KLINST_AX_GETX(inst), KL_STRING), "something wrong in code generation");
         KlString* varname = klvalue_getobj(constants + KLINST_AX_GETX(inst), KlString*);
-        KlMapIter itr = klmap_searchstring(state->global, varname);
-        if (kl_likely(itr)) {
-          klvalue_setvalue(&itr->value, a);
+        KlMapSlot* slot = klmap_searchstring(state->global, varname);
+        if (kl_likely(slot)) {
+          klmap_slot_setvalue(slot, a);
         } else {
           klexec_savestate(callinfo->top, pc);
-          if (kl_unlikely(!klmap_insertstring(state->global, varname, a)))
+          if (kl_unlikely(!klmap_insertstring(state->global, klstate_getmm(state), varname, a)))
             return klstate_throw_oom(state, "setting a global variable");
         }
         break;
@@ -1522,7 +1521,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* stktop = stkbase + KLINST_ABX_GETB(inst);
         size_t capacity = KLINST_ABX_GETX(inst);
         klexec_savestate(stktop, pc); /* creating map may trigger gc */
-        KlMap* map = klmap_create(state->common->klclass.map, capacity, state->mapnodepool);
+        KlMap* map = klmap_create(klstate_getmm(state), capacity);
         if (kl_unlikely(!map))
           return klstate_throw_oom(state, "creating a map");
         klvalue_setobj(a, map, KL_MAP);
@@ -1605,8 +1604,8 @@ KlException klexec_execute(KlState* state) {
           klarray_index(arr, index, val);
         } else if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
           KlMap* map = klvalue_getobj(indexable, KlMap*);
-          KlMapIter itr = klmap_searchint(map, index);
-          itr ? klvalue_setvalue(val, &itr->value) : klvalue_setnil(val);
+          KlMapSlot* slot = klmap_searchint(map, index);
+          slot ? klvalue_setvalue(val, &slot->value) : klvalue_setnil(val);
         } else {
           KlValue key;
           klvalue_setint(&key, index);
@@ -1638,7 +1637,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
-            KlMapIter itr = klmap_searchint(map, index);
+            KlMapSlot* itr = klmap_searchint(map, index);
             if (itr) {
               klvalue_checktype(val, KL_NIL) ? klmap_erase(map, itr)
                                              : klvalue_setvalue(&itr->value, val);
@@ -1646,7 +1645,7 @@ KlException klexec_execute(KlState* state) {
               KlValue key;
               klvalue_setint(&key, index);
               klexec_savestate(callinfo->top, pc);
-              if (kl_unlikely(!klmap_insert(map, &key, val)))
+              if (kl_unlikely(!klmap_insert(map, klstate_getmm(state), &key, val)))
                 return klstate_throw_oom(state, "inserting a k-v pair to a map");
             }
             break;
@@ -1684,7 +1683,7 @@ KlException klexec_execute(KlState* state) {
           if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
             if (klvalue_canrawequal(key)) {
-              KlMapIter itr = klmap_search(map, key);
+              KlMapSlot* itr = klmap_search(map, key);
               itr ? klvalue_setvalue(val, &itr->value) : klvalue_setnil(val);
               break;
             }
@@ -1722,13 +1721,13 @@ KlException klexec_execute(KlState* state) {
           if (klvalue_checktype(indexable, KL_MAP)) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
             if (klvalue_canrawequal(key)) { /* simple types that can apply raw equal. fast search and set */
-              KlMapIter itr = klmap_search(map, key);
+              KlMapSlot* itr = klmap_search(map, key);
               if (itr) {
                 klvalue_checktype(val, KL_NIL) ? klmap_erase(map, itr)
                                                : klvalue_setvalue(&itr->value, val);
               } else if (!klvalue_checktype(val, KL_NIL)) {
                 klexec_savestate(callinfo->top, pc);
-                if (kl_unlikely(!klmap_insert(map, key, val)))
+                if (kl_unlikely(!klmap_insert(map, klstate_getmm(state), key, val)))
                   return klstate_throw_oom(state, "inserting a k-v pair to a map");
               }
               break;
@@ -2220,8 +2219,8 @@ KlException klexec_execute(KlState* state) {
         klvalue_setvalue(b + nwanted + 1, b);
         for (size_t i = 0; i < nwanted; ++i) {
           if (kl_likely(klvalue_canrawequal(key + i))) {
-            KlMapConstIter itr = klmap_search(map, key + i);
-            itr ? klvalue_setvalue(a + i, &itr->value) : klvalue_setnil(a + i);
+            const KlMapSlot* slot = klmap_search(map, key + i);
+            slot ? klvalue_setvalue(a + i, &slot->value) : klvalue_setnil(a + i);
           } else {
             klvalue_setint(b + nwanted + 2, i); /* save current index for pmappost */
             klexec_savestate(callinfo->top, pc);
@@ -2258,7 +2257,7 @@ KlException klexec_execute(KlState* state) {
         kl_assert(klvalue_checktype(b + nwanted + 2, KL_INT), "");
         for (size_t i = klvalue_getint(b + nwanted + 2); i < nwanted; ++i) {
           if (kl_likely(klvalue_canrawequal(key + i))) {
-            KlMapIter itr = klmap_search(map, key + i);
+            KlMapSlot* itr = klmap_search(map, key + i);
             itr ? klvalue_setvalue(a + i, &itr->value) : klvalue_setnil(a + i);
           } else {
             klvalue_setint(b + nwanted + 2, i); /* save current index */

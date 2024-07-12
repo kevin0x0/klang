@@ -15,7 +15,7 @@ void klco_init(KlCoroutine* co, KlKClosure* kclo) {
 
 KlState* klco_create(KlState* state, KlKClosure* kclo) {
   KlMM* klmm = klstate_getmm(state);
-  KlState* costate = klstate_create(klmm, klstate_global(state), klstate_common(state), klstate_strpool(state), klstate_mapnodepool(state), kclo);
+  KlState* costate = klstate_create(klmm, klstate_global(state), klstate_common(state), klstate_strpool(state), kclo);
   if (kl_unlikely(!costate)) return NULL;
   return costate;
 }
