@@ -85,9 +85,9 @@ static KlException klexec_handle_arrayindexas_exception(KlState* state, KlExcept
 }
 
 static KlClass* klexec_getclass(const KlState* state, const KlValue* obj) {
-  return klvalue_checktype(obj, KL_CLASS) ? klvalue_getobj(obj, KlClass*)                  :
-         klvalue_dotable(obj)             ? klobject_class(klvalue_getobj(obj, KlObject*)) :
-                                            klstate_common(state)->klclass.phony[klvalue_gettype(obj)];
+  return klvalue_checktype(obj, KL_CLASS)   ? klvalue_getobj(obj, KlClass*)                  :
+         klvalue_checktype(obj, KL_OBJECT)  ? klobject_class(klvalue_getobj(obj, KlObject*)) :
+                                              klstate_common(state)->klclass.phony[klvalue_gettype(obj)];
 }
 
 static KlCallInfo* klexec_alloc_callinfo(KlState* state) {
@@ -431,7 +431,7 @@ static KlException klexec_callprep_callback_for_method(KlState* state, const KlV
 
 static const KlValue* klexec_getfield(const KlState* state, const KlValue* object, const KlString* field) {
   static const KlValue nil = KLVALUE_NIL_INIT;
-  if (klvalue_dotable(object)) {
+  if (klvalue_checktype(object, KL_OBJECT)) {
     KlObject* obj = klvalue_getobj(object, KlObject*);
     KlValue* val = klobject_getfield(obj, field);
     return val ? val : &nil;
@@ -666,7 +666,7 @@ static void klexec_getfieldgeneric(KlState* state, const KlValue* dotable, const
   kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
 
   KlString* keystr = klvalue_getobj(key, KlString*);
-  if (klvalue_dotable(dotable)) {
+  if (klvalue_checktype(dotable, KL_OBJECT)) {
     /* values with type KL_OBJECT(including map and array). */
     KlObject* object = klvalue_getobj(dotable, KlObject*);
     klobject_getfieldset(object, keystr, val);

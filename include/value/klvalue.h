@@ -9,7 +9,6 @@
 
 #define klvalue_gettype(value)              ((value)->type)
 #define klvalue_collectable(value)          (klvalue_gettype((value)) >= KL_COLLECTABLE)
-#define klvalue_dotable(value)              (klvalue_checktype((value), KL_OBJECT))
 #define klvalue_callable(value)             (klvalue_gettype((value)) >= KL_CALLABLEOBJ || klvalue_gettype((value)) == KL_CFUNCTION)
 #define klvalue_canrawequal(value)          (klvalue_gettype((value)) <= KL_RAWEQUAL)
 #define klvalue_checktype(value, valtype)   (klvalue_gettype((value)) == (valtype))
