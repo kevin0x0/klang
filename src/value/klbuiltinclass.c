@@ -16,7 +16,10 @@ bool klarray_compatible(KlObject* obj) {
 }
 
 KlClass* klbuiltinclass_array(KlMM* klmm) {
-  return klclass_create(klmm, 5, klobject_attrarrayoffset(KlArray), NULL, klbuiltinclass_array_constructor);
+  KlClass* klclass = klclass_create(klmm, 5, klobject_attrarrayoffset(KlArray), NULL, klbuiltinclass_array_constructor);
+  if (kl_unlikely(!klclass)) return NULL;
+  klclass_final(klclass);
+  return klclass;
 }
 
 /* map */
@@ -30,7 +33,10 @@ static KlException klbuiltinclass_map_constructor(KlClass* klclass, KlMM* klmm, 
 }
 
 KlClass* klbuiltinclass_map(KlMM* klmm) {
-  return klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klbuiltinclass_map_constructor);
+  KlClass* klclass = klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klbuiltinclass_map_constructor);
+  if (kl_unlikely(!klclass)) return NULL;
+  klclass_final(klclass);
+  return klclass;
 }
 
 bool klmap_compatible(KlObject* obj) {

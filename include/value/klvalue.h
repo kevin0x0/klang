@@ -9,7 +9,7 @@
 
 #define klvalue_gettype(value)              ((value)->type)
 #define klvalue_collectable(value)          (klvalue_gettype((value)) >= KL_COLLECTABLE)
-#define klvalue_dotable(value)              (klvalue_gettype((value)) >= KL_DOTABLE && klvalue_gettype((value)) <= KL_DOTABLE_END)
+#define klvalue_dotable(value)              (klvalue_checktype((value), KL_ARRAY) && klvalue_checktype((value), KL_OBJECT))
 #define klvalue_callable(value)             (klvalue_gettype((value)) >= KL_CALLABLEOBJ || klvalue_gettype((value)) == KL_CFUNCTION)
 #define klvalue_canrawequal(value)          (klvalue_gettype((value)) <= KL_RAWEQUAL)
 #define klvalue_checktype(value, valtype)   (klvalue_gettype((value)) == (valtype))
@@ -43,8 +43,7 @@ typedef enum tagKlType {
   KL_USERDATA,                    /* non-collectable type */
   KL_COLLECTABLE , KL_STRING = KL_COLLECTABLE,
   KL_RAWEQUAL = KL_STRING,
-  KL_DOTABLE, KL_MAP = KL_DOTABLE, KL_ARRAY, KL_OBJECT,
-  KL_DOTABLE_END = KL_OBJECT,
+  KL_MAP, KL_ARRAY, KL_OBJECT,
   KL_CLASS, KL_KFUNCTION,
   KL_CALLABLEOBJ, KL_KCLOSURE = KL_CALLABLEOBJ, KL_CCLOSURE, KL_COROUTINE,
   KL_CALLABLEOBJ_END = KL_COROUTINE,

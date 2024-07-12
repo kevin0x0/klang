@@ -1,10 +1,8 @@
 #include "include/value/klmap.h"
-#include "include/misc/klutils.h"
-#include "include/mm/klmm.h"
 #include "include/value/klvalue.h"
-#include "include/vm/klexception.h"
+#include "include/mm/klmm.h"
+#include "include/misc/klutils.h"
 
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,6 +30,7 @@ KlMap* klmap_create(KlMM* klmm, size_t capacity) {
   capacity = (size_t)1 << capacity;
   map->capacity = capacity;
   map->lastfree = capacity;
+  map->option = 0;
   KlMapSlot* slots = (KlMapSlot*)klmm_alloc(klmm, capacity * sizeof (KlMapSlot));
   if (kl_unlikely(!slots)) {
     klmm_free(klmm, map, sizeof (KlMap));
@@ -299,7 +298,7 @@ static KlGCObject* klmap_propagate_nonweak(KlMap* map, KlGCObject* gclist) {
   for (KlMapSlot* itr = slots; itr != end; ++itr) {
     if (klmap_emptyslot(itr)) continue;
     if (klvalue_collectable(&itr->key))
-      klmm_gcobj_mark(klmm_to_gcobj(&itr->key), gclist);
+      klmm_gcobj_mark(klvalue_getgcobj(&itr->key), gclist);
     if (klvalue_collectable(&itr->value))
       klmm_gcobj_mark(klvalue_getgcobj(&itr->value), gclist);
   }

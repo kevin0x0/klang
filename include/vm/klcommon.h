@@ -2,7 +2,6 @@
 #define _KLANG_INCLUDE_VM_KLSTRS_H_
 
 #include "include/value/klclass.h"
-#include "include/value/klmap.h"
 #include "include/value/klstring.h"
 
 typedef struct tagKlCommon {
@@ -32,7 +31,6 @@ typedef struct tagKlCommon {
     KlString* typename;
   } string;
   struct {
-    KlClass* map;
     KlClass* array;
     KlClass* phony[KL_NTYPE];
   } klclass;

@@ -448,7 +448,6 @@ static const KlValue* klexec_getfield(const KlState* state, const KlValue* objec
 static bool klexec_getmethod(const KlState* state, const KlValue* object, const KlString* field, KlValue* result) {
   switch (klvalue_gettype(object)) {
     case KL_OBJECT:
-    case KL_MAP:
     case KL_ARRAY: {
       return klobject_getmethod(klvalue_getobj(object, KlObject*), field, result);
     }
@@ -474,7 +473,6 @@ static bool klexec_getmethod(const KlState* state, const KlValue* object, const 
 
 const char* klexec_typename(const KlState* state, const KlValue* val) {
   if (klvalue_checktype(val, KL_OBJECT) ||
-      klvalue_checktype(val, KL_MAP)    ||
       klvalue_checktype(val, KL_ARRAY)) {
     const KlValue* typename = klexec_getfield(state, val, state->common->string.typename);
     return klvalue_checktype(typename, KL_STRING)                ? 
@@ -691,7 +689,6 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     case KL_NIL: {
       return klstate_throw(state, KL_E_INVLD, "can not set field of nil class");
     }
-    case KL_MAP:
     case KL_ARRAY:
     case KL_OBJECT: {
       /* values with type KL_OBJECT(including map and array). */
