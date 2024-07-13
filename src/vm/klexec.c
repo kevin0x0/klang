@@ -471,8 +471,7 @@ static bool klexec_getmethod(const KlState* state, const KlValue* object, const 
 }
 
 const char* klexec_typename(const KlState* state, const KlValue* val) {
-  if (klvalue_checktype(val, KL_OBJECT) ||
-      klvalue_checktype(val, KL_ARRAY)) {
+  if (klvalue_checktype(val, KL_OBJECT)) {
     const KlValue* typename = klexec_getfield(state, val, state->common->string.typename);
     return klvalue_checktype(typename, KL_STRING)                ? 
            klstring_content(klvalue_getobj(typename, KlString*)) :
