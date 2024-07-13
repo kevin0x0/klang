@@ -447,8 +447,7 @@ static const KlValue* klexec_getfield(const KlState* state, const KlValue* objec
 
 static bool klexec_getmethod(const KlState* state, const KlValue* object, const KlString* field, KlValue* result) {
   switch (klvalue_gettype(object)) {
-    case KL_OBJECT:
-    case KL_ARRAY: {
+    case KL_OBJECT: {
       return klobject_getmethod(klvalue_getobj(object, KlObject*), field, result);
     }
     case KL_CLASS: {
