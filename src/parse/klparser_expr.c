@@ -865,10 +865,12 @@ static KlAst* klparser_exprpost(KlParser* parser, KlLex* lex) {
       case KLTK_ID:
       case KLTK_STRING:
       case KLTK_INT:
+      case KLTK_INTDOT:
       case KLTK_FLOAT:
       case KLTK_BOOLVAL:
       case KLTK_NIL:
       case KLTK_VARARG:
+      case KLTK_NEW:
       case KLTK_LPAREN:
       case KLTK_LBRACE: { /* function call */
         postexpr = klast(klparser_exprcall(parser, lex, postexpr));

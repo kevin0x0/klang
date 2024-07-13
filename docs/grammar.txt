@@ -1,0 +1,229 @@
+expression              : binary_expression
+                        | binary_expression where statement_block
+                        | binary_expression ':=' expression
+                        | binary_expression '<<' expression_list
+                        | binary_expression '=>' statement_block
+                        | binary_expression '->' expression
+                        | '=>' statement_block
+                        | '->' expression
+                        | 'yield' expression_list
+                        | 'async' expression
+                        | case_expression
+                        ;
+
+pattern                 : expression
+                        ;
+
+case_expression         : 'case' expression 'of' case_list
+                        ;
+
+case_list               : pattern '=' expression
+                        | case_list ',' pattern '=' expression
+                        ;
+
+expression_list         : expression_list ',' expression
+                        | expression
+                        ;
+
+binary_expression       : prefix_expression
+                        | binary_expression binop_or  binary_expression
+                        | binary_expression binop_and binary_expression
+                        | binary_expression '<=' binary_expression
+                        | binary_expression '<'  binary_expression
+                        | binary_expression '>=' binary_expression
+                        | binary_expression '>'  binary_expression
+                        | binary_expression '==' binary_expression
+                        | binary_expression '!=' binary_expression
+                        | binary_expression binop_is    binary_expression
+                        | binary_expression binop_isnot binary_expression
+                        | binary_expression '..' binary_expression
+                        | binary_expression '+'  binary_expression
+                        | binary_expression '-'  binary_expression
+                        | binary_expression '*'  binary_expression
+                        | binary_expression '/'  binary_expression
+                        | binary_expression '%'  binary_expression
+                        | binary_expression '//' binary_expression
+                        ;
+
+prefix_expression       : postfix_expression
+                        | '-' prefix_expression
+                        | '$' prefix_expression
+                        | preop_not prefix_expression
+                        | 'inherit' prefix_expression ':' class_expression
+                        | '+' prefix_expression
+                        ;
+
+postfix_expression      : unit_expression
+                        | postfix_expression '[' expression ']'
+                        | postfix_expression '.' identifier
+                        | postfix_expression unit_expression
+                        | postfix_expression '(' expression_list ')'
+                        | postfix_expression '(' ')'
+                        ;
+
+unit_expression         : identifier
+                        | integer
+                        | float
+                        | string
+                        | 'true'
+                        | 'false'
+                        | 'nil'
+                        | '...'
+                        | '(' expression_list ')'
+                        | '(' expression ')'
+                        | array_expression
+                        | brace_expression
+                        ;
+
+array_expression        : '[' expression_list ']'
+                        | '[' expression_list '|' generator_def_sequence ']'
+                        | '[' ']'
+                        ;
+
+brace_expression        : map_expression
+                        | class_expression
+                        | generator_expression
+                        ;
+
+map_expression          : '{' kvpairs '}'
+                        : '{' kvpairs '|' generator_def_sequence '}'
+                        | '{' ':' '}'
+                        ;
+
+kvpairs                 : pattern ':' expression
+                        | kvpairs ',' pattern ':' expression
+                        ;
+
+class_expression        : '{' class_def_list '}'   
+                        | '{' '}'
+                        ;
+
+class_def_list          : class_def
+                        | class_def_list optional(';') class_def
+                        ;
+
+class_def               : 'local' class_local_list
+                        | optional('shared') class_shared_list
+                        | 'method' identifier '=' expression
+                        ;
+
+class_local_list        : identifier
+                        | class_local_list ',' identifier
+                        ;
+
+class_shared_list       : pattern '=' expression
+                        | class_shared_list ',' pattern '=' expression
+                        ;
+
+generator_expression    : '{' expression_list '|' generator_def_sequence '}'
+                        ;
+
+identifier              : regular expression: ([A-Za-z_] | ([:unicode_character:] - [:ascii:]))([A-Za-z0-9_] | ([:unicode_character:] - [:ascii:]))*
+                        | regular expression: '(([:unicode_character:] - [\\']) | \\[:ascii:])*'
+                        ;
+
+integer                 : regular expression: 0[Xx][A-Fa-f0-9]+ | 0[0-7]* | [1-9][0-9]*
+                        ;
+
+float                   : regular expression: [0-9]+\.[0-9]+
+                        ;
+
+string                  : regular expression: "(([:unicode_character:] - [\\"]) | \\[:ascii:])*"
+                        | regular expression: `([:unicode_character:] - [`])`
+                        ;
+
+
+
+
+
+statement_list          : statement_list optional(';') statement
+                        | statement
+
+statement_block         : statement
+                        | '{' statement_list '}'
+
+statement               : assign_statement
+                        | expression_statement
+                        | let_statement
+                        | if_statement
+                        | for_statement
+                        | while_statement
+                        | repeat_statement
+                        | match_statement
+                        | return_statement
+                        | break_statement
+                        | continue_statement
+                        | local_statement
+                        ;
+
+
+assign_statement        : pattern_list '=' expression_list
+                        ;
+
+pattern_list            : pattern
+                        | pattern_list ',' pattern
+                        ;
+
+expression_statement    : expression_list
+                        ;
+
+let_statement           : 'let' pattern_list '=' expression_list
+                        ;
+
+if_statement            : 'if' expression ':' statement_block
+                        | 'if' expression ':' statement_block 'else' optional(':') statement_block
+                        ;
+
+for_statement           : 'for' pattern '=' expression, expression optional(',' expression) ':' statement_block
+                        | 'for' pattern_list keyword_in expression ':' statement_block
+                        | 'for' pattern_list keyword_in '...' ':' statement_block
+                        ;
+
+while_statement         : 'while' expression ':' statement_block
+                        ;
+
+repeat_statement        : 'repeat' optional(':') statement_block
+                        | 'repeat' optional(':') statement_block 'until' expression
+                        ;
+
+match_statement         : 'match' expression ':' '{' match_list '}'
+                        ;
+
+match_list              : pattern ':' statement_block optional(';')
+                        | match_list pattern ':' statement_block optional(';')
+                        ;
+
+return_statement        : 'return'
+                        | 'return' expression_list
+                        ;
+
+break_statement         : 'break'
+                        ;
+
+continue_statement      : 'continue'
+                        ;
+
+local_statement         : 'local' identifier expression
+                        ;
+
+
+
+
+
+generator_def           : pattern_list keyword_in expression_list
+                        | pattern_list keyword_in '...'
+                        | pattern '=' expression ',' expression optional(',' expression)
+                        | let_statement
+                        | expression_statement
+
+generator_def_sequence  : generator_def
+                        | generator_def_sequence optional(';') generator_def
+                        ;
+
+
+keyword_in              : regular expression: in | <\-
+binop_or                : regular expression: or | \|\|
+binop_and               : regular expression: and | &&
+binop_is                : regular expression: is | ===
+binop_isnot             : regular expression: isnot | !==
+preop_not               : regular expression: not | !
