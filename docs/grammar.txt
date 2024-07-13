@@ -1,5 +1,5 @@
 expression              : binary_expression
-                        | binary_expression where statement_block
+                        | binary_expression 'where' statement_block
                         | binary_expression ':=' expression
                         | binary_expression '<<' expression_list
                         | binary_expression '=>' statement_block
