@@ -1,6 +1,7 @@
 #include "include/value/klclass.h"
 #include "include/misc/klutils.h"
 #include "include/value/klstring.h"
+#include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include <stddef.h>
 #include <string.h>
@@ -12,6 +13,7 @@ static const KlGCVirtualFunc klclass_gcvfunc = { .destructor = (KlGCDestructor)k
 
 static KlClassSlot* klclass_getfreeslot(KlClass* klclass);
 static bool klclass_rehash(KlClass* klclass, KlMM* klmm);
+static KlClassSlot* klclass_add_rehash(KlClass* klclass, const KlString* key);
 
 
 KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* constructor_data, KlObjectConstructor constructor) {
@@ -86,7 +88,7 @@ static bool klclass_rehash(KlClass* klclass, KlMM* klmm) {
   klclass->capacity = new_capacity;
   klclass->lastfree = new_capacity; /* reset lastfree */
   for (KlClassSlot* slot = oldslots; slot != endslots; ++slot) {
-    KlClassSlot* inserted = klclass_add(klclass, klmm, slot->key);
+    KlClassSlot* inserted = klclass_add_rehash(klclass, slot->key);
     klvalue_setvalue(&inserted->value, &slot->value);
   }
   klmm_free(klmm, oldslots, (endslots - oldslots) * sizeof (KlClassSlot));
@@ -105,7 +107,7 @@ static KlClassSlot* klclass_getfreeslot(KlClass* klclass) {
   return NULL;
 }
 
-static KlClassSlot* klclass_add_after_rehash(KlClass* klclass, const KlString* key) {
+static KlClassSlot* klclass_add_rehash(KlClass* klclass, const KlString* key) {
   size_t mask = klclass->capacity - 1;
   size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
@@ -154,8 +156,6 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, 
   KlClassSlot* findslot = slot;
   do {
     if (findslot->key == key) {
-      if (klclass_is_local(findslot)) /* local field can not be overwritten */
-        return KL_E_INVLD;
       klvalue_setvalue(&findslot->value, value);
       return KL_E_NONE;
     }
@@ -164,10 +164,10 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, 
 
   /* not found, insert new one */
   KlClassSlot* newslot = klclass_getfreeslot(klclass);
-  if (!newslot) { /* no slot */
+  if (kl_unlikely(!newslot)) { /* no slot */
     if (kl_unlikely(!klclass_rehash(klclass, klmm)))
       return KL_E_OOM;
-    KlClassSlot* slot = klclass_add_after_rehash(klclass, key);
+    KlClassSlot* slot = klclass_add_rehash(klclass, key);
     klvalue_setvalue(&slot->value, value);
     return KL_E_NONE;
   }
@@ -195,40 +195,57 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, 
   }
 }
 
-KlClassSlot* klclass_add(KlClass* klclass, KlMM* klmm, const KlString* key) {
+KlException klclass_addnormal_nosearch(KlClass* klclass, KlMM* klmm, const KlString* key, const KlValue* value) {
   size_t mask = klclass->capacity - 1;
-  size_t keyindex = klstring_hash(key) & mask;
+  size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
-  if (!slots[keyindex].key) {
-    slots[keyindex].key = key;
-    return &slots[keyindex];
+  KlClassSlot* slot = &slots[index];
+  if (!slot->key) { /* slot is empty */
+    slot->key = key;
+    klvalue_setvalue_withtag(&slot->value, value, KLCLASS_TAG_NORMAL);
+    return KL_E_NONE;
   }
-  KlClassSlot* newslot = klclass_getfreeslot(klclass);
-  if (!newslot) { /* no slot */
-    if (kl_unlikely(!klclass_rehash(klclass, klmm)))
-      return NULL;
-    return klclass_add_after_rehash(klclass, key);
-  }
+  /* this slot is not empty */
+  /* find */
+  KlClassSlot* findslot = slot;
+  do {
+    if (findslot->key == key) {
+      klvalue_setvalue_withtag(&findslot->value, value, KLCLASS_TAG_NORMAL);
+      return KL_E_NONE;
+    }
+    findslot = findslot->next;
+  } while (findslot);
 
-  size_t slotindex = klstring_hash(slots[keyindex].key) & mask;
-  if (slotindex == keyindex) {
+  /* not found, insert new one */
+  KlClassSlot* newslot = klclass_getfreeslot(klclass);
+  if (kl_unlikely(!newslot)) { /* no slot */
+    if (kl_unlikely(!klclass_rehash(klclass, klmm)))
+      return KL_E_OOM;
+    KlClassSlot* slot = klclass_add_rehash(klclass, key);
+    klvalue_setvalue_withtag(&slot->value, value, KLCLASS_TAG_NORMAL);
+    return KL_E_NONE;
+  }
+  size_t oldindex = klstring_hash(slot->key) & mask;
+  if (oldindex == index) {
     newslot->key = key;
-    newslot->next = slots[keyindex].next;
-    slots[keyindex].next = newslot;
-    return newslot;
+    newslot->next = slot->next;
+    slot->next = newslot;
+    klvalue_setvalue_withtag(&newslot->value, value, KLCLASS_TAG_NORMAL);
+    return KL_E_NONE;
   } else {
-    newslot->key = slots[keyindex].key;
-    klvalue_setvalue(&newslot->value, &slots[keyindex].value);
-    newslot->next = slots[keyindex].next;
+    newslot->key = slot->key;
+    klvalue_setvalue(&newslot->value, &slot->value);
+    newslot->next = slot->next;
     /* correct link */
-    KlClassSlot* prevslot = &slots[slotindex];
-    while (prevslot->next != &slots[keyindex])
+    KlClassSlot* prevslot = &slots[oldindex];
+    while (prevslot->next != slot)
       prevslot = prevslot->next;
     prevslot->next = newslot;
 
-    slots[keyindex].key = key;
-    slots[keyindex].next = NULL;
-    return &slots[keyindex];
+    slot->key = key;
+    slot->next = NULL;
+    klvalue_setvalue_withtag(&slot->value, value, KLCLASS_TAG_NORMAL);
+    return KL_E_NONE;
   }
 }
 

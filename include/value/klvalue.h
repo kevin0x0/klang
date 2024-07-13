@@ -16,6 +16,8 @@
 #define klvalue_isstrornumber(value)        (klvalue_checktype((value), KL_STRING) || klvalue_isnumber((value)))
 #define klvalue_sametype(val1, val2)        (klvalue_gettype(val1) == klvalue_gettype(val2))
 
+#define klvalue_testtag(value, tag)         (klvalue_gettag((value)) & (tag))
+
 #define klvalue_getobj(val, type)           ((type)((val)->value.gcobj))
 #define klvalue_setobj(val, obj, type)      klvalue_setgcobj((val), (KlGCObject*)(obj), (type))
 
@@ -37,7 +39,7 @@
 
 typedef enum tagKlType {
   KL_INT = 0, KL_FLOAT,
-  KL_NUMBER, KL_UINT = KL_NUMBER,   /* not actual type, KL_NUMBER is used for number(KlInt or KlFloat) fast test */
+  KL_NUMBER, KL_UINT,   /* not actual type, KL_NUMBER is used for number(KlInt or KlFloat) fast test */
   KL_NIL, KL_BOOL, KL_CFUNCTION,
   KL_USERDATA,                    /* non-collectable type */
   KL_COLLECTABLE , KL_STRING = KL_COLLECTABLE,
@@ -124,6 +126,12 @@ static inline void klvalue_setint(KlValue *val, KlInt intval) {
   val->type = KL_INT;
 }
 
+static inline void klvalue_setint_withtag(KlValue *val, KlInt intval, KlUnsigned tag) {
+  val->value.intval = intval;
+  val->typewithtag.type = KL_INT;
+  val->typewithtag.tag = tag;
+}
+
 static inline void klvalue_setfloat(KlValue* val, KlFloat floatval) {
   val->value.floatval = floatval;
   val->type = KL_FLOAT;
@@ -137,6 +145,12 @@ static inline void klvalue_setbool(KlValue *val, KlBool boolval) {
 static inline void klvalue_setuint(KlValue *val, KlUInt id) {
   val->value.uintval = id;
   val->type = KL_UINT;
+}
+
+static inline void klvalue_setuint_withtag(KlValue *val, KlUInt id, KlUnsigned tag) {
+  val->value.uintval = id;
+  val->typewithtag.type = KL_UINT;
+  val->typewithtag.tag = tag;
 }
 
 static inline void klvalue_setcfunc(KlValue *val, KlCFunction* cfunc) {

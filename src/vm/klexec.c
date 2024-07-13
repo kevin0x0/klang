@@ -441,7 +441,7 @@ static const KlValue* klexec_getfield(const KlState* state, const KlValue* objec
                    : state->common->klclass.phony[klvalue_gettype(object)];
     /* phony class should have only shared field */
     KlClassSlot* slot = klclass_find(phony, field);
-    return slot && klclass_is_shared(slot) ? &slot->value : &nil;
+    return slot ? &slot->value : &nil;
   }
 }
 
@@ -454,15 +454,15 @@ static bool klexec_getmethod(const KlState* state, const KlValue* object, const 
     case KL_CLASS: {
       KlClass* klclass = klvalue_getobj(object, KlClass*);
       KlClassSlot* slot = klclass_find(klclass, field);
-      slot && klclass_is_shared(slot) ? klvalue_setvalue(result, &slot->value) : klvalue_setnil(result);
+      slot ? klvalue_setvalue(result, &slot->value) : klvalue_setnil(result);
       return false;
     }
     default: {
       KlClass* klclass = state->common->klclass.phony[klvalue_gettype(object)];
       KlClassSlot* slot = klclass_find(klclass, field);
-      if (slot && klclass_is_shared(slot)) {
+      if (slot) {
         klvalue_setvalue(result, &slot->value);
-        return klvalue_gettag(&slot->value) & KLCLASS_TAG_METHOD;
+        return klclass_is_method(slot);
       } else {
         klvalue_setnil(result);
         return false;
@@ -675,7 +675,7 @@ static void klexec_getfieldgeneric(KlState* state, const KlValue* dotable, const
                    : state->common->klclass.phony[klvalue_gettype(dotable)];
     /* phony class should have only shared field */
     KlClassSlot* slot = klclass_find(phony, keystr);
-    slot && klclass_is_shared(slot) ? klvalue_setvalue(val, &slot->value) : klvalue_setnil(val);
+    slot ? klvalue_setvalue(val, &slot->value) : klvalue_setnil(val);
   }
 }
 
@@ -689,16 +689,13 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
       return klstate_throw(state, KL_E_INVLD, "can not set field of nil class");
     }
     case KL_OBJECT: {
-      /* values with type KL_OBJECT(including map and array). */
       KlObject* object = klvalue_getobj(dotable, KlObject*);
-      if (!klobject_setfield(object, keystr, val)) {
+      if (kl_unlikely(!klobject_setfield(object, keystr, val))) {
         klexec_savestktop(state, state->callinfo->top);
         KlClass* klclass = klobject_class(object);
-        KlClassSlot* newslot = klclass_add(klclass, klstate_getmm(state), keystr);
-        if (kl_unlikely(!newslot))
-          return klstate_throw_oom(state, "adding new field");
-        klvalue_setvalue(&newslot->value, val);
-        klvalue_settag(&newslot->value, KLCLASS_TAG_NORMAL);
+        KlException exception = klclass_addnormal_nosearch(klclass, klstate_getmm(state), keystr, val);
+        if (kl_unlikely(exception))
+          return klexec_handle_newshared_exception(state, exception, keystr);
       }
       return KL_E_NONE;
     } 
