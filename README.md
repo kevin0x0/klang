@@ -73,9 +73,9 @@ make
 ```
 
 ```bash
->>> [ i | i = 0, 100; isprime(i) ] where local isprime(n) => {
+>>> [ i | i = 0, 100; isprime i ] where local isprime(n) => {
 ...   if n <= 2: return n == 2;
-...   for i = 2, n - 1:
+...   for i = 2, n:
 ...     if n % i == 0: return false;
 ...   return true;
 ... };
