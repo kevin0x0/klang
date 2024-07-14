@@ -19,19 +19,20 @@ static KlClassSlot* klclass_add_rehash(KlClass* klclass, const KlString* key);
 KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* constructor_data, KlObjectConstructor constructor) {
   KlClass* klclass = (KlClass*)klmm_alloc(klmm, sizeof (KlClass));
   if (kl_unlikely(!klclass)) return NULL;
-  klclass->capacity = (size_t)1 << capacity;
-  klclass->lastfree = klclass->capacity;
+  capacity = (size_t)1 << capacity;
+  klclass->mask = capacity - 1;
+  klclass->lastfree = capacity;
   klclass->constructor = constructor ? constructor : klclass_default_constructor;
   klclass->constructor_data = constructor_data;
   klclass->attroffset = attroffset;
   klclass->nlocal = 0;
   klclass->is_final = false;
-  klclass->slots = (KlClassSlot*)klmm_alloc(klmm, klclass->capacity * sizeof (KlClassSlot));
+  klclass->slots = (KlClassSlot*)klmm_alloc(klmm, capacity * sizeof (KlClassSlot));
   if (kl_unlikely(!klclass->slots)) {
     klmm_free(klmm, klclass, sizeof (KlClass));
     return NULL;
   }
-  for (size_t i = 0; i < klclass->capacity; ++i) {
+  for (size_t i = 0; i < capacity; ++i) {
     klclass->slots[i].key = NULL;
     klclass->slots[i].next = NULL;
   }
@@ -40,15 +41,16 @@ KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* co
 }
 
 KlClass* klclass_inherit(KlMM* klmm, const KlClass* parent) {
-  KlClassSlot* array = (KlClassSlot*)klmm_alloc(klmm, parent->capacity * sizeof (KlClassSlot));
+  size_t capacity = klclass_capacity(parent);
+  KlClassSlot* array = (KlClassSlot*)klmm_alloc(klmm, capacity * sizeof (KlClassSlot));
   KlClass* klclass = (KlClass*)klmm_alloc(klmm, sizeof (KlClass));
   if (kl_unlikely(!array || !klclass)) {
-    if (array) klmm_free(klmm, array, parent->capacity * sizeof (KlClassSlot));
+    if (array) klmm_free(klmm, array, capacity * sizeof (KlClassSlot));
     if (klclass) klmm_free(klmm, klclass, sizeof (KlClass));
     return NULL;
   }
 
-  KlClassSlot* end = array + parent->capacity;
+  KlClassSlot* end = array + capacity;
   KlClassSlot* slotbegin = parent->slots;
   for (KlClassSlot* itr = array, * slot = slotbegin; itr != end; ++itr, ++slot) {
     if ((itr->key = slot->key)) {
@@ -60,7 +62,7 @@ KlClass* klclass_inherit(KlMM* klmm, const KlClass* parent) {
   }
   klclass->constructor = parent->constructor;
   klclass->constructor_data = parent->constructor_data;
-  klclass->capacity = parent->capacity;
+  klclass->mask = capacity - 1;
   klclass->lastfree = parent->lastfree;
   klclass->attroffset = parent->attroffset;
   klclass->nlocal = parent->nlocal;
@@ -72,8 +74,8 @@ KlClass* klclass_inherit(KlMM* klmm, const KlClass* parent) {
 
 static bool klclass_rehash(KlClass* klclass, KlMM* klmm) {
   KlClassSlot* oldslots = klclass->slots;
-  KlClassSlot* endslots = oldslots + klclass->capacity;
-  size_t new_capacity = klclass->capacity * 2;
+  KlClassSlot* endslots = oldslots + klclass_capacity(klclass);
+  size_t new_capacity = klclass_capacity(klclass) * 2;
   klclass->slots = (KlClassSlot*)klmm_alloc(klmm, new_capacity * sizeof (KlClassSlot)); 
   if (kl_unlikely(!klclass->slots)) {
     klclass->slots = oldslots;
@@ -85,7 +87,7 @@ static bool klclass_rehash(KlClass* klclass, KlMM* klmm) {
     klclass->slots[i].next = NULL;
   }
 
-  klclass->capacity = new_capacity;
+  klclass->mask = new_capacity - 1;
   klclass->lastfree = new_capacity; /* reset lastfree */
   for (KlClassSlot* slot = oldslots; slot != endslots; ++slot) {
     KlClassSlot* inserted = klclass_add_rehash(klclass, slot->key);
@@ -108,7 +110,7 @@ static KlClassSlot* klclass_getfreeslot(KlClass* klclass) {
 }
 
 static KlClassSlot* klclass_add_rehash(KlClass* klclass, const KlString* key) {
-  size_t mask = klclass->capacity - 1;
+  size_t mask = klclass_mask(klclass);
   size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
   KlClassSlot* slot = &slots[index];
@@ -142,7 +144,7 @@ static KlClassSlot* klclass_add_rehash(KlClass* klclass, const KlString* key) {
 }
 
 KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, const KlValue* value) {
-  size_t mask = klclass->capacity - 1;
+  size_t mask = klclass_mask(klclass);
   size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
   KlClassSlot* slot = &slots[index];
@@ -196,7 +198,7 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, 
 }
 
 KlException klclass_addnormal_nosearch(KlClass* klclass, KlMM* klmm, const KlString* key, const KlValue* value) {
-  size_t mask = klclass->capacity - 1;
+  size_t mask = klclass_mask(klclass);
   size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
   KlClassSlot* slot = &slots[index];
@@ -206,17 +208,6 @@ KlException klclass_addnormal_nosearch(KlClass* klclass, KlMM* klmm, const KlStr
     return KL_E_NONE;
   }
   /* this slot is not empty */
-  /* find */
-  KlClassSlot* findslot = slot;
-  do {
-    if (findslot->key == key) {
-      klvalue_setvalue_withtag(&findslot->value, value, KLCLASS_TAG_NORMAL);
-      return KL_E_NONE;
-    }
-    findslot = findslot->next;
-  } while (findslot);
-
-  /* not found, insert new one */
   KlClassSlot* newslot = klclass_getfreeslot(klclass);
   if (kl_unlikely(!newslot)) { /* no slot */
     if (kl_unlikely(!klclass_rehash(klclass, klmm)))
@@ -252,7 +243,7 @@ KlException klclass_addnormal_nosearch(KlClass* klclass, KlMM* klmm, const KlStr
 static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
   KlClassSlot* slots = klclass->slots;
-  KlClassSlot* end = slots + klclass->capacity;
+  KlClassSlot* end = slots + klclass_capacity(klclass);
   for (KlClassSlot* itr = slots; itr != end; ++itr) {
     if (itr->key) {
       klmm_gcobj_mark(klmm_to_gcobj(itr->key), gclist);
@@ -264,7 +255,7 @@ static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* g
 }
 
 static void klclass_delete(KlClass* klclass, KlMM* klmm) {
-  klmm_free(klmm, klclass->slots, klclass->capacity * sizeof (KlClassSlot));
+  klmm_free(klmm, klclass->slots, klclass_capacity(klclass) * sizeof (KlClassSlot));
   klmm_free(klmm, klclass, sizeof (KlClass));
 }
 
