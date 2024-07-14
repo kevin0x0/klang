@@ -86,7 +86,7 @@ brace_expression        : map_expression
                         ;
 
 map_expression          : '{' kvpairs '}'
-                        : '{' kvpairs '|' generator_def_sequence '}'
+                        | '{' kvpairs '|' generator_def_sequence '}'
                         | '{' ':' '}'
                         ;
 
