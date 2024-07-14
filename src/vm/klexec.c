@@ -106,7 +106,7 @@ static KlException klexec_co_startcall(KlState* state, const KlValue* callable, 
   if (kl_unlikely(!newci))
     return klstate_throw_oom(state, "calling a callable object");
   KlException exception = klexec_callprepare(state, callable, narg, NULL);
-  if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {  /* is a klang call ? */
+  if (newci == state->callinfo) {  /* to be executed klang call */
     state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
     exception = klexec_execute(state);
   }
@@ -319,7 +319,7 @@ KlException klexec_call(KlState* state, const KlValue* callable, size_t narg, si
   bool yieldallowance_save = klco_yield_allowed(&state->coinfo);
   klco_allow_yield(&state->coinfo, false);
   KlException exception = klexec_callprepare(state, callable, narg, NULL);
-  if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {  /* is a klang call ? */
+  if (newci == state->callinfo) {  /* to be executed klang call */
     state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
     exception = klexec_execute(state);
   }
@@ -332,7 +332,7 @@ KlException klexec_tailcall(KlState* state, const KlValue* callable, size_t narg
   newci->retoff += newci->base - (klstate_stktop(state) - narg);
   klexec_pop_callinfo(state);
   KlException exception = klexec_callprepare(state, callable, narg, NULL);
-  if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {  /* is a klang call ? */
+  if (newci == state->callinfo) {  /* to be executed klang call */
     state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
     exception = klexec_execute(state);
   }
@@ -778,7 +778,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klexec_savestate(callinfo->top, pc);  /* in case of error and gc */           \
     KlString* opname = state->common->string.op;                                  \
     KlException exception = klexec_dobinopmethod(state, (a), (b), (c), opname);   \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -798,7 +798,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klexec_savestate(callinfo->top, pc);  /* in case of error and gc */           \
     KlString* opname = state->common->string.op;                                  \
     KlException exception = klexec_dobinopmethod(state, (a), (b), (c), opname);   \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -822,7 +822,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klexec_savestate(callinfo->top, pc);  /* in case of error and gc */           \
     KlString* opname = state->common->string.op;                                  \
     KlException exception = klexec_dobinopmethod(state, (a), (b), (c), opname);   \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -846,7 +846,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klexec_savestate(callinfo->top, pc);  /* in case of error and gc */           \
     KlString* opname = state->common->string.op;                                  \
     KlException exception = klexec_dobinopmethod(state, (a), (b), (c), opname);   \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -869,7 +869,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klvalue_setint(&tmp, imm);                                                    \
     KlString* opname = state->common->string.op;                                  \
     KlException exception = klexec_dobinopmethod(state, (a), (b), &tmp, opname);  \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -894,7 +894,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klvalue_setint(&tmp, (imm));                                                  \
     KlString* opname = state->common->string.op;                                  \
     KlException exception = klexec_dobinopmethod(state, (a), (b), &tmp, opname);  \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -916,7 +916,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klvalue_setint(&tmp, (imm));                                                  \
     KlString* opname = state->common->string.op;                                  \
     KlException exception = klexec_dobinopmethod(state, (a), (b), &tmp, opname);  \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -941,7 +941,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klvalue_setint(&tmp, (imm));                                                  \
     KlString* opname = state->common->string.op;                                  \
     KlException exception = klexec_dobinopmethod(state, (a), (b), &tmp, opname);  \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -964,7 +964,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klexec_savestate(callinfo->top, pc - 1);                                      \
     KlValue* respos = callinfo->top;                                              \
     KlException exception = klexec_do##order(state, respos, (a), (b));            \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -991,7 +991,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
     klexec_savestate(callinfo->top, pc - 1);                                      \
     KlValue* respos = callinfo->top;                                              \
     KlException exception = klexec_do##order(state, respos, (a), &tmpval);        \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+    if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */         \
       KlValue* newbase = state->callinfo->base;                                   \
       klexec_updateglobal(newbase);                                               \
     } else {                                                                      \
@@ -1014,7 +1014,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
       KlValue* respos = callinfo->top;                                            \
       KlString* op = state->common->string.eq;                                    \
       KlException exception = klexec_dobinopmethod(state, respos, (a), (b), op);  \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+      if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */       \
         KlValue* newbase = state->callinfo->base;                                 \
         klexec_updateglobal(newbase);                                             \
       } else {                                                                    \
@@ -1048,7 +1048,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
       KlValue* respos = callinfo->top;                                            \
       KlString* op = state->common->string.neq;                                   \
       KlException exception = klexec_dobinopmethod(state, respos, (a), (b), op);  \
-    if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {        \
+      if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */       \
         KlValue* newbase = state->callinfo->base;                                 \
         klexec_updateglobal(newbase);                                             \
       } else {                                                                    \
@@ -1168,7 +1168,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           KlString* op = state->common->string.concat;
           KlException exception = klexec_dobinopmethod(state, a, b, c, op);
-          if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {
+          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call */
             KlValue* newbase = callinfo->top;
             klexec_updateglobal(newbase);
           } else {
@@ -1272,7 +1272,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_dopreopmethod(state, stkbase + KLINST_ABC_GETA(inst), b, state->common->string.len);
-          if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {
+          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call */
             KlValue* newbase = callinfo->top;
             klexec_updateglobal(newbase);
           } else {
@@ -1292,7 +1292,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_dopreopmethod(state, stkbase + KLINST_ABC_GETA(inst), b, state->common->string.neg);
-          if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {
+          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call */
             KlValue* newbase = callinfo->top;
             klexec_updateglobal(newbase);
           } else {
@@ -1314,7 +1314,7 @@ KlException klexec_execute(KlState* state) {
         if (kl_unlikely(!newci))
           return klstate_throw_oom(state, "calling a callable object");
         KlException exception = klexec_callprepare(state, callable, narg, klexec_callprep_callback_for_call);
-        if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {  /* is a klang call ? */
+        if (kl_likely(newci == state->callinfo)) { /* is a klang call ? */
           KlValue* newbase = newci->base;
           klexec_updateglobal(newbase);
         } else {
@@ -1338,7 +1338,7 @@ KlException klexec_execute(KlState* state) {
         if (kl_unlikely(!newci))
           return klstate_throw_oom(state, "calling a callable object");
         KlException exception = klexec_callprepare(state, callable, narg, klexec_callprep_callback_for_call);
-        if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {  /* is a klang call ? */
+        if (kl_likely(newci == state->callinfo)) { /* is a klang call ? */
           KlValue* newbase = newci->base;
           klexec_updateglobal(newbase);
         } else {
@@ -1368,7 +1368,7 @@ KlException klexec_execute(KlState* state) {
         if (kl_unlikely(!newci))
           return klstate_throw_oom(state, "calling a callable object");
         KlException exception = klexec_callprepare(state, &callable, narg, klexec_callprep_callback_for_method);
-        if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {  /* is a klang call ? */
+        if (kl_likely(newci == state->callinfo)) { /* is a klang call ? */
           KlValue* newbase = newci->base;
           klexec_updateglobal(newbase);
         } else {
@@ -1591,7 +1591,7 @@ KlException klexec_execute(KlState* state) {
           klvalue_setint(&key, index);
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_doindexmethod(state, val, indexable, &key);
-          if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {
+          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
             KlValue* newbase = state->callinfo->base;
             klexec_updateglobal(newbase);
           } else {
@@ -1634,7 +1634,7 @@ KlException klexec_execute(KlState* state) {
           klvalue_setint(&key, index);
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_doindexasmethod(state, indexable, &key, val);
-          if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {
+          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
             KlValue* newbase = state->callinfo->base;
             klexec_updateglobal(newbase);
           } else {
@@ -1670,7 +1670,7 @@ KlException klexec_execute(KlState* state) {
           }
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_doindexmethod(state, val, indexable, key);
-          if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {
+          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
             KlValue* newbase = state->callinfo->base;
             klexec_updateglobal(newbase);
           } else {
@@ -1715,7 +1715,7 @@ KlException klexec_execute(KlState* state) {
           }
           klexec_savestate(callinfo->top, pc);
           KlException exception = klexec_doindexasmethod(state, indexable, key, val);
-          if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {
+          if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
             KlValue* newbase = state->callinfo->base;
             klexec_updateglobal(newbase);
           } else {
@@ -2205,7 +2205,7 @@ KlException klexec_execute(KlState* state) {
             klvalue_setint(b + nwanted + 2, i); /* save current index for pmappost */
             klexec_savestate(callinfo->top, pc);
             KlException exception = klexec_doindexmethod(state, a + i, b + nwanted + 1, key + i);
-            if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {
+            if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
               KlValue* newbase = state->callinfo->base;
               klexec_updateglobal(newbase);
               --pc; /* do pmmappost instruction */
@@ -2244,7 +2244,7 @@ KlException klexec_execute(KlState* state) {
             klexec_savetop(callinfo->top);
             klexec_savepc(callinfo, pc - 1);
             KlException exception = klexec_doindexmethod(state, a + i, b + nwanted + 1, key + i);
-            if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {
+            if (kl_likely(callinfo != state->callinfo)) { /* is a klang call ? */
               KlValue* newbase = state->callinfo->base;
               klexec_updateglobal(newbase);
               break;  /* break to execute new function */
@@ -2374,7 +2374,7 @@ KlException klexec_execute(KlState* state) {
         if (kl_unlikely(!newci))
           return klstate_throw_oom(state, "doing generic for loop");
         KlException exception = klexec_callprepare(state, a, nret, NULL);
-        if (kl_likely((state->callinfo->status & (KLSTATE_CI_STATUS_KCLO)))) {  /* is a klang call ? */
+        if (newci == state->callinfo) { /* is a klang call ? */
           KlValue* newbase = newci->base;
           klexec_updateglobal(newbase);
         } else {
