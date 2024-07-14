@@ -1,70 +1,73 @@
 # klang
 
-### 关于
-klang是一个动态类型脚本语言。本项目实现了：
+### Language
+> Note: This README was translated from [Chinese](README.zh.md)  by AI.
 
-- klang的独立编译器``klangc``
-- 运行时编译器。与解释器分离，以外部库的形式实现。
-- 基于寄存器的，可嵌入的字节码解释器。
+- English
+- Chinese [汉语](README.zh.md)
 
-### 构建
-首先，请确保以下工具可用
-1. gcc或者与gcc兼容的编译工具链(比如clang)。并且至少支持ISO C99标准。
-2. GNU Make。
+### About
+klang is a dynamically-typed scripting language. This project implements:
 
-然后克隆此仓库，初始化依赖的仓库
+- an independent compiler for klang, `klangc`
+- a runtime compiler, implemented as an external library, separate from the interpreter
+- a register-based, embeddable bytecode interpreter
+
+### Building
+First, make sure the following tools are available:
+1. gcc or a gcc-compatible compiler toolchain (such as clang), supporting at least the ISO C99 standard.
+2. GNU Make.
+
+Then, clone this repository and initialize the dependent repositories:
 
 ```bash
 git submodule init
 git submodule update
 ```
 
-如果你没有配置SSH，那么可能会在克隆依赖仓库时失败，此时你可能需要手动克隆依赖。
+If you haven't configured SSH, the clone of the dependent repositories may fail, and you may need to clone them manually.
 
-最后:
-- Windows
+Finally:
+- Windows:
+  Use MinGW to build. In the project root directory, execute:
 
-  使用MinGW构建。在项目根目录执行
+  ```bash
+  make PLATFORM=Windows
+  ```
 
-```bash
-make PLATFORM=Windows
-```
+- Linux:
+  In the project root directory, execute:
 
-- Linux
+  ```bash
+  make
+  ```
 
-  在项目根目录执行
+- Other platforms:
+  The build should work on any POSIX-compliant operating system (though some Makefile modifications might be necessary), but I haven't tried it.
 
-```bash
-make
-```
+### Runtime Environment
+On Windows, make sure that `./lib/klang.dll` can be loaded by `klang.exe`.
+You can:
 
-- 其他平台
+- Add the location of `klang.dll` to the `Path`
+- Copy `klang.dll` to the same directory as `klang.exe`
+- Copy `klang.dll` to the current working directory
 
-  符合POSIX标准的操作系统下应当都可以成功构建(也许需要对``Makefile``做一些修改)，但我没有尝试过。
+The first or second option is recommended.
 
-### 运行环境
-在Windows下，需要确保``./lib/klang.dll``能被``klang.exe``加载。
-你可以:
+### Quick Experience
 
-- 将``klang.dll``的位置添加到``Path``中
-- 将``klang.dll``复制到``klang.exe``所在目录下
-- 将``klang.dll``复制到当前工作目录下
+Assuming the execution environment is the project root directory (you can add the executable's location to the search path to run it from anywhere).
 
-建议采用第一种或第二种方式。
-
-### 快速体验
-
-以下假定执行环境为项目的根目录（你可以将可执行文件的位置加入搜索路径中以在任何位置运行）。
-
-构建完成后，在项目根目录下执行
+After the build is complete, in the project root directory, execute:
 
 ```bash
 ./bin/klang
 ```
 
-即可进入交互式模式。
+to enter the interactive mode.
 
-交互式模式下，可输入任意语句。该模式下语句必须以分号结尾(TODO: 添加简单的语法介绍)。如果是表达式语句，会打印表达式的值。
+In the interactive mode, you can enter any statement. Statements in this mode must end with a semicolon (TODO: add a simple syntax introduction). If the statement is an expression, its value will be printed.
 
 ```bash
 >>> [ i * i | i = 0, 10 ];
@@ -83,28 +86,27 @@ make
 >>> 
 ```
 
-
-在根目录下执行
+To execute a script from a file, in the root directory, run:
 
 ```bash
 ./bin/klang <script>
 ```
 
-可以从文件中加载脚本，编译并执行。
-在项目根目录的``./samples``目录下，有一些预先写好的示例程序可供体验。
+This will load the script from the file, compile it, and execute it.
+In the `./samples` directory of the project root, there are some pre-written example programs for you to try.
 
-如果从文件中加载的脚本在执行时出错，backtrace能够打印详细的调用栈信息。
+If there is an error when executing a script loaded from a file, the backtrace will print detailed call stack information.
 
-如果你对klang的字节码感兴趣，可以尝试klang的独立编译器klangc。在项目根目录下执行
+If you're interested in klang's bytecode, you can try the independent klang compiler, klangc. In the project root directory, execute:
 
 ```bash
 ./bin/klangc <script> -p <output>
 ```
 
-这会从``<script>``中加载并编译脚本，然后将字节码以人类可读的形式打印到文件``<output>``中。
+This will load and compile the script from `<script>`, and then print the bytecode in a human-readable form to the file `<output>`.
 
-``<output>``和``<script>``都可缺省， 如果``<output>``缺省，则打印到标准输出。如果``<script>``缺省，则会从标准输入读取脚本。
+`<output>` and `<script>` can both be omitted. If `<output>` is omitted, the bytecode will be printed to standard output. If `<script>` is omitted, the script will be read from standard input.
 
-### 特性
+### Features
 
-TODO: 补充语言特色
+TODO: Add language features
