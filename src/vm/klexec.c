@@ -1714,6 +1714,8 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_ABC_GETA(inst);
         KlValue* dotable = stkbase + KLINST_ABC_GETB(inst);
         KlValue* key = stkbase + KLINST_ABC_GETC(inst);
+        kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
+
         klexec_getfieldgeneric(state, dotable, klvalue_getobj(key, KlString*), val);
         break;
       }
@@ -1721,6 +1723,8 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_ABX_GETA(inst);
         KlValue* dotable = stkbase + KLINST_ABX_GETB(inst);
         const KlValue* key = constants + KLINST_ABX_GETX(inst);
+        kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
+
         klexec_getfieldgeneric(state, dotable, klvalue_getobj(key, KlString*), val);
         break;
       }
@@ -1728,6 +1732,8 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_ABX_GETA(inst);
         KlValue* dotable = stkbase + KLINST_ABX_GETB(inst);
         KlValue* key = stkbase + KLINST_ABC_GETC(inst);
+        kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
+
         KlException exception = klexec_setfieldgeneric(state, dotable, klvalue_getobj(key, KlString*), val);
         if (kl_unlikely(exception)) {
           klexec_savepc(callinfo, pc);
@@ -1739,6 +1745,8 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_ABX_GETA(inst);
         KlValue* dotable = stkbase + KLINST_ABX_GETB(inst);
         const KlValue* key = constants + KLINST_ABX_GETX(inst);
+        kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
+
         KlException exception = klexec_setfieldgeneric(state, dotable, klvalue_getobj(key, KlString*), val);
         if (kl_unlikely(exception)) {
           klexec_savepc(callinfo, pc);
@@ -1748,8 +1756,10 @@ KlException klexec_execute(KlState* state) {
       }
       case KLOPCODE_REFGETFIELDR: {
         KlValue* val = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* key = stkbase + KLINST_ABX_GETB(inst);
+        const KlValue* key = stkbase + KLINST_ABX_GETB(inst);
         KlValue* dotable = klref_getval(klkclosure_getref(closure, KLINST_ABX_GETX(inst)));
+        kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
+
         klexec_getfieldgeneric(state, dotable, klvalue_getobj(key, KlString*), val);
         break;
       }
@@ -1757,13 +1767,17 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_AXY_GETA(inst);
         const KlValue* key = constants + KLINST_AXY_GETX(inst);
         KlValue* dotable = klref_getval(klkclosure_getref(closure, KLINST_AXY_GETY(inst)));
+        kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
+
         klexec_getfieldgeneric(state, dotable, klvalue_getobj(key, KlString*), val);
         break;
       }
       case KLOPCODE_REFSETFIELDR: {
         KlValue* val = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* key = stkbase + KLINST_ABX_GETB(inst);
+        const KlValue* key = stkbase + KLINST_ABX_GETB(inst);
         KlValue* dotable = klref_getval(klkclosure_getref(closure, KLINST_ABX_GETX(inst)));
+        kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
+
         KlException exception = klexec_setfieldgeneric(state, dotable, klvalue_getobj(key, KlString*), val);
         if (kl_unlikely(exception)) {
           klexec_savepc(callinfo, pc);
@@ -1775,6 +1789,8 @@ KlException klexec_execute(KlState* state) {
         KlValue* val = stkbase + KLINST_AXY_GETA(inst);
         const KlValue* key = constants + KLINST_AXY_GETX(inst);
         KlValue* dotable = klref_getval(klkclosure_getref(closure, KLINST_AXY_GETY(inst)));
+        kl_assert(klvalue_checktype(key, KL_STRING), "expected string to index field");
+
         KlException exception = klexec_setfieldgeneric(state, dotable, klvalue_getobj(key, KlString*), val);
         if (kl_unlikely(exception)) {
           klexec_savepc(callinfo, pc);
