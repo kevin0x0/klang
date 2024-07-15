@@ -103,7 +103,6 @@ void klapi_popclose(KlState* state, size_t count);
 /* push method */
 void klapi_pushcfunc(KlState* state, KlCFunction* cfunc);
 void klapi_pushint(KlState* state, KlInt val);
-void klapi_pushuint(KlState* state, KlUInt val);
 void klapi_pushfloat(KlState* state, KlFloat val);
 void klapi_pushnil(KlState* state, size_t count);
 void klapi_pushbool(KlState* state, KlBool val);

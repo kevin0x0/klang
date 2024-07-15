@@ -98,11 +98,6 @@ void klapi_pushint(KlState* state, KlInt val) {
   klstack_pushint(klstate_stack(state), val);
 }
 
-void klapi_pushuint(KlState* state, KlUInt val) {
-  kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
-  klstack_pushuint(&state->stack, val);
-}
-
 void klapi_pushfloat(KlState* state, KlFloat val) {
   kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   klstack_pushfloat(klstate_stack(state), val);

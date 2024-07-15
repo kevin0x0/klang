@@ -36,7 +36,6 @@ static inline void klstack_move_top(KlStack* stack, int offset);
 /* no protect */
 static inline void klstack_pushnil(KlStack* stack, size_t count);
 static inline void klstack_pushint(KlStack* stack, KlInt val);
-static inline void klstack_pushuint(KlStack* stack, KlUInt val);
 static inline void klstack_pushfloat(KlStack* stack, KlFloat val);
 static inline void klstack_pushbool(KlStack* stack, KlBool val);
 static inline void klstack_pushcfunc(KlStack* stack, KlCFunction* cfunc);
@@ -121,10 +120,6 @@ static inline void klstack_pushnil(KlStack* stack, size_t count) {
 
 static inline void klstack_pushint(KlStack* stack, KlInt val) {
   klvalue_setint(stack->curr++, val);
-}
-
-static inline void klstack_pushuint(KlStack* stack, KlUInt val) {
-  klvalue_setuint(stack->curr++, val);
 }
 
 static inline void klstack_pushfloat(KlStack* stack, KlFloat val) {
