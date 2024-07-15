@@ -149,7 +149,7 @@ struct tagKlObjectInstance {
 
 
 
-static inline KlValue* klobject_getfield(const KlObject* object, const KlString* key);
+static inline void klobject_getfield(KlObject* object, const KlString* key, KlValue* result);
 static inline bool klobject_getmethod(const KlObject* object, const KlString* key, KlValue* result);
 static inline KlClass* klobject_class(const KlObject* object);
 static inline size_t klobject_size(const KlObject* object);
@@ -157,18 +157,7 @@ static inline KlGCObject* klobject_propagate_nomm(const KlObject* object, KlGCOb
 static inline void klobject_free(KlObject* object, KlMM* klmm);
 static inline bool klobject_compatible(const KlObject* object, KlObjectConstructor constructor);
 
-static inline KlValue* klobject_getfield(const KlObject* object, const KlString* key) {
-  KlClass* klclass = object->klclass;
-  KlClassSlot* slot = klclass_find(klclass, key);
-  if (kl_unlikely(!slot)) return NULL;
-  if (klclass_slot_is_local(slot)) {
-    return klobject_getlocal(object, slot);
-  } else {
-    return &slot->value;
-  }
-}
-
-static inline bool klobject_setfield(KlObject* object, KlString* key, KlValue* value) {
+static inline bool klobject_setfield(KlObject* object, const KlString* key, KlValue* value) {
   KlClass* klclass = object->klclass;
   KlClassSlot* slot = klclass_find(klclass, key);
   if (kl_unlikely(!slot)) return false;
@@ -180,7 +169,7 @@ static inline bool klobject_setfield(KlObject* object, KlString* key, KlValue* v
   return true;
 }
 
-static inline void klobject_getfieldset(KlObject* object, KlString* key, KlValue* result) {
+static inline void klobject_getfield(KlObject* object, const KlString* key, KlValue* result) {
   KlClass* klclass = object->klclass;
   KlClassSlot* slot = klclass_find(klclass, key);
   if (kl_unlikely(!slot)) {
