@@ -41,7 +41,8 @@ KLANGLIB_RTCPL_PIC_OBJS = $(OBJ_DIR)kllib_rtcpl.pic.o
 
 KLANGLIB_BASIC_PIC_OBJS = $(OBJ_DIR)kllib_basic.pic.o
 
-KLANGLIB_STREAM_PIC_OBJS = $(OBJ_DIR)kllib_stream.pic.o $(OBJ_DIR)kllib_file.pic.o $(OBJ_DIR)kllib_stream_collection.pic.o
+KLANGLIB_STREAM_PIC_OBJS = $(OBJ_DIR)kllib_stream.pic.o $(OBJ_DIR)kllib_file.pic.o $(OBJ_DIR)kllib_stream_collection.pic.o \
+                           $(OBJ_DIR)kllib_kistring.pic.o $(OBJ_DIR)kllib_kostring.pic.o $(OBJ_DIR)kllib_sstring.pic.o
 
 KLANGLIB_RTCPL_WRAPPER_PIC_OBJS = $(OBJ_DIR)kllib_rtcpl_wrapper.pic.o
 

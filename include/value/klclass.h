@@ -63,6 +63,7 @@ static inline KlClassSlot* klclass_find(const KlClass* klclass, const KlString* 
 KlException klclass_addnormal_nosearch(KlClass* klclass, KlMM* klmm, const KlString* key, const KlValue* value);
 KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, const KlValue* result);
 
+static inline size_t klclass_newlocal_anonymous(KlClass* klclass);
 static inline KlException klclass_newlocal(KlClass* klclass, KlMM* klmm, const KlString* key);
 static inline KlException klclass_newshared_normal(KlClass* klclass, KlMM* klmm, const KlString* key, KlValue* value);
 static inline KlException klclass_newshared_method(KlClass* klclass, KlMM* klmm, const KlString* key, KlValue* value);
@@ -101,6 +102,10 @@ static inline void* klclass_constructor_data(KlClass* klclass) {
 
 static inline KlException klclass_new_object(KlClass* klclass, KlMM* klmm, KlValue* value) {
   return klclass->constructor(klclass, klmm, value);
+}
+
+static inline size_t klclass_newlocal_anonymous(KlClass* klclass) {
+  return klclass->nlocal++;
 }
 
 static inline KlException klclass_newlocal(KlClass* klclass, KlMM* klmm, const KlString* key) {

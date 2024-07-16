@@ -49,7 +49,7 @@ static KlException kllib_ifile_init(KlState* state) {
   Ki* ki = kifile_create(klstring_content(filepath), "rb");
   if (kl_unlikely(!ki))
     return klapi_throw_internal(state, KL_E_INVLD, "failed to open file: %.*s", klstring_length(filepath), klstring_content(filepath));
-  kllib_istream_set(klapi_getobjb(state, 0, KlInputStream*), ki);
+  kllib_istream_set(klapi_getobjb(state, 0, KlInputStream*), ki, NULL);
   return klapi_return(state, 0);
 }
 
@@ -65,6 +65,6 @@ static KlException kllib_ofile_init(KlState* state) {
   Ko* ko = kofile_create(klstring_content(filepath), "w");
   if (kl_unlikely(!ko))
     return klapi_throw_internal(state, KL_E_INVLD, "failed to open file: %.*s", klstring_length(filepath), klstring_content(filepath));
-  kllib_ostream_set(klapi_getobjb(state, 0, KlOutputStream*), ko);
+  kllib_ostream_set(klapi_getobjb(state, 0, KlOutputStream*), ko, NULL);
   return klapi_return(state, 0);
 }

@@ -84,14 +84,24 @@ bool kllib_ostream_compatible(KlValue* val) {
   return klvalue_checktype(val, KL_OBJECT) && klobject_compatible(klvalue_getobj(val, KlObject*), kllib_ostream_objconstructor);
 }
 
-void kllib_istream_set(KlInputStream* istream, Ki* ki) {
-  if (istream->ki) ki_delete(istream->ki);
-  istream->ki = ki;
+Ki* kllib_istream_getki(KlInputStream* istream) {
+  return istream->ki;
 }
 
-void kllib_ostream_set(KlOutputStream* ostream, Ko* ko) {
+Ko* kllib_ostream_getko(KlOutputStream* ostream) {
+  return ostream->ko;
+}
+
+void kllib_istream_set(KlInputStream* istream, Ki* ki, KiProp kiprop) {
+  if (istream->ki) ki_delete(istream->ki);
+  istream->ki = ki;
+  istream->kiprop = kiprop;
+}
+
+void kllib_ostream_set(KlOutputStream* ostream, Ko* ko, KoProp koprop) {
   if (ostream->ko) ko_delete(ostream->ko);
   ostream->ko = ko;
+  ostream->koprop = koprop;
 }
 
 static KlException kllib_istream_readline(KlState* state) {
@@ -142,7 +152,7 @@ static KlException kllib_ostream_writeline(KlState* state) {
   for (size_t i = 1; i < narg; ++i) {
     switch (klapi_gettypeb(state, i)) {
       case KL_INT: {
-        ko_printf(ko, "%lld", klapi_getfloatb(state, i));
+        ko_printf(ko, "%lld", klapi_getintb(state, i));
         break;
       }
       case KL_FLOAT: {
@@ -173,7 +183,8 @@ static KlException kllib_ostream_writeline(KlState* state) {
     }
   }
   ko_putc(ko, '\n');
-  return klapi_return(state, 0);
+  klapi_pop(state, narg - 1);
+  return klapi_return(state, 1);
 }
 
 static KlException kllib_istream_close(KlState* state) {
@@ -206,6 +217,7 @@ static KlException kllib_istream_objconstructor(KlClass* klclass, KlMM* klmm, Kl
   KlInputStream* istream = klcast(KlInputStream*, klclass_objalloc(klclass, klmm));
   if (kl_unlikely(!istream)) return KL_E_OOM;
   istream->ki = NULL;
+  istream->kiprop = NULL;
   klmm_gcobj_enable(klmm, klmm_to_gcobj(istream), &kllib_istream_gcvfunc);
   klvalue_setobj(result, istream, KL_OBJECT);
   return KL_E_NONE;
@@ -215,20 +227,19 @@ static KlException kllib_ostream_objconstructor(KlClass* klclass, KlMM* klmm, Kl
   KlOutputStream* ostream = klcast(KlOutputStream*, klclass_objalloc(klclass, klmm));
   if (kl_unlikely(!ostream)) return KL_E_OOM;
   ostream->ko = NULL;
+  ostream->koprop = NULL;
   klmm_gcobj_enable(klmm, klmm_to_gcobj(ostream), &kllib_ostream_gcvfunc);
   klvalue_setobj(result, ostream, KL_OBJECT);
   return KL_E_NONE;
 }
 
 static KlGCObject* kllib_istream_prop(KlInputStream* istream, KlMM* klmm, KlGCObject* gclist) {
-  /* TODO: propagate gc object in Ki if exists */
-  kl_unused(klmm);
+  if (istream->kiprop) istream->kiprop(istream->ki, klmm, gclist);
   return klobject_propagate_nomm(klcast(KlObject*, istream), gclist);
 }
 
 static KlGCObject* kllib_ostream_prop(KlOutputStream* ostream, KlMM* klmm, KlGCObject* gclist) {
-  /* TODO: propagate gc object in Ko if exists */
-  kl_unused(klmm);
+  if (ostream->koprop) ostream->koprop(ostream->ko, klmm, gclist);
   return klobject_propagate_nomm(klcast(KlObject*, ostream), gclist);
 }
 
