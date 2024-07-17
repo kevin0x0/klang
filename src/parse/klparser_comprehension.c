@@ -1,10 +1,10 @@
-#include "include/parse/klparser_generator.h"
+#include "include/parse/klparser_comprehension.h"
 #include "include/parse/klparser_expr.h"
 #include "include/parse/klparser_stmt.h"
 #include "include/parse/klparser_utils.h"
 #include "deps/k/include/array/karray.h"
 
-static KlAst* klparser_generatorfor(KlParser* parser, KlLex* lex, KlAstExprList* lvals, KlAst* inner_stmt) {
+static KlAst* klparser_comprehensionfor(KlParser* parser, KlLex* lex, KlAstExprList* lvals, KlAst* inner_stmt) {
   if (kllex_trymatch(lex, KLTK_ASSIGN)) { /* i = n, m, s */
     KlAstExprList* exprlist = klparser_exprlist(parser, lex);
     kllex_trymatch(lex, KLTK_SEMI);
@@ -29,7 +29,7 @@ static KlAst* klparser_generatorfor(KlParser* parser, KlLex* lex, KlAstExprList*
       klast_delete(lvals);
       return NULL;
     }
-    KlAstStmtList* block = klparser_generator(parser, lex, inner_stmt);
+    KlAstStmtList* block = klparser_comprehension(parser, lex, inner_stmt);
     if (kl_unlikely(!block)) {
       klast_delete(exprlist);
       klast_delete(lvals);
@@ -51,7 +51,7 @@ static KlAst* klparser_generatorfor(KlParser* parser, KlLex* lex, KlAstExprList*
     klast_delete(lvals);
     return NULL;
   }
-  KlAstStmtList* block = klparser_generator(parser, lex, inner_stmt);
+  KlAstStmtList* block = klparser_comprehension(parser, lex, inner_stmt);
   if (kl_unlikely(!block)) {
     klast_delete(lvals);
     klast_delete(iterable);
@@ -69,7 +69,7 @@ static KlAst* klparser_generatorfor(KlParser* parser, KlLex* lex, KlAstExprList*
   }
 }
 
-KlAstStmtList* klparser_generator(KlParser* parser, KlLex* lex, KlAst* inner_stmt) {
+KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAst* inner_stmt) {
   KArray stmtarr;
   if (kl_unlikely(!karray_init(&stmtarr)))
     return klparser_error_oom(parser, lex);
@@ -81,9 +81,9 @@ KlAstStmtList* klparser_generator(KlParser* parser, KlLex* lex, KlAst* inner_stm
         continue;
       }
       if (kllex_check(lex, KLTK_IN) || kllex_check(lex, KLTK_ASSIGN)) {
-        KlAst* stmt = klparser_generatorfor(parser, lex, exprlist, inner_stmt);
+        KlAst* stmt = klparser_comprehensionfor(parser, lex, exprlist, inner_stmt);
         if (kl_unlikely(!stmt)) {
-          /* 'exprlist' is deleted in klparser_generatorfor() */
+          /* 'exprlist' is deleted in klparser_comprehensionfor() */
           klparser_destroy_astarray(&stmtarr);
           return NULL;
         }
@@ -94,7 +94,7 @@ KlAstStmtList* klparser_generator(KlParser* parser, KlLex* lex, KlAst* inner_stm
         }
       } else {
         kllex_trymatch(lex, KLTK_SEMI);
-        KlAstStmtList* block = klparser_generator(parser, lex, inner_stmt);
+        KlAstStmtList* block = klparser_comprehension(parser, lex, inner_stmt);
         if (kl_unlikely(!block)) {
           klast_delete(exprlist);
           klparser_destroy_astarray(&stmtarr);

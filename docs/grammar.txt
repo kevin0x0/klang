@@ -76,17 +76,17 @@ unit_expression         : identifier
                         ;
 
 array_expression        : '[' expression_list ']'
-                        | '[' expression_list '|' generator_def_sequence ']'
+                        | '[' expression_list '|' comprehension ']'
                         | '[' ']'
                         ;
 
 brace_expression        : map_expression
                         | class_expression
-                        | generator_expression
+                        | comprehension_expression
                         ;
 
 map_expression          : '{' kvpairs '}'
-                        | '{' kvpairs '|' generator_def_sequence '}'
+                        | '{' kvpairs '|' comprehension '}'
                         | '{' ':' '}'
                         ;
 
@@ -115,7 +115,7 @@ class_shared_list       : pattern '=' expression
                         | class_shared_list ',' pattern '=' expression
                         ;
 
-generator_expression    : '{' expression_list '|' generator_def_sequence '}'
+comprehension_expression    : '{' expression_list '|' comprehension '}'
                         ;
 
 identifier              : regular expression: ([A-Za-z_] | ([:unicode_character:] - [:ascii:]))([A-Za-z0-9_] | ([:unicode_character:] - [:ascii:]))*
@@ -210,14 +210,14 @@ local_statement         : 'local' identifier expression
 
 
 
-generator_def           : pattern_list keyword_in expression_list
+comprehension_stuff     : pattern_list keyword_in expression_list
                         | pattern_list keyword_in '...'
                         | pattern '=' expression ',' expression optional(',' expression)
                         | let_statement
                         | expression_statement
 
-generator_def_sequence  : generator_def
-                        | generator_def_sequence optional(';') generator_def
+comprehension           : comprehension_stuff
+                        | comprehension optional(';') comprehension_stuff
                         ;
 
 

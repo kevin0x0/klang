@@ -25,7 +25,7 @@ KLANG_OBJS = $(OBJ_DIR)klutils.o $(OBJ_DIR)klgc.o $(OBJ_DIR)klmm.o $(OBJ_DIR)kla
              $(OBJ_DIR)klvalue.o $(OBJ_DIR)klcommon.o $(OBJ_DIR)klexec.o $(OBJ_DIR)klstack.o $(OBJ_DIR)klstate.o $(OBJ_DIR)klthrow.o \
              $(OBJ_DIR)klconvert.o $(OBJ_DIR)klapi.o
 
-KLANGC_OBJS = $(OBJ_DIR)klparser.o $(OBJ_DIR)klparser_expr.o $(OBJ_DIR)klparser_stmt.o $(OBJ_DIR)klparser_generator.o \
+KLANGC_OBJS = $(OBJ_DIR)klparser.o $(OBJ_DIR)klparser_expr.o $(OBJ_DIR)klparser_stmt.o $(OBJ_DIR)klparser_comprehension.o \
               $(OBJ_DIR)klparser_utils.o $(OBJ_DIR)klparser_error.o $(OBJ_DIR)klparser_recovery.o $(OBJ_DIR)kltokens.o \
               $(OBJ_DIR)kllex.o $(OBJ_DIR)klcfdarr.o $(OBJ_DIR)klerror.o $(OBJ_DIR)klast.o $(OBJ_DIR)klast_expr.o $(OBJ_DIR)klast_stmt.o \
               $(OBJ_DIR)klstrtbl.o $(OBJ_DIR)klcode.o $(OBJ_DIR)klcode_dump.o $(OBJ_DIR)klcode_print.o $(OBJ_DIR)klcontbl.o \

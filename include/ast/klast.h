@@ -142,22 +142,22 @@ typedef struct tagKlAstMap {
   size_t npair;                     /* number of k-v pairs */
 } KlAstMap;
 
-typedef struct tagKlAstMapGenerator {
+typedef struct tagKlAstMapComprehension {
   KL_DERIVE_FROM(KlAst, _astbase_);
   KlStrDesc mapid;                  /* temporary identifier for array */
   KlAstStmtList* block;             /* code that generates an array */
-} KlAstMapGenerator;
+} KlAstMapComprehension;
 
 typedef struct tagKlAstArray {
   KL_DERIVE_FROM(KlAst, _astbase_);
   KlAstExprList* exprlist;             /* exprlist */
 } KlAstArray;
 
-typedef struct tagKlAstArrayGenerator {
+typedef struct tagKlAstArrayComprehension {
   KL_DERIVE_FROM(KlAst, _astbase_);
   KlStrDesc arrid;                  /* temporary identifier for array */
   KlAstStmtList* block;             /* code that generates an array */
-} KlAstArrayGenerator;
+} KlAstArrayComprehension;
 
 typedef struct tagKlAstClass {
   KL_DERIVE_FROM(KlAst, _astbase_);
@@ -394,9 +394,9 @@ static inline void klast_setposition_raw(KlAst* ast, KlFileOffset begin, KlFileO
 /* expressions */
 KlAstIdentifier* klast_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset end);
 KlAstMap* klast_map_create(KlAst** keys, KlAst** vals, size_t npair, KlFileOffset begin, KlFileOffset end);
-KlAstMapGenerator* klast_mapgenerator_create(KlStrDesc arrid, KlAstStmtList* stmts, KlFileOffset begin, KlFileOffset end);
+KlAstMapComprehension* klast_mapcomprehension_create(KlStrDesc arrid, KlAstStmtList* stmts, KlFileOffset begin, KlFileOffset end);
 KlAstArray* klast_array_create(KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end);
-KlAstArrayGenerator* klast_arraygenerator_create(KlStrDesc arrid, KlAstStmtList* stmts, KlFileOffset begin, KlFileOffset end);
+KlAstArrayComprehension* klast_arraycomprehension_create(KlStrDesc arrid, KlAstStmtList* stmts, KlFileOffset begin, KlFileOffset end);
 KlAstClass* klast_class_create(KlAstClassFieldDesc* fields, KlAst** vals, size_t nfield, KlAst* base, KlFileOffset begin, KlFileOffset end);
 KlAstConstant* klast_constant_create_string(KlStrDesc string, KlFileOffset begin, KlFileOffset end);
 KlAstConstant* klast_constant_create_integer(KlCInt intval, KlFileOffset begin, KlFileOffset end);

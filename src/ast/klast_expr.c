@@ -3,9 +3,9 @@
 
 static void klast_id_destroy(KlAstIdentifier* astid);
 static void klast_map_destroy(KlAstMap* astmap);
-static void klast_mapgenerator_destroy(KlAstMapGenerator* astmapgenerator);
+static void klast_mapcomprehension_destroy(KlAstMapComprehension* astmapcomprehension);
 static void klast_array_destroy(KlAstArray* astarray);
-static void klast_arraygenerator_destroy(KlAstArrayGenerator* astarraygenerator);
+static void klast_arraycomprehension_destroy(KlAstArrayComprehension* astarraycomprehension);
 static void klast_class_destroy(KlAstClass* astclass);
 static void klast_constant_destroy(KlAstConstant* astconstant);
 static void klast_vararg_destroy(KlAstVararg* astvararg);
@@ -26,9 +26,9 @@ static void klast_where_destroy(KlAstWhere* astwhere);
 
 static const KlAstInfo klast_id_vfunc = { .destructor = (KlAstDelete)klast_id_destroy, .kind = KLAST_EXPR_ID };
 static const KlAstInfo klast_map_vfunc = { .destructor = (KlAstDelete)klast_map_destroy, .kind = KLAST_EXPR_MAP };
-static const KlAstInfo klast_mapgenerator_vfunc = { .destructor = (KlAstDelete)klast_mapgenerator_destroy, .kind = KLAST_EXPR_MAPGEN };
+static const KlAstInfo klast_mapcomprehension_vfunc = { .destructor = (KlAstDelete)klast_mapcomprehension_destroy, .kind = KLAST_EXPR_MAPGEN };
 static const KlAstInfo klast_array_vfunc = { .destructor = (KlAstDelete)klast_array_destroy, .kind = KLAST_EXPR_ARR };
-static const KlAstInfo klast_arraygenerator_vfunc = { .destructor = (KlAstDelete)klast_arraygenerator_destroy, .kind = KLAST_EXPR_ARRGEN };
+static const KlAstInfo klast_arraycomprehension_vfunc = { .destructor = (KlAstDelete)klast_arraycomprehension_destroy, .kind = KLAST_EXPR_ARRGEN };
 static const KlAstInfo klast_class_vfunc = { .destructor = (KlAstDelete)klast_class_destroy, .kind = KLAST_EXPR_CLASS };
 static const KlAstInfo klast_constant_vfunc = { .destructor = (KlAstDelete)klast_constant_destroy, .kind = KLAST_EXPR_CONSTANT };
 static const KlAstInfo klast_vararg_vfunc = { .destructor = (KlAstDelete)klast_vararg_destroy, .kind = KLAST_EXPR_VARARG };
@@ -75,17 +75,17 @@ KlAstMap* klast_map_create(KlAst** keys, KlAst** vals, size_t npair, KlFileOffse
   return astmap;
 }
 
-KlAstMapGenerator* klast_mapgenerator_create(KlStrDesc arrid, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
-  KlAstMapGenerator* astmapgenerator = klast_alloc(KlAstMapGenerator);
-  if (kl_unlikely(!astmapgenerator)) {
+KlAstMapComprehension* klast_mapcomprehension_create(KlStrDesc arrid, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
+  KlAstMapComprehension* astmapcomprehension = klast_alloc(KlAstMapComprehension);
+  if (kl_unlikely(!astmapcomprehension)) {
     klast_delete(block);
     return NULL;
   }
-  astmapgenerator->mapid = arrid;
-  astmapgenerator->block = block;
-  klast_setposition(astmapgenerator, begin, end);
-  klast_init(astmapgenerator, &klast_mapgenerator_vfunc);
-  return astmapgenerator;
+  astmapcomprehension->mapid = arrid;
+  astmapcomprehension->block = block;
+  klast_setposition(astmapcomprehension, begin, end);
+  klast_init(astmapcomprehension, &klast_mapcomprehension_vfunc);
+  return astmapcomprehension;
 }
 
 KlAstArray* klast_array_create(KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end) {
@@ -100,17 +100,17 @@ KlAstArray* klast_array_create(KlAstExprList* exprlist, KlFileOffset begin, KlFi
   return astarray;
 }
 
-KlAstArrayGenerator* klast_arraygenerator_create(KlStrDesc arrid, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
-  KlAstArrayGenerator* astarraygenerator = klast_alloc(KlAstArrayGenerator);
-  if (kl_unlikely(!astarraygenerator)) {
+KlAstArrayComprehension* klast_arraycomprehension_create(KlStrDesc arrid, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
+  KlAstArrayComprehension* astarraycomprehension = klast_alloc(KlAstArrayComprehension);
+  if (kl_unlikely(!astarraycomprehension)) {
     klast_delete(block);
     return NULL;
   }
-  astarraygenerator->arrid = arrid;
-  astarraygenerator->block = block;
-  klast_setposition(astarraygenerator, begin, end);
-  klast_init(astarraygenerator, &klast_arraygenerator_vfunc);
-  return astarraygenerator;
+  astarraycomprehension->arrid = arrid;
+  astarraycomprehension->block = block;
+  klast_setposition(astarraycomprehension, begin, end);
+  klast_init(astarraycomprehension, &klast_arraycomprehension_vfunc);
+  return astarraycomprehension;
 }
 
 KlAstClass* klast_class_create(KlAstClassFieldDesc* fields, KlAst** vals, size_t nfield, KlAst* base, KlFileOffset begin, KlFileOffset end) {
@@ -421,16 +421,16 @@ static void klast_map_destroy(KlAstMap* astmap) {
   free(vals);
 }
 
-static void klast_mapgenerator_destroy(KlAstMapGenerator* astmapgenerator) {
-  klast_delete(astmapgenerator->block);
+static void klast_mapcomprehension_destroy(KlAstMapComprehension* astmapcomprehension) {
+  klast_delete(astmapcomprehension->block);
 }
 
 static void klast_array_destroy(KlAstArray* astarray) {
   klast_delete(astarray->exprlist);
 }
 
-static void klast_arraygenerator_destroy(KlAstArrayGenerator* astarraygenerator) {
-  klast_delete(astarraygenerator->block);
+static void klast_arraycomprehension_destroy(KlAstArrayComprehension* astarraycomprehension) {
+  klast_delete(astarraycomprehension->block);
 }
 
 static void klast_class_destroy(KlAstClass* astclass) {
