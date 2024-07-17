@@ -90,7 +90,7 @@ static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
       }
       if (behaviour->dumpoutput)
         ko_delete(behaviour->dumpoutput);
-      behaviour->dumpoutput = kofile_create(argv[++i], "w");
+      behaviour->dumpoutput = kofile_create(argv[++i], "wb");
       if (kl_unlikely(!behaviour->dumpoutput)) {
         fprintf(stderr, "failed to open file: %s\n", argv[i]);
         klc_cleanbehaviour(behaviour);
