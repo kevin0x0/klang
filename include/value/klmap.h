@@ -9,8 +9,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define KLMAP_OPT_WEAKKEY   (klbit(0))
-#define KLMAP_OPT_WEAKVAL   (klbit(1))
+#define KLMAP_OPT_WEAKKEY     klcast(unsigned, klbit(0))
+#define KLMAP_OPT_WEAKVAL     klcast(unsigned, klbit(1))
+#define KLMAP_OPT_CUSTOMHASH  klcast(unsigned, klbit(2))
 
 
 #define KLMAP_KEYTAG_EMPTY    (0)
@@ -47,6 +48,7 @@ static inline size_t klmap_capacity(const KlMap* map);
 static inline void klmap_assignoption(KlMap* map, unsigned option);
 static inline void klmap_setoption(KlMap* map, unsigned bit);
 static inline void klmap_clroption(KlMap* map, unsigned bit);
+static inline bool klmap_testoption(KlMap* map, unsigned bit);
 
 static inline size_t klmap_getinthash(KlInt key);
 static inline size_t klmap_gethash(const KlValue* key);
@@ -214,6 +216,9 @@ static inline void klmap_clroption(KlMap* map, unsigned bit) {
   map->option &= ~bit;
 }
 
+static inline bool klmap_testoption(KlMap* map, unsigned bit) {
+  return map->option & bit;
+}
 
 
 #endif
