@@ -1054,7 +1054,6 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
 
 KlException klexec_execute(KlState* state) {
   kl_assert(state->callinfo->status & KLSTATE_CI_STATUS_KCLO, "expected klang closure in klexec_execute()");
-
   KlCallInfo* callinfo = state->callinfo;
   KlKClosure* closure = klcast(KlKClosure*, callinfo->callable.clo);
   const KlInstruction* pc = callinfo->savedpc;
@@ -1597,22 +1596,20 @@ KlException klexec_execute(KlState* state) {
             klexec_savestate(callinfo->top, pc);
             return klexec_handle_arrayindexas_exception(state, exception, arr, index);
           }
-        } else {
-          if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
-            KlMap* map = klvalue_getobj(indexable, KlMap*);
-            KlMapSlot* itr = klmap_searchint(map, index);
-            if (itr) {
-              klvalue_checktype(val, KL_NIL) ? klmap_erase(map, itr)
-                                             : klvalue_setvalue(&itr->value, val);
-            } else if (!klvalue_checktype(val, KL_NIL)) {
-              KlValue key;
-              klvalue_setint(&key, index);
-              klexec_savestate(callinfo->top, pc);
-              if (kl_unlikely(!klmap_insert(map, klstate_getmm(state), &key, val)))
-                return klstate_throw_oom(state, "inserting a k-v pair to a map");
-            }
-            break;
+        } else if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
+          KlMap* map = klvalue_getobj(indexable, KlMap*);
+          KlMapSlot* slot = klmap_searchint(map, index);
+          if (kl_likely(slot)) {
+            kl_unlikely(klvalue_checktype(val, KL_NIL)) ? klmap_erase(map, slot)
+              : klmap_slot_setvalue(slot, val);
+          } else if (!klvalue_checktype(val, KL_NIL)) {
+            KlValue key;
+            klvalue_setint(&key, index);
+            klexec_savestate(callinfo->top, pc);
+            if (kl_unlikely(!klmap_insert(map, klstate_getmm(state), &key, val)))
+              return klstate_throw_oom(state, "inserting a k-v pair to a map");
           }
+        } else {
           KlValue key;
           klvalue_setint(&key, index);
           klexec_savestate(callinfo->top, pc);
@@ -1645,7 +1642,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           if (kl_likely(klvalue_checktype(indexable, KL_MAP))) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
-            if (klvalue_canrawequal(key)) {
+            if (kl_likely(klvalue_canrawequal(key) || !klmap_testoption(map, KLMAP_OPT_CUSTOMHASH))) {
               KlMapSlot* itr = klmap_search(map, key);
               itr ? klvalue_setvalue(val, &itr->value) : klvalue_setnil(val);
               break;
@@ -1683,7 +1680,7 @@ KlException klexec_execute(KlState* state) {
         } else {
           if (klvalue_checktype(indexable, KL_MAP)) {  /* is map? */
             KlMap* map = klvalue_getobj(indexable, KlMap*);
-            if (klvalue_canrawequal(key)) { /* simple types that can apply raw equal. fast search and set */
+            if (kl_likely(klvalue_canrawequal(key) || !klmap_testoption(map, KLMAP_OPT_CUSTOMHASH))) {
               KlMapSlot* itr = klmap_search(map, key);
               if (itr) {
                 klvalue_checktype(val, KL_NIL) ? klmap_erase(map, itr)
