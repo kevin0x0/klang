@@ -8,7 +8,7 @@
 static KlGCObject* klarray_propagate(KlArray* array, KlMM* klmm, KlGCObject* gclist);
 static void klarray_delete(KlArray* array, KlMM* klmm);
 
-static const KlGCVirtualFunc klarray_gcvfunc = { .destructor = (KlGCDestructor)klarray_delete, .propagate = (KlGCProp)klarray_propagate };
+static const KlGCVirtualFunc klarray_gcvfunc = { .destructor = (KlGCDestructor)klarray_delete, .propagate = (KlGCProp)klarray_propagate, .after = NULL };
 
 
 KlArray* klarray_create(KlMM* klmm, size_t capacity) {
