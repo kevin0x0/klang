@@ -66,10 +66,10 @@
 #define klapi_nres(state)                             (klstate_currci(state)->nret)
 #define klapi_framesize(state)                        klcast(size_t, (klstate_stktop((state)) - klstate_currci((state))->base))
 
-#define klapi_tointb(state, to, from)                 klapi_toint((state), klapi_framesize((state)) + (to), klapi_framesize(state) + (from))
-#define klapi_tofloatb(state, to, from)               klapi_tofloat((state), klapi_framesize((state)) + (to), klapi_framesize((state)) + (from))
-#define klapi_toboolb(state, index)                   klapi_tobool((state), klapi_framesize((state)) + (index))
-#define klapi_tostringb(state, index)                 klapi_tostring((state), klapi_framesize((state)) + (index))
+#define klapi_tointb(state, to, from)                 klapi_toint((state), (to) - klapi_framesize((state)), (from) - klapi_framesize(state))
+#define klapi_tofloatb(state, to, from)               klapi_tofloat((state), (to) - klapi_framesize((state)), (from) - klapi_framesize(state))
+#define klapi_toboolb(state, index)                   klapi_tobool((state), (index) - klapi_framesize((state)))
+#define klapi_tostringb(state, index)                 klapi_tostring((state), (index) - klapi_framesize((state)))
 
 #define klapi_exception_clear(state, callinfo)        klstate_setcurrci((state), (callinfo))
 
@@ -94,7 +94,7 @@ KlValue* klapi_access(KlState* state, int index);
 /* access from frame base */
 KlValue* klapi_accessb(KlState* state, unsigned index);
 KlType klapi_gettype(KlState* state, int index);
-KlType klapi_gettypeb(KlState* state, int index);
+KlType klapi_gettypeb(KlState* state, unsigned int index);
 void klapi_setframesize(KlState* state, unsigned size);
 void klapi_pop(KlState* state, size_t count);
 void klapi_close(KlState* state, KlValue* bound);
