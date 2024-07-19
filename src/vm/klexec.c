@@ -29,7 +29,6 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
 static KlException klexec_callprepare(KlState* state, const KlValue* callable, size_t narg, KlCallPrepCallBack callback);
 static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff);
 static KlCallInfo* klexec_alloc_callinfo(KlState* state);
-static bool klexec_getmethod(const KlState* state, const KlValue* object, const KlString* field, KlValue* result);
 
 static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int retoff) {
   KlCallInfo* callinfo = state->callinfo->next ? state->callinfo->next : klexec_alloc_callinfo(state);
@@ -199,12 +198,9 @@ static KlException klexec_co_resume_execute(KlState* costate) {
     if (ci->status & KLSTATE_CI_STATUS_KCLO) {
       exception = klexec_execute(costate);
       if (kl_unlikely(exception)) return exception;
-    } else if (ci->status & KLSTATE_CI_STATUS_CFUN) {
-      if (kl_unlikely((exception = ci->callable.cfunc(costate))))
-        return exception;
-      klexec_pop_callinfo(costate);
-    } else if (ci->status & KLSTATE_CI_STATUS_CCLO) {
-      if (kl_unlikely((exception = klcast(KlCClosure*, ci->callable.clo)->cfunc(costate))))
+    } else {
+      kl_assert(ci->status & (KLSTATE_CI_STATUS_CFUN | KLSTATE_CI_STATUS_CCLO), "");
+      if (kl_unlikely((exception = ci->resume.afteryield(costate))))
         return exception;
       klexec_pop_callinfo(costate);
     }
@@ -329,6 +325,25 @@ KlException klexec_call(KlState* state, const KlValue* callable, size_t narg, si
   return exception;
 }
 
+KlException klexec_call_yieldable(KlState* state, const KlValue* callable, size_t narg, size_t nret, KlValue* respos, KlCFunction* afteryield, KlCIUD ud) {
+  kl_assert(nret <= KLEXEC_VARIABLE_RESULTS, "number of returned values should be in range [0, 255) or KLAPI_VARIABLE_RESULTS");
+  kl_assert(klstack_onstack(klstate_stack(state), respos), "'respos' should be a position on stack");
+
+  KlCallInfo* currci = klstate_currci(state);
+  kl_assert(currci->status & (KLSTATE_CI_STATUS_CFUN | KLSTATE_CI_STATUS_CCLO), "must be called by C function or C closure");
+  currci->resume.afteryield = afteryield;
+  currci->resume.ud = ud;
+  KlCallInfo* newci = klexec_new_callinfo(state, nret, respos - (klstate_stktop(state) - narg));
+  if (kl_unlikely(!newci))
+    return klstate_throw_oom(state, "calling a callable object");
+  KlException exception = klexec_callprepare(state, callable, narg, NULL);
+  if (newci == state->callinfo) {  /* to be executed klang call */
+    state->callinfo->status |= KLSTATE_CI_STATUS_STOP;
+    exception = klexec_execute(state);
+  }
+  return exception;
+}
+
 KlException klexec_tailcall(KlState* state, const KlValue* callable, size_t narg) {
   KlCallInfo* newci = state->callinfo;
   newci->retoff += newci->base - (klstate_stktop(state) - narg);
@@ -431,7 +446,7 @@ static KlException klexec_callprep_callback_for_method(KlState* state, const KlV
   return klexec_callprepare(state, &method, narg, NULL);
 }
  
-static bool klexec_getmethod(const KlState* state, const KlValue* object, const KlString* field, KlValue* result) {
+bool klexec_getmethod(const KlState* state, const KlValue* object, const KlString* field, KlValue* result) {
   switch (klvalue_gettype(object)) {
     case KL_OBJECT: {
       return klobject_getmethod(klvalue_getobj(object, KlObject*), field, result);

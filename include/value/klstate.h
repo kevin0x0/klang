@@ -39,12 +39,17 @@ struct tagKlCallInfo {
     KlGCObject* clo;                /* klang closure or C closure(determined by status) */
     KlCFunction* cfunc;             /* C function in execution */
   } callable;
-  KlValue* top;                     /* stack frame top for this klang call */
-  KlValue* base;                    /* stack base */
   union {
-    const KlInstruction* savedpc;   /* pointed to current klang instruction */
-    KlCIUD resume_ud;               /* userdata for C call when coroutine resuming */
+    struct {
+      const KlInstruction* savedpc; /* pointed to current klang instruction */
+      KlValue* top;                 /* stack frame top for this klang call */
+    };
+    struct {
+      KlCIUD ud;                    /* userdata for C call when coroutine resuming */
+      KlCFunction* afteryield;      /* function to be executed after yielding */
+    } resume;
   };
+  KlValue* base;                    /* stack base */
   int retoff;                       /* the offset of position relative to stkbase where returned values place. */
   KlUnsigned narg;                  /* actual number of received arguments */
   KlUByte nret;                     /* expected number of returned value */

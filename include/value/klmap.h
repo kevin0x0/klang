@@ -45,6 +45,7 @@ typedef struct tagKlMap {
 KlMap* klmap_create(KlMM* klmm, size_t capacity);
 
 static inline size_t klmap_capacity(const KlMap* map);
+static inline size_t klmap_mask(const KlMap* map);
 static inline void klmap_assignoption(KlMap* map, unsigned option);
 static inline void klmap_setoption(KlMap* map, unsigned bit);
 static inline void klmap_clroption(KlMap* map, unsigned bit);
@@ -55,6 +56,7 @@ static inline size_t klmap_gethash(const KlValue* key);
 
 bool klmap_insert(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value);
 bool klmap_insert_new(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value);
+bool klmap_insert_hash(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value, size_t hash);
 bool klmap_insertstring(KlMap* map, KlMM* klmm, const KlString* str, const KlValue* value);
 static inline KlMapSlot* klmap_search(const KlMap* map, const KlValue* key);
 static inline KlMapSlot* klmap_searchint(const KlMap* map, KlInt key);
@@ -202,6 +204,10 @@ static inline bool klmap_indexas(KlMap* map, KlMM* klmm, const KlValue* key, con
 
 static inline size_t klmap_capacity(const KlMap* map) {
   return map->capacity;
+}
+
+static inline size_t klmap_mask(const KlMap* map) {
+  return map->capacity - 1;
 }
 
 static inline void klmap_assignoption(KlMap* map, unsigned option) {

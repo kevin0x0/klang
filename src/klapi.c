@@ -62,7 +62,7 @@ KlType klapi_gettype(KlState* state, int index) {
   return klvalue_gettype(klapi_access(state, index));
 }
 
-KlType klapi_gettypeb(KlState* state, int index) {
+KlType klapi_gettypeb(KlState* state, unsigned int index) {
   return klvalue_gettype(klapi_accessb(state, index));
 }
 
@@ -438,6 +438,14 @@ KlException klapi_scall(KlState* state, KlValue* callable, size_t narg, size_t n
   return KL_E_NONE;
 }
 
+KlException klapi_scall_yieldable(KlState* state, KlValue* callable, size_t narg, size_t nret, KlCFunction* afteryield, KlCIUD ud) {
+  ptrdiff_t retpos_save = klexec_savestack(state, klstate_stktop(state) - narg);
+  KLAPI_PROTECT(klexec_call_yieldable(state, callable, narg, nret, klexec_restorestack(state, retpos_save), afteryield, ud));
+  if (nret != KLAPI_VARIABLE_RESULTS)
+    klstack_set_top(klstate_stack(state), klexec_restorestack(state, retpos_save) + nret);
+  return KL_E_NONE;
+}
+
 KlException klapi_tryscall(KlState* state, int errhandler, KlValue* callable, size_t narg, size_t nret) {
   ptrdiff_t errhandler_save = klstack_size(klstate_stack(state)) + errhandler;
   ptrdiff_t retpos_save = klexec_savestack(state, klstate_stktop(state) - narg);
@@ -635,3 +643,6 @@ KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fie
   return KL_E_NONE;
 }
 
+bool klapi_getmethod(KlState* state, KlValue* dotable, KlString* fieldname, KlValue* result) {
+  return klexec_getmethod(state, dotable, fieldname, result);
+}

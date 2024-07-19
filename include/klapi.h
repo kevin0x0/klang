@@ -81,6 +81,7 @@ KlException klapi_call(KlState* state, KlValue* callable, size_t narg, size_t nr
 KlException klapi_tailcall(KlState* state, KlValue* callable, size_t narg);
 /* the exception handler should be pushed into stack immediately before argmuments */
 KlException klapi_trycall(KlState* state, int errhandler, KlValue* callable, size_t narg, size_t nret, KlValue* respos);
+KlException klapi_scall_yieldable(KlState* state, KlValue* callable, size_t narg, size_t nret, KlCFunction* afteryield, KlCIUD ud);
 
 KlException klapi_allocstack(KlState* state, size_t size);
 KlException klapi_checkstack(KlState* state, size_t size);
@@ -188,6 +189,8 @@ KlException klapi_loadlib(KlState* state, int result, const char* entryfunction)
 KlException klapi_class_newshared_normal(KlState* state, KlClass* klclass, KlString* fieldname);
 KlException klapi_class_newshared_method(KlState* state, KlClass* klclass, KlString* fieldname);
 KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fieldname);
+/* index a field and return whether it is a method or not */
+bool klapi_getmethod(KlState* state, KlValue* dotable, KlString* fieldname, KlValue* result);
 
 
 #endif

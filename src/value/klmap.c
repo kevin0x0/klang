@@ -244,9 +244,8 @@ bool klmap_insertstring(KlMap* map, KlMM* klmm, const KlString* key, const KlVal
   }
 }
 
-bool klmap_insert_new(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value) {
-  size_t mask = map->capacity - 1;
-  size_t hash = klmap_gethash(key);
+bool klmap_insert_hash(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value, size_t hash) {
+  size_t mask = klmap_mask(map);
   size_t index = hash & mask;
   KlMapSlot* slots = map->slots;
   KlMapSlot* slot = &slots[index];
@@ -289,6 +288,10 @@ bool klmap_insert_new(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue*
     slot->next = NULL;
     return true;
   }
+}
+
+bool klmap_insert_new(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value) {
+  return klmap_insert_hash(map, klmm, key, value, klmap_gethash(key));
 }
 
 static KlGCObject* klmap_propagate_nonweak(KlMap* map, KlGCObject* gclist) {
