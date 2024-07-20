@@ -28,6 +28,9 @@ static inline void klexec_pop_callinfo(KlState* state);
 static inline KlCallInfo* klexec_newed_callinfo(const KlState* state);
 static inline void klexec_setnils(KlValue* vals, size_t nnil);
 
+KlException klexec_handle_newshared_exception(KlState* state, KlException exception, const KlString* key);
+KlException klexec_handle_newlocal_exception(KlState* state, KlException exception, const KlString* key);
+KlException klexec_handle_newobject_exception(KlState* state, KlException exception);
 
 static inline void klexec_pop_callinfo(KlState* state) {
   state->callinfo = state->callinfo->prev;

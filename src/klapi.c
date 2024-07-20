@@ -1,5 +1,6 @@
 #include "include/klapi.h"
 #include "include/lang/klconvert.h"
+#include "include/value/klclass.h"
 #include "include/value/klkfunc.h"
 #include "include/value/klstate.h"
 #include "include/vm/klexception.h"
@@ -641,6 +642,15 @@ KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fie
     return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
   }
   return KL_E_NONE;
+}
+
+KlException klapi_class_newobject(KlState* state, KlClass* klclass) {
+  KLAPI_PROTECT(klapi_checkstack(state, 1));
+  klapi_pushnil(state, 1);
+  KlException exception = klclass_new_object(klclass, klstate_getmm(state), klapi_access(state, -1));
+  if (kl_unlikely(exception))
+    return klexec_handle_newobject_exception(state, exception);
+  return exception;
 }
 
 bool klapi_getmethod(KlState* state, KlValue* dotable, KlString* fieldname, KlValue* result) {

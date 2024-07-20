@@ -1,5 +1,6 @@
 #include "include/klapi.h"
 #include "include/langlib/stream/kllib_stream.h"
+#include "include/misc/klutils.h"
 #include "include/value/klclass.h"
 #include "include/value/klstate.h"
 #include "include/value/klstring.h"
@@ -34,6 +35,39 @@ KlException kllib_ofile_createclass(KlState* state, KlClass* ostream) {
   KLAPI_PROTECT(klapi_pushstring(state, "init"));
   KLAPI_PROTECT(klclass_newshared_method(ofile, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_ofile_init)));
   klapi_pop(state, 1);
+  return KL_E_NONE;
+}
+
+KlException kllib_ifile_createstdin(KlState* state, KlClass* ifile) {
+  KLAPI_PROTECT(klapi_class_newobject(state, ifile));
+  KlInputStream* ifile_stdin = klapi_getobj(state, -1, KlInputStream*);
+  Ki* ki = kifile_attach_stdin(stdin);
+  if (kl_unlikely(!ki))
+    return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating stdin");
+  kllib_istream_set(ifile_stdin, ki, NULL);
+  kllib_istream_clroption(ifile_stdin, KLLIB_ISTREAM_FBUF);
+  return KL_E_NONE;
+}
+
+KlException kllib_ofile_createstdout(KlState* state, KlClass* ofile) {
+  KLAPI_PROTECT(klapi_class_newobject(state, ofile));
+  KlOutputStream* ofile_stdout = klapi_getobj(state, -1, KlOutputStream*);
+  Ko* ko = kofile_attach(stdout);
+  if (kl_unlikely(!ko))
+    return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating stdout");
+  kllib_ostream_set(ofile_stdout, ko, NULL);
+  kllib_ostream_clroption(ofile_stdout, KLLIB_OSTREAM_FBUF);
+  return KL_E_NONE;
+}
+
+KlException kllib_ofile_createstderr(KlState* state, KlClass* ofile) {
+  KLAPI_PROTECT(klapi_class_newobject(state, ofile));
+  KlOutputStream* ofile_stderr = klapi_getobj(state, -1, KlOutputStream*);
+  Ko* ko = kofile_attach(stderr);
+  if (kl_unlikely(!ko))
+    return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating stderr");
+  kllib_ostream_set(ofile_stderr, ko, NULL);
+  kllib_ostream_clroption(ofile_stderr, KLLIB_OSTREAM_FBUF);
   return KL_E_NONE;
 }
 

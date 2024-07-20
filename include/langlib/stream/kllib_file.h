@@ -7,4 +7,8 @@
 KlException kllib_ifile_createclass(KlState* state, KlClass* istream);
 KlException kllib_ofile_createclass(KlState* state, KlClass* ostream);
 
+KlException kllib_ifile_createstdin(KlState* state, KlClass* ifile);
+KlException kllib_ofile_createstdout(KlState* state, KlClass* ofile);
+KlException kllib_ofile_createstderr(KlState* state, KlClass* ofile);
+
 #endif

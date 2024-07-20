@@ -41,7 +41,7 @@ static inline KlCallInfo* klexec_new_callinfo(KlState* state, size_t nret, int r
 
 
 
-static KlException klexec_handle_newshared_exception(KlState* state, KlException exception, const KlString* key) {
+KlException klexec_handle_newshared_exception(KlState* state, KlException exception, const KlString* key) {
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when setting a new field: %s", klstring_content(key));
   } else {
@@ -53,7 +53,7 @@ static KlException klexec_handle_newshared_exception(KlState* state, KlException
   return KL_E_NONE;
 }
 
-static KlException klexec_handle_newlocal_exception(KlState* state, KlException exception, const KlString* key) {
+KlException klexec_handle_newlocal_exception(KlState* state, KlException exception, const KlString* key) {
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when adding a new field: %s", klstring_content(key));
   } else {
@@ -65,7 +65,7 @@ static KlException klexec_handle_newlocal_exception(KlState* state, KlException 
   return KL_E_NONE;
 }
 
-static KlException klexec_handle_newobject_exception(KlState* state, KlException exception) {
+KlException klexec_handle_newobject_exception(KlState* state, KlException exception) {
   if (exception == KL_E_OOM) {
     return klstate_throw_oom(state, "creating new object");
   } else if (exception == KL_E_INVLD) {

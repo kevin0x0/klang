@@ -189,6 +189,7 @@ KlException klapi_loadlib(KlState* state, int result, const char* entryfunction)
 KlException klapi_class_newshared_normal(KlState* state, KlClass* klclass, KlString* fieldname);
 KlException klapi_class_newshared_method(KlState* state, KlClass* klclass, KlString* fieldname);
 KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fieldname);
+KlException klapi_class_newobject(KlState* state, KlClass* klclass);
 /* index a field and return whether it is a method or not */
 bool klapi_getmethod(KlState* state, KlValue* dotable, KlString* fieldname, KlValue* result);
 

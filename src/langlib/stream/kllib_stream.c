@@ -184,6 +184,8 @@ static KlException kllib_ostream_writeline(KlState* state) {
   }
   ko_putc(ko, '\n');
   klapi_pop(state, narg - 1);
+  if (!(ostream->option & KLLIB_OSTREAM_FBUF))
+    ko_flush(ko);
   return klapi_return(state, 1);
 }
 
@@ -218,6 +220,7 @@ static KlException kllib_istream_objconstructor(KlClass* klclass, KlMM* klmm, Kl
   if (kl_unlikely(!istream)) return KL_E_OOM;
   istream->ki = NULL;
   istream->kiprop = NULL;
+  istream->option = KLLIB_ISTREAM_FBUF;
   klmm_gcobj_enable(klmm, klmm_to_gcobj(istream), &kllib_istream_gcvfunc);
   klvalue_setobj(result, istream, KL_OBJECT);
   return KL_E_NONE;
@@ -228,6 +231,7 @@ static KlException kllib_ostream_objconstructor(KlClass* klclass, KlMM* klmm, Kl
   if (kl_unlikely(!ostream)) return KL_E_OOM;
   ostream->ko = NULL;
   ostream->koprop = NULL;
+  ostream->option = KLLIB_OSTREAM_FBUF;
   klmm_gcobj_enable(klmm, klmm_to_gcobj(ostream), &kllib_ostream_gcvfunc);
   klvalue_setobj(result, ostream, KL_OBJECT);
   return KL_E_NONE;
