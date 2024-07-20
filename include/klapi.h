@@ -100,6 +100,7 @@ void klapi_setframesize(KlState* state, unsigned size);
 void klapi_pop(KlState* state, size_t count);
 void klapi_close(KlState* state, KlValue* bound);
 void klapi_popclose(KlState* state, size_t count);
+void klapi_move(KlState* state, int from, int to, size_t count);
 
 /* push method */
 void klapi_pushcfunc(KlState* state, KlCFunction* cfunc);
@@ -190,6 +191,7 @@ KlException klapi_class_newshared_normal(KlState* state, KlClass* klclass, KlStr
 KlException klapi_class_newshared_method(KlState* state, KlClass* klclass, KlString* fieldname);
 KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fieldname);
 KlException klapi_class_newobject(KlState* state, KlClass* klclass);
+void klapi_class_getfield(KlState* state, KlClass* klclass, KlString* fieldname, KlValue* result);
 /* index a field and return whether it is a method or not */
 bool klapi_getmethod(KlState* state, KlValue* dotable, KlString* fieldname, KlValue* result);
 

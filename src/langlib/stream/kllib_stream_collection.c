@@ -81,7 +81,6 @@ KlException kllib_init(KlState* state) {
   KLAPI_PROTECT(kllib_create_istream_collection(state));
   KLAPI_PROTECT(klapi_pushstring(state, "istream"));
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -1), -2));
-
   klapi_pop(state, 2);
   KLAPI_PROTECT(kllib_create_ostream_collection(state));
   KLAPI_PROTECT(klapi_pushstring(state, "ostream"));

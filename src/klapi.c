@@ -1,5 +1,6 @@
 #include "include/klapi.h"
 #include "include/lang/klconvert.h"
+#include "include/misc/klutils.h"
 #include "include/value/klclass.h"
 #include "include/value/klkfunc.h"
 #include "include/value/klstate.h"
@@ -87,6 +88,12 @@ void klapi_popclose(KlState* state, size_t count) {
   KlValue* bound = klstate_stktop(state) - count;
   klreflist_close(klstate_reflist(state), bound, klstate_getmm(state));
   klstack_set_top(klstate_stack(state), bound);
+}
+
+void klapi_move(KlState* state, int from, int to, size_t count) {
+  KlValue* pfrom = klapi_pointer(state, from);
+  KlValue* pto = klapi_pointer(state, to);
+  memmove(pfrom, pto, count * sizeof (KlValue));
 }
 
 void klapi_pushcfunc(KlState* state, KlCFunction* cfunc) {
@@ -651,6 +658,12 @@ KlException klapi_class_newobject(KlState* state, KlClass* klclass) {
   if (kl_unlikely(exception))
     return klexec_handle_newobject_exception(state, exception);
   return exception;
+}
+
+void klapi_class_getfield(KlState* state, KlClass* klclass, KlString* fieldname, KlValue* result) {
+  kl_unused(state);
+  KlClassSlot* slot = klclass_find(klclass, fieldname);
+  kl_likely(slot) ? klvalue_setvalue(result, &slot->value) : klvalue_setnil(result);
 }
 
 bool klapi_getmethod(KlState* state, KlValue* dotable, KlString* fieldname, KlValue* result) {

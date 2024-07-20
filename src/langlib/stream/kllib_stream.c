@@ -1,5 +1,6 @@
 #include "include/langlib/stream/kllib_stream.h"
 #include "include/langlib/stream/kllib_strbuf.h"
+#include "include/langlib/stream/kllib_write.h"
 #include "include/klapi.h"
 #include "include/value/klclass.h"
 #include "include/value/klstate.h"
@@ -67,7 +68,7 @@ KlException kllib_ostream_createclass(KlState* state) {
   KLAPI_PROTECT(klapi_pushstring(state, "put"));
   KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &nil));
   KLAPI_PROTECT(klapi_setstring(state, -1, "write"));
-  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &nil));
+  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostream_write)));
   KLAPI_PROTECT(klapi_setstring(state, -1, "writeline"));
   KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostream_writeline)));
   KLAPI_PROTECT(klapi_setstring(state, -1, "close"));
@@ -144,47 +145,11 @@ static KlException kllib_ostream_writeline(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with at least 1 argument(including 'this')!");
   if (!kllib_ostream_compatible(klapi_accessb(state, 0)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with ostream object!");
-  KlOutputStream* ostream = klapi_getobjb(state, 0, KlOutputStream*);
-  Ko* ko = ostream->ko;
-  if (kl_unlikely(!ko))
-    return klapi_throw_internal(state, KL_E_INVLD, "uninitialized ostream object");
-  size_t narg = klapi_narg(state);
-  for (size_t i = 1; i < narg; ++i) {
-    switch (klapi_gettypeb(state, i)) {
-      case KL_INT: {
-        ko_printf(ko, "%lld", klapi_getintb(state, i));
-        break;
-      }
-      case KL_FLOAT: {
-        ko_printf(ko, "%lf", klapi_getfloatb(state, i));
-        break;
-      }
-      case KL_STRING: {
-        KlString* str = klapi_getstringb(state, i);
-        ko_write(ko, klstring_content(str), klstring_length(str));
-        break;
-      }
-      case KL_NIL: {
-        ko_write(ko, "nil", sizeof ("nil") - 1);
-        break;
-      }
-      case KL_BOOL: {
-        ko_printf(ko, "%s", klapi_getboolb(state, i) ? "true" : "false", stdout);
-        break;
-      }
-      case KL_CFUNCTION: {
-        ko_printf(ko, "<%s: %p>", klexec_typename(state, klapi_accessb(state, i)), klapi_getcfuncb(state, i));
-        break;
-      }
-      default: {
-        ko_printf(ko, "<%s: %p>", klexec_typename(state, klapi_accessb(state, i)), klapi_getgcobjb(state, i));
-        break;
-      }
-    }
-  }
+  KLAPI_PROTECT(klapi_scall(state, &klvalue_cfunc(kllib_ostream_write), klapi_narg(state), 1));
+  KlOutputStream* ostream = klapi_getobj(state, -1, KlOutputStream*);
+  Ko* ko = kllib_ostream_getko((ostream));
   ko_putc(ko, '\n');
-  klapi_pop(state, narg - 1);
-  if (!(ostream->option & KLLIB_OSTREAM_FBUF))
+  if (!kllib_ostream_testoption(ostream, KLLIB_OSTREAM_FBUF))
     ko_flush(ko);
   return klapi_return(state, 1);
 }

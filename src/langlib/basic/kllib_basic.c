@@ -7,14 +7,7 @@
 #include "include/value/klstate.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
-#include <stdio.h>
 
-#define KLLIB_BASIC_PRINT_DEPTH_LIMIT   (3)
-
-static void kllib_basic_print_map(KlState* state, const KlMap* map, size_t depth);
-static void kllib_basic_print_inner(KlState* state, const KlValue* val, size_t depth);
-static void kllib_basic_print_array(KlState* state, const KlArray* array, size_t depth);
-static KlException kllib_basic_print(KlState* state);
 static KlException kllib_basic_map_next(KlState* state);
 static KlException kllib_basic_arr_next(KlState* state);
 static KlException kllib_basic_callable_next(KlState* state);
@@ -41,10 +34,7 @@ KlException kllib_init(KlState* state) {
 
 static KlException kllib_basic_init_globalvar(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
-  KLAPI_PROTECT(klapi_pushstring(state, "print"));
-  klapi_pushcfunc(state, kllib_basic_print);
-  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
-  KLAPI_PROTECT(klapi_setstring(state, -2, "string"));
+  KLAPI_PROTECT(klapi_pushstring(state, "string"));
   klapi_setobj(state, -1, state->common->klclass.phony[KL_STRING], KL_CLASS);
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
   KLAPI_PROTECT(klapi_setstring(state, -2, "integer"));
@@ -105,143 +95,6 @@ static KlException kllib_basic_init_map(KlState* state) {
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
-
-static void kllib_basic_print_inner(KlState* state, const KlValue* val, size_t depth) {
-  switch (klvalue_gettype(val)) {
-    case KL_INT: {
-      fprintf(stdout, "%lld", klvalue_getint(val));
-      break;
-    }
-    case KL_FLOAT: {
-      fprintf(stdout, "%lf", klvalue_getfloat(val));
-      break;
-    }
-    case KL_STRING: {
-      fputs("\"", stdout);
-      fputs(klstring_content(klvalue_getobj(val, KlString*)), stdout);
-      fputs("\"", stdout);
-      break;
-    }
-    case KL_NIL: {
-      fputs("nil", stdout);
-      break;
-    }
-    case KL_BOOL: {
-      fputs(klvalue_getbool(val) ? "true" : "false", stdout);
-      break;
-    }
-    case KL_CFUNCTION: {
-      fprintf(stdout, "<%s: %p>", klexec_typename(state, val), klvalue_getgcobj(val));
-      break;
-    }
-    case KL_ARRAY: {
-      kllib_basic_print_array(state, klvalue_getobj(val, KlArray*), depth + 1);
-      break;
-    }
-    case KL_MAP: {
-      kllib_basic_print_map(state, klvalue_getobj(val, KlMap*), depth + 1);
-      break;
-    }
-    default: {
-      fprintf(stdout, "<%s: %p>", klexec_typename(state, val), klvalue_getgcobj(val));
-      break;
-    }
-  }
-}
-
-static void kllib_basic_print_array(KlState* state, const KlArray* array, size_t depth) {
-  KlArrayIter end = klarray_iter_end(array);
-  KlArrayIter itr = klarray_iter_begin(array);
-  if (itr == end) {
-    fputs("[]", stdout);
-    return;
-  }
-  if (depth++ >= KLLIB_BASIC_PRINT_DEPTH_LIMIT) {
-    fputs("[...]", stdout);
-    return;
-  }
-  fputc('[', stdout);
-  kllib_basic_print_inner(state, itr, depth);
-  itr = klarray_iter_next(itr);
-  for (; itr != end; itr = klarray_iter_next(itr)) {
-    fputs(", ", stdout);
-    kllib_basic_print_inner(state, itr, depth);
-  }
-  fputc(']', stdout);
-}
-
-static void kllib_basic_print_map(KlState* state, const KlMap* map, size_t depth) {
-  size_t end = klmap_iter_end(map);
-  size_t itr = klmap_iter_begin(map);
-  if (itr == end) {
-    fputs("{:}", stdout);
-    return;
-  }
-  if (depth++ >= KLLIB_BASIC_PRINT_DEPTH_LIMIT) {
-    fputs("{...}", stdout);
-    return;
-  }
-  fputc('{', stdout);
-  kllib_basic_print_inner(state, klmap_iter_getkey(map, itr), depth);
-  fputc(':', stdout);
-  kllib_basic_print_inner(state, klmap_iter_getvalue(map, itr), depth);
-  itr = klmap_iter_next(map, itr);
-  for (; itr != end; itr = klmap_iter_next(map, itr)) {
-    fputs(", ", stdout);
-    kllib_basic_print_inner(state, klmap_iter_getkey(map, itr), depth);
-    fputc(':', stdout);
-    kllib_basic_print_inner(state, klmap_iter_getvalue(map, itr), depth);
-  }
-  fputc('}', stdout);
-}
-
-static KlException kllib_basic_print(KlState* state) {
-  size_t narg = klapi_narg(state);
-  for (size_t i = 0; i < narg; ++i) {
-    switch (klapi_gettypeb(state, i)) {
-      case KL_INT: {
-        fprintf(stdout, "%lld", klapi_getintb(state, i));
-        break;
-      }
-      case KL_FLOAT: {
-        fprintf(stdout, "%lf", klapi_getfloatb(state, i));
-        break;
-      }
-      case KL_STRING: {
-        fputs(klstring_content(klapi_getstringb(state, i)), stdout);
-        break;
-      }
-      case KL_ARRAY: {
-        kllib_basic_print_array(state, klapi_getarrayb(state, i), 0);
-        break;
-      }
-      case KL_MAP: {
-        kllib_basic_print_map(state, klapi_getmapb(state, i), 0);
-        break;
-      }
-      case KL_NIL: {
-        fputs("nil", stdout);
-        break;
-      }
-      case KL_BOOL: {
-        fputs(klapi_getboolb(state, i) ? "true" : "false", stdout);
-        break;
-      }
-      case KL_CFUNCTION: {
-        fprintf(stdout, "<%s: %p>", klexec_typename(state, klapi_accessb(state, i)), klapi_getcfuncb(state, i));
-        break;
-      }
-      default: {
-        fprintf(stdout, "<%s: %p>", klexec_typename(state, klapi_accessb(state, i)), klapi_getgcobjb(state, i));
-        break;
-      }
-    }
-    fputc('\t', stdout);
-  }
-  fputc('\n', stdout);
-  return klapi_return(state, 0);
-}
-
 static KlException kllib_basic_map_next(KlState* state) {
   if (kl_unlikely(klapi_narg(state) < 3))
     return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 3 arguments(1 iteration variable in for loop)");

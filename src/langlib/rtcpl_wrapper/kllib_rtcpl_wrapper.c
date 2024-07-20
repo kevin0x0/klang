@@ -13,7 +13,7 @@ KlException kllib_init(KlState* state);
 
 
 KlException kllib_init(KlState* state) {
-  KLAPI_PROTECT(klapi_checkstack(state, 1));
+  KLAPI_PROTECT(klapi_checkstack(state, 2));
   char* libdir = kfs_trunc_leaf(klstring_content(klapi_getstring(state, -1)));
   if (kl_unlikely(!libdir))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while init rtcplwrapper");
@@ -21,6 +21,7 @@ KlException kllib_init(KlState* state) {
   free(libdir);
   if (kl_unlikely(!librtcpl))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while init rtcplwrapper");
+  klapi_pushnil(state, 1);
   KLAPI_MAYFAIL(klapi_pushstring(state, librtcpl), free(librtcpl));
   free(librtcpl);
   KLAPI_PROTECT(klapi_loadlib(state, 0, NULL));

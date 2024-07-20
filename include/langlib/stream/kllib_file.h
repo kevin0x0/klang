@@ -1,6 +1,7 @@
 #ifndef _KLANG_INCLUDE_LANGLIB_STREAM_KLLIB_FILE_H_
 #define _KLANG_INCLUDE_LANGLIB_STREAM_KLLIB_FILE_H_
 
+#include "include/langlib/stream/kllib_stream.h"
 #include "include/value/klclass.h"
 #include "include/vm/klexception.h"
 

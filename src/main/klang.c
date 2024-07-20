@@ -227,7 +227,7 @@ error_create_vm:
 
 static KlException kl_dopreload_helper_loadlib(KlState* state, const char* libname) {
   KLAPI_PROTECT(klapi_checkstack(state, 1));
-  KLAPI_PROTECT(klapi_pushstring(state,libname));
+  KLAPI_PROTECT(klapi_pushstring(state, libname));
   KLAPI_PROTECT(klapi_concati(state, -1, -2, -1));
   KLAPI_PROTECT(klapi_loadlib(state, 0, NULL));
   return KL_E_NONE;
@@ -259,6 +259,9 @@ static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicT
 
   /* load rtcpl_wrapper */
   KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/rtcpl_wrapper.so"));
+
+  /* load print */
+  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/print.so"));
 
   klapi_pop(state, 1);  /* pop corelibpath */
 
