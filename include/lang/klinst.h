@@ -20,7 +20,7 @@ typedef uint8_t KlOpcode;
 #define klinst_utos(num, width)         ((int32_t)(num) - (int32_t)(klbit((width) - 1)))
 #define klinst_stou(num, width)         ((int32_t)(num) + (klbit((width) - 1)))
 
-#define KLINST_GET_OPCODE(inst)         ((uint8_t)(inst))
+#define KLINST_GET_OPCODE(inst)         (klcast(KlOpcode, (uint8_t)(inst)))
 
 /* instruction that has no argument */
 #define klinst_(opcode)                 kllow8bits(opcode)
@@ -330,6 +330,111 @@ typedef uint8_t KlOpcode;
 #define klinst_extra_i(imm)                               klinst_I(KLOPCODE_EXTRA, (imm))
 
 
+#define klinst_foreach(macro)                             \
+macro(KLOPCODE_MOVE)                                      \
+macro(KLOPCODE_MULTIMOVE)                                 \
+macro(KLOPCODE_ADD)                                       \
+macro(KLOPCODE_SUB)                                       \
+macro(KLOPCODE_MUL)                                       \
+macro(KLOPCODE_DIV)                                       \
+macro(KLOPCODE_MOD)                                       \
+macro(KLOPCODE_IDIV)                                      \
+macro(KLOPCODE_CONCAT)                                    \
+macro(KLOPCODE_ADDI)                                      \
+macro(KLOPCODE_SUBI)                                      \
+macro(KLOPCODE_MULI)                                      \
+macro(KLOPCODE_DIVI)                                      \
+macro(KLOPCODE_MODI)                                      \
+macro(KLOPCODE_IDIVI)                                     \
+macro(KLOPCODE_ADDC)                                      \
+macro(KLOPCODE_SUBC)                                      \
+macro(KLOPCODE_MULC)                                      \
+macro(KLOPCODE_DIVC)                                      \
+macro(KLOPCODE_MODC)                                      \
+macro(KLOPCODE_IDIVC)                                     \
+macro(KLOPCODE_NEG)                                       \
+macro(KLOPCODE_LEN)                                       \
+macro(KLOPCODE_SCALL)                                     \
+macro(KLOPCODE_CALL)                                      \
+macro(KLOPCODE_METHOD)                                    \
+macro(KLOPCODE_RETURN)                                    \
+macro(KLOPCODE_RETURN0)                                   \
+macro(KLOPCODE_RETURN1)                                   \
+macro(KLOPCODE_LOADBOOL)                                  \
+macro(KLOPCODE_LOADI)                                     \
+macro(KLOPCODE_LOADC)                                     \
+macro(KLOPCODE_LOADNIL)                                   \
+macro(KLOPCODE_LOADREF)                                   \
+macro(KLOPCODE_LOADGLOBAL)                                \
+macro(KLOPCODE_STOREREF)                                  \
+macro(KLOPCODE_STOREGLOBAL)                               \
+macro(KLOPCODE_MKMAP)                                     \
+macro(KLOPCODE_MKARRAY)                                   \
+macro(KLOPCODE_MKCLOSURE)                                 \
+macro(KLOPCODE_APPEND)                                    \
+macro(KLOPCODE_MKCLASS)                                   \
+macro(KLOPCODE_INDEXI)                                    \
+macro(KLOPCODE_INDEXASI)                                  \
+macro(KLOPCODE_INDEX)                                     \
+macro(KLOPCODE_INDEXAS)                                   \
+macro(KLOPCODE_GETFIELDR)                                 \
+macro(KLOPCODE_GETFIELDC)                                 \
+macro(KLOPCODE_SETFIELDR)                                 \
+macro(KLOPCODE_SETFIELDC)                                 \
+macro(KLOPCODE_REFGETFIELDR)                              \
+macro(KLOPCODE_REFGETFIELDC)                              \
+macro(KLOPCODE_REFSETFIELDR)                              \
+macro(KLOPCODE_REFSETFIELDC)                              \
+macro(KLOPCODE_NEWLOCAL)                                  \
+macro(KLOPCODE_NEWMETHODC)                                \
+macro(KLOPCODE_NEWMETHODR)                                \
+macro(KLOPCODE_LOADFALSESKIP)                             \
+macro(KLOPCODE_TESTSET)                                   \
+macro(KLOPCODE_TRUEJMP)                                   \
+macro(KLOPCODE_FALSEJMP)                                  \
+macro(KLOPCODE_JMP)                                       \
+macro(KLOPCODE_CONDJMP)                                   \
+macro(KLOPCODE_CLOSEJMP)                                  \
+macro(KLOPCODE_HASFIELD)                                  \
+macro(KLOPCODE_IS)                                        \
+macro(KLOPCODE_EQ)                                        \
+macro(KLOPCODE_NE)                                        \
+macro(KLOPCODE_LE)                                        \
+macro(KLOPCODE_GE)                                        \
+macro(KLOPCODE_LT)                                        \
+macro(KLOPCODE_GT)                                        \
+macro(KLOPCODE_EQC)                                       \
+macro(KLOPCODE_NEC)                                       \
+macro(KLOPCODE_LEC)                                       \
+macro(KLOPCODE_GEC)                                       \
+macro(KLOPCODE_LTC)                                       \
+macro(KLOPCODE_GTC)                                       \
+macro(KLOPCODE_EQI)                                       \
+macro(KLOPCODE_NEI)                                       \
+macro(KLOPCODE_LEI)                                       \
+macro(KLOPCODE_GEI)                                       \
+macro(KLOPCODE_LTI)                                       \
+macro(KLOPCODE_GTI)                                       \
+macro(KLOPCODE_MATCH)                                     \
+macro(KLOPCODE_PBARR)                                     \
+macro(KLOPCODE_PBTUP)                                     \
+macro(KLOPCODE_PBMAP)                                     \
+macro(KLOPCODE_PBOBJ)                                     \
+macro(KLOPCODE_PMARR)                                     \
+macro(KLOPCODE_PMTUP)                                     \
+macro(KLOPCODE_PMMAP)                                     \
+macro(KLOPCODE_PMOBJ)                                     \
+macro(KLOPCODE_PMAPPOST)                                  \
+macro(KLOPCODE_NEWOBJ)                                    \
+macro(KLOPCODE_ADJUSTARGS)                                \
+macro(KLOPCODE_VFORPREP)                                  \
+macro(KLOPCODE_VFORLOOP)                                  \
+macro(KLOPCODE_IFORPREP)                                  \
+macro(KLOPCODE_IFORLOOP)                                  \
+macro(KLOPCODE_GFORLOOP)                                  \
+macro(KLOPCODE_ASYNC)                                     \
+macro(KLOPCODE_YIELD)                                     \
+macro(KLOPCODE_VARARG)
 
 
 

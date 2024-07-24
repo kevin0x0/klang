@@ -3,8 +3,13 @@
 
 #include <stdint.h>
 
+#if defined (__GNUC__) || defined (__clang__)
 #define kl_likely(expr)       (__builtin_expect(!!(expr), 1))
 #define kl_unlikely(expr)     (__builtin_expect(!!(expr), 0))
+#else
+#define kl_likely(expr)       (expr)
+#define kl_unlikely(expr)     (expr)
+#endif
 
 #define kl_noreturn           _Noreturn
 

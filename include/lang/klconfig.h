@@ -1,6 +1,12 @@
 #ifndef _KLANG_INCLUDE_LANG_KLCONFIG_H_
 #define _KLANG_INCLUDE_LANG_KLCONFIG_H_
 
+#if defined (__GNUC__) || defined (__clang__)
+#define KLCONFIG_USE_JMPTABLE
+#endif
+
+
+
 #define KLCONFIG_LIBRARY_RTCPL_LIBNAME_QUOTE          ("runtime_compiler.so")
 #define KLCONFIG_LIBRARY_RTCPL_WRAPPER_LIBNAME_QUOTE  ("rtcpl_wrapper.so")
 #define KLCONFIG_LIBRARY_TRACEBACK_LIBNAME_QUOTE      ("traceback.so")
