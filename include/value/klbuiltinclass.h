@@ -2,12 +2,8 @@
 #define _KLANG_INCLUDE_VALUE_KLBUILTINCLASS_H_
 
 #include "include/value/klclass.h"
-#include "include/value/klmap.h"
 #include "include/value/klstring.h"
 
-
-bool klarray_compatible(KlObject* obj);
-bool klmap_compatible(KlObject* obj);
 
 KlClass* klbuiltinclass_array(KlMM* klmm);
 KlClass* klbuiltinclass_map(KlMM* klmm);

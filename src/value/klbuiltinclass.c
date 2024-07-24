@@ -12,10 +12,6 @@ static KlException klbuiltinclass_array_constructor(KlClass* klclass, KlMM* klmm
   return KL_E_NONE;
 }
 
-bool klarray_compatible(KlObject* obj) {
-  return klobject_compatible(obj, klbuiltinclass_array_constructor);
-}
-
 KlClass* klbuiltinclass_array(KlMM* klmm) {
   KlClass* klclass = klclass_create(klmm, 2, KLOBJECT_DEFAULT_ATTROFF, NULL, klbuiltinclass_array_constructor);
   if (kl_unlikely(!klclass)) return NULL;
@@ -38,10 +34,6 @@ KlClass* klbuiltinclass_map(KlMM* klmm) {
   if (kl_unlikely(!klclass)) return NULL;
   klclass_final(klclass);
   return klclass;
-}
-
-bool klmap_compatible(KlObject* obj) {
-  return klobject_compatible(obj, klbuiltinclass_map_constructor);
 }
 
 static KlException klbuiltinclass_string_constructor(KlClass* klclass, KlMM* klmm, KlValue* value) {
@@ -162,7 +154,7 @@ KlClass* klbuiltinclass_bool(KlMM* klmm) {
 }
 
 KlClass* klbuiltinclass_nil(KlMM* klmm) {
-  KlClass* klclass = klclass_create(klmm, 2, KLOBJECT_DEFAULT_ATTROFF, NULL, klbuiltinclass_nil_constructor);
+  KlClass* klclass = klclass_create(klmm, 0, KLOBJECT_DEFAULT_ATTROFF, NULL, klbuiltinclass_nil_constructor);
   if (kl_unlikely(!klclass)) return NULL;
   klclass_final(klclass);
   return klclass;
