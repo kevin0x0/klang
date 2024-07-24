@@ -1,6 +1,6 @@
 #include "include/klapi.h"
+#include "include/lang/klconfig.h"
 #include "include/misc/klutils.h"
-#include "include/value/klbuiltinclass.h"
 #include "include/value/klarray.h"
 #include "include/value/klcfunc.h"
 #include "include/value/klmap.h"
@@ -25,7 +25,7 @@ static KlException kllib_basic_init_globalvar(KlState* state);
 static KlException kllib_basic_init_iter(KlState* state);
 static KlException kllib_basic_init_map(KlState* state);
 
-KlException kllib_init(KlState* state) {
+KlException KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(kllib_basic_init_globalvar(state));
   KLAPI_PROTECT(kllib_basic_init_iter(state));
   KLAPI_PROTECT(kllib_basic_init_map(state));

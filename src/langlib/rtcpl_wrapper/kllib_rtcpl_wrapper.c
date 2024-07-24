@@ -1,4 +1,5 @@
 #include "include/klapi.h"
+#include "include/lang/klconfig.h"
 #include "include/misc/klutils.h"
 #include "include/vm/klexception.h"
 #include "deps/k/include/kio/kifile.h"
@@ -9,10 +10,9 @@
 
 static KlException kllib_rtcpl_wrapper_compile(KlState* state);
 static KlException kllib_rtcpl_wrapper_evaluate(KlState* state);
-KlException kllib_init(KlState* state);
 
 
-KlException kllib_init(KlState* state) {
+KlException KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   char* libdir = kfs_trunc_leaf(klstring_content(klapi_getstring(state, -1)));
   if (kl_unlikely(!libdir))
@@ -24,7 +24,7 @@ KlException kllib_init(KlState* state) {
   klapi_pushnil(state, 1);
   KLAPI_MAYFAIL(klapi_pushstring(state, librtcpl), free(librtcpl));
   free(librtcpl);
-  KLAPI_PROTECT(klapi_loadlib(state, 0, NULL));
+  KLAPI_PROTECT(klapi_loadlib(state, 0, KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME_QUOTE));
 
   KLAPI_PROTECT(klapi_mkcclosure(state, -5, kllib_rtcpl_wrapper_evaluate, 1));
   klapi_popclose(state, 1); /* pop and close evaluate */

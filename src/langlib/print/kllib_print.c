@@ -1,11 +1,11 @@
 #include "include/klapi.h"
+#include "include/lang/klconfig.h"
 #include "include/misc/klutils.h"
 
-KlException kllib_init(KlState* state);
 static KlException kllib_print(KlState* state);
 static KlException kllib_create_print(KlState* state, const char* globalname);
 
-KlException kllib_init(KlState* state) {
+KlException KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   KLAPI_PROTECT(klapi_pushstring(state, "ostream"));
   klapi_loadglobal(state);

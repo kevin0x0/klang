@@ -1,4 +1,5 @@
 #include "include/klapi.h"
+#include "include/lang/klconfig.h"
 
 #include <stdio.h>
 
@@ -27,7 +28,7 @@ static void kllib_tb_printframe(KlFmtConfig* fmt, FILE* err, const KlCallInfo* c
 static void kllib_tb_dotraceback(KlFmtConfig* fmt, FILE* err, const KlCallInfo* from, const KlCallInfo* end);
 static KlException kllib_tb_main(KlState* state);
 
-KlException kllib_init(KlState* state) {
+KlException KLCONFIG_LIBRARY_TRACEBACK_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 1));
   klapi_pushcfunc(state, kllib_tb_main);
   return klapi_return(state, 1);

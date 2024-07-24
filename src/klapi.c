@@ -1,12 +1,23 @@
 #include "include/klapi.h"
+#include "include/lang/klconfig.h"
 #include "include/lang/klconvert.h"
 #include "include/misc/klutils.h"
 #include "include/value/klclass.h"
 #include "include/value/klkfunc.h"
 #include "include/value/klstate.h"
 #include "include/vm/klexception.h"
-#include "deps/k/include/lib/lib.h"
 #include "include/vm/klexec.h"
+#ifdef KLCONFIG_USE_STATIC_LANGLIB
+#include <string.h>
+extern KlException KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME(KlState*);
+extern KlException KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME(KlState*);
+extern KlException KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME(KlState*);
+extern KlException KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME(KlState*);
+extern KlException KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME(KlState*);
+extern KlException KLCONFIG_LIBRARY_TRACEBACK_ENTRYFUNCNAME(KlState*);
+#else
+#include "deps/k/include/lib/lib.h"
+#endif
 #include <stddef.h>
 
 
@@ -558,6 +569,35 @@ KlException klapi_concati(KlState* state, int result, int left, int right) {
 
 
 KlException klapi_loadlib(KlState* state, int result, const char* entryfunction) {
+#ifdef KLCONFIG_USE_STATIC_LANGLIB
+  kl_unused(entryfunction);
+  KlString* libpath = klapi_getstring(state, -1);
+  size_t libpathlen = klstring_length(libpath);
+  const char* libpathcontent = klstring_content(libpath);
+  size_t staticliblen;
+  KlCFunction* init;
+  if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_RTCPL_LIBNAME_QUOTE)) &&
+      strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_RTCPL_LIBNAME_QUOTE) == 0) {
+    init = KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME;
+  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_RTCPL_WRAPPER_LIBNAME_QUOTE)) &&
+             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_RTCPL_WRAPPER_LIBNAME_QUOTE) == 0) {
+    init = KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME;
+  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_TRACEBACK_LIBNAME_QUOTE)) &&
+             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_TRACEBACK_LIBNAME_QUOTE) == 0) {
+    init = KLCONFIG_LIBRARY_TRACEBACK_ENTRYFUNCNAME;
+  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_BASIC_LIBNAME_QUOTE)) &&
+             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_BASIC_LIBNAME_QUOTE) == 0) {
+    init = KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME;
+  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_PRINT_LIBNAME_QUOTE)) &&
+             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_PRINT_LIBNAME_QUOTE) == 0) {
+    init = KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME;
+  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_STREAM_LIBNAME_QUOTE)) &&
+             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_STREAM_LIBNAME_QUOTE) == 0) {
+    init = KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME;
+  } else {
+    return klstate_throw(state, KL_E_INVLD, "can not open library: %s", klstring_content(libpath));
+  }
+#else
   /* open library */
   KlString* libpath = klapi_getstring(state, -1);
   KLib handle = klib_dlopen(klstring_content(libpath));
@@ -571,6 +611,7 @@ KlException klapi_loadlib(KlState* state, int result, const char* entryfunction)
     klib_dlclose(handle);
     return klstate_throw(state, KL_E_INVLD, "can not find entry point: %s in library: ", entryfunction, klstring_content(libpath));
   }
+#endif
 
   /* call the entry function */
   return klapi_call(state, &klvalue_cfunc(init), 1, KLAPI_VARIABLE_RESULTS, klapi_stacktop(state) - 1 + result);

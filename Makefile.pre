@@ -16,9 +16,10 @@ MEMORY_CHECK =
 WARNING = -Wall -Wextra -Winline
 DEBUG = -DNDEBUG
 PLATFORM = Linux
+CONFIG =
 STDC =
 
-CFLAGS = $(STDC) $(OPTIMIZE) $(MEMORY_CHECK) $(WARNING) $(DEBUG) -I $(ROOT_DIR) -I $(DEPS_K_DIR)
+CFLAGS = $(STDC) $(OPTIMIZE) $(MEMORY_CHECK) $(WARNING) $(DEBUG) $(CONFIG) -I $(ROOT_DIR) -I $(DEPS_K_DIR)
 
 KLANG_OBJS = $(OBJ_DIR)klutils.o $(OBJ_DIR)klgc.o $(OBJ_DIR)klmm.o $(OBJ_DIR)klarray.o $(OBJ_DIR)klmap.o $(OBJ_DIR)klclass.o \
              $(OBJ_DIR)klclosure.o $(OBJ_DIR)klkfunc.o $(OBJ_DIR)klref.o $(OBJ_DIR)klstring.o $(OBJ_DIR)klcoroutine.o $(OBJ_DIR)klbuiltinclass.o \
@@ -35,25 +36,32 @@ KLANGC_OBJS = $(OBJ_DIR)klparser.o $(OBJ_DIR)klparser_expr.o $(OBJ_DIR)klparser_
 
 KLANGC_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGC_OBJS))
 
-KLANGLIB_TB_PIC_OBJS = $(OBJ_DIR)kllib_tb.pic.o
+KLANGLIB_TB_OBJS = $(OBJ_DIR)kllib_tb.o
+KLANGLIB_TB_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGLIB_TB_OBJS))
 
-KLANGLIB_RTCPL_PIC_OBJS = $(OBJ_DIR)kllib_rtcpl.pic.o
+KLANGLIB_RTCPL_OBJS = $(OBJ_DIR)kllib_rtcpl.o
+KLANGLIB_RTCPL_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGLIB_RTCPL_OBJS))
 
-KLANGLIB_BASIC_PIC_OBJS = $(OBJ_DIR)kllib_basic.pic.o
+KLANGLIB_BASIC_OBJS = $(OBJ_DIR)kllib_basic.o
+KLANGLIB_BASIC_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGLIB_BASIC_OBJS))
 
-KLANGLIB_STREAM_PIC_OBJS = $(OBJ_DIR)kllib_stream.pic.o $(OBJ_DIR)kllib_file.pic.o $(OBJ_DIR)kllib_stream_collection.pic.o \
-                           $(OBJ_DIR)kllib_kistring.pic.o $(OBJ_DIR)kllib_kostring.pic.o $(OBJ_DIR)kllib_sstring.pic.o $(OBJ_DIR)kllib_write.pic.o
+KLANGLIB_STREAM_OBJS = $(OBJ_DIR)kllib_stream.o $(OBJ_DIR)kllib_file.o $(OBJ_DIR)kllib_stream_collection.o \
+                       $(OBJ_DIR)kllib_kistring.o $(OBJ_DIR)kllib_kostring.o $(OBJ_DIR)kllib_sstring.o $(OBJ_DIR)kllib_write.o
+KLANGLIB_STREAM_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGLIB_STREAM_OBJS))
 
-KLANGLIB_RTCPL_WRAPPER_PIC_OBJS = $(OBJ_DIR)kllib_rtcpl_wrapper.pic.o
+KLANGLIB_RTCPL_WRAPPER_OBJS = $(OBJ_DIR)kllib_rtcpl_wrapper.o
+KLANGLIB_RTCPL_WRAPPER_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGLIB_RTCPL_WRAPPER_OBJS))
 
-KLANGLIB_PRINT_PIC_OBJS = $(OBJ_DIR)kllib_print.pic.o
+KLANGLIB_PRINT_OBJS = $(OBJ_DIR)kllib_print.o
+KLANGLIB_PRINT_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGLIB_PRINT_OBJS))
 
-KLANGLIBS = $(LIB_DIR)traceback.so $(LIB_DIR)runtime_compiler.so $(LIB_DIR)basic.so $(LIB_DIR)stream.so $(LIB_DIR)rtcpl_wrapper.so $(LIB_DIR)print.so
+KLANGLIBS_A = $(LIB_DIR)traceback.a $(LIB_DIR)runtime_compiler.a $(LIB_DIR)basic.a $(LIB_DIR)stream.a $(LIB_DIR)rtcpl_wrapper.a $(LIB_DIR)print.a
+KLANGLIBS_SO = $(patsubst %.a, %.so, $(KLANGLIBS_A))
 
 
 ifeq ($(PLATFORM), Windows)
 
-all: $(LIB_DIR)klang.dll $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(BIN_DIR)klang $(KLANGLIBS)
+all: $(LIB_DIR)klang.dll $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(BIN_DIR)klang $(KLANGLIBS_SO)
 
 $(BIN_DIR)klang : $(OBJ_DIR)klang.o $(LIB_DIR)klang.dll $(DEPS_K_DIR)lib/libk.a | create_dir
 	$(CC) $(CFLAGS) -o $@ $^
@@ -80,9 +88,11 @@ $(LIB_DIR)rtcpl_wrapper.so : $(KLANGLIB_RTCPL_WRAPPER_PIC_OBJS) $(LIB_DIR)klang.
 $(LIB_DIR)print.so : $(KLANGLIB_PRINT_PIC_OBJS) $(LIB_DIR)klang.dll | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $^
 
-else
+endif
 
-all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(BIN_DIR)klang $(KLANGLIBS)
+ifeq ($(PLATFORM), Linux)
+
+all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(LIB_DIR)libklangc.pic.a $(BIN_DIR)klangc $(BIN_DIR)klang $(KLANGLIBS_SO)
 
 $(BIN_DIR)klang : $(OBJ_DIR)klang.o $(LIB_DIR)libklang.a | create_dir
 	$(CC) $(CFLAGS) -rdynamic -o $@ $< -L $(LIB_DIR) -lklang -ldl
@@ -109,6 +119,42 @@ $(LIB_DIR)rtcpl_wrapper.so : $(KLANGLIB_RTCPL_WRAPPER_PIC_OBJS) | create_dir
 
 $(LIB_DIR)print.so : $(KLANGLIB_PRINT_PIC_OBJS) | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $^
+
+endif
+
+ifeq ($(PLATFORM), static)
+
+CONFIG += -DKLCONFIG_USE_STATIC_LANGLIB
+
+
+all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(BIN_DIR)klangc $(BIN_DIR)klang
+
+$(BIN_DIR)klang : $(OBJ_DIR)klang.o $(LIB_DIR)libklang.a $(KLANGLIBS_A) | create_dir
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(LIB_DIR)libklang.a : $(KLANG_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
+	cp $(DEPS_K_DIR)lib/libk.a $@
+	$(AR) $@ $(KLANG_OBJS)
+
+
+$(LIB_DIR)traceback.a : $(KLANGLIB_TB_OBJS) | create_dir
+	$(AR) $@ $^
+
+$(LIB_DIR)runtime_compiler.a : $(KLANGLIB_RTCPL_OBJS) $(LIB_DIR)libklangc.a | create_dir
+	cp $(LIB_DIR)libklangc.a $@
+	$(AR) $@ $(KLANGLIB_RTCPL_OBJS)
+
+$(LIB_DIR)basic.a : $(KLANGLIB_BASIC_OBJS) | create_dir
+	$(AR) $@ $^
+
+$(LIB_DIR)stream.a : $(KLANGLIB_STREAM_OBJS) $(DEPS_K_DIR)lib/libk.a | create_dir
+	$(AR) $@ $^
+
+$(LIB_DIR)rtcpl_wrapper.a : $(KLANGLIB_RTCPL_WRAPPER_OBJS) | create_dir
+	$(AR) $@ $^
+
+$(LIB_DIR)print.a : $(KLANGLIB_PRINT_OBJS) | create_dir
+	$(AR) $@ $^
 
 endif
 

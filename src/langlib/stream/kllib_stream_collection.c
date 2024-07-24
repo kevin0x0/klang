@@ -1,4 +1,5 @@
 #include "include/klapi.h"
+#include "include/lang/klconfig.h"
 #include "include/langlib/stream/kllib_stream.h"
 #include "include/langlib/stream/kllib_sstring.h"
 #include "include/langlib/stream/kllib_file.h"
@@ -75,7 +76,7 @@ static KlException kllib_create_ostream_collection(KlState* state) {
   return KL_E_NONE;
 }
 
-KlException kllib_init(KlState* state) {
+KlException KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
 
   KLAPI_PROTECT(kllib_create_istream_collection(state));

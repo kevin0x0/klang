@@ -1,4 +1,5 @@
 #include "include/klapi.h"
+#include "include/lang/klconfig.h"
 #include "include/code/klcode.h"
 #include "include/parse/klparser.h"
 
@@ -14,10 +15,8 @@ static KlException kllib_rtcpl_bcloader(KlState* state);
 /* evaluate expression */
 static KlException kllib_rtcpl_evaluate(KlState* state);
 
-KlException kllib_init(KlState* state);
 
-
-KlException kllib_init(KlState* state) {
+KlException KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(klapi_allocstack(state, 4));
   klapi_setcfunc(state, -4, kllib_rtcpl_compiler);
   klapi_setcfunc(state, -3, kllib_rtcpl_compileri);
