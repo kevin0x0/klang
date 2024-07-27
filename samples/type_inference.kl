@@ -6,14 +6,14 @@ local Node {
 
   shared '?' = "Node";
 
-  method init = (self) => self.parent = self;
+  method init = self => self.parent = self;
 
   method setparent = (self, parent) => self.parent = parent;
   method getparent = self -> self.parent;
 
   method find = self -> parent === self and self or parent.find() where let parent = self.getparent();
 
-  method union = (self, other) => self.setparent(other.find());
+  method union = (self, other) => self.find().setparent(other.find());
 
   method unify = (self, other) => {
     self, other = self.find(), other.find();
