@@ -418,7 +418,7 @@ static KlException klexec_callprepare(KlState* state, const KlValue* callable, s
       return callback(state, callable, narg);
     return klstate_throw(state, KL_E_TYPE,
            "try to call a non-callable object with type '%s'(method '%s' can not be called from here)",
-           klexec_typename(state, callable), klstring_content(state->common->string.call));
+           klexec_typename_cstr(state, callable), klstring_content(state->common->string.call));
   }
 }
 
@@ -472,7 +472,19 @@ bool klexec_getmethod(const KlState* state, const KlValue* object, const KlStrin
   }
 }
 
-const char* klexec_typename(const KlState* state, const KlValue* val) {
+const KlString* klexec_typename(const KlState* state, const KlValue* val) {
+  if (klvalue_checktype(val, KL_OBJECT)) {
+    KlValue typename;
+    klexec_getfieldgeneric(state, val, state->common->string.typename, &typename);
+    return klvalue_checktype(&typename, KL_STRING) ?
+           klvalue_getobj(&typename, KlString*)    :
+           state->common->typenames[klvalue_gettype(val)];
+  } else {
+    return state->common->typenames[klvalue_gettype(val)];
+  }
+}
+
+const char* klexec_typename_cstr(const KlState* state, const KlValue* val) {
   if (klvalue_checktype(val, KL_OBJECT)) {
     KlValue typename;
     klexec_getfieldgeneric(state, val, state->common->string.typename, &typename);
@@ -495,7 +507,7 @@ static KlException klexec_dopreopmethod(KlState* state, const KlValue* a, const 
   bool ismethod = klexec_getmethod(state, b, state->common->string.call, &method);
   if (kl_unlikely(!ismethod || !klvalue_callable(&method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply prefix '%s' to value with type '%s'",
-                         klstring_content(op), klexec_typename(state, b));
+                         klstring_content(op), klexec_typename_cstr(state, b));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, a - klstate_stktop(state));
   if (kl_unlikely(!newci))
@@ -515,7 +527,7 @@ static KlException klexec_dobinopmethod(KlState* state, KlValue* a, const KlValu
   bool ismethod = klexec_getmethod(state, b, op, &method);
   if (kl_unlikely(!ismethod || !klvalue_callable(&method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply binary '%s' to values with type '%s' and '%s'",
-                         klstring_content(op), klexec_typename(state, b), klexec_typename(state, c));
+                         klstring_content(op), klexec_typename_cstr(state, b), klexec_typename_cstr(state, c));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, a - klstate_stktop(state));
   if (kl_unlikely(!newci))
@@ -537,7 +549,7 @@ static KlException klexec_doindexmethod(KlState* state, KlValue* val, const KlVa
   bool ismethod = klexec_getmethod(state, indexable, index, &method);
   if (kl_unlikely(!ismethod || !klvalue_callable(&method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s' for key with type '%s'",
-                         klstring_content(index), klexec_typename(state, indexable), klexec_typename(state, key));
+                         klstring_content(index), klexec_typename_cstr(state, indexable), klexec_typename_cstr(state, key));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 1, val - klstate_stktop(state));
   if (kl_unlikely(!newci))
@@ -558,7 +570,7 @@ static KlException klexec_doindexasmethod(KlState* state, const KlValue* indexab
   bool ismethod = klexec_getmethod(state, indexable, indexas, &method);
   if (kl_unlikely(!ismethod || !klvalue_callable(&method))) {
     return klstate_throw(state, KL_E_INVLD, "can not apply '%s' to values with type '%s' for key with type '%s'",
-                         klstring_content(indexas), klexec_typename(state, indexable), klexec_typename(state, key));
+                         klstring_content(indexas), klexec_typename_cstr(state, indexable), klexec_typename_cstr(state, key));
   }
   KlCallInfo* newci = klexec_new_callinfo(state, 0, 0);
   if (kl_unlikely(!newci))
@@ -640,9 +652,9 @@ static KlException klexec_iforprep(KlState* state, KlValue* ctrlvars, int offset
                   !(klvalue_checktype(ctrlvars + 2, KL_INT) ||
                     klvalue_checktype(ctrlvars + 2, KL_NIL)))) {
     return klstate_throw(state, KL_E_TYPE, "expected integer for integer loop, got %s, %s, %s",
-                         klexec_typename(state, ctrlvars),
-                         klexec_typename(state, ctrlvars + 1),
-                         klexec_typename(state, ctrlvars + 2));
+                         klexec_typename_cstr(state, ctrlvars),
+                         klexec_typename_cstr(state, ctrlvars + 1),
+                         klexec_typename_cstr(state, ctrlvars + 2));
   }
   KlInt begin = klvalue_getint(ctrlvars);
   KlInt end = klvalue_getint(ctrlvars + 1);
@@ -1482,7 +1494,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         kl_assert(klvalue_checktype(constants + KLINST_AX_GETX(inst), KL_STRING), "something wrong in code generation");
         KlString* varname = klvalue_getobj(constants + KLINST_AX_GETX(inst), KlString*);
-        KlMapSlot* slot = klmap_searchstring(state->global, varname);
+        KlMapSlot* slot = klmap_searchstring(klstate_global(state), varname);
         slot ? klvalue_setvalue(a, &slot->value) : klvalue_setnil(a);
         klexec_break;
       }
@@ -1496,9 +1508,10 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         kl_assert(klvalue_checktype(constants + KLINST_AX_GETX(inst), KL_STRING), "something wrong in code generation");
         KlString* varname = klvalue_getobj(constants + KLINST_AX_GETX(inst), KlString*);
-        KlMapSlot* slot = klmap_searchstring(state->global, varname);
+        KlMapSlot* slot = klmap_searchstring(klstate_global(state), varname);
         if (kl_likely(slot)) {
-          klmap_slot_setvalue(slot, a);
+          kl_unlikely(klvalue_checktype(a, KL_NIL)) ? klmap_erase(klstate_global(state), slot)
+                                                    : klmap_slot_setvalue(slot, a);
         } else {
           klexec_savestate(callinfo->top, pc);
           if (kl_unlikely(!klmap_insertstring(state->global, klstate_getmm(state), varname, a)))
@@ -1572,7 +1585,7 @@ KlException klexec_execute(KlState* state) {
         if (KLINST_ABTX_GETT(inst)) { /* is stktop base class ? */
           klexec_savestate(stktop + 1, pc);   /* creating class may trigger gc */
           if (kl_unlikely(!klvalue_checktype(stktop, KL_CLASS)))
-            return klstate_throw(state, KL_E_TYPE, "inherit a non-class value, type: %s", klexec_typename(state, stktop));
+            return klstate_throw(state, KL_E_TYPE, "inherit a non-class value, type: %s", klexec_typename_cstr(state, stktop));
           KlClass* base = klvalue_getobj(stktop, KlClass*);
           if (kl_unlikely(klclass_isfinal(base)))
             return klstate_throw(state, KL_E_INVLD, "can not inherit this class");
@@ -1664,7 +1677,7 @@ KlException klexec_execute(KlState* state) {
             klexec_savepc(callinfo, pc);
             return klstate_throw(state, KL_E_TYPE,
                                  "type error occurred when indexing an array: expected %s, got %s.",
-                                 klvalue_typename(KL_INT), klexec_typename(state, key));
+                                 klvalue_typename(KL_INT), klexec_typename_cstr(state, key));
           }
           KlArray* arr = klvalue_getobj(indexable, KlArray*);
           klarray_index(arr, klvalue_getint(key), val);
@@ -1701,7 +1714,7 @@ KlException klexec_execute(KlState* state) {
           if (kl_unlikely(!klvalue_checktype(key, KL_INT))) { /* only integer can index array */
             return klstate_throw(state, KL_E_TYPE,
                                  "type error occurred when indexing an array: expected %s, got %s.",
-                                 klvalue_typename(KL_INT), klexec_typename(state, key));
+                                 klvalue_typename(KL_INT), klexec_typename_cstr(state, key));
           }
           KlException exception = klarray_indexas(arr, klvalue_getint(key), val);
           if (kl_unlikely(exception))
@@ -2304,7 +2317,7 @@ KlException klexec_execute(KlState* state) {
         KlValue* klclass = stkbase + KLINST_ABC_GETB(inst);
         klexec_savestate(callinfo->top, pc);
         if (kl_unlikely(!klvalue_checktype(klclass, KL_CLASS)))
-          return klstate_throw(state, KL_E_TYPE, "%s is not a class", klexec_typename(state, klclass));
+          return klstate_throw(state, KL_E_TYPE, "%s is not a class", klexec_typename_cstr(state, klclass));
         KlException exception = klclass_new_object(klvalue_getobj(klclass, KlClass*), klstate_getmm(state), stkbase + KLINST_ABC_GETA(inst));
         if (kl_unlikely(exception))
           return klexec_handle_newobject_exception(state, exception);
@@ -2424,7 +2437,7 @@ KlException klexec_execute(KlState* state) {
         if (kl_unlikely(!klvalue_checktype(f, KL_KCLOSURE))) {
           return klstate_throw(state, KL_E_TYPE,
                                "async should be applied to a klang closure, got '%s'",
-                               klexec_typename(state, f));
+                               klexec_typename_cstr(state, f));
         }
         KlState* costate = klco_create(state, klvalue_getobj(f, KlKClosure*));
         if (kl_unlikely(!costate)) return klstate_throw_oom(state, "creating a coroutine");

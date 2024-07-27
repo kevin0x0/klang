@@ -1,5 +1,6 @@
 #include "include/vm/klcommon.h"
 #include "include/value/klbuiltinclass.h"
+#include "include/value/klstring.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include "include/misc/klutils.h"
@@ -51,6 +52,8 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool) {
 
   done = done && (common->string.typename = klstrpool_new_string(strpool, "?"));
 
+  for (KlType type = 0; type < KL_NTYPE; ++type)
+    done = done && (common->typenames[type] = klstrpool_new_string(strpool, klvalue_typename(type)));
 
   KlClass* fallback = klcommon_phonyclass(klmm);
   done = done && fallback;
@@ -97,6 +100,9 @@ KlGCObject* klcommon_propagate(const KlCommon* common, KlGCObject* gclist) {
   klmm_gcobj_mark(klmm_to_gcobj(common->string.append), gclist);
   klmm_gcobj_mark(klmm_to_gcobj(common->string.iter), gclist);
   klmm_gcobj_mark(klmm_to_gcobj(common->string.typename), gclist);
+
+  for (KlType type = 0; type < KL_NTYPE; ++type)
+    klmm_gcobj_mark(klmm_to_gcobj(common->typenames[type]), gclist);
 
   for (KlType type = 0; type < KL_NTYPE; ++type)
     klmm_gcobj_mark(klmm_to_gcobj(common->klclass.phony[type]), gclist);

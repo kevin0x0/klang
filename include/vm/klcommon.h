@@ -30,6 +30,7 @@ typedef struct tagKlCommon {
 
     KlString* typename;
   } string;
+  KlString* typenames[KL_NTYPE];
   struct {
     KlClass* phony[KL_NTYPE];
   } klclass;

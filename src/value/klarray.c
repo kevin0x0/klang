@@ -14,7 +14,9 @@ static const KlGCVirtualFunc klarray_gcvfunc = { .destructor = (KlGCDestructor)k
 KlArray* klarray_create(KlMM* klmm, size_t capacity) {
   KlArray* array = (KlArray*)klmm_alloc(klmm, sizeof (KlArray));
   if (kl_unlikely(!array)) return NULL;
-  if (kl_unlikely(!(array->begin = (KlValue*)klmm_alloc(klmm, sizeof (KlValue) * capacity)))) {
+  if (capacity == 0) {
+    array->begin = NULL;
+  } else if (kl_unlikely(!(array->begin = (KlValue*)klmm_alloc(klmm, sizeof (KlValue) * capacity)))) {
     klmm_free(klmm, array, sizeof (KlArray));
     return NULL;
   }
@@ -25,12 +27,12 @@ KlArray* klarray_create(KlMM* klmm, size_t capacity) {
 }
 
 static void klarray_delete(KlArray* array, KlMM* klmm) {
-  klmm_free(klmm, array->begin, klarray_capacity(array) * sizeof (KlValue));
+  if (kl_likely(array->begin)) klmm_free(klmm, array->begin, klarray_capacity(array) * sizeof (KlValue));
   klmm_free(klmm, array, sizeof (KlArray));
 }
 
 bool klarray_grow(KlArray* array, KlMM* klmm, size_t new_capacity) {
-  kl_assert((klarray_capacity(array) < new_capacity), "");
+  kl_assert((klarray_capacity(array) < new_capacity || klarray_capacity(array) == 0), "");
 
   new_capacity = new_capacity == 0 ? 4 : new_capacity;
   new_capacity = klarray_capacity(array) * 2 > new_capacity ? klarray_capacity(array) * 2 : new_capacity;

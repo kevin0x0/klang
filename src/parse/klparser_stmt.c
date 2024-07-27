@@ -292,11 +292,6 @@ static KlAstStmtLocalDefinition* klparser_stmtlocaldefinition(KlParser* parser, 
   kllex_next(lex);
   KlAst* expr = klparser_expr(parser, lex);
   klparser_returnifnull(expr);
-  if (kl_unlikely(klast_kind(expr) != KLAST_EXPR_FUNC && klast_kind(expr) != KLAST_EXPR_CLASS)) {
-    klparser_error(parser, kllex_inputstream(lex), klast_begin(expr), klast_end(expr), "expected function or class");
-    klast_delete(expr);
-    return NULL;
-  }
   KlAstStmtLocalDefinition* stmtlocalfunc = klast_stmtlocaldef_create(funcid, idbegin, idend, expr, begin, klast_end(expr));
   klparser_oomifnull(stmtlocalfunc);
   return stmtlocalfunc;

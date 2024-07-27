@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#define KLMAP_OPT_NORMAL      klcast(unsigned, 0)
 #define KLMAP_OPT_WEAKKEY     klcast(unsigned, klbit(0))
 #define KLMAP_OPT_WEAKVAL     klcast(unsigned, klbit(1))
 #define KLMAP_OPT_CUSTOMHASH  klcast(unsigned, klbit(2))

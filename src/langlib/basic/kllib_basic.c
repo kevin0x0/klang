@@ -7,6 +7,7 @@
 #include "include/value/klstate.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
+#include "include/vm/klexec.h"
 
 static KlException kllib_basic_map_next(KlState* state);
 static KlException kllib_basic_arr_next(KlState* state);
@@ -20,6 +21,8 @@ static KlException kllib_basic_map_customhash(KlState* state);
 static KlException kllib_basic_map_getslot(KlState* state);
 static KlException kllib_basic_map_index(KlState* state);
 static KlException kllib_basic_map_indexas(KlState* state);
+
+static KlException kllib_basic_type(KlState* state);
 
 static KlException kllib_basic_init_globalvar(KlState* state);
 static KlException kllib_basic_init_iter(KlState* state);
@@ -35,7 +38,7 @@ KlException KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME(KlState* state) {
 static KlException kllib_basic_init_globalvar(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   KLAPI_PROTECT(klapi_pushstring(state, "string"));
-  klapi_setobj(state, -1, state->common->klclass.phony[KL_STRING], KL_CLASS);
+  klapi_pushobj(state, state->common->klclass.phony[KL_STRING], KL_CLASS);
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
   KLAPI_PROTECT(klapi_setstring(state, -2, "integer"));
   klapi_setobj(state, -1, state->common->klclass.phony[KL_INT], KL_CLASS);
@@ -58,6 +61,14 @@ static KlException kllib_basic_init_globalvar(KlState* state) {
   KLAPI_PROTECT(klapi_setstring(state, -2, "array"));
   klapi_setobj(state, -1, state->common->klclass.phony[KL_ARRAY], KL_CLASS);
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+
+  KLAPI_PROTECT(klapi_setstring(state, -2, "type"));
+  klapi_setcfunc(state, -1, kllib_basic_type);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "global"));
+  klapi_setobj(state, -1, klstate_global(state), KL_MAP);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+
   klapi_pop(state, 2);
   return KL_E_NONE;
 }
@@ -145,7 +156,6 @@ static KlException kllib_basic_arr_next(KlState* state) {
     return klapi_return(state, 0);
   klvalue_setint(base + 1, index);
   klvalue_setvalue(base + 2, klarray_access(array, index));
-  klapi_setframesize(state, 3);
   return klapi_return(state, 3);
 }
 
@@ -235,13 +245,15 @@ static KlException kllib_basic_map_weak(KlState* state) {
   KlMap* map = klapi_getmap(state, -2);
   KlString* option = klapi_getstring(state, -1);
   if (strcmp(klstring_content(option), "k") == 0) {
-    klmap_assignoption(map, KLMAP_OPT_WEAKKEY);
+    klmap_setoption(map, KLMAP_OPT_WEAKKEY);
   } else if (strcmp(klstring_content(option), "v") == 0) {
-    klmap_assignoption(map, KLMAP_OPT_WEAKVAL);
+    klmap_setoption(map, KLMAP_OPT_WEAKVAL);
   } else if (strcmp(klstring_content(option), "kv") == 0) {
-    klmap_assignoption(map, KLMAP_OPT_WEAKKEY | KLMAP_OPT_WEAKVAL);
+    klmap_setoption(map, KLMAP_OPT_WEAKKEY | KLMAP_OPT_WEAKVAL);
+  } else if (strcmp(klstring_content(option), "") == 0) {
+    klmap_setoption(map, KLMAP_OPT_NORMAL);
   } else {
-    return klapi_throw_internal(state, KL_E_INVLD, "expected string \"k\", \"v\" or \"kv\", got %s", klstring_content(option));
+    return klapi_throw_internal(state, KL_E_INVLD, "expected string \"\", \"k\", \"v\" or \"kv\", got %s", klstring_content(option));
   }
   klapi_pop(state, 1);
   return klapi_return(state, 1);
@@ -274,14 +286,14 @@ static KlException kllib_basic_map_getslot(KlState* state) {
   if (kl_unlikely(!ismethod))
     return klapi_throw_internal(state, KL_E_INVLD,
                                 "no custom hash method for value with type '%s'",
-                                klexec_typename(state, klapi_access(state, -1)));
+                                klexec_typename_cstr(state, klapi_access(state, -1)));
   KLAPI_PROTECT(klapi_scall(state, &hashmethod, 1, 1));
 
   /* get hash value */
   if (kl_unlikely(!klapi_checktype(state, -1, KL_INT)))
       return klapi_throw_internal(state, KL_E_TYPE,
                                   "hashmethod should return integer, got '%s'",
-                                  klexec_typename(state, klapi_access(state, -1)));
+                                  klexec_typename_cstr(state, klapi_access(state, -1)));
   size_t hash = klcast(size_t, klapi_getint(state, -1));
   klapi_pop(state, 1);
   /* find slot */
@@ -292,7 +304,7 @@ static KlException kllib_basic_map_getslot(KlState* state) {
   if (kl_unlikely(!ismethod))
     return klapi_throw_internal(state, KL_E_INVLD,
                                 "no equality comparison method for value with type '%s'",
-                                klexec_typename(state, klapi_access(state, -1)));
+                                klexec_typename_cstr(state, klapi_access(state, -1)));
   klapi_pushvalue(state, &eqmethod);  /* push it to avoid being garbage collected */
 
   KlMapSlot* slot = &map->slots[hash & (klmap_mask(map))];
@@ -360,4 +372,11 @@ static KlException kllib_basic_map_indexas(KlState* state) {
     klmap_slot_setvalue(slot, klapi_access(state, -2));
   }
   return klapi_return(state, 0);
+}
+
+static KlException kllib_basic_type(KlState* state) {
+  if (klapi_narg(state) != 1)
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one arguments");
+  klapi_setobj(state, -1, klexec_typename(state, klapi_access(state, -1)), KL_STRING);
+  return klapi_return(state, 1);
 }

@@ -35,7 +35,7 @@ static void kllib_ostream_print_inner(KlState* state, Ko* ko, const KlValue* val
       break;
     }
     case KL_CFUNCTION: {
-      ko_printf(ko, "<%s: %p>", klexec_typename(state, val), klvalue_getgcobj(val));
+      ko_printf(ko, "<%s: %p>", klexec_typename_cstr(state, val), klvalue_getgcobj(val));
       break;
     }
     case KL_ARRAY: {
@@ -47,7 +47,7 @@ static void kllib_ostream_print_inner(KlState* state, Ko* ko, const KlValue* val
       break;
     }
     default: {
-      ko_printf(ko, "<%s: %p>", klexec_typename(state, val), klvalue_getgcobj(val));
+      ko_printf(ko, "<%s: %p>", klexec_typename_cstr(state, val), klvalue_getgcobj(val));
       break;
     }
   }
@@ -137,11 +137,11 @@ KlException kllib_ostream_write(KlState* state) {
         break;
       }
       case KL_CFUNCTION: {
-        ko_printf(ko, "<%s: %p>", klexec_typename(state, klapi_accessb(state, i)), klapi_getcfuncb(state, i));
+        ko_printf(ko, "<%s: %p>", klexec_typename_cstr(state, klapi_accessb(state, i)), klapi_getcfuncb(state, i));
         break;
       }
       default: {
-        ko_printf(ko, "<%s: %p>", klexec_typename(state, klapi_accessb(state, i)), klapi_getgcobjb(state, i));
+        ko_printf(ko, "<%s: %p>", klexec_typename_cstr(state, klapi_accessb(state, i)), klapi_getgcobjb(state, i));
         break;
       }
     }

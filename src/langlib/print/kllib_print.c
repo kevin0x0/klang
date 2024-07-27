@@ -36,6 +36,14 @@ static KlException kllib_print(KlState* state) {
       return klapi_throw_internal(state, KL_E_INVLD, "output stream is broken");
     KLAPI_PROTECT(klapi_scall(state, &write, 3, 0));
   }
+  if (narg == 0) {
+    klapi_pushvalue(state, ostream);
+    klapi_pushvalue(state, end);
+    KlValue write;
+    if (kl_unlikely(!klapi_getmethod(state, ostream, methodname, &write)))
+      return klapi_throw_internal(state, KL_E_INVLD, "output stream is broken");
+    KLAPI_PROTECT(klapi_scall(state, &write, 2, 0));
+  }
   return klapi_return(state, 0);
 }
 
