@@ -1,0 +1,100 @@
+let type = type;
+local virtual => debug("not implemented"), traceback();
+
+local Node {
+  local parent;
+
+  shared '?' = "Node";
+
+  method init = (self) => self.parent = self;
+
+  method setparent = (self, parent) => self.parent = parent;
+  method getparent = self -> self.parent;
+
+  method find = self -> parent === self and self or parent.find() where let parent = self.getparent();
+
+  method union = (self, other) => self.setparent(other.find());
+
+  method unify = (self, other) => {
+    self, other = self.find(), other.find();
+    if self === other: return true;
+    let self_type, other_type = type self, type other;
+    if self_type == "InnerNode" and other_type == self_type: {
+      let self_children, other_children = self.getchildren(), other.getchildren();
+      if self.getop() != other.getop() || $self_children != $other_children: return false;
+      self.union(other);
+      for i = 0, $self_children:
+        if not self_children[i].unify(other_children[i]):
+          return false;
+      return true;
+    }
+    if self_type == "TypeVar": return true where self.union(other);
+    if other_type == "TypeVar": return true where other.union(self);
+    return false;
+  };
+
+  method print = virtual;
+};
+
+local InnerNode inherit Node: {
+  local operator;
+  local children;
+
+  shared '?' = "InnerNode";
+
+  method init = (self, operator, children) => {
+    Node.init(self);
+    self.operator, self.children = operator, children;
+  };
+
+  method getop = self -> self.operator;
+  method getchildren = self -> self.children;
+
+  method print = (self, out) => {
+    out.write(self.getop(), "(");
+    let children = self.getchildren();
+    if $children != 0: {
+      for i = 0, $children - 1:
+        children[i].print(out), out.write(", ");
+      children[$children - 1].print(out);
+    }
+    out.write(")");
+  };
+}
+
+local TypeVar inherit Node: {
+  local name;
+
+  shared '?' = "TypeVar";
+
+  method init = (self, name) => {
+    Node.init(self);
+    self.name = name;
+  };
+
+  method print = (self, out) => {
+    let repre = self.find();
+    if repre === self: out.write("type variable: ", self.name) else repre.print(out);
+  }
+}
+
+method string.print = (self, out) => out.write(self);
+method string.find = self -> self;
+method string.unify = Node.unify;
+
+let typevarA = new TypeVar("a");
+let typevarB = new TypeVar("b");
+let typevarC = new TypeVar("c");
+let type1 = new InnerNode("function", [new InnerNode("tuple", [typevarA, typevarB]), typevarA]);
+let type2 = new InnerNode("function", [new InnerNode("tuple", ["int", "float"]), typevarC]);
+
+if type1.unify(type2): {
+  let out = ostream.stdout;
+  out.write("type1: "), type1.print(out), print();
+  out.write("type2: "), type2.print(out), print();
+  out.write("a: "), typevarA.print(out), print();
+  out.write("b: "), typevarB.print(out), print();
+  out.write("c: "), typevarC.print(out), print();
+} else {
+  print("type mismatch");
+}
