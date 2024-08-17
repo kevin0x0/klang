@@ -105,6 +105,8 @@ KlException kllib_ostream_write(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with ostream object");
   KlOutputStream* ostream = klapi_getobjb(state, 0, KlOutputStream*);
   Ko* ko = kllib_ostream_getko(ostream);
+  if (kl_unlikely(!ko))
+    return klapi_throw_internal(state, KL_E_INVLD, "uninitialized ostream object");
   for (size_t i = 1; i < narg; ++i) {
     switch (klapi_gettypeb(state, i)) {
       case KL_INT: {
