@@ -117,11 +117,11 @@ KlException kllib_ostream_write(KlState* state) {
         ko_printf(ko, "%lf", klapi_getfloatb(state, i));
         break;
       }
-    case KL_STRING: {
-      ko_write(ko, klstring_content(klapi_getstringb(state, i)),
-                   klstring_length(klapi_getstringb(state, i)));
-      break;
-    }
+      case KL_STRING: {
+        ko_write(ko, klstring_content(klapi_getstringb(state, i)),
+                 klstring_length(klapi_getstringb(state, i)));
+        break;
+      }
       case KL_ARRAY: {
         kllib_ostream_write_array(state, ko, klapi_getarrayb(state, i), 0);
         break;
