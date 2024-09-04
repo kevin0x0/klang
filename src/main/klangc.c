@@ -69,7 +69,7 @@ static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
         ko_delete(behaviour->textoutput);
       bool isfilename = argv[i + 1] && klc_isfilename(argv[i + 1]);
       behaviour->textoutput = isfilename
-        ? kofile_create(argv[i + 1], "w")
+        ? kofile_create(argv[i + 1], "wb")
         : kofile_attach(stdout);
       if (isfilename) ++i;
       if (kl_unlikely(!behaviour->textoutput)) {

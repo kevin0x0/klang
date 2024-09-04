@@ -96,7 +96,7 @@ static KlException kllib_ofile_init(KlState* state) {
     return klapi_throw_internal(state, KL_E_INVLD, "please provide a file path");
 
   KlString* filepath = klapi_getstringb(state, 1);
-  Ko* ko = kofile_create(klstring_content(filepath), "w");
+  Ko* ko = kofile_create(klstring_content(filepath), "wb");
   if (kl_unlikely(!ko))
     return klapi_throw_internal(state, KL_E_INVLD, "failed to open file: %.*s", klstring_length(filepath), klstring_content(filepath));
   kllib_ostream_set(klapi_getobjb(state, 0, KlOutputStream*), ko, NULL);
