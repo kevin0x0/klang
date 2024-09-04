@@ -7,6 +7,7 @@
 #include "include/code/klgen_stmt.h"
 #include "include/code/klsymtbl.h"
 #include "include/ast/klast.h"
+#include "include/misc/klutils.h"
 
 kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
 kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
@@ -16,17 +17,20 @@ kgarray_impl(KlFilePosition, KlFPArray, klfparr, pass_val,)
 #define KLGEN_NREG      (klbit(8) - 1)
 #define KLGEN_NCONST    (klbit(16))
 #define KLGEN_NREF      (klbit(16))
+#define KLGEN_NINST     (klbit(sizeof (KlCPC) * 8))
 
 void klgen_validate(KlGenUnit* gen) {
-  if (klcodearr_size(&gen->subfunc) >= KLGEN_NSUBFUNC)
+  if (klcodearr_size(&gen->subfunc) > KLGEN_NSUBFUNC)
     klgen_error_fatal(gen, "too many functions defined in a function");
-  if (klcontbl_size(gen->contbl) >= KLGEN_NCONST)
+  if (klcontbl_size(gen->contbl) > KLGEN_NCONST)
     klgen_error_fatal(gen, "too many constants");
   klgen_stackfree(gen, 0);
-  if (gen->framesize >= KLGEN_NREG)
+  if (gen->framesize > KLGEN_NREG)
     klgen_error_fatal(gen, "too many registers used");
-  if (klsymtbl_size(gen->reftbl) >= KLGEN_NREF)
+  if (klsymtbl_size(gen->reftbl) > KLGEN_NREF)
     klgen_error_fatal(gen, "refereces too many variables from upper function");
+  if (klinstarr_size(&gen->code) > KLGEN_NINST)
+    klgen_error_fatal(gen, "too many instructions");
 }
 
 bool klgen_init_commonstrings(KlStrTbl* strtbl, KlGUCommonString* strings) {
