@@ -13,11 +13,11 @@ kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
 kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
 kgarray_impl(KlFilePosition, KlFPArray, klfparr, pass_val,)
 
-#define KLGEN_NSUBFUNC  (klbit(16))
+#define KLGEN_NSUBFUNC  (klbit(16) - 1)
 #define KLGEN_NREG      (klbit(8) - 1)
-#define KLGEN_NCONST    (klbit(16))
-#define KLGEN_NREF      (klbit(16))
-#define KLGEN_NINST     (klbit(sizeof (KlCPC) * 8))
+#define KLGEN_NCONST    (klbit(16) - 1)
+#define KLGEN_NREF      (klbit(16) - 1)
+#define KLGEN_NINST     (klbit(sizeof (KlCPC) * 8) - 1)
 
 void klgen_validate(KlGenUnit* gen) {
   if (klcodearr_size(&gen->subfunc) > KLGEN_NSUBFUNC)
