@@ -6,6 +6,7 @@
 #include "include/value/klstring.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
+#include <stddef.h>
 
 #define KLCLASS_TAG_NORMAL      klcast(KlUnsigned, 0)
 #define KLCLASS_TAG_METHOD      klcast(KlUnsigned, klbit(0))
