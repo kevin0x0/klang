@@ -114,7 +114,7 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
       behaviour->option |= KL_OPTION_INTER;
     } else if (kl_match(argv[i], "-u", "--undump")) {
       if (++i == argc) {
-        fprintf(stderr, "expected <filename> after option: %s", argv[i - 1]);
+        fprintf(stderr, "expected <filename> after option: %s\n", argv[i - 1]);
         kl_cleanbehaviour(behaviour);
         return 1;
       }
@@ -134,7 +134,7 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
       break;
     } else if (kl_match(argv[i], "--corelibpath")) {
       if (++i == argc) {
-        fprintf(stderr, "expected <directory path> after option: %s", argv[i - 1]);
+        fprintf(stderr, "expected <directory path> after option: %s\n", argv[i - 1]);
         kl_cleanbehaviour(behaviour);
         return 1;
       }
