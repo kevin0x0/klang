@@ -8,11 +8,12 @@ typedef struct tagKlErrorConfig {
   unsigned tabstop;
   unsigned maxtextline;
   unsigned maxtextcol;
-  char curl;
-  char zerocurl;
+  unsigned maxreport;
   char* promptmsg;
   char* prompttext;
   char* promptnorm;
+  char curl;
+  char zerocurl;
 } KlErrorConfig;
 
 typedef struct tagKlError {

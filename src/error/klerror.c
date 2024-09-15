@@ -12,9 +12,11 @@ void klerror_init(KlError* klerr, Ko* errout) {
     .zerocurl = '^',
     .tabstop = 8,
     .maxtextline = 3,
+    .maxreport = 10,
     .promptnorm = "|| ",
     .prompttext = "||== ",
-    .promptmsg = "|| "
+    .promptmsg = "|| ",
+    
   };
 }
 
@@ -31,6 +33,11 @@ void klerror_error(KlError* klerr, Ki* input, const char* inputname, KlFileOffse
 
 void klerror_errorv(KlError* klerr, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, va_list args) {
   ++klerr->errcount;
+  if (klerr->errcount > klerr->config.maxreport) {
+    if (klerr->errcount == klerr->config.maxreport + 1)
+      ko_printf(klerr->err, "%stoo many errors...\n", klerr->config.promptnorm);
+    return;
+  }
   Ko* err = klerr->err;
   KioFileOffset orioffset = ki_tell(input);
   unsigned line = klerror_helper_locateline(input, begin);
