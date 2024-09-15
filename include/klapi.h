@@ -58,6 +58,7 @@
 
 #define klapi_checktype(state, index, type)           (klapi_gettype((state), (index)) == (type))
 #define klapi_checktypeb(state, index, type)          (klapi_gettypeb((state), (index)) == (type))
+#define klapi_typename(state, val)                    (klexec_typename((state), (val)))
 
 /* number of arguments passed by caller */
 #define klapi_narg(state)                             (klstate_currci(state)->narg)

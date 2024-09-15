@@ -14,6 +14,7 @@ extern KlException KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME(KlState*);
 extern KlException KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME(KlState*);
 extern KlException KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME(KlState*);
 extern KlException KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME(KlState*);
+extern KlException KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME(KlState*);
 extern KlException KLCONFIG_LIBRARY_TRACEBACK_ENTRYFUNCNAME(KlState*);
 #else
 #include "deps/k/include/lib/lib.h"
@@ -570,33 +571,31 @@ KlException klapi_concati(KlState* state, int result, int left, int right) {
 
 KlException klapi_loadlib(KlState* state, int result, const char* entryfunction) {
 #ifdef KLCONFIG_USE_STATIC_LANGLIB
+#def KLAPI_LIBINFO_INIT(libid)  \
+    { .libname = KLCONFIG_LIBRARY_##libid##_LIBNAME_QUOTE, .entry = KLCONFIG_LIBRARY_##libid##_ENTRYFUNCNAME },
+
+  static const struct {
+    const char* libname;
+    KlCFunction* entry;
+  } libinfos[] = {
+    klconfig_library_foreach(KLAPI_LIBINFO_INIT)
+  };
+#undef KLAPI_LIBINFO_INIT
+
   kl_unused(entryfunction);
   KlString* libpath = klapi_getstring(state, -1);
   size_t libpathlen = klstring_length(libpath);
   const char* libpathcontent = klstring_content(libpath);
-  size_t staticliblen;
-  KlCFunction* init;
-  if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_RTCPL_LIBNAME_QUOTE)) &&
-      strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_RTCPL_LIBNAME_QUOTE) == 0) {
-    init = KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME;
-  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_RTCPL_WRAPPER_LIBNAME_QUOTE)) &&
-             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_RTCPL_WRAPPER_LIBNAME_QUOTE) == 0) {
-    init = KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME;
-  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_TRACEBACK_LIBNAME_QUOTE)) &&
-             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_TRACEBACK_LIBNAME_QUOTE) == 0) {
-    init = KLCONFIG_LIBRARY_TRACEBACK_ENTRYFUNCNAME;
-  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_BASIC_LIBNAME_QUOTE)) &&
-             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_BASIC_LIBNAME_QUOTE) == 0) {
-    init = KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME;
-  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_PRINT_LIBNAME_QUOTE)) &&
-             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_PRINT_LIBNAME_QUOTE) == 0) {
-    init = KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME;
-  } else if (libpathlen >= (staticliblen = strlen(KLCONFIG_LIBRARY_STREAM_LIBNAME_QUOTE)) &&
-             strcmp(libpathcontent + libpathlen - staticliblen, KLCONFIG_LIBRARY_STREAM_LIBNAME_QUOTE) == 0) {
-    init = KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME;
-  } else {
-    return klstate_throw(state, KL_E_INVLD, "can not open library: %s", klstring_content(libpath));
+  KlCFunction* init = NULL;
+  for (size_t i = 0; i < sizeof (libinfos) / sizeof (libinfos[0]); ++i) {
+    size_t staticliblen;
+    if (libpathlen >= (staticliblen = strlen(libinfos[i].libname)) &&
+        strcmp(libpathcontent + libpathlen - staticliblen, libinfos[i].libname) == 0) {
+      init = libinfos[i].entry;
+    }
   }
+  if (kl_unlikely(!init))
+    return klstate_throw(state, KL_E_INVLD, "can not open library: %s", klstring_content(libpath));
 #else
   /* open library */
   KlString* libpath = klapi_getstring(state, -1);
