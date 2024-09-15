@@ -13,6 +13,17 @@ static KlException kllib_string_sub(KlState* state);
 static KlException kllib_string_find(KlState* state);
 static KlException kllib_string_join(KlState* state);
 
+static KlException kllib_string_utf8idx(KlState* state);
+static KlException kllib_string_utf8len(KlState* state);
+
+static inline size_t kllib_string_utf8charlen(const unsigned char* str) {
+  unsigned ch = *str;
+  if (ch < 0xC0) return 1;
+  if (ch < 0xE0) return 2;
+  if (ch < 0xF0) return 3;
+  return 4;
+}
+
 static inline KlInt kllib_normalise_stringidx(KlInt idx, size_t strlength) {
   while (idx < 0)
     idx = strlength + idx;
@@ -38,6 +49,14 @@ KlException KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME(KlState* state) {
   klapi_setcfunc(state, -1, kllib_string_sub);
   KLAPI_PROTECT(klapi_class_newshared_method(state, strclass, klapi_getstring(state, -2)));
 
+  KLAPI_PROTECT(klapi_setstring(state, -2, "utf8len"));
+  klapi_setcfunc(state, -1, kllib_string_utf8len);
+  KLAPI_PROTECT(klapi_class_newshared_method(state, strclass, klapi_getstring(state, -2)));
+
+  KLAPI_PROTECT(klapi_setstring(state, -2, "utf8idx"));
+  klapi_setcfunc(state, -1, kllib_string_utf8idx);
+  KLAPI_PROTECT(klapi_class_newshared_method(state, strclass, klapi_getstring(state, -2)));
+
   return klapi_return(state, 0);
 }
 
@@ -58,7 +77,7 @@ static KlException kllib_string_sub(KlState* state) {
     end = kllib_normalise_stringidx(klapi_getint(state, -1), strlength);
   }
   if (kl_unlikely(end < begin))
-      return klapi_throw_internal(state, KL_E_INVLD, "invalid range: (%zd, %zd) for string: %s", begin, end, klstring_content(str));
+      return klapi_throw_internal(state, KL_E_RANGE, "invalid range: (%zd, %zd) for string: %s", begin, end, klstring_content(str));
   KlString* res = klstrpool_new_string_buf(klstate_strpool(state), klstring_content(str) + begin, end - begin);
   if (kl_unlikely(!res))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating string");
@@ -151,4 +170,53 @@ static KlException kllib_string_join_raw(KlState* state, size_t nval, KlValue* v
       return KL_E_NONE;
     }
   }
+}
+
+static KlException kllib_string_utf8idx(KlState* state) {
+  if (kl_unlikely(klapi_narg(state) != 2 && klapi_narg(state) != 3))
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected two or three arguments");
+  if (kl_unlikely(!klapi_checktypeb(state, 0, KL_STRING)))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected string, got %s", klstring_content(klapi_typename(state, klapi_accessb(state, 0))));
+  if (kl_unlikely(!klapi_checktypeb(state, 1, KL_INT)))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected integer, got %s", klstring_content(klapi_typename(state, klapi_accessb(state, 1))));
+  KlString* str = klapi_getstringb(state, 0);
+  KlInt count = klapi_getintb(state, 1);
+  KlInt begin = 0;
+  if (klapi_narg(state) == 3) {
+    if (kl_unlikely(!klapi_checktype(state, -1, KL_INT)))
+      return klapi_throw_internal(state, KL_E_TYPE, "expected integer, got %s", klstring_content(klapi_typename(state, klapi_access(state, -1))));
+    begin = kllib_normalise_stringidx(klapi_getint(state, -1), klstring_length(str));
+  }
+  if (kl_unlikely(count < 0))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected positive index");
+
+  const unsigned char* text = (unsigned char*)klstring_content(str);
+  size_t strlength = klstring_length(str);
+  size_t idx = begin;
+  while (count-- > 0) {
+    idx += kllib_string_utf8charlen(text + idx);
+    if (kl_unlikely(idx >= strlength))
+      return klapi_throw_internal(state, KL_E_RANGE, "there are not that many utf8 characters");
+  }
+
+  klapi_setint(state, -1, idx);
+  return klapi_return(state, 1);
+}
+
+static KlException kllib_string_utf8len(KlState* state) {
+  if (kl_unlikely(klapi_narg(state) != 1))
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
+  if (kl_unlikely(!klapi_checktype(state, -1, KL_STRING)))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected string, got %s", klstring_content(klapi_typename(state, klapi_accessb(state, 0))));
+  KlString* str = klapi_getstring(state, -1);
+  const unsigned char* text = (unsigned char*)klstring_content(str); 
+  size_t strlength = klstring_length(str);
+  size_t idx = 0;
+  KlInt count = 0;
+  while (idx < strlength) {
+    idx += kllib_string_utf8charlen(text + idx);
+    ++count;
+  }
+  klapi_setint(state, -1, count);
+  return klapi_return(state, 1);
 }
