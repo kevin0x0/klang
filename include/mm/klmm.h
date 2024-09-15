@@ -79,7 +79,7 @@ struct tagKlMM {
   /* if mem_used exceeds this limit, the garbage collection will start.
    * the value of limit will dynamically change. */
   size_t limit; 
-  unsigned gcstop_rcs_count;                /* gc can be stoped recursively */
+  unsigned gcstop_rcs_count;                /* gc can be stopped recursively */
 };
 
 static inline void klmm_init(KlMM* klmm, size_t limit);
