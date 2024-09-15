@@ -49,7 +49,7 @@ static KlException kllib_print(KlState* state) {
 
 static KlException kllib_create_print(KlState* state, const char* globalname) {
   KLAPI_PROTECT(klapi_checkstack(state, 4));
-  klapi_pushvalue(state,klapi_access(state, -1));
+  klapi_pushvalue(state, klapi_access(state, -1));
   KLAPI_PROTECT(klapi_pushstring(state, "write"));
   KLAPI_PROTECT(klapi_pushstring(state, "\t"));
   KLAPI_PROTECT(klapi_pushstring(state, "\n"));
