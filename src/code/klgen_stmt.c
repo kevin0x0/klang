@@ -569,17 +569,7 @@ static void klgen_stmtreturn(KlGenUnit* gen, KlAstStmtReturn* returnast) {
 }
 
 static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
-  KlCodeVal bjmplist = klcodeval_none();
-  KlCodeVal cjmplist = klcodeval_none();
-  KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
-  KlCodeVal* prev_cjmplist = gen->jmpinfo.continuelist;
-  KlSymTbl* prev_bscope = gen->jmpinfo.break_scope;
-  KlSymTbl* prev_cscope = gen->jmpinfo.continue_scope;
-  gen->jmpinfo.breaklist = &bjmplist;
-  gen->jmpinfo.continuelist = &cjmplist;
-  gen->jmpinfo.break_scope = gen->symtbl;
-  gen->jmpinfo.continue_scope = gen->symtbl;
-
+  /* compute iteration information(begin, end, step) */
   KlCStkId forbase = klgen_stacktop(gen);
   klgen_exprtarget_noconst(gen, iforast->begin, forbase);
   // KlCodeVal begin = klcodeval_stack(forbase);
@@ -591,6 +581,19 @@ static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
     klgen_stackalloc1(gen);
   }
   kl_assert(klgen_stacktop(gen) == forbase + 3, "");
+
+  /* now enable statement 'break' and 'continue' */
+  KlCodeVal bjmplist = klcodeval_none();
+  KlCodeVal cjmplist = klcodeval_none();
+  KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
+  KlCodeVal* prev_cjmplist = gen->jmpinfo.continuelist;
+  KlSymTbl* prev_bscope = gen->jmpinfo.break_scope;
+  KlSymTbl* prev_cscope = gen->jmpinfo.continue_scope;
+  gen->jmpinfo.breaklist = &bjmplist;
+  gen->jmpinfo.continuelist = &cjmplist;
+  gen->jmpinfo.break_scope = gen->symtbl;
+  gen->jmpinfo.continue_scope = gen->symtbl;
+  /* statement 'break' and 'continue' are enabled */
 
   klgen_mergejmplist_maynone(gen, gen->jmpinfo.breaklist,
                              klcodeval_jmplist(klgen_emit(gen, klinst_iforprep(forbase, 0), klgen_astposition(iforast))));
@@ -623,6 +626,13 @@ static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
 }
 
 static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
+  KlCStkId forbase = klgen_stacktop(gen);
+  KlAst** patterns = vforast->lvals->exprs;
+  size_t npattern = vforast->lvals->nexpr;
+  KlCodeVal step = klcodeval_integer(npattern);
+  klgen_putonstktop(gen, &step, klgen_astposition(vforast));
+
+  /* now enable statement 'break' and 'continue' */
   KlCodeVal bjmplist = klcodeval_none();
   KlCodeVal cjmplist = klcodeval_none();
   KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
@@ -633,12 +643,8 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
   gen->jmpinfo.continuelist = &cjmplist;
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
+  /* statement 'break' and 'continue' are enabled */
 
-  KlCStkId forbase = klgen_stacktop(gen);
-  KlAst** patterns = vforast->lvals->exprs;
-  size_t npattern = vforast->lvals->nexpr;
-  KlCodeVal step = klcodeval_integer(npattern);
-  klgen_putonstktop(gen, &step, klgen_astposition(vforast));
   klgen_mergejmplist_maynone(gen, gen->jmpinfo.breaklist,
                              klcodeval_jmplist(klgen_emit(gen, klinst_vforprep(forbase, 0), klgen_astposition(vforast))));
   KlCPC looppos = klgen_getjmptarget(gen);
@@ -674,6 +680,15 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
 }
 
 static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
+  /* compute iterable object */
+  KlCStkId forbase = klgen_stacktop(gen);
+  KlCStkId iterable = forbase;
+  klgen_exprtarget_noconst(gen, gforast->expr, iterable);
+  klgen_stackfree(gen, forbase);
+  KlCIdx conidx = klgen_newstring(gen, gen->strings->itermethod);
+  klgen_emitmethod(gen, iterable, conidx, 0, gforast->lvals->nexpr + 3, forbase, klgen_astposition(gforast));
+
+  /* now enable statement 'break' and 'continue' */
   KlCodeVal bjmplist = klcodeval_none();
   KlCodeVal cjmplist = klcodeval_none();
   KlCodeVal* prev_bjmplist = gen->jmpinfo.breaklist;
@@ -684,13 +699,8 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   gen->jmpinfo.continuelist = &cjmplist;
   gen->jmpinfo.break_scope = gen->symtbl;
   gen->jmpinfo.continue_scope = gen->symtbl;
+  /* statement 'break' and 'continue' are enabled */
 
-  KlCStkId forbase = klgen_stacktop(gen);
-  KlCStkId iterable = forbase;
-  klgen_exprtarget_noconst(gen, gforast->expr, iterable);
-  klgen_stackfree(gen, forbase);
-  KlCIdx conidx = klgen_newstring(gen, gen->strings->itermethod);
-  klgen_emitmethod(gen, iterable, conidx, 0, gforast->lvals->nexpr + 3, forbase, klgen_astposition(gforast));
   klgen_mergejmplist_maynone(gen, gen->jmpinfo.breaklist,
                              klcodeval_jmplist(klgen_emit(gen, klinst_falsejmp(forbase + 3, 0), klgen_astposition(gforast))));
   KlCPC looppos = klgen_getjmptarget(gen);
