@@ -5,6 +5,7 @@
 #include "include/value/klclass.h"
 #include "include/value/klkfunc.h"
 #include "include/value/klstate.h"
+#include "include/value/kltuple.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
 #ifdef KLCONFIG_USE_STATIC_LANGLIB
@@ -224,6 +225,15 @@ KlException klapi_setarray(KlState* state, int index, size_t capacity) {
   return KL_E_NONE;
 }
 
+KlException klapi_settuple(KlState* state, int index, size_t nval) {
+  KlValue* val = klapi_access(state, index);
+  kl_assert(nval <= klapi_framesize(state), "there is not enough values on stack");
+  KlTuple* tuple = kltuple_create(klstate_getmm(state), klapi_pointer(state, -nval), nval);
+  if (!tuple) return klstate_throw(state, KL_E_OOM, "out of momery");
+  klvalue_setobj(val, tuple, KL_TUPLE);
+  return KL_E_NONE;
+}
+
 void klapi_setuserdata(KlState* state, int index, void* ud) {
   KlValue* val = klapi_access(state, index);
   klvalue_setuserdata(val, ud);
@@ -307,6 +317,16 @@ KlArray* klapi_getarray(KlState* state, int index) {
 KlArray* klapi_getarrayb(KlState* state, unsigned index) {
   kl_assert(klvalue_checktype(klapi_accessb(state, index), KL_ARRAY), "expected type KL_ARRAY");
   return klvalue_getobj(klapi_accessb(state, index), KlArray*);
+}
+
+KlTuple* klapi_gettuple(KlState* state, int index) {
+  kl_assert(klvalue_checktype(klapi_access(state, index), KL_TUPLE), "expected type KL_TUPLE");
+  return klvalue_getobj(klapi_access(state, index), KlTuple*);
+}
+
+KlTuple* klapi_gettupleb(KlState* state, unsigned index) {
+  kl_assert(klvalue_checktype(klapi_accessb(state, index), KL_TUPLE), "expected type KL_TUPLE");
+  return klvalue_getobj(klapi_accessb(state, index), KlTuple*);
 }
 
 KlGCObject* klapi_getgcobj(KlState* state, int index) {

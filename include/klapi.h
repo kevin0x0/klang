@@ -1,11 +1,12 @@
 #ifndef _KLANG_INCLUDE_VM_KLAPI_H_
 #define _KLANG_INCLUDE_VM_KLAPI_H_
 
-#include "include/value/klcfunc.h"
-#include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
+#include "include/value/klvalue.h"
+#include "include/value/klcfunc.h"
 #include "include/value/klstate.h"
+#include "include/value/kltuple.h"
 #include "include/value/klarray.h"
 #include "include/misc/klutils.h"
 
@@ -128,6 +129,7 @@ void klapi_setvalue(KlState* state, int index, const KlValue* val);
 KlException klapi_setstring(KlState* state, int index, const char* str);
 KlException klapi_setmap(KlState* state, int index, size_t capacity);
 KlException klapi_setarray(KlState* state, int index, size_t capacity);
+KlException klapi_settuple(KlState* state, int index, size_t nval);
 
 /* get method */
 KlCFunction* klapi_getcfunc(KlState* state, int index);
@@ -142,6 +144,8 @@ KlString* klapi_getstring(KlState* state, int index);
 KlString* klapi_getstringb(KlState* state, unsigned index);
 KlMap* klapi_getmap(KlState* state, int index);
 KlMap* klapi_getmapb(KlState* state, unsigned index);
+KlTuple* klapi_gettuple(KlState* state, int index);
+KlTuple* klapi_gettupleb(KlState* state, unsigned index);
 KlArray* klapi_getarray(KlState* state, int index);
 KlArray* klapi_getarrayb(KlState* state, unsigned index);
 KlGCObject* klapi_getgcobj(KlState* state, int index);

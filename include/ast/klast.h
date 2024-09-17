@@ -21,7 +21,7 @@
 
 
 typedef enum tagKlAstKind {
-  KLAST_EXPR_ARR, KLAST_EXPR_UNIT = KLAST_EXPR_ARR, KLAST_EXPR = KLAST_EXPR_ARR,
+  KLAST_EXPR_ARRAY, KLAST_EXPR_UNIT = KLAST_EXPR_ARRAY, KLAST_EXPR = KLAST_EXPR_ARRAY,
   KLAST_EXPR_ARRGEN,
   KLAST_EXPR_MAP,
   KLAST_EXPR_MAPGEN,
@@ -29,7 +29,8 @@ typedef enum tagKlAstKind {
   KLAST_EXPR_CONSTANT,
   KLAST_EXPR_ID,
   KLAST_EXPR_VARARG,
-  KLAST_EXPR_LIST, KLAST_EXPR_UNIT_END = KLAST_EXPR_LIST,
+  KLAST_EXPR_TUPLE,
+  KLAST_EXPR_LIST = KLAST_EXPR_TUPLE, KLAST_EXPR_UNIT_END = KLAST_EXPR_LIST,
 
   KLAST_EXPR_PRE,
   KLAST_EXPR_NEW,
@@ -122,6 +123,7 @@ typedef struct tagKlConstant {
 /* forward declaration */
 typedef struct tagKlAstExprList KlAstExprList;
 typedef struct tagKlAstStmtList KlAstStmtList;
+typedef KlAstExprList KlAstTuple;
 
 typedef struct tagKlAstClassFieldDesc {
   KlStrDesc name;

@@ -214,12 +214,14 @@ static KlAst* klparser_exprunit(KlParser* parser, KlLex* lex) {
         return klast(exprlist);
       }
       KlAst* expr = klparser_expr(parser, lex);
-      if (kllex_check(lex, KLTK_RPAREN)) {  /* not an exprlist */
+      if (kllex_check(lex, KLTK_RPAREN)) {  /* maybe an exprlist */
         klast_setposition(expr, begin, kllex_tokend(lex));
         kllex_next(lex);
-        return expr;
+        return kllex_check(lex, KLTK_ARROW) || kllex_check(lex, KLTK_DARROW)
+               ? klast(klparser_singletonexprlist(parser, lex, expr))
+               : expr;
       }
-      /* is a exprlist */
+      /* is an exprlist */
       klparser_returnifnull(expr);
       KlAstExprList* exprlist = klparser_finishexprlist(parser, lex, expr);
       KlFileOffset end = kllex_tokend(lex);

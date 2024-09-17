@@ -1,6 +1,7 @@
 #include "include/vm/klexec.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klstack.h"
+#include "include/value/kltuple.h"
 #include "include/value/klmap.h"
 #include "include/value/klarray.h"
 #include "include/value/klcfunc.h"
@@ -1519,6 +1520,18 @@ KlException klexec_execute(KlState* state) {
         }
         klexec_break;
       }
+      klexec_case (KLOPCODE_MKTUPLE) {
+        KlValue* a = stkbase + KLINST_ABX_GETA(inst);
+        /* this instruction tells us current stack top */
+        KlValue* base = stkbase + KLINST_ABX_GETB(inst);
+        size_t nval = KLINST_ABX_GETX(inst);
+        klexec_savestate(base + nval, pc); /* creating map may trigger gc */
+        KlTuple* tuple = kltuple_create(klstate_getmm(state), base, nval);
+        if (kl_unlikely(!tuple))
+          return klstate_throw_oom(state, "creating a tuple");
+        klvalue_setobj(a, tuple, KL_TUPLE);
+        klexec_break;
+      }
       klexec_case (KLOPCODE_MKMAP) {
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
         /* this instruction tells us current stack top */
@@ -2192,11 +2205,11 @@ KlException klexec_execute(KlState* state) {
       klexec_case (KLOPCODE_PBTUP) {
         KlValue* b = stkbase + KLINST_ABX_GETB(inst);
         size_t nwanted = KLINST_ABX_GETX(inst);
-        KlArray* array = klvalue_getobj(b, KlArray*);
-        if (!klvalue_checktype(b, KL_ARRAY) || klarray_size(array) != nwanted) {
+        KlTuple* tuple = klvalue_getobj(b, KlTuple*);
+        if (!klvalue_checktype(b, KL_TUPLE) || kltuple_nval(tuple) != nwanted) {
           if (kl_unlikely(KLINST_GET_OPCODE(inst) == KLOPCODE_PBTUP)) {  /* is pattern binding? */
             klexec_savestate(callinfo->top, pc);
-            return klstate_throw(state, KL_E_TYPE, "pattern binding: not an array with %zd elements", nwanted);
+            return klstate_throw(state, KL_E_TYPE, "pattern binding: not a tuple with %zd value(s)", nwanted);
           }
           /* else jump out */
           kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_EXTRA, "");
@@ -2204,12 +2217,12 @@ KlException klexec_execute(KlState* state) {
           pc += KLINST_XI_GETI(extra);
           klexec_break;
         }
-        /* else is array with exactly 'nwanted' elements */
+        /* else is a tuple with 'nwanted' values */
         if (KLINST_GET_OPCODE(inst) == KLOPCODE_PMTUP) /* is pattern binding? */
           ++pc; /* skip extra instruction */
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
-        KlValue* end = klarray_iter_end(array);
-        for (KlValue* itr = klarray_iter_begin(array); itr != end; ++itr)
+        const KlValue* end = kltuple_iter_end(tuple);
+        for (const KlValue* itr = kltuple_iter_begin(tuple); itr != end; ++itr)
           klvalue_setvalue(a++, itr);
         klexec_break;
       }

@@ -27,7 +27,7 @@ static void klast_where_destroy(KlAstWhere* astwhere);
 static const KlAstInfo klast_id_vfunc = { .destructor = (KlAstDelete)klast_id_destroy, .kind = KLAST_EXPR_ID };
 static const KlAstInfo klast_map_vfunc = { .destructor = (KlAstDelete)klast_map_destroy, .kind = KLAST_EXPR_MAP };
 static const KlAstInfo klast_mapcomprehension_vfunc = { .destructor = (KlAstDelete)klast_mapcomprehension_destroy, .kind = KLAST_EXPR_MAPGEN };
-static const KlAstInfo klast_array_vfunc = { .destructor = (KlAstDelete)klast_array_destroy, .kind = KLAST_EXPR_ARR };
+static const KlAstInfo klast_array_vfunc = { .destructor = (KlAstDelete)klast_array_destroy, .kind = KLAST_EXPR_ARRAY };
 static const KlAstInfo klast_arraycomprehension_vfunc = { .destructor = (KlAstDelete)klast_arraycomprehension_destroy, .kind = KLAST_EXPR_ARRGEN };
 static const KlAstInfo klast_class_vfunc = { .destructor = (KlAstDelete)klast_class_destroy, .kind = KLAST_EXPR_CLASS };
 static const KlAstInfo klast_constant_vfunc = { .destructor = (KlAstDelete)klast_constant_destroy, .kind = KLAST_EXPR_CONSTANT };

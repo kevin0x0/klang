@@ -11,6 +11,7 @@ static const char* const klvalue_typenames[KL_NTYPE] = {
   [KL_STRING] = "string",
   [KL_MAP] = "map",
   [KL_ARRAY] = "array",
+  [KL_TUPLE] = "tuple",
   [KL_OBJECT] = "object",
   [KL_CLASS] = "class",
   [KL_KFUNCTION] = "K function",

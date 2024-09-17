@@ -58,10 +58,10 @@ struct tagKlCallInfo {
 
 typedef struct tagKlState {
   KL_DERIVE_FROM(KlGCObject, _gcbase_);
-  KlThrowInfo throwinfo;            /* store the throwed but not handled exception */
+  KlThrowInfo throwinfo;            /* store the thrown but not handled exception */
   KlStack stack;                    /* stack */
-  KlMM* klmm;                       /* mamemory manager */
-  KlMap* global;                    /* store global variables */
+  KlMM* klmm;                       /* memory manager */
+  KlMap* global;                    /* global variables */
   KlCallInfo* callinfo;             /* call information of the closure in execution */
   KlCommon* common;                 /* store some gcobjects that are often used */
   KlRef* reflist;                   /* all open references */

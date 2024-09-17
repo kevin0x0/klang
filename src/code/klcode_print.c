@@ -45,6 +45,7 @@ static const char* klcode_get_instname(KlInstruction inst) {
     [KLOPCODE_LOADGLOBAL] = "LOADGLOBAL",
     [KLOPCODE_STOREREF] = "STOREREF",
     [KLOPCODE_STOREGLOBAL] = "STOREGLOBAL",
+    [KLOPCODE_MKTUPLE] = "MKTUPLE",
     [KLOPCODE_MKMAP] = "MKMAP",
     [KLOPCODE_MKARRAY] = "MKARRAY",
     [KLOPCODE_MKCLOSURE] = "MKCLOSURE",
@@ -403,6 +404,12 @@ static KlInstruction* klcode_print_instruction(const KlCode* code, Ko* out, KlIn
     case KLOPCODE_STOREGLOBAL: {
       klcode_print_AX(out, inst);
       klcode_print_string_noquote(code, out, &code->constants[KLINST_AX_GETX(inst)]);
+      return pc;
+    }
+    case KLOPCODE_MKTUPLE: {
+      klcode_print_ABX(out, inst);
+      size_t nexpr = KLINST_ABX_GETX(inst);
+      ko_printf(out, "%u values", nexpr);
       return pc;
     }
     case KLOPCODE_MKMAP: {
@@ -782,7 +789,7 @@ static KlInstruction* klcode_print_instruction(const KlCode* code, Ko* out, KlIn
       KlInstruction extra = *pc++;
       klcode_print_prefix(code, out, pc - 1, "PMARR EXTRA");
       klcode_print_XI(out, extra);
-      ko_printf(out, "back: %u; jump to %u if not array", KLINST_XI_GETX(extra), pc + KLINST_XI_GETI(extra) - code->code);
+      ko_printf(out, "back: %u; jump to %u if not an array", KLINST_XI_GETX(extra), pc + KLINST_XI_GETI(extra) - code->code);
       return pc;
     }
     case KLOPCODE_PBARR: {
@@ -802,12 +809,12 @@ static KlInstruction* klcode_print_instruction(const KlCode* code, Ko* out, KlIn
       KlInstruction extra = *pc++;
       klcode_print_prefix(code, out, pc - 1, "PMTUP EXTRA");
       klcode_print_XI(out, extra);
-      ko_printf(out, "jump to %u if not array", pc + KLINST_XI_GETI(extra) - code->code);
+      ko_printf(out, "jump to %u if not a tuple", pc + KLINST_XI_GETI(extra) - code->code);
       return pc;
     }
     case KLOPCODE_PBTUP: {
       klcode_print_ABX(out, inst);
-      ko_printf(out, "bind R%u to R%u, %u elements", KLINST_ABX_GETB(inst), KLINST_ABX_GETA(inst), KLINST_ABX_GETX(inst));
+      ko_printf(out, "bind R%u to R%u, %u values", KLINST_ABX_GETB(inst), KLINST_ABX_GETA(inst), KLINST_ABX_GETX(inst));
       return pc;
     }
     case KLOPCODE_PMMAP: {
