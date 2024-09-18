@@ -6,7 +6,7 @@
 #include "include/parse/klparser_error.h"
 
 
-KlAst* klparser_stmt(KlParser* parser, KlLex* lex);
+KlAstStmt* klparser_stmt(KlParser* parser, KlLex* lex);
 /* do not set file position */
 KlAstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex);
 /* do not set file position */

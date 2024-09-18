@@ -7,8 +7,8 @@
 #include "include/ast/klast.h"
 
 
-KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAst* ast, bool jumpcond);
-KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlAst* ast, KlCStkId target);
+KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAstExpr* ast, bool jumpcond);
+KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlAstExpr* ast, KlCStkId target);
 void klgen_jumpto(KlGenUnit* gen, KlCodeVal jmplist, KlCPC jmppos);
 
 

@@ -11,9 +11,9 @@
 #include <setjmp.h>
 
 
-kgarray_decl(KlCode*, KlCodeArray, klcodearr, pass_val, );
-kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val, );
-kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val, );
+kgarray_decl(KlCode*, KlCodeArray, klcodearr, pass_val, nonstatic);
+kgarray_decl(KlInstruction, KlInstArray, klinstarr, pass_val, nonstatic);
+kgarray_decl(KlFilePosition, KlFPArray, klfparr, pass_val, nonstatic);
 
 
 typedef struct tagKlGenJumpInfo KlGenJumpInfo;

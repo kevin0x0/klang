@@ -34,10 +34,10 @@ bool klgen_stmtblockpure(KlGenUnit* gen, KlAstStmtList* stmtlist) {
   return needclose;
 }
 
-static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlAst** patterns, size_t npattern, KlAst** rvals, size_t nrval, KlFilePosition filepos) {
+static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlAstExpr** patterns, size_t npattern, KlAstExpr** rvals, size_t nrval, KlFilePosition filepos) {
   size_t nfastassign = 0;
   for (; nfastassign < npattern; ++nfastassign) {
-    if (!klast_islvalue(patterns[nfastassign]))
+    if (!klast_expr_islvalue(patterns[nfastassign]))
       break;
   }
   if (nfastassign == npattern) {
@@ -83,12 +83,12 @@ static void klgen_deconstruct_to_stktop(KlGenUnit* gen, KlAst** patterns, size_t
 }
 
 static void klgen_stmtlocaldef(KlGenUnit* gen, KlAstStmtLocalDefinition* localdefast) {
-  KlAst* expr = localdefast->expr;
+  KlAstExpr* expr = localdefast->expr;
   KlCStkId stktop = klgen_stacktop(gen);
   if (klast_kind(expr) != KLAST_EXPR_FUNC)
     klgen_emitloadnils(gen, stktop, 1, klgen_astposition(localdefast));
   klgen_newsymbol(gen, localdefast->id, stktop, klgen_position(localdefast->idbegin, localdefast->idend));
-  klgen_exprtarget_noconst(gen, klast(localdefast->expr), stktop);
+  klgen_exprtarget_noconst(gen, localdefast->expr, stktop);
   kl_assert(klgen_stacktop(gen) == stktop + 1, "");
 }
 
@@ -102,7 +102,7 @@ static void klgen_stmtlet(KlGenUnit* gen, KlAstStmtLet* letast) {
 
 static void klgen_stmtmethod(KlGenUnit* gen, KlAstStmtMethod* methodast) {
   KlAstDot* lval = methodast->lval;
-  KlAst* rval = methodast->rval;
+  KlAstExpr* rval = methodast->rval;
   KlCStkId stktop = klgen_stacktop(gen);
   KlCodeVal val = klgen_expr_onstack(gen, rval);
   KlCodeVal obj = klgen_expr_onstack(gen, lval->operand);
@@ -117,7 +117,7 @@ static void klgen_stmtmethod(KlGenUnit* gen, KlAstStmtMethod* methodast) {
   klgen_stackfree(gen, stktop);
 }
 
-static void klgen_stmt_domatching(KlGenUnit* gen, KlAst* pattern, KlCStkId base, KlCStkId matchobj) {
+static void klgen_stmt_domatching(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId base, KlCStkId matchobj) {
   if (klast_kind(pattern) == KLAST_EXPR_CONSTANT) {
     KlConstant* constant = &klcast(KlAstConstant*, pattern)->con;
     KlFilePosition filepos = klgen_astposition(pattern);
@@ -145,7 +145,7 @@ static void klgen_stmtmatch(KlGenUnit* gen, KlAstStmtMatch* stmtmatchast) {
 
   KlCodeVal jmpoutlist = klcodeval_none();
   size_t npattern = stmtmatchast->npattern;
-  KlAst** patterns = stmtmatchast->patterns;
+  KlAstExpr** patterns = stmtmatchast->patterns;
   KlAstStmtList** stmtlists = stmtmatchast->stmtlists;
   for (size_t i = 0; i < npattern; ++i) {
     KlGenJumpInfo jmpinfo = {
@@ -180,7 +180,7 @@ static void klgen_stmtmatch(KlGenUnit* gen, KlAstStmtMatch* stmtmatchast) {
   klgen_stackfree(gen, oristktop);
 }
 
-static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
+static void klgen_singleassign(KlGenUnit* gen, KlAstExpr* lval, KlAstExpr* rval) {
   if (klast_kind(lval) == KLAST_EXPR_ID) {
     KlAstIdentifier* id = klcast(KlAstIdentifier*, lval);
     KlSymbol* symbol = klgen_getsymbol(gen, id->id);
@@ -207,8 +207,8 @@ static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
   } else if (klast_kind(lval) == KLAST_EXPR_INDEX) {
     KlCStkId stktop = klgen_stacktop(gen);
     KlAstIndex* indexast = klcast(KlAstIndex*, lval);
-    KlAst* indexableast = indexast->indexable;
-    KlAst* keyast = indexast->index;
+    KlAstExpr* indexableast = indexast->indexable;
+    KlAstExpr* keyast = indexast->index;
     KlCodeVal val = klgen_expr(gen, rval);
     klgen_putonstack(gen, &val, klgen_astposition(rval));
     KlCodeVal indexable = klgen_expr(gen, indexableast);
@@ -225,7 +225,7 @@ static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
   } else if (klast_kind(lval) == KLAST_EXPR_DOT) {
     KlCStkId stktop = klgen_stacktop(gen);
     KlAstDot* dotast = klcast(KlAstDot*, lval);
-    KlAst* objast = dotast->operand;
+    KlAstExpr* objast = dotast->operand;
     KlCodeVal val = klgen_expr(gen, rval);
     klgen_putonstack(gen, &val, klgen_astposition(rval));
     KlCodeVal obj = klgen_expr(gen, objast);
@@ -253,7 +253,7 @@ static void klgen_singleassign(KlGenUnit* gen, KlAst* lval, KlAst* rval) {
   }
 }
 
-void klgen_assignfrom(KlGenUnit* gen, KlAst* lval, KlCStkId stkid) {
+void klgen_assignfrom(KlGenUnit* gen, KlAstExpr* lval, KlCStkId stkid) {
   if (klast_kind(lval) == KLAST_EXPR_ID) {
     KlAstIdentifier* id = klcast(KlAstIdentifier*, lval);
     KlSymbol* symbol = klgen_getsymbol(gen, id->id);
@@ -271,8 +271,8 @@ void klgen_assignfrom(KlGenUnit* gen, KlAst* lval, KlCStkId stkid) {
   } else if (klast_kind(lval) == KLAST_EXPR_INDEX) {
     KlCStkId stktop = klgen_stacktop(gen);
     KlAstIndex* indexast = klcast(KlAstIndex*, lval);
-    KlAst* indexableast = indexast->indexable;
-    KlAst* keyast = indexast->index;
+    KlAstExpr* indexableast = indexast->indexable;
+    KlAstExpr* keyast = indexast->index;
     KlCodeVal indexable = klgen_expr(gen, indexableast);
     klgen_putonstack(gen, &indexable, klgen_astposition(indexableast));
     KlCodeVal key = klgen_expr(gen, keyast);
@@ -287,7 +287,7 @@ void klgen_assignfrom(KlGenUnit* gen, KlAst* lval, KlCStkId stkid) {
   } else if (klast_kind(lval) == KLAST_EXPR_DOT) {
     KlCStkId stktop = klgen_stacktop(gen);
     KlAstDot* dotast = klcast(KlAstDot*, lval);
-    KlAst* objast = dotast->operand;
+    KlAstExpr* objast = dotast->operand;
     KlCodeVal obj = klgen_expr(gen, objast);
     KlCIdx conidx = klgen_newstring(gen, dotast->field);
     if (klinst_inurange(conidx, 8)) {
@@ -314,9 +314,9 @@ void klgen_assignfrom(KlGenUnit* gen, KlAst* lval, KlCStkId stkid) {
 }
 
 static void klgen_stmtassign(KlGenUnit* gen, KlAstStmtAssign* assignast) {
-  KlAst** patterns = assignast->lvals->exprs;
+  KlAstExpr** patterns = assignast->lvals->exprs;
   size_t npattern = assignast->lvals->nexpr;
-  KlAst** rvals = assignast->rvals->exprs;
+  KlAstExpr** rvals = assignast->rvals->exprs;
   size_t nrval = assignast->rvals->nexpr;
   kl_assert(npattern != 0, "");
   kl_assert(nrval != 0, "");
@@ -328,7 +328,7 @@ static void klgen_stmtassign(KlGenUnit* gen, KlAstStmtAssign* assignast) {
     klgen_stackfree(gen, base);
   } else {
     for (size_t i = 0; i < npattern; ++i) {
-      if (!klast_islvalue(patterns[i])) {
+      if (!klast_expr_islvalue(patterns[i])) {
         klgen_deconstruct_to_stktop(gen, patterns, npattern, rvals, nrval, rvals_pos);
         klgen_patterns_do_assignment(gen, patterns, npattern);
         klgen_stackfree(gen, base);
@@ -364,7 +364,7 @@ static bool klgen_stmttryfastjmp_inif(KlGenUnit* gen, KlAstStmtIf* ifast) {
       klast_kind(block->stmts[block->nstmt - 1]) != KLAST_STMT_CONTINUE) {
     return false;
   }
-  KlAst* stmtast = block->stmts[block->nstmt - 1];
+  KlAstStmt* stmtast = block->stmts[block->nstmt - 1];
   KlSymTbl* endtbl = klast_kind(stmtast) == KLAST_STMT_BREAK ? gen->jmpinfo.break_scope : gen->jmpinfo.continue_scope;
   KlCodeVal* jmplist = klast_kind(stmtast) == KLAST_STMT_BREAK ? gen->jmpinfo.breaklist : gen->jmpinfo.continuelist;
   if (kl_unlikely(!jmplist)) {
@@ -601,7 +601,7 @@ static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
   KlCPC looppos = klgen_getjmptarget(gen);
   kl_assert(iforast->lval->nexpr == 1, "");
 
-  KlAst* pattern = iforast->lval->exprs[0];
+  KlAstExpr* pattern = iforast->lval->exprs[0];
   if ((klast_kind(pattern) == KLAST_EXPR_ID)) {
     klgen_newsymbol(gen, klcast(KlAstIdentifier*, pattern)->id, forbase, klgen_astposition(pattern));
   } else {  /* else is pattern deconstruction */
@@ -627,7 +627,7 @@ static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
 
 static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
   KlCStkId forbase = klgen_stacktop(gen);
-  KlAst** patterns = vforast->lvals->exprs;
+  KlAstExpr** patterns = vforast->lvals->exprs;
   size_t npattern = vforast->lvals->nexpr;
   KlCodeVal step = klcodeval_integer(npattern);
   klgen_putonstktop(gen, &step, klgen_astposition(vforast));
@@ -653,7 +653,7 @@ static void klgen_stmtvfor(KlGenUnit* gen, KlAstStmtVFor* vforast) {
 
   klgen_stackalloc(gen, npattern);
   for (size_t i = npattern; i--;) {
-    KlAst* pattern = patterns[i];
+    KlAstExpr* pattern = patterns[i];
     KlCStkId valstkid = forbase + 2 + i;
     if (klast_kind(pattern) == KLAST_EXPR_ID) {
       klgen_newsymbol(gen, klcast(KlAstIdentifier*, pattern)->id, valstkid, klgen_astposition(pattern));
@@ -707,11 +707,11 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   klgen_pushsymtbl(gen);    /* begin a new scope */
   klgen_stackalloc(gen, 3); /* forbase: iteration function, forbase + 1: static state, forbase + 2: index state */
 
-  KlAst** patterns = gforast->lvals->exprs;
+  KlAstExpr** patterns = gforast->lvals->exprs;
   size_t npattern = gforast->lvals->nexpr;
   klgen_stackalloc(gen, npattern);
   for (size_t i = npattern; i--;) {
-    KlAst* pattern = patterns[i];
+    KlAstExpr* pattern = patterns[i];
     KlCStkId valstkid = forbase + 3 + i;
     if (klast_kind(pattern) == KLAST_EXPR_ID) {
       klgen_newsymbol(gen, klcast(KlAstIdentifier*, pattern)->id, valstkid, klgen_astposition(pattern));
@@ -739,9 +739,9 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
 }
 
 void klgen_stmtlist(KlGenUnit* gen, KlAstStmtList* ast) {
-  KlAst** endstmt = ast->stmts + ast->nstmt;
-  for (KlAst** pstmt = ast->stmts; pstmt != endstmt; ++pstmt) {
-    KlAst* stmt = *pstmt;
+  KlAstStmt** endstmt = ast->stmts + ast->nstmt;
+  for (KlAstStmt** pstmt = ast->stmts; pstmt != endstmt; ++pstmt) {
+    KlAstStmt* stmt = *pstmt;
     switch (klast_kind(stmt)) {
       case KLAST_STMT_LOCALFUNC: {
         klgen_stmtlocaldef(gen, klcast(KlAstStmtLocalDefinition*, stmt));

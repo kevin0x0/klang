@@ -1,5 +1,4 @@
 #include "include/code/klgen.h"
-#include "include/ast/klstrtbl.h"
 #include "include/code/klcode.h"
 #include "include/code/klcodeval.h"
 #include "include/code/klcontbl.h"
@@ -7,11 +6,12 @@
 #include "include/code/klgen_stmt.h"
 #include "include/code/klsymtbl.h"
 #include "include/ast/klast.h"
+#include "include/ast/klstrtbl.h"
 #include "include/misc/klutils.h"
 
-kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val,)
-kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val,)
-kgarray_impl(KlFilePosition, KlFPArray, klfparr, pass_val,)
+kgarray_impl(KlCode*, KlCodeArray, klcodearr, pass_val, nonstatic)
+kgarray_impl(KlInstruction, KlInstArray, klinstarr, pass_val, nonstatic)
+kgarray_impl(KlFilePosition, KlFPArray, klfparr, pass_val, nonstatic)
 
 #define KLGEN_NSUBFUNC  (klbit(16) - 1)
 #define KLGEN_NREG      (klbit(8) - 1)

@@ -3,7 +3,7 @@
 #include "include/ast/klast.h"
 #include "include/parse/klparser.h"
 
-KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAst* inner_stmt);
+KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAstStmt* inner_stmt);
 
 #endif
 

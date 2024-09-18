@@ -1,6 +1,6 @@
 #include "include/ast/klast.h"
 
-bool klast_isboolexpr(KlAst* ast) {
+bool klast_isboolexpr(KlAstExpr* ast) {
   switch (klast_kind(ast)) {
     case KLAST_EXPR_PRE: {
       return klcast(KlAstPre*, ast)->op == KLTK_NOT;

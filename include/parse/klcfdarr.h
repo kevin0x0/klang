@@ -4,6 +4,6 @@
 #include "include/ast/klast.h"
 #include "deps/k/include/array/kgarray.h"
 
-kgarray_decl(KlAstClassFieldDesc, KlCfdArray, klcfd, pass_ref,)
+kgarray_decl(KlAstClassFieldDesc, KlCfdArray, klcfd, pass_ref, nonstatic)
 
 #endif

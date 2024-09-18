@@ -3,6 +3,6 @@
 
 #include "deps/k/include/array/kgarray.h"
 
-kgarray_decl(char, KlStringBuf, klstrbuf, pass_val,);
+kgarray_decl(char, KlStringBuf, klstrbuf, pass_val, nonstatic);
 
 #endif

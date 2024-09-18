@@ -55,8 +55,8 @@ static KlPatternEmitter matchers = {
 };
 
 
-static void klgen_pattern_fast(KlGenUnit* gen, KlAst* pattern, KlPatternEmitter* emitter);
-static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, KlPatternEmitter* emitter);
+static void klgen_pattern_fast(KlGenUnit* gen, KlAstExpr* pattern, KlPatternEmitter* emitter);
+static KlCStkId klgen_pattern(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId target, KlPatternEmitter* emitter);
 
 
 
@@ -138,7 +138,7 @@ static void klgen_pattern_constant_match(KlGenUnit* gen, KlAstConstant* constant
 
 /* if is an array with exact number of elements return false.
  * else return true and set pnfront and pnback. */
-static void klgen_pattern_array_get_nfront_and_nback(KlGenUnit* gen, KlAst** elems, size_t nelem, size_t* pnfront, size_t* pnback) {
+static void klgen_pattern_array_get_nfront_and_nback(KlGenUnit* gen, KlAstExpr** elems, size_t nelem, size_t* pnfront, size_t* pnback) {
   size_t nfront = 0;
   for (; nfront < nelem; ++nfront) {
     if (klast_kind(elems[nfront]) == KLAST_EXPR_VARARG)
@@ -156,7 +156,7 @@ static void klgen_pattern_array_get_nfront_and_nback(KlGenUnit* gen, KlAst** ele
   *pnback = nback;
 }
 
-static KlStrDesc klgen_pattern_methodname(KlGenUnit* gen, KlAst* ast) {
+static KlStrDesc klgen_pattern_methodname(KlGenUnit* gen, KlAstExpr* ast) {
   if (klast_kind(ast) == KLAST_EXPR_PRE) {
     KlTokenKind op = klcast(KlAstPre*, ast)->op;
     if (op == KLTK_MINUS) {
@@ -197,11 +197,11 @@ static KlStrDesc klgen_pattern_methodname(KlGenUnit* gen, KlAst* ast) {
   }
 }
 
-static inline bool klgen_pattern_islval(KlAst* lval) {
-  return klast_islvalue(lval);
+static inline bool klgen_pattern_islval(KlAstExpr* lval) {
+  return klast_expr_islvalue(lval);
 }
 
-static inline bool klgen_pattern_allislval(KlAst** lvals, size_t nlval) {
+static inline bool klgen_pattern_allislval(KlAstExpr** lvals, size_t nlval) {
   for (size_t i = 0; i < nlval; ++i) {
     if (!klgen_pattern_islval(lvals[i]))
       return false;
@@ -209,7 +209,7 @@ static inline bool klgen_pattern_allislval(KlAst** lvals, size_t nlval) {
   return true;
 }
 
-static inline bool klgen_pattern_allislval_maynull(KlAst** lvals, size_t nlval) {
+static inline bool klgen_pattern_allislval_maynull(KlAstExpr** lvals, size_t nlval) {
   for (size_t i = 0; i < nlval; ++i) {
     if (lvals[i] && !klgen_pattern_islval(lvals[i]))
       return false;
@@ -217,13 +217,13 @@ static inline bool klgen_pattern_allislval_maynull(KlAst** lvals, size_t nlval) 
   return true;
 }
 
-static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, KlPatternEmitter* emitter) {
+static KlCStkId klgen_pattern(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId target, KlPatternEmitter* emitter) {
   switch (klast_kind(pattern)) {
     case KLAST_EXPR_TUPLE: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
-      size_t nexpr = tuple->nexpr;
-      KlAst** exprs = tuple->exprs;
+      size_t nexpr = tuple->nval;
+      KlAstExpr** exprs = tuple->vals;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       if (klgen_pattern_allislval(exprs, nexpr)) {
         emitter->tuple(gen, nexpr, target - nexpr, obj, klgen_astposition(tuple));
@@ -241,12 +241,13 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
       size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       size_t nfront;
       size_t nback;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       klgen_pattern_array_get_nfront_and_nback(gen, elems, nelem, &nfront, &nback);
-      if (klgen_pattern_allislval(elems, nfront) && klgen_pattern_allislval(elems + nfront + 1, nelem - nfront - 1)) {
+      if (klgen_pattern_allislval(elems, nfront) &&
+          (nback == 0 || klgen_pattern_allislval(elems + nfront + 1, nelem - nfront - 1))) {
         emitter->array(gen, nfront, nback, target - (nfront + nback), obj, klgen_astposition(exprlist));
         klgen_stackfree(gen, obj);
         return target - (nfront + nback);
@@ -254,8 +255,10 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
       /* else put on stack top */
       emitter->array(gen, nfront, nback, obj, obj, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + nfront + nback);
-      for (size_t i = nelem; i-- != nfront + 1;)
-        target = klgen_pattern(gen, elems[i], target, emitter);
+      if (nback != 0) {
+        for (size_t i = nelem; i-- != nfront + 1;)
+          target = klgen_pattern(gen, elems[i], target, emitter);
+      }
       for (size_t i = nfront; i--;)
         target = klgen_pattern(gen, elems[i], target, emitter);
       return  target;
@@ -277,7 +280,7 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
         klgen_emit(gen, klinst_loadc(klgen_stacktop(gen), name), klgen_astposition(pattern));
         klgen_stackalloc1(gen);
       }
-      KlAst** vals = klclass->vals;
+      KlAstExpr** vals = klclass->vals;
       if (klgen_pattern_allislval_maynull(vals, nval)) {
         emitter->obj(gen, nshared, target - nshared, obj, klgen_astposition(pattern));
         klgen_stackfree(gen, obj);
@@ -294,8 +297,8 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
     case KLAST_EXPR_MAP: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlAstMap* map = klcast(KlAstMap*, pattern);
-      KlAst** vals = map->vals;
-      KlAst** keys = map->keys;
+      KlAstExpr** vals = map->vals;
+      KlAstExpr** keys = map->keys;
       size_t npair = map->npair;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       for (size_t i = 0; i < npair; ++i)
@@ -358,7 +361,7 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
       KlAstExprList* args = klcast(KlAstCall*, pattern)->args;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       size_t nelem = args->nexpr;
-      KlAst** elems = args->exprs;
+      KlAstExpr** elems = args->exprs;
       if (klgen_pattern_allislval(elems, nelem)) {
         emitter->generic(gen, args->nexpr, target - nelem, method, obj, 0, klgen_astposition(pattern));
         klgen_stackfree(gen, obj);
@@ -395,24 +398,24 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAst* pattern, KlCStkId target, K
   }
 }
 
-static void klgen_pattern_fast(KlGenUnit* gen, KlAst* pattern, KlPatternEmitter* emitter) {
+static void klgen_pattern_fast(KlGenUnit* gen, KlAstExpr* pattern, KlPatternEmitter* emitter) {
   switch (klast_kind(pattern)) {
     case KLAST_EXPR_TUPLE: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
-      size_t nexpr = tuple->nexpr;
+      size_t nexpr = tuple->nval;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       emitter->tuple(gen, nexpr, obj, obj, klgen_astposition(pattern));
       klgen_stackfree(gen, obj + nexpr);
       if (nexpr != 0)
-        klgen_pattern_fast(gen, tuple->exprs[tuple->nexpr - 1], emitter);
+        klgen_pattern_fast(gen, tuple->vals[tuple->nval - 1], emitter);
       return;
     }
     case KLAST_EXPR_ARRAY: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
       size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       size_t nfront;
       size_t nback;
       KlCStkId obj = klgen_stacktop(gen) - 1;
@@ -431,11 +434,11 @@ static void klgen_pattern_fast(KlGenUnit* gen, KlAst* pattern, KlPatternEmitter*
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
-      KlAst** vals = klclass->vals;
+      KlAstExpr** vals = klclass->vals;
       KlAstClassFieldDesc* fields = klclass->fields;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       size_t nshared = 0;
-      KlAst* lastshared = NULL;
+      KlAstExpr* lastshared = NULL;
       for (size_t i = 0; i < nval; ++i) {
         if (!fields[i].shared) {
           klgen_error(gen, klast_begin(pattern), klast_end(pattern), "'local' can not appeared in object pattern");
@@ -456,8 +459,8 @@ static void klgen_pattern_fast(KlGenUnit* gen, KlAst* pattern, KlPatternEmitter*
     case KLAST_EXPR_MAP: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlAstMap* map = klcast(KlAstMap*, pattern);
-      KlAst** vals = map->vals;
-      KlAst** keys = map->keys;
+      KlAstExpr** vals = map->vals;
+      KlAstExpr** keys = map->keys;
       size_t npair = map->npair;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       for (size_t i = 0; i < npair; ++i)
@@ -537,12 +540,12 @@ static void klgen_pattern_fast(KlGenUnit* gen, KlAst* pattern, KlPatternEmitter*
   }
 }
 
-static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
+static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAstExpr* pattern) {
   switch (klast_kind(pattern)) {
     case KLAST_EXPR_TUPLE: {
       KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
-      KlAst** exprs = tuple->exprs;
-      size_t nexpr = tuple->nexpr;
+      KlAstExpr** exprs = tuple->vals;
+      size_t nexpr = tuple->nval;
       if (nexpr == 0) return true;
       return klgen_pattern_allislval(exprs, nexpr - 1) &&
              klgen_pattern_fast_check(gen, exprs[nexpr - 1]);
@@ -551,7 +554,7 @@ static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
       size_t nelem = exprlist->nexpr;
       if (nelem == 0) return true;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       size_t i = 0;
       for (; i < nelem; ++i) {
         if (!klgen_pattern_islval(elems[i]))
@@ -572,7 +575,7 @@ static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
       KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
       if (nval == 0) return true;
-      KlAst** vals = klclass->vals;
+      KlAstExpr** vals = klclass->vals;
       for (size_t i = 0; i < nval - 1; ++i) {
         if (!vals[i]) continue;
         if (!klgen_pattern_islval(vals[i]))
@@ -585,7 +588,7 @@ static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
       KlAstMap* map = klcast(KlAstMap*, pattern);
       size_t nval = map->npair;
       if (nval == 0) return true;
-      KlAst** vals = map->vals;
+      KlAstExpr** vals = map->vals;
       for (size_t i = 0; i < nval - 1; ++i) {
         if (!klgen_pattern_islval(vals[i]))
           return false;
@@ -612,7 +615,7 @@ static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
       KlAstExprList* exprlist = klcast(KlAstCall*, pattern)->args;
       size_t nelem = exprlist->nexpr;
       if (nelem == 0) return true;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       for (size_t i = 0; i < nelem - 1; ++i) {
         if (!klgen_pattern_islval(elems[i]))
           return false;
@@ -636,34 +639,36 @@ static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAst* pattern) {
   }
 }
 
-void klgen_pattern_tostktop(KlGenUnit* gen, KlAst* pattern, KlCStkId val, KlPatternEmitter* emitter) {
+void klgen_pattern_tostktop(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId val, KlPatternEmitter* emitter) {
   size_t stktop = klgen_stacktop(gen);
   if (klgen_pattern_fast_check(gen, pattern)) {
+    kl_assert(stktop != val, "");
     klgen_emitmove(gen, stktop, val, 1, klgen_astposition(pattern));
     klgen_stackalloc1(gen);
     klgen_pattern_fast(gen, pattern, emitter);
   } else {
     size_t nres = klgen_pattern_count_result(gen, pattern);
+    kl_assert(stktop + nres != val, "");
     klgen_emitmove(gen, stktop + nres, val, 1, klgen_astposition(pattern));
     klgen_stackalloc(gen, nres + 1);
     klgen_pattern(gen, pattern, stktop + nres, emitter);
   }
 }
 
-void klgen_pattern_binding_tostktop(KlGenUnit* gen, KlAst* pattern, KlCStkId val) {
+void klgen_pattern_binding_tostktop(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId val) {
   klgen_pattern_tostktop(gen, pattern, val, &binders);
 }
 
-void klgen_pattern_matching_tostktop(KlGenUnit* gen, KlAst* pattern, KlCStkId val) {
+void klgen_pattern_matching_tostktop(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId val) {
   klgen_pattern_tostktop(gen, pattern, val, &matchers);
 }
 
-size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
+size_t klgen_pattern_count_result(KlGenUnit* gen, KlAstExpr* pattern) {
   switch (klast_kind(pattern)) {
     case KLAST_EXPR_TUPLE: {
       KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
-      size_t nexpr = tuple->nexpr;
-      KlAst** exprs = tuple->exprs;
+      size_t nexpr = tuple->nval;
+      KlAstExpr** exprs = tuple->vals;
       size_t count = 0;
       for (size_t i = 0; i < nexpr; ++i)
         count += klgen_pattern_count_result(gen, exprs[i]);
@@ -672,7 +677,7 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
     case KLAST_EXPR_ARRAY: {
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
       size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       size_t count = 0;
       for (size_t i = 0; i < nelem; ++i)
         count += klgen_pattern_count_result(gen, elems[i]);
@@ -681,7 +686,7 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
     case KLAST_EXPR_CLASS: {
       KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
-      KlAst** vals = klclass->vals;
+      KlAstExpr** vals = klclass->vals;
       size_t count = 0;
       for (size_t i = 0; i < nval; ++i) {
         if (!vals[i]) continue;
@@ -691,7 +696,7 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
     }
     case KLAST_EXPR_MAP: {
       KlAstMap* map = klcast(KlAstMap*, pattern);
-      KlAst** vals = map->vals;
+      KlAstExpr** vals = map->vals;
       size_t nval = map->npair;
       size_t count = 0;
       for (size_t i = 0; i < nval; ++i)
@@ -713,7 +718,7 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
     case KLAST_EXPR_CALL: {
       KlAstExprList* exprlist = klcast(KlAstCall*, pattern)->args;
       size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       size_t count = 0;
       for (size_t i = 0; i < nelem; ++i)
         count += klgen_pattern_count_result(gen, elems[i]);
@@ -734,12 +739,12 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlAst* pattern) {
   }
 }
 
-void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
+void klgen_pattern_do_assignment(KlGenUnit* gen, KlAstExpr* pattern) {
   switch (klast_kind(pattern)) {
     case KLAST_EXPR_TUPLE: {
       KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
-      size_t nexpr = tuple->nexpr;
-      KlAst** exprs = tuple->exprs;
+      size_t nexpr = tuple->nval;
+      KlAstExpr** exprs = tuple->vals;
       for (size_t i = nexpr; i-- > 0;)
         klgen_pattern_do_assignment(gen, exprs[i]);
       break;
@@ -747,7 +752,7 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
     case KLAST_EXPR_ARRAY: {
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
       size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       for (size_t i = nelem; i-- > 0;)
         klgen_pattern_do_assignment(gen, elems[i]);
       break;
@@ -755,7 +760,7 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
     case KLAST_EXPR_CLASS: {
       KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
-      KlAst** vals = klclass->vals;
+      KlAstExpr** vals = klclass->vals;
       for (size_t i = nval; i-- > 0;) {
         if (!vals[i]) continue;
         klgen_pattern_do_assignment(gen, vals[i]);
@@ -764,7 +769,7 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
     }
     case KLAST_EXPR_MAP: {
       KlAstMap* map = klcast(KlAstMap*, pattern);
-      KlAst** vals = map->vals;
+      KlAstExpr** vals = map->vals;
       size_t nval = map->npair;
       for (size_t i = nval; i-- > 0;)
         klgen_pattern_do_assignment(gen, vals[i]);
@@ -790,7 +795,7 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
     case KLAST_EXPR_CALL: {
       KlAstExprList* exprlist = klcast(KlAstCall*, pattern)->args;
       size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       for (size_t i = nelem; i-- > 0;)
         klgen_pattern_do_assignment(gen, elems[i]);
       break;
@@ -814,12 +819,12 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlAst* pattern) {
   }
 }
 
-KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, KlCStkId base) {
+KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId base) {
   switch (klast_kind(pattern)) {
     case KLAST_EXPR_TUPLE: {
       KlAstTuple* tuple = klcast(KlAstTuple*, pattern);
-      size_t nexpr = tuple->nexpr;
-      KlAst** exprs = tuple->exprs;
+      size_t nexpr = tuple->nval;
+      KlAstExpr** exprs = tuple->vals;
       for (size_t i = 0; i < nexpr; ++i)
         base = klgen_pattern_newsymbol(gen, exprs[i], base);
       return base;
@@ -827,7 +832,7 @@ KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, KlCStkId base) 
     case KLAST_EXPR_ARRAY: {
       KlAstExprList* exprlist = klcast(KlAstArray*, pattern)->exprlist;
       size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       for (size_t i = 0; i < nelem; ++i)
         base = klgen_pattern_newsymbol(gen, elems[i], base);
       return base;
@@ -835,7 +840,7 @@ KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, KlCStkId base) 
     case KLAST_EXPR_CLASS: {
       KlAstClass* klclass = klcast(KlAstClass*, pattern);
       size_t nval = klclass->nfield;
-      KlAst** vals = klclass->vals;
+      KlAstExpr** vals = klclass->vals;
       for (size_t i = 0; i < nval; ++i) {
         if (!vals[i]) continue;
         base = klgen_pattern_newsymbol(gen, vals[i], base);
@@ -844,7 +849,7 @@ KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, KlCStkId base) 
     }
     case KLAST_EXPR_MAP: {
       KlAstMap* map = klcast(KlAstMap*, pattern);
-      KlAst** vals = map->vals;
+      KlAstExpr** vals = map->vals;
       size_t nval = map->npair;
       for (size_t i = 0; i < nval; ++i)
         base = klgen_pattern_newsymbol(gen, vals[i], base);
@@ -867,7 +872,7 @@ KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, KlCStkId base) 
     case KLAST_EXPR_CALL: {
       KlAstExprList* exprlist = klcast(KlAstCall*, pattern)->args;
       size_t nelem = exprlist->nexpr;
-      KlAst** elems = exprlist->exprs;
+      KlAstExpr** elems = exprlist->exprs;
       for (size_t i = 0; i < nelem; ++i)
         base = klgen_pattern_newsymbol(gen, elems[i], base);
       return base;
@@ -893,22 +898,22 @@ KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAst* pattern, KlCStkId base) 
 
 
 
-KlCStkId klgen_pattern_binding(KlGenUnit* gen, KlAst* pattern, KlCStkId target) {
+KlCStkId klgen_pattern_binding(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId target) {
   return klgen_pattern(gen, pattern, target, &binders);
 }
 
-KlCStkId klgen_pattern_matching(KlGenUnit* gen, KlAst* pattern, KlCStkId target) {
+KlCStkId klgen_pattern_matching(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId target) {
   return klgen_pattern(gen, pattern, target, &matchers);
 }
 
-bool klgen_pattern_fastbinding(KlGenUnit* gen, KlAst* pattern) {
+bool klgen_pattern_fastbinding(KlGenUnit* gen, KlAstExpr* pattern) {
   if (!klgen_pattern_fast_check(gen, pattern))
     return false;
   klgen_pattern_fast(gen, pattern, &binders);
   return true;
 }
 
-bool klgen_pattern_fastmatching(KlGenUnit* gen, KlAst* pattern) {
+bool klgen_pattern_fastmatching(KlGenUnit* gen, KlAstExpr* pattern) {
   if (!klgen_pattern_fast_check(gen, pattern))
     return false;
   klgen_pattern_fast(gen, pattern, &matchers);

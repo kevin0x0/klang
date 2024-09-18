@@ -4,7 +4,7 @@
 #include "include/parse/klparser_utils.h"
 #include "deps/k/include/array/karray.h"
 
-static KlAst* klparser_comprehensionfor(KlParser* parser, KlLex* lex, KlAstExprList* lvals, KlAst* inner_stmt) {
+static KlAst* klparser_comprehensionfor(KlParser* parser, KlLex* lex, KlAstExprList* lvals, KlAstStmt* inner_stmt) {
   if (kllex_trymatch(lex, KLTK_ASSIGN)) { /* i = n, m, s */
     KlAstExprList* exprlist = klparser_exprlist(parser, lex);
     kllex_trymatch(lex, KLTK_SEMI);
@@ -35,7 +35,7 @@ static KlAst* klparser_comprehensionfor(KlParser* parser, KlLex* lex, KlAstExprL
       klast_delete(lvals);
       return NULL;
     }
-    KlAst** exprs = exprlist->exprs;
+    KlAstExpr** exprs = exprlist->exprs;
     KlAstStmtIFor* ifor = klast_stmtifor_create(lvals, exprs[0], exprs[1], nelem == 3 ? exprs[2] : NULL, block, klast_begin(lvals), klast_end(block));
     klast_exprlist_shallow_replace(exprlist, NULL, 0);
     klast_delete(exprlist);
@@ -44,7 +44,7 @@ static KlAst* klparser_comprehensionfor(KlParser* parser, KlLex* lex, KlAstExprL
   }
   /* a, b, ... in expr */
   klparser_match(parser, lex, KLTK_IN);
-  KlAst* iterable = klparser_expr(parser, lex);
+  KlAstExpr* iterable = klparser_expr(parser, lex);
   kllex_trymatch(lex, KLTK_SEMI);
   if (kl_unlikely(!iterable)) {
     klast_delete(inner_stmt);
@@ -69,7 +69,7 @@ static KlAst* klparser_comprehensionfor(KlParser* parser, KlLex* lex, KlAstExprL
   }
 }
 
-KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAst* inner_stmt) {
+KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAstStmt* inner_stmt) {
   KArray stmtarr;
   if (kl_unlikely(!karray_init(&stmtarr)))
     return klparser_error_oom(parser, lex);
@@ -100,7 +100,12 @@ KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAst* inner
           klparser_destroy_astarray(&stmtarr);
           return NULL;
         }
-        KlAstStmtIf* stmtif = klast_stmtif_create(klast(exprlist), block, NULL, klast_begin(exprlist), klast_end(block));
+        if (kl_unlikely(exprlist->nexpr != 1)) {
+          klparser_error(parser, kllex_inputstream(lex), klast_begin(exprlist), klast_end(exprlist),
+                         "expected a single expression as condition, not an expression list");
+        }
+        KlAstExpr* expr = klast_exprlist_stealfirst_and_destroy(exprlist);
+        KlAstStmtIf* stmtif = klast_stmtif_create(expr, block, NULL, klast_begin(exprlist), klast_end(block));
         if (kl_unlikely(!stmtif)) {
           klparser_destroy_astarray(&stmtarr);
           return NULL;
@@ -114,8 +119,8 @@ KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAst* inner
       kl_assert(karray_size(&stmtarr) != 0, "");
       karray_shrink(&stmtarr);
       size_t nstmt = karray_size(&stmtarr);
-      KlAst** stmts = (KlAst**)karray_steal(&stmtarr);
-      KlAstStmtList* stmtlist = klast_stmtlist_create(stmts, nstmt, stmts[0]->begin, stmts[nstmt - 1]->end);
+      KlAstStmt** stmts = (KlAstStmt**)karray_steal(&stmtarr);
+      KlAstStmtList* stmtlist = klast_stmtlist_create(stmts, nstmt, klast_begin(stmts[0]), klast_end(stmts[nstmt - 1]));
       klparser_oomifnull(stmtlist);
       return stmtlist;
     } else if (kllex_check(lex, KLTK_LET)) {
@@ -136,7 +141,7 @@ KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAst* inner
       }
       karray_shrink(&stmtarr);
       size_t nstmt = karray_size(&stmtarr);
-      KlAst** stmts = (KlAst**)karray_steal(&stmtarr);
+      KlAstStmt** stmts = (KlAstStmt**)karray_steal(&stmtarr);
       KlAstStmtList* stmtlist = klast_stmtlist_create(stmts, nstmt, begin, end);
       klparser_oomifnull(stmtlist);
       return stmtlist;

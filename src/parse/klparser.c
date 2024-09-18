@@ -21,13 +21,13 @@ KlAstStmtList* klparser_file(KlParser* parser, KlLex* lex) {
 }
 
 KlAstStmtList* klparser_interactive(KlParser* parser, KlLex* lex) {
-  KlAst* stmt = NULL;
+  KlAstStmt* stmt = NULL;
   if (kllex_check(lex, KLTK_END)) {
     KlAstExprList* exprlist = klparser_emptyexprlist(parser, lex, 0, 0);
     klparser_oomifnull(exprlist);
     KlAstStmtReturn* stmtreturn = klast_stmtreturn_create(klcast(KlAstExprList*, exprlist), klast_begin(exprlist), klast_end(exprlist));
     klparser_oomifnull(stmtreturn);
-    stmt = klast(stmtreturn);
+    stmt = klcast(KlAstStmt*, stmtreturn);
   } else {
     stmt = klparser_stmt(parser, lex);
     klparser_check(parser, lex, KLTK_SEMI);
@@ -36,10 +36,10 @@ KlAstStmtList* klparser_interactive(KlParser* parser, KlLex* lex) {
       KlAstExprList* exprlist = klast_stmtexpr_steal_exprlist_and_destroy(klcast(KlAstStmtExpr*, stmt));
       KlAstStmtReturn* stmtreturn = klast_stmtreturn_create(klcast(KlAstExprList*, exprlist), klast_begin(exprlist), klast_end(exprlist));
       klparser_oomifnull(stmtreturn);
-      stmt = klast(stmtreturn);
+      stmt = klcast(KlAstStmt*, stmtreturn);
     }
   }
-  KlAst** stmts = (KlAst**)malloc(sizeof (KlAst*));
+  KlAstStmt** stmts = (KlAstStmt**)malloc(sizeof (KlAstStmt*));
   if (kl_unlikely(!stmts)) {
     klast_delete(stmt);
     return NULL;
@@ -51,7 +51,7 @@ KlAstStmtList* klparser_interactive(KlParser* parser, KlLex* lex) {
 }
 
 KlAstStmtList* klparser_evaluate(KlParser* parser, KlLex* lex) {
-  KlAst* stmt = klparser_stmt(parser, lex);
+  KlAstStmt* stmt = klparser_stmt(parser, lex);
   klparser_returnifnull(stmt);
   if (klast_kind(stmt) != KLAST_STMT_EXPR) {
     klparser_error(parser, kllex_inputstream(lex), klast_begin(stmt), klast_end(stmt), "expected expression list");
@@ -62,12 +62,12 @@ KlAstStmtList* klparser_evaluate(KlParser* parser, KlLex* lex) {
   KlAstExprList* exprlist = klast_stmtexpr_steal_exprlist_and_destroy(klcast(KlAstStmtExpr*, stmt));
   KlAstStmtReturn* stmtreturn = klast_stmtreturn_create(klcast(KlAstExprList*, exprlist), klast_begin(exprlist), klast_end(exprlist));
   klparser_oomifnull(stmtreturn);
-  KlAst** stmts = (KlAst**)malloc(sizeof (KlAst*));
+  KlAstStmt** stmts = (KlAstStmt**)malloc(sizeof (KlAstStmt*));
   if (kl_unlikely(!stmts)) {
     klast_delete(stmtreturn);
     return NULL;
   }
-  stmts[0] = klast(stmtreturn);
+  stmts[0] = klcast(KlAstStmt*, stmtreturn);
   KlAstStmtList* stmtlist = klast_stmtlist_create(stmts, 1, klast_begin(stmtreturn), klast_end(stmtreturn));
   klparser_oomifnull(stmtlist);
   return stmtlist;

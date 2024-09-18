@@ -3,6 +3,7 @@
 
 static void klast_id_destroy(KlAstIdentifier* astid);
 static void klast_map_destroy(KlAstMap* astmap);
+static void klast_tuple_destroy(KlAstTuple* asttuple);
 static void klast_mapcomprehension_destroy(KlAstMapComprehension* astmapcomprehension);
 static void klast_array_destroy(KlAstArray* astarray);
 static void klast_arraycomprehension_destroy(KlAstArrayComprehension* astarraycomprehension);
@@ -26,6 +27,7 @@ static void klast_where_destroy(KlAstWhere* astwhere);
 
 static const KlAstInfo klast_id_vfunc = { .destructor = (KlAstDelete)klast_id_destroy, .kind = KLAST_EXPR_ID };
 static const KlAstInfo klast_map_vfunc = { .destructor = (KlAstDelete)klast_map_destroy, .kind = KLAST_EXPR_MAP };
+static const KlAstInfo klast_tuple_vfunc = { .destructor = (KlAstDelete)klast_tuple_destroy, .kind = KLAST_EXPR_TUPLE };
 static const KlAstInfo klast_mapcomprehension_vfunc = { .destructor = (KlAstDelete)klast_mapcomprehension_destroy, .kind = KLAST_EXPR_MAPGEN };
 static const KlAstInfo klast_array_vfunc = { .destructor = (KlAstDelete)klast_array_destroy, .kind = KLAST_EXPR_ARRAY };
 static const KlAstInfo klast_arraycomprehension_vfunc = { .destructor = (KlAstDelete)klast_arraycomprehension_destroy, .kind = KLAST_EXPR_ARRGEN };
@@ -56,7 +58,7 @@ KlAstIdentifier* klast_id_create(KlStrDesc id, KlFileOffset begin, KlFileOffset 
   return astid;
 }
 
-KlAstMap* klast_map_create(KlAst** keys, KlAst** vals, size_t npair, KlFileOffset begin, KlFileOffset end) {
+KlAstMap* klast_map_create(KlAstExpr** keys, KlAstExpr** vals, size_t npair, KlFileOffset begin, KlFileOffset end) {
   KlAstMap* astmap = klast_alloc(KlAstMap);
   if (kl_unlikely(!astmap)) {
     for (size_t i = 0; i < npair; ++i) {
@@ -73,6 +75,22 @@ KlAstMap* klast_map_create(KlAst** keys, KlAst** vals, size_t npair, KlFileOffse
   klast_setposition(astmap, begin, end);
   klast_init(astmap, &klast_map_vfunc);
   return astmap;
+}
+
+KlAstTuple* klast_tuple_create(KlAstExpr** vals, size_t nval, KlFileOffset begin, KlFileOffset end) {
+  KlAstTuple* asttuple = klast_alloc(KlAstTuple);
+  if (kl_unlikely(!asttuple)) {
+    for (size_t i = 0; i < nval; ++i) {
+      klast_delete(vals[i]);
+    }
+    free(vals);
+    return NULL;
+  }
+  asttuple->vals = vals;
+  asttuple->nval = nval;
+  klast_setposition(asttuple, begin, end);
+  klast_init(asttuple, &klast_tuple_vfunc);
+  return asttuple;
 }
 
 KlAstMapComprehension* klast_mapcomprehension_create(KlStrDesc arrid, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
@@ -113,7 +131,7 @@ KlAstArrayComprehension* klast_arraycomprehension_create(KlStrDesc arrid, KlAstS
   return astarraycomprehension;
 }
 
-KlAstClass* klast_class_create(KlAstClassFieldDesc* fields, KlAst** vals, size_t nfield, KlAst* base, KlFileOffset begin, KlFileOffset end) {
+KlAstClass* klast_class_create(KlAstClassFieldDesc* fields, KlAstExpr** vals, size_t nfield, KlAstExpr* base, KlFileOffset begin, KlFileOffset end) {
   KlAstClass* astclass = klast_alloc(KlAstClass);
   if (kl_unlikely(!astclass)) {
     for (size_t i = 0; i < nfield; ++i) {
@@ -189,7 +207,7 @@ KlAstVararg* klast_vararg_create(KlFileOffset begin, KlFileOffset end) {
   return astvararg;
 }
 
-KlAstExprList* klast_exprlist_create(KlAst** exprs, size_t nexpr, KlFileOffset begin, KlFileOffset end) {
+KlAstExprList* klast_exprlist_create(KlAstExpr** exprs, size_t nexpr, KlFileOffset begin, KlFileOffset end) {
   KlAstExprList* astexprlist = klast_alloc(KlAstExprList);
   if (kl_unlikely(!astexprlist)) {
     for (size_t i = 0; i < nexpr; ++i) {
@@ -205,7 +223,7 @@ KlAstExprList* klast_exprlist_create(KlAst** exprs, size_t nexpr, KlFileOffset b
   return astexprlist;
 }
 
-KlAstBin* klast_bin_create(KlTokenKind op, KlAst* loperand, KlAst* roperand, KlFileOffset begin, KlFileOffset end) {
+KlAstBin* klast_bin_create(KlTokenKind op, KlAstExpr* loperand, KlAstExpr* roperand, KlFileOffset begin, KlFileOffset end) {
   KlAstBin* astbin = klast_alloc(KlAstBin);
   if (kl_unlikely(!astbin)) {
     klast_delete(loperand);
@@ -220,7 +238,7 @@ KlAstBin* klast_bin_create(KlTokenKind op, KlAst* loperand, KlAst* roperand, KlF
   return astbin;
 }
 
-KlAstWalrus* klast_walrus_create(KlAst* pattern, KlAst* rval, KlFileOffset begin, KlFileOffset end) {
+KlAstWalrus* klast_walrus_create(KlAstExpr* pattern, KlAstExpr* rval, KlFileOffset begin, KlFileOffset end) {
   KlAstWalrus* astwalrus = klast_alloc(KlAstWalrus);
   if (kl_unlikely(!astwalrus)) {
     klast_delete(pattern);
@@ -234,19 +252,19 @@ KlAstWalrus* klast_walrus_create(KlAst* pattern, KlAst* rval, KlFileOffset begin
   return astwalrus;
 }
 
-KlAstAsync* klast_async_create(KlAst* operand, KlFileOffset begin, KlFileOffset end) {
+KlAstAsync* klast_async_create(KlAstExpr* callable, KlFileOffset begin, KlFileOffset end) {
   KlAstAsync* astasync = klast_alloc(KlAstAsync);
   if (kl_unlikely(!astasync)) {
-    klast_delete(operand);
+    klast_delete(callable);
     return NULL;
   }
-  astasync->callable = operand;
+  astasync->callable = callable;
   klast_setposition(astasync, begin, end);
   klast_init(astasync, &klast_async_vfunc);
   return astasync;
 }
 
-KlAstPre* klast_pre_create(KlTokenKind op, KlAst* operand, KlFileOffset begin, KlFileOffset end) {
+KlAstPre* klast_pre_create(KlTokenKind op, KlAstExpr* operand, KlFileOffset begin, KlFileOffset end) {
   KlAstPre* astpre = klast_alloc(KlAstPre);
   if (kl_unlikely(!astpre)) {
     klast_delete(operand);
@@ -259,7 +277,7 @@ KlAstPre* klast_pre_create(KlTokenKind op, KlAst* operand, KlFileOffset begin, K
   return astpre;
 }
 
-KlAstNew* klast_new_create(KlAst* klclass, KlAstExprList* args, KlFileOffset begin, KlFileOffset end) {
+KlAstNew* klast_new_create(KlAstExpr* klclass, KlAstExprList* args, KlFileOffset begin, KlFileOffset end) {
   KlAstNew* astnew = klast_alloc(KlAstNew);
   if (kl_unlikely(!astnew)) {
     klast_delete(klclass);
@@ -285,7 +303,7 @@ KlAstYield* klast_yield_create(KlAstExprList* vals, KlFileOffset begin, KlFileOf
   return astyield;
 }
 
-KlAstIndex* klast_index_create(KlAst* operand, KlAst* index, KlFileOffset begin, KlFileOffset end) {
+KlAstIndex* klast_index_create(KlAstExpr* operand, KlAstExpr* index, KlFileOffset begin, KlFileOffset end) {
   KlAstIndex* astpost = klast_alloc(KlAstIndex);
   if (kl_unlikely(!astpost)) {
     klast_delete(operand);
@@ -299,7 +317,7 @@ KlAstIndex* klast_index_create(KlAst* operand, KlAst* index, KlFileOffset begin,
   return astpost;
 }
 
-KlAstAppend* klast_append_create(KlAst* array, KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end) {
+KlAstAppend* klast_append_create(KlAstExpr* array, KlAstExprList* exprlist, KlFileOffset begin, KlFileOffset end) {
   KlAstAppend* astappend = klast_alloc(KlAstAppend);
   if (kl_unlikely(!astappend)) {
     klast_delete(array);
@@ -313,7 +331,7 @@ KlAstAppend* klast_append_create(KlAst* array, KlAstExprList* exprlist, KlFileOf
   return astappend;
 }
 
-KlAstCall* klast_call_create(KlAst* callable, KlAstExprList* args, KlFileOffset begin, KlFileOffset end) {
+KlAstCall* klast_call_create(KlAstExpr* callable, KlAstExprList* args, KlFileOffset begin, KlFileOffset end) {
   KlAstCall* astcall = klast_alloc(KlAstCall);
   if (kl_unlikely(!astcall)) {
     klast_delete(callable);
@@ -342,7 +360,7 @@ KlAstFunc* klast_func_create(KlAstStmtList* block, KlAstExprList* params, bool v
   return astfunc;
 }
 
-KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end) {
+KlAstDot* klast_dot_create(KlAstExpr* operand, KlStrDesc field, KlFileOffset begin, KlFileOffset end) {
   KlAstDot* astdot = klast_alloc(KlAstDot);
   if (kl_unlikely(!astdot)) {
     klast_delete(operand);
@@ -355,7 +373,7 @@ KlAstDot* klast_dot_create(KlAst* operand, KlStrDesc field, KlFileOffset begin, 
   return astdot;
 }
 
-KlAstMatch* klast_match_create(KlAst* matchobj, KlAst** patterns, KlAst** exprs, size_t npattern, KlFileOffset begin, KlFileOffset end) {
+KlAstMatch* klast_match_create(KlAstExpr* matchobj, KlAstExpr** patterns, KlAstExpr** exprs, size_t npattern, KlFileOffset begin, KlFileOffset end) {
   KlAstMatch* astmatch = klast_alloc(KlAstMatch);
   if (kl_unlikely(!astmatch)) {
     klast_delete(matchobj);
@@ -376,7 +394,7 @@ KlAstMatch* klast_match_create(KlAst* matchobj, KlAst** patterns, KlAst** exprs,
   return astmatch;
 }
 
-KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
+KlAstWhere* klast_where_create(KlAstExpr* expr, KlAstStmtList* block, KlFileOffset begin, KlFileOffset end) {
   KlAstWhere* astwhere = klast_alloc(KlAstWhere);
   if (kl_unlikely(!astwhere)) {
     klast_delete(expr);
@@ -391,10 +409,10 @@ KlAstWhere* klast_where_create(KlAst* expr, KlAstStmtList* block, KlFileOffset b
 }
 
 
-KlAst* klast_exprlist_stealfirst_and_destroy(KlAstExprList* exprlist) {
+KlAstExpr* klast_exprlist_stealfirst_and_destroy(KlAstExprList* exprlist) {
   kl_assert(exprlist->nexpr != 0, "");
-  KlAst* ret = exprlist->exprs[0];
-  KlAst** elems = exprlist->exprs;
+  KlAstExpr* ret = exprlist->exprs[0];
+  KlAstExpr** elems = exprlist->exprs;
   size_t nelem = exprlist->nexpr;
   for (size_t i = 1; i < nelem; ++i) {
     klast_delete(elems[i]);
@@ -410,14 +428,23 @@ static void klast_id_destroy(KlAstIdentifier* astid) {
 }
 
 static void klast_map_destroy(KlAstMap* astmap) {
-  KlAst** keys = astmap->keys;
-  KlAst** vals = astmap->vals;
+  KlAstExpr** keys = astmap->keys;
+  KlAstExpr** vals = astmap->vals;
   size_t npair = astmap->npair;
   for (size_t i = 0; i < npair; ++i) {
     klast_delete(keys[i]);
     klast_delete(vals[i]);
   }
   free(keys);
+  free(vals);
+}
+
+static void klast_tuple_destroy(KlAstTuple* asttuple) {
+  KlAstExpr** vals = asttuple->vals;
+  size_t nval = asttuple->nval;
+  for (size_t i = 0; i < nval; ++i) {
+    klast_delete(vals[i]);
+  }
   free(vals);
 }
 
@@ -434,7 +461,7 @@ static void klast_arraycomprehension_destroy(KlAstArrayComprehension* astarrayco
 }
 
 static void klast_class_destroy(KlAstClass* astclass) {
-  KlAst** vals = astclass->vals;
+  KlAstExpr** vals = astclass->vals;
   size_t nfield = astclass->nfield;
   for (size_t i = 0; i < nfield; ++i) {
     if (vals[i]) klast_delete(vals[i]);
@@ -454,7 +481,7 @@ static void klast_vararg_destroy(KlAstVararg* astvararg) {
 }
 
 static void klast_exprlist_destroy(KlAstExprList* astexprlist) {
-  KlAst** elems = astexprlist->exprs;
+  KlAstExpr** elems = astexprlist->exprs;
   size_t nelem = astexprlist->nexpr;
   for (size_t i = 0; i < nelem; ++i) {
     klast_delete(elems[i]);
@@ -515,8 +542,8 @@ static void klast_func_destroy(KlAstFunc* astfunc) {
 
 static void klast_match_destroy(KlAstMatch* astmatch) {
   klast_delete(astmatch->matchobj);
-  KlAst** exprs = astmatch->exprs;
-  KlAst** patterns = astmatch->patterns;
+  KlAstExpr** exprs = astmatch->exprs;
+  KlAstExpr** patterns = astmatch->patterns;
   size_t npattern = astmatch->npattern;
   for (size_t i = 0; i < npattern; ++i) {
     klast_delete(patterns[i]);

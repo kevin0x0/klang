@@ -12,7 +12,7 @@
 #include "deps/k/include/kio/ki.h"
 #include "deps/k/include/kio/ko.h"
 
-kgarray_impl(char, KlStringBuf, klstrbuf, pass_val,);
+kgarray_impl(char, KlStringBuf, klstrbuf, pass_val, nonstatic);
 
 static KlGCObject* kllib_istream_prop(KlInputStream* istream, KlMM* klmm, KlGCObject* gclist);
 static KlGCObject* kllib_ostream_prop(KlOutputStream* ostream, KlMM* klmm, KlGCObject* gclist);

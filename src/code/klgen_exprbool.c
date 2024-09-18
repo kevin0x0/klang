@@ -12,7 +12,7 @@ static KlCodeVal klgen_exprnot(KlGenUnit* gen, KlAstPre* notast, bool jumpcond);
 static KlCodeVal klgen_expror(KlGenUnit* gen, KlAstBin* orast, bool jumpcond);
 static KlCodeVal klgen_exprand(KlGenUnit* gen, KlAstBin* andast, bool jumpcond);
 static KlCodeVal klgen_exprrelrightnonstk(KlGenUnit* gen, KlAstBin* binast, KlCStkId oristktop, KlCodeVal left, KlCodeVal right, bool jumpcond);
-static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlAst* boolast, KlCStkId target, bool setcond);
+static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlAstExpr* boolast, KlCStkId target, bool setcond);
 
 static inline int klgen_getoffset(KlInstruction jmpinst) {
   if (KLINST_GET_OPCODE(jmpinst) == KLOPCODE_JMP) {
@@ -365,7 +365,7 @@ static KlCodeVal klgen_exprwhere_ascondition(KlGenUnit* gen, KlAstWhere* whereas
 }
 
 
-KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAst* ast, bool jumpcond) {
+KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAstExpr* ast, bool jumpcond) {
   if (klast_kind(ast) == KLAST_EXPR_PRE && klcast(KlAstPre*, ast)->op == KLTK_NOT) {
     return klgen_exprnot(gen, klcast(KlAstPre*, ast), jumpcond);
   } else if (klast_kind(ast) == KLAST_EXPR_BIN) {
@@ -379,14 +379,6 @@ KlCodeVal klgen_exprbool(KlGenUnit* gen, KlAst* ast, bool jumpcond) {
     /* else is other binary expression, fallthrough */
   } else if (klast_kind(ast) == KLAST_EXPR_WHERE && klast_isboolexpr(klcast(KlAstWhere*, ast)->expr)) {
     return klgen_exprwhere_ascondition(gen, klcast(KlAstWhere*, ast), jumpcond);
-  } else if (klast_kind(ast) == KLAST_EXPR_LIST) {
-    KlAstExprList* exprlist = klcast(KlAstExprList*, ast);
-    KlAst* lastelem = exprlist->nexpr == 0 ? NULL : exprlist->exprs[exprlist->nexpr - 1];
-    if (lastelem && klast_isboolexpr(lastelem)) {
-      klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr - 1, 0, klgen_astposition(exprlist));
-      return klgen_exprbool(gen, lastelem, jumpcond);
-    }
-    /* else the exprlist should be evaluated by klgen_expr, fallthrough */
   }
   KlCStkId stktop = klgen_stacktop(gen);
   KlCodeVal res = klgen_expr(gen, ast);
@@ -533,7 +525,7 @@ static KlCodeVal klgen_exprboolset_handleresult(KlGenUnit* gen, KlCodeVal res, b
   return klcodeval_none();
 }
 
-static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlAst* ast, KlCStkId target, bool setcond) {
+static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlAstExpr* ast, KlCStkId target, bool setcond) {
   if (klast_kind(ast) == KLAST_EXPR_PRE && klcast(KlAstPre*, ast)->op == KLTK_NOT) {
     KlCodeVal res = klgen_exprnot(gen, klcast(KlAstPre*, ast), setcond);
     return klgen_exprboolset_handleresult(gen, res, setcond);
@@ -548,14 +540,6 @@ static KlCodeVal klgen_exprboolset(KlGenUnit* gen, KlAst* ast, KlCStkId target, 
       return klgen_exprboolset_handleresult(gen, res, setcond);
     }
     /* else is other binary expression, fallthrough */
-  } else if (klast_kind(ast) == KLAST_EXPR_LIST) {
-    KlAstExprList* exprlist = klcast(KlAstExprList*, ast);
-    KlAst* lastelem = exprlist->nexpr == 0 ? NULL : exprlist->exprs[exprlist->nexpr - 1];
-    if (lastelem && klast_isboolexpr(lastelem)) {
-      klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr - 1, 0, klgen_astposition(exprlist));
-      return klgen_exprboolset(gen, lastelem, target, setcond);
-    }
-    /* else the exprlist should be evaluated by klgen_expr, fallthrough */
   }
   KlCStkId stktop = klgen_stacktop(gen);
   KlCodeVal res = klgen_expr(gen, ast);
@@ -593,7 +577,7 @@ static void klgen_finishexprboolvalraw_afterload(KlGenUnit* gen, KlCStkId target
   }
 }
 
-static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId target) {
+static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAstExpr* ast, KlCStkId target) {
   if (klast_kind(ast) == KLAST_EXPR_PRE && klcast(KlAstPre*, ast)->op == KLTK_NOT) {
     KlCodeVal res = klgen_exprnot(gen, klcast(KlAstPre*, ast), true);
     if (klcodeval_isconstant(res)) return res;
@@ -638,14 +622,6 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId targe
       return klcodeval_none();
     }
     /* else is other binary expression, fallthrough */
-  } else if (klast_kind(ast) == KLAST_EXPR_LIST) {
-    KlAstExprList* exprlist = klcast(KlAstExprList*, ast);
-    KlAst* lastelem = exprlist->nexpr == 0 ? NULL : exprlist->exprs[exprlist->nexpr - 1];
-    if (lastelem && klast_isboolexpr(lastelem)) {
-      klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr - 1, 0, klgen_astposition(exprlist));
-      return klgen_exprboolvalraw(gen, lastelem, target);
-    }
-    /* else the exprlist should be evaluated by klgen_expr, fallthrough */
   }
   KlCStkId stktop = klgen_stacktop(gen);
   KlCodeVal res = klgen_exprtarget(gen, ast, target);
@@ -655,7 +631,7 @@ static KlCodeVal klgen_exprboolvalraw(KlGenUnit* gen, KlAst* ast, KlCStkId targe
   return klcodeval_none();
 }
 
-KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlAst* ast, KlCStkId target) {
+KlCodeVal klgen_exprboolval(KlGenUnit* gen, KlAstExpr* ast, KlCStkId target) {
   KlGenJumpInfo jumpinfo;
   jumpinfo.truelist = klcodeval_none();
   jumpinfo.falselist = klcodeval_none();
