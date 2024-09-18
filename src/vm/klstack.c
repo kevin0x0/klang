@@ -1,8 +1,18 @@
 #include "include/vm/klstack.h"
 #include "include/value/klvalue.h"
+#include "include/lang/kltypes.h"
+
+#include <limits.h>
 
 #define KLSTACK_INITSIZE      (32)
 #define KLSTACK_MAXSIZE       (1024 * 1024)
+
+
+/* callinfo.retoff should be able to represent any possible return position
+ * and callinfo.narg should be able to represent any possible number of arguments
+ * in function call, so the KLSTACK_MAXSIZE should not be too large.
+ * see KlCallInfo. */
+kl_static_assert(KLSTACK_MAXSIZE < KLUINT_MAX && KLSTACK_MAXSIZE < INT_MAX, "stack size limit too large");
 
 
 bool klstack_init(KlStack* stack, KlMM* klmm) {
