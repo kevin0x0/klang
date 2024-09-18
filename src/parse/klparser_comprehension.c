@@ -105,7 +105,7 @@ KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAstStmt* i
                          "expected a single expression as condition, not an expression list");
         }
         KlAstExpr* expr = klast_exprlist_stealfirst_and_destroy(exprlist);
-        KlAstStmtIf* stmtif = klast_stmtif_create(expr, block, NULL, klast_begin(exprlist), klast_end(block));
+        KlAstStmtIf* stmtif = klast_stmtif_create(expr, block, NULL, klast_begin(expr), klast_end(expr));
         if (kl_unlikely(!stmtif)) {
           klparser_destroy_astarray(&stmtarr);
           return NULL;

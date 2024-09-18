@@ -374,6 +374,11 @@ static KlAstExpr* klparser_exprbrace_inner(KlParser* parser, KlLex* lex) {
     }
     KlAstExpr* key = klast_exprlist_stealfirst_and_destroy(exprlist);
     KlAstExpr* val = klparser_expr(parser, lex);
+    if (kl_unlikely(!val)) {
+      klast_delete(key);
+      /* pretend there are no pre-parsed k-v pair to recover from syntax error */
+      key = NULL;
+    }
     return klparser_finishmap(parser, lex, key, val);
   } else {
     /* else is a comprehension */
@@ -406,6 +411,8 @@ static KlAstExpr* klparser_finishmap(KlParser* parser, KlLex* lex, KlAstExpr* fi
   if (kl_unlikely(!karray_init(&keys) || !karray_init(&vals))) {
     karray_destroy(&keys);
     karray_destroy(&vals);
+    if (firstkey) klast_delete(firstkey);
+    if (firstval) klast_delete(firstval);
     return klparser_error_oom(parser, lex);
   }
 
@@ -512,6 +519,7 @@ static KlAstClass* klparser_finishclass(KlParser* parser, KlLex* lex, KlStrDesc 
     cfd.name = id;
     if (kl_unlikely(!klcfd_push_back(&fields, &cfd)))
       klparser_error_oom(parser, lex);
+    /* NULL expr is OK for class, this field will be traited as a field with no initial value. */
     if (kl_unlikely(!karray_push_back(&vals, expr))) {
       if (expr) klast_delete(expr);
       klparser_error_oom(parser, lex);
