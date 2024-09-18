@@ -10,13 +10,10 @@
 #include "include/vm/klexec.h"
 #ifdef KLCONFIG_USE_STATIC_LANGLIB
 #include <string.h>
-extern KlException KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME(KlState*);
-extern KlException KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME(KlState*);
-extern KlException KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME(KlState*);
-extern KlException KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME(KlState*);
-extern KlException KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME(KlState*);
-extern KlException KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME(KlState*);
-extern KlException KLCONFIG_LIBRARY_TRACEBACK_ENTRYFUNCNAME(KlState*);
+#define KLAPI_LIBENTRY_DECL(libid)  \
+  extern KlException KLCONFIG_LIBRARY_##libid##_ENTRYFUNCNAME(KlState*);
+klconfig_library_foreach(KLAPI_LIBENTRY_DECL);
+#undef KLAPI_LIBENTRY_DECL
 #else
 #include "deps/k/include/lib/lib.h"
 #endif
