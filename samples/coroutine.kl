@@ -1,8 +1,6 @@
-let double = async n => {
-  repeat {
-    print n;
-    n = yield n * 2;
-  } until false;
+let double = async n => repeat {
+  print n;
+  n = yield n * 2;
 };
 
 let n = 1;

@@ -6,4 +6,4 @@ repeat {
   print prime;
   let previous_seive = seive;
   seive = { x | x <- previous_seive; x % prime != 0 };
-} until false;
+};

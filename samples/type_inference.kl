@@ -82,6 +82,13 @@ method string.print = (self, out) => out.write(self);
 method string.find = self -> self;
 method string.unify = Node.unify;
 
+local printresult(head, type) => {
+  let out = ostream.stdout;
+  out.write(head);
+  type.print(out);
+  print();  -- just print '\n'
+};
+
 let typevarA = new TypeVar("a");
 let typevarB = new TypeVar("b");
 let typevarC = new TypeVar("c");
@@ -89,12 +96,11 @@ let type1 = new InnerNode("function", [new InnerNode("tuple", [typevarA, typevar
 let type2 = new InnerNode("function", [new InnerNode("tuple", ["int", "float"]), typevarC]);
 
 if type1.unify(type2): {
-  let out = ostream.stdout;
-  out.write("type1: "), type1.print(out), print();
-  out.write("type2: "), type2.print(out), print();
-  out.write("a: "), typevarA.print(out), print();
-  out.write("b: "), typevarB.print(out), print();
-  out.write("c: "), typevarC.print(out), print();
+  printresult("type1: ", type1);
+  printresult("type2: ", type2);
+  printresult("a: ", typevarA);
+  printresult("b: ", typevarB);
+  printresult("c: ", typevarC);
 } else {
   print("type mismatch");
 }
