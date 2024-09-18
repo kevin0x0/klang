@@ -591,7 +591,7 @@ KlException klapi_concati(KlState* state, int result, int left, int right) {
 
 KlException klapi_loadlib(KlState* state, int result, const char* entryfunction) {
 #ifdef KLCONFIG_USE_STATIC_LANGLIB
-#def KLAPI_LIBINFO_INIT(libid)  \
+#define KLAPI_LIBINFO_INIT(libid) \
     { .libname = KLCONFIG_LIBRARY_##libid##_LIBNAME_QUOTE, .entry = KLCONFIG_LIBRARY_##libid##_ENTRYFUNCNAME },
 
   static const struct {
