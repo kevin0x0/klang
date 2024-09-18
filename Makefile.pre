@@ -31,7 +31,7 @@ KLANGC_OBJS = $(OBJ_DIR)klparser.o $(OBJ_DIR)klparser_expr.o $(OBJ_DIR)klparser_
               $(OBJ_DIR)kllex.o $(OBJ_DIR)klcfdarr.o $(OBJ_DIR)klerror.o $(OBJ_DIR)klast.o $(OBJ_DIR)klast_expr.o $(OBJ_DIR)klast_stmt.o \
               $(OBJ_DIR)klstrtbl.o $(OBJ_DIR)klcode.o $(OBJ_DIR)klcode_dump.o $(OBJ_DIR)klcode_print.o $(OBJ_DIR)klcontbl.o \
               $(OBJ_DIR)klgen.o $(OBJ_DIR)klgen_expr.o $(OBJ_DIR)klgen_exprbool.o $(OBJ_DIR)klgen_pattern.o $(OBJ_DIR)klgen_stmt.o \
-							$(OBJ_DIR)klgen_emit.o $(OBJ_DIR)klgen_utils.o $(OBJ_DIR)klsymtbl.o $(OBJ_DIR)klutils.o
+              $(OBJ_DIR)klgen_emit.o $(OBJ_DIR)klgen_utils.o $(OBJ_DIR)klsymtbl.o $(OBJ_DIR)klutils.o
 
 
 KLANGC_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGC_OBJS))
@@ -133,7 +133,7 @@ endif
 
 ifeq ($(PLATFORM), static)
 
-CONFIG += -DKLCONFIG_USE_STATIC_LANGLIB
+CONFIG += -DKLCONFIG_USE_STATIC_LANGLIB --static
 
 
 all: $(LIB_DIR)libklang.a $(LIB_DIR)libklangc.a $(BIN_DIR)klangc $(BIN_DIR)klang
