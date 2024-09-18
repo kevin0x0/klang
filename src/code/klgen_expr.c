@@ -35,7 +35,7 @@ static void klgen_exprtuple(KlGenUnit* gen, KlAstTuple* tuple, KlCStkId target) 
   klgen_exprlist_raw(gen, tuple->vals, tuple->nval, tuple->nval, klgen_astposition(tuple));
   /* the calculation of a 255-tuple will exceed the maximum number of available registers,
    * thus in that case, the control flow would not reach here. */
-  kl_assert(tuple->nexpr < 255, "");
+  kl_assert(tuple->nval < 255, "");
   klgen_emit(gen, klinst_mktuple(target, base, tuple->nval), klgen_astposition(tuple));
   klgen_stackfree(gen, base <= target ? target + 1 : base);
 }
