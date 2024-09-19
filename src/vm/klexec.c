@@ -741,7 +741,7 @@ static KlException klexec_setfieldgeneric(KlState* state, const KlValue* dotable
 }
 
 
-/* macros for klstate_execute() */
+/* macros for klexec_execute() */
 
 #define klop_add(a, b)              ((a) + (b))
 #define klop_sub(a, b)              ((a) - (b))
