@@ -132,7 +132,7 @@ static KlException kllib_string_join(KlState* state) {
 static KlException kllib_string_split(KlState* state) {
   if (klapi_narg(state) != 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two arguments");
-  if (!klapi_checktype(state, -2, KL_STRING) || !klapi_checktype(state, -2, KL_STRING))
+  if (!klapi_checktype(state, -2, KL_STRING) || !klapi_checktype(state, -1, KL_STRING))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two strings, got %s, %s", 
                                 klstring_content(klapi_typename(state, klapi_access(state, -2))),
                                 klstring_content(klapi_typename(state, klapi_access(state, -1))));
