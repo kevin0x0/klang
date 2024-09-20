@@ -44,6 +44,9 @@ static inline bool klcontbl_constant_equal(const KlStrTbl* strtbl, const KlConst
     case KLC_INT: {
       return con1->intval == con2->intval;
     }
+    case KLC_FLOAT: {
+      return con1->floatval == con2->floatval;
+    }
     case KLC_STRING: {
       return con1->string.length == con2->string.length &&
              0 == strncmp(klstrtbl_getstring(strtbl, con1->string.id),
