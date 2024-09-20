@@ -16,7 +16,7 @@ static const KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_prop
 
 static KlMapSlot* klmap_getfreeslot(KlMap* map);
 static bool klmap_rehash(KlMap* map, KlMM* klmm);
-static void klmap_insert_rehash(KlMap* map, const KlValue* key, const KlValue* value);
+static void klmap_insert_rehash(KlMap* map, const KlValue* key, const KlValue* value, size_t hash);
 
 static void klmap_correctlastfree(KlMap* map, size_t newemptyslotindex) {
   if (map->lastfree <= newemptyslotindex)
@@ -61,7 +61,7 @@ static bool klmap_rehash(KlMap* map, KlMM* klmm) {
   map->capacity = new_capacity;
   map->lastfree = new_capacity; /* reset lastfree */
   for (KlMapSlot* slot = oldslots; slot != endslots; ++slot)
-    klmap_insert_rehash(map, &slot->key, &slot->value);
+    klmap_insert_rehash(map, &slot->key, &slot->value, slot->hash);
 
   klmm_free(klmm, oldslots, (endslots - oldslots) * sizeof (KlMapSlot));
   return true;
@@ -79,9 +79,8 @@ static KlMapSlot* klmap_getfreeslot(KlMap* map) {
   return NULL;
 }
 
-static void klmap_insert_rehash(KlMap* map, const KlValue* key, const KlValue* value) {
+static void klmap_insert_rehash(KlMap* map, const KlValue* key, const KlValue* value, size_t hash) {
   size_t mask = map->capacity - 1;
-  size_t hash = klmap_gethash(key);
   size_t index = hash & mask;
   KlMapSlot* slots = map->slots;
   KlMapSlot* slot = &slots[index];
@@ -150,7 +149,7 @@ bool klmap_insert(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* val
   if (!newslot) { /* no slot */
     if (kl_unlikely(!klmap_rehash(map, klmm)))
       return false;
-    klmap_insert_rehash(map, key, value);
+    klmap_insert_rehash(map, key, value, hash);
     return true;
   }
   if (klmap_masterslot(slot)) {
@@ -212,7 +211,7 @@ bool klmap_insertstring(KlMap* map, KlMM* klmm, const KlString* key, const KlVal
   if (!newslot) { /* no slot */
     if (kl_unlikely(!klmap_rehash(map, klmm)))
       return false;
-    klmap_insert_rehash(map, &klvalue_obj(key, KL_STRING), value);
+    klmap_insert_rehash(map, &klvalue_obj(key, KL_STRING), value, klstring_hash(key));
     return true;
   }
   if (klmap_masterslot(slot)) {
@@ -260,7 +259,7 @@ bool klmap_insert_hash(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue
   if (!newslot) { /* no slot */
     if (kl_unlikely(!klmap_rehash(map, klmm)))
       return false;
-    klmap_insert_rehash(map, key, value);
+    klmap_insert_rehash(map, key, value, hash);
     return true;
   }
   if (klmap_masterslot(slot)) {
