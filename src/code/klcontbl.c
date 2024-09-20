@@ -1,5 +1,7 @@
 #include "include/code/klcontbl.h"
 #include "deps/k/include/array/karray.h"
+
+#include <limits.h>
 #include <stdlib.h>
 
 static inline size_t klcontbl_hashing(const KlStrTbl* strtbl, const KlConstant* con) {
@@ -24,7 +26,7 @@ static inline size_t klcontbl_hashing(const KlStrTbl* strtbl, const KlConstant* 
       } num = { .floatval = con->floatval };
       /* +0.0 and -0.0 is equal but have difference binary representations */
       if (num.floatval == 0.0) return 0;
-      return num.hash;
+      return num.hash ^ (num.hash >> (sizeof (KlCFloat) * CHAR_BIT / 2));
     }
     case KLC_BOOL: {
       return con->boolval;
