@@ -1656,12 +1656,12 @@ KlException klexec_execute(KlState* state) {
           KlMapSlot* slot = klmap_searchint(map, index);
           if (kl_likely(slot)) {
             kl_unlikely(klvalue_checktype(val, KL_NIL)) ? klmap_erase(map, slot)
-              : klmap_slot_setvalue(slot, val);
+                                                        : klmap_slot_setvalue(slot, val);
           } else if (!klvalue_checktype(val, KL_NIL)) {
             KlValue key;
             klvalue_setint(&key, index);
             klexec_savestate(callinfo->top, pc);
-            if (kl_unlikely(!klmap_insert(map, klstate_getmm(state), &key, val)))
+            if (kl_unlikely(!klmap_insert_new(map, klstate_getmm(state), &key, val)))
               return klstate_throw_oom(state, "inserting a k-v pair to a map");
           }
         } else {
@@ -1742,7 +1742,7 @@ KlException klexec_execute(KlState* state) {
                                                : klvalue_setvalue(&itr->value, val);
               } else if (!klvalue_checktype(val, KL_NIL)) {
                 klexec_savestate(callinfo->top, pc);
-                if (kl_unlikely(!klmap_insert(map, klstate_getmm(state), key, val)))
+                if (kl_unlikely(!klmap_insert_new(map, klstate_getmm(state), key, val)))
                   return klstate_throw_oom(state, "inserting a k-v pair to a map");
               }
               klexec_break;
