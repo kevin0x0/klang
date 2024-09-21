@@ -13,7 +13,9 @@
   macro(BASIC)                          \
   macro(PRINT)                          \
   macro(STREAM)                         \
-  macro(STRING)
+  macro(STRING)                         \
+  macro(CAST)                           \
+  macro(OS)
 
 
 
@@ -24,6 +26,8 @@
 #define KLCONFIG_LIBRARY_PRINT_LIBNAME_QUOTE          ("print.so")
 #define KLCONFIG_LIBRARY_STREAM_LIBNAME_QUOTE         ("stream.so")
 #define KLCONFIG_LIBRARY_STRING_LIBNAME_QUOTE         ("string.so")
+#define KLCONFIG_LIBRARY_CAST_LIBNAME_QUOTE           ("cast.so")
+#define KLCONFIG_LIBRARY_OS_LIBNAME_QUOTE             ("os.so")
 
 #define KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME          kllib_rtcpl_init
 #define KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME  kllib_rtcpl_wrapper_init
@@ -32,6 +36,8 @@
 #define KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME          kllib_print_init
 #define KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME         kllib_stream_init
 #define KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME         kllib_string_init
+#define KLCONFIG_LIBRARY_CAST_ENTRYFUNCNAME           kllib_cast_init
+#define KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME             kllib_os_init
 
 #define KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME_QUOTE          ("kllib_rtcpl_init")
 #define KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME_QUOTE  ("kllib_rtcpl_wrapper_init")
@@ -40,6 +46,8 @@
 #define KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME_QUOTE          ("kllib_print_init")
 #define KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME_QUOTE         ("kllib_stream_init")
 #define KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME_QUOTE         ("kllib_string_init")
+#define KLCONFIG_LIBRARY_CAST_ENTRYFUNCNAME_QUOTE           ("kllib_cast_init")
+#define KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME_QUOTE             ("kllib_os_init")
 
 #endif
 

@@ -267,6 +267,12 @@ static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicT
   /* load string */
   KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/string.so", KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME_QUOTE));
 
+  /* load cast */
+  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/cast.so", KLCONFIG_LIBRARY_CAST_ENTRYFUNCNAME_QUOTE));
+
+  /* load os */
+  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/os.so", KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME_QUOTE));
+
   klapi_pop(state, 1);  /* pop corelibpath */
 
   kl_assert(klstack_size(klstate_stack(state)) == 0, "");
