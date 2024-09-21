@@ -765,7 +765,7 @@ void klgen_stmtlist(KlGenUnit* gen, KlAstStmtList* ast) {
       }
       case KLAST_STMT_EXPR: {
         KlAstExprList* exprlist = klcast(KlAstStmtExpr*, stmt)->exprlist;
-        klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr, exprlist->nexpr, klgen_astposition(exprlist));
+        klgen_exprlist_raw(gen, exprlist->exprs, exprlist->nexpr, 0, klgen_astposition(exprlist));
         break;
       }
       case KLAST_STMT_BLOCK: {
