@@ -142,6 +142,8 @@ static KlException kllib_string_split(KlState* state) {
   const char* delim_raw = klstring_content(delim);
   size_t selflen = klstring_length(self);
   size_t delimlen = klstring_length(delim);
+  if (kl_unlikely(delimlen == 0))
+    return klapi_throw_internal(state, KL_E_INVLD, "delimiter is empty string");
   const char* begin = self_raw;
   const char* end;
   size_t nret = 0;
