@@ -6,6 +6,7 @@
 #include "include/value/klkfunc.h"
 #include "include/value/klstate.h"
 #include "include/value/kltuple.h"
+#include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
 #ifdef KLCONFIG_USE_STATIC_LANGLIB
@@ -186,6 +187,11 @@ void klapi_setcfunc(KlState* state, int index, KlCFunction* cfunc) {
 void klapi_setint(KlState* state, int index, KlInt intval) {
   KlValue* val = klapi_access(state, index);
   klvalue_setint(val, intval);
+}
+
+void klapi_setfloat(KlState* state, int index, KlFloat floatval) {
+  KlValue* val = klapi_access(state, index);
+  klvalue_setfloat(val, floatval);
 }
 
 void klapi_setnil(KlState* state, int index) {

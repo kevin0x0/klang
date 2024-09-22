@@ -121,6 +121,7 @@ KlException klapi_pusharray(KlState* state, size_t capacity);
 /* set method */
 void klapi_setcfunc(KlState* state, int index, KlCFunction* cfunc);
 void klapi_setint(KlState* state, int index, KlInt val);
+void klapi_setfloat(KlState* state, int index, KlFloat floatval);
 void klapi_setnil(KlState* state, int index);
 void klapi_setbool(KlState* state, int index, KlBool val);
 void klapi_setuserdata(KlState* state, int index, void* ud);
