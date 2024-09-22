@@ -9,9 +9,9 @@
 #include <time.h>
 
 
-KlException kllib_os_clock(KlState* state);
-KlException kllib_os_getenv(KlState* state);
-KlException kllib_os_createclass(KlState* state);
+static KlException kllib_os_clock(KlState* state);
+static KlException kllib_os_getenv(KlState* state);
+static KlException kllib_os_createclass(KlState* state);
 
 
 KlException KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME(KlState* state) {
@@ -22,13 +22,13 @@ KlException KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME(KlState* state) {
   return klapi_return(state, 0);
 }
 
-KlException kllib_os_clock(KlState* state) {
+static KlException kllib_os_clock(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 1));
   klapi_pushfloat(state, klcast(KlFloat, clock()) / klcast(KlFloat, CLOCKS_PER_SEC));
   return klapi_return(state, 1);
 }
 
-KlException kllib_os_getenv(KlState* state) {
+static KlException kllib_os_getenv(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   if (kl_unlikely(!klapi_checktype(state, -1, KL_STRING)))
@@ -46,7 +46,7 @@ KlException kllib_os_getenv(KlState* state) {
   return klapi_return(state, 1);
 }
 
-KlException kllib_os_createclass(KlState* state) {
+static KlException kllib_os_createclass(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 3));
   KlClass* osclass = klclass_create(klstate_getmm(state), 1, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
   if (kl_unlikely(!osclass))
