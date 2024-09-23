@@ -2407,7 +2407,11 @@ KlException klexec_execute(KlState* state) {
       }
       klexec_case (KLOPCODE_IFORLOOP) {
         KlValue* a = stkbase + KLINST_AI_GETA(inst);
-        kl_assert(klvalue_checktype(a, KL_INT) && klvalue_checktype(a, KL_INT) && klvalue_checktype(a, KL_INT), "");
+        kl_assert(klvalue_checktype(a + 1, KL_INT) && klvalue_checktype(a + 2, KL_INT), "");
+        if (kl_unlikely(!klvalue_checktype(a, KL_INT))) {
+          klexec_savestate(callinfo->top, pc);
+          return klstate_throw(state, KL_E_INVLD, "integer loop is broken");
+        }
         KlInt i = klvalue_getint(a);
         KlInt end = klvalue_getint(a + 1);
         KlInt step = klvalue_getint(a + 2);
