@@ -160,6 +160,7 @@ static KlString* klstrpool_insert(KlStrPool* strpool, KlString* str) {
   if (kl_unlikely(klstring_islong(str))) {
     str->next = strpool->lstrings;
     strpool->lstrings = str;
+    klmm_gcobj_enable_delegate(klstrpool_getmm(strpool), klmm_to_gcobjdelegate(str));
     return str;
   }
 
