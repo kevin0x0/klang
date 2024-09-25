@@ -1,5 +1,6 @@
 #include "include/value/klstring.h"
 #include "include/lang/kltypes.h"
+#include "include/misc/klutils.h"
 #include "include/mm/klmm.h"
 #include <string.h>
 
@@ -38,6 +39,11 @@ static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len
   return klstr;
 }
 
+static inline size_t klstring_calculate_hash_continue(size_t hash, const char* str) {
+  while (*str)
+    hash = (*str++) + (hash << 6) + (hash << 16) - hash;
+  return hash;
+}
 
 static inline size_t klstring_calculate_hash(const char* str) {
   size_t hash = 0;
@@ -192,10 +198,12 @@ KlString* klstrpool_string_concat_cstyle(KlStrPool* strpool, const char* str1, c
   if (kl_unlikely(!klstr)) return NULL;
   const char* conc = klstring_content(klstr);
   size_t hash = klstring_calculate_hash(conc);
-  KlString* res = klstrpool_search(strpool, conc, hash);
-  if (res) {
-    klmm_free(klmm, klstr, klstring_size(klstr));
-    return res;
+  if (kl_likely(!klstring_islong(klstr))) {
+    KlString* res = klstrpool_search(strpool, conc, hash);
+    if (res) {
+      klmm_free(klmm, klstr, klstring_size(klstr));
+      return res;
+    }
   }
   klstr->hash = hash;
   return klstrpool_insert(strpool, klstr);
@@ -206,11 +214,13 @@ KlString* klstrpool_string_concat(KlStrPool* strpool, const KlString* str1, cons
   KlString* klstr = klstring_create_concat(klmm, klstring_content(str1), str1->length, klstring_content(str2), str2->length);
   if (kl_unlikely(!klstr)) return NULL;
   const char* conc = klstring_content(klstr);
-  size_t hash = klstring_calculate_hash(conc);
-  KlString* res = klstrpool_search(strpool, conc, hash);
-  if (res) {
-    klmm_free(klmm, klstr, klstring_size(klstr));
-    return res;
+  size_t hash = klstring_calculate_hash_continue(klstring_hash(str1), klstring_content(str2));
+  if (kl_likely(!klstring_islong(klstr))) {
+    KlString* res = klstrpool_search(strpool, conc, hash);
+    if (res) {
+      klmm_free(klmm, klstr, klstring_size(klstr));
+      return res;
+    }
   }
   klstr->hash = hash;
   return klstrpool_insert(strpool, klstr);
