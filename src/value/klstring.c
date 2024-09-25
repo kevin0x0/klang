@@ -39,10 +39,18 @@ static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len
   return klstr;
 }
 
-static inline size_t klstring_calculate_hash_continue(size_t hash, const char* str) {
-  while (*str)
-    hash = (*str++) + (hash << 6) + (hash << 16) - hash;
-  return hash;
+static inline size_t klstring_util_fastpower(size_t base, size_t exp) {
+  size_t res = 1;
+  while (exp != 0) {
+    if (exp & 0x1) res *= base;
+    base *= base;
+    exp >>= 1;
+  }
+  return res;
+}
+
+static inline size_t klstring_calculate_hash_combine(const KlString* str1, const KlString* str2) {
+  return klstring_hash(str1) * (klstring_util_fastpower(65599, klstring_length(str2))) + klstring_hash(str2);
 }
 
 static inline size_t klstring_calculate_hash(const char* str) {
@@ -214,7 +222,7 @@ KlString* klstrpool_string_concat(KlStrPool* strpool, const KlString* str1, cons
   KlString* klstr = klstring_create_concat(klmm, klstring_content(str1), str1->length, klstring_content(str2), str2->length);
   if (kl_unlikely(!klstr)) return NULL;
   const char* conc = klstring_content(klstr);
-  size_t hash = klstring_calculate_hash_continue(klstring_hash(str1), klstring_content(str2));
+  size_t hash = klstring_calculate_hash_combine(str1, str2);
   if (kl_likely(!klstring_islong(klstr))) {
     KlString* res = klstrpool_search(strpool, conc, hash);
     if (res) {
