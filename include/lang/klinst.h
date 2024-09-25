@@ -203,11 +203,12 @@ typedef uint8_t KlOpcode;
 #define KLOPCODE_VFORLOOP           (98)
 #define KLOPCODE_IFORPREP           (99)
 #define KLOPCODE_IFORLOOP           (100)
-#define KLOPCODE_GFORLOOP           (101)
-#define KLOPCODE_ASYNC              (102)
-#define KLOPCODE_YIELD              (103)
-#define KLOPCODE_VARARG             (104)
-#define KLOPCODE_NINST              (105)
+#define KLOPCODE_GFORPREP           (101)
+#define KLOPCODE_GFORLOOP           (102)
+#define KLOPCODE_ASYNC              (103)
+#define KLOPCODE_YIELD              (104)
+#define KLOPCODE_VARARG             (105)
+#define KLOPCODE_NINST              (106)
 
 
 /* extra information for some instructions */
@@ -322,10 +323,12 @@ typedef uint8_t KlOpcode;
 #define klinst_vforloop(a, offset)                        klinst_AI(KLOPCODE_VFORLOOP, (a), (offset))
 #define klinst_iforprep(a, offset)                        klinst_AI(KLOPCODE_IFORPREP, (a), (offset))
 #define klinst_iforloop(a, offset)                        klinst_AI(KLOPCODE_IFORLOOP, (a), (offset))
+#define klinst_gforprep(a, niter)                         klinst_AX(KLOPCODE_GFORPREP, (a), (niter))
 #define klinst_gforloop(a, nret)                          klinst_AX(KLOPCODE_GFORLOOP, (a), (nret))
 #define klinst_async(a, f)                                klinst_ABC(KLOPCODE_ASYNC, (a), (f), (0))
 #define klinst_yield(first, nres, nwanted)                klinst_AXY(KLOPCODE_YIELD, (first), (nres), (nwanted))
 #define klinst_vararg(a, nwanted)                         klinst_AXY(KLOPCODE_VARARG, (a), (nwanted), (0))
+#define klinst_gforprepextra(offset)                      klinst_extra_xi((0), (offset))
 #define klinst_gforloopextra(offset)                      klinst_extra_i((offset))
 #define klinst_extra_xyz(x, y, z)                         klinst_XYZ(KLOPCODE_EXTRA, (x), (y), (z))
 #define klinst_extra_xi(x, imm)                           klinst_XI(KLOPCODE_EXTRA, (x), (imm))
@@ -434,6 +437,7 @@ macro(KLOPCODE_VFORPREP)                                  \
 macro(KLOPCODE_VFORLOOP)                                  \
 macro(KLOPCODE_IFORPREP)                                  \
 macro(KLOPCODE_IFORLOOP)                                  \
+macro(KLOPCODE_GFORPREP)                                  \
 macro(KLOPCODE_GFORLOOP)                                  \
 macro(KLOPCODE_ASYNC)                                     \
 macro(KLOPCODE_YIELD)                                     \

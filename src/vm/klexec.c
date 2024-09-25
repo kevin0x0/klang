@@ -15,6 +15,7 @@
 #include "include/lang/klconvert.h"
 #include "include/lang/klconfig.h"
 #include "include/misc/klutils.h"
+#include <stdio.h>
 
 
 /* extra stack frame size for calling operator method */
@@ -580,6 +581,20 @@ static KlException klexec_doindexasmethod(KlState* state, const KlValue* indexab
   klstack_pushvalue(klstate_stack(state), key);
   klstack_pushvalue(klstate_stack(state), val);
   return klexec_callprepare(state, &method, 3, NULL);
+}
+
+static KlException klexec_doitermethod(KlState* state, const KlValue* iterable, size_t nret) {
+  KlValue method;
+  KlString* iter = state->common->string.iter;
+  bool ismethod = klexec_getmethod(state, iterable, iter, &method);
+  if (kl_unlikely(!ismethod || !klvalue_callable(&method))) {
+    return klstate_throw(state, KL_E_INVLD, "can not iterate value with type '%s'",
+                         klstring_content(iter), klexec_typename_cstr(state, iterable));
+  }
+  KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
+  if (kl_unlikely(!newci))
+    return klstate_throw_oom(state, "calling iteration operator method");
+  return klexec_callprepare(state, &method, 1, NULL);
 }
 
 static KlException klexec_dolt(KlState* state, KlValue* a, const KlValue* b, const KlValue* c) {
@@ -2441,29 +2456,139 @@ KlException klexec_execute(KlState* state) {
         }
         klexec_break;
       }
+      klexec_case (KLOPCODE_GFORPREP) {
+        KlValue* iterable = stkbase + KLINST_AX_GETA(inst);
+        size_t niter = KLINST_AX_GETX(inst);
+        kl_assert(niter != 0, "");
+        if (klvalue_checktype(iterable, KL_ARRAY)) {  /* is an array */
+          KlArray* array = klvalue_getobj(iterable, KlArray*);
+          if (kl_likely(klarray_size(array) != 0)) {
+            klvalue_setobj(iterable + 1, array, KL_ARRAY);  /* static state */
+            klvalue_setint(iterable + 2, 0);  /* index state */
+            if (niter == 1) {
+              klvalue_setvalue(iterable + 3, klarray_access(array, 0));
+            } else {
+              klvalue_setint(iterable + 3, 0);
+              klvalue_setvalue(iterable + 4, klarray_access(array, 0));
+              if (kl_unlikely(niter > 2))
+                klexec_setnils(iterable + 5, niter - 2);
+            }
+            ++pc; /* skip next jump instruction */
+          } else {
+            KlInstruction jmp = *pc++;
+            kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_FALSEJMP, "");
+            pc += KLINST_AI_GETI(jmp);  /* break this for loop */
+          }
+        } else if (klvalue_checktype(iterable, KL_MAP)) {  /* is a map */
+          KlMap* map = klvalue_getobj(iterable, KlMap*);
+          size_t index = klmap_iter_begin(map);
+          if (kl_likely(index != klmap_iter_end(map))) {
+            /* set values */
+            klvalue_setobj(iterable + 1, map, KL_MAP);  /* static state */
+            klvalue_setint(iterable + 2, klcast(KlInt, index)); /* index state */
+            klvalue_setvalue(iterable + 3, klmap_iter_getkey(map, index));
+            if (kl_likely(niter == 2)) {
+              klvalue_setvalue(iterable + 4, klmap_iter_getvalue(map, index));
+            } else if (kl_unlikely(niter > 2)) {
+              klvalue_setvalue(iterable + 4, klmap_iter_getvalue(map, index));
+              klexec_setnils(iterable + 5, niter - 2);
+            }
+            ++pc; /* skip next jump instruction */
+          } else {
+            KlInstruction jmp = *pc++;
+            kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_FALSEJMP, "");
+            pc += KLINST_AI_GETI(jmp);  /* break this for loop */
+          }
+        } else {  /* else prepare generic for loop call */
+          klexec_savestate(iterable + 1, pc);
+          KlException exception = klexec_doitermethod(state, iterable, niter + 3);
+          if (callinfo != state->callinfo) { /* is a klang call ? */
+            KlValue* newbase = state->callinfo->base;
+            klexec_updateglobal(newbase);
+          } else {
+            if (kl_unlikely(exception)) return exception;
+            /* C function or C closure */
+            /* stack may have grown. restore stkbase. */
+            stkbase = callinfo->base;
+            KlInstruction jmp = *pc++;
+            kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_FALSEJMP, "");
+            /* test the index state variable */
+            KlValue* testval = stkbase + KLINST_AX_GETA(inst) + 2;
+            if (kl_likely(klexec_satisfy(testval, KL_FALSE)))
+              pc += KLINST_AI_GETI(jmp);
+          }
+        }
+        klexec_break;
+      }
       klexec_case (KLOPCODE_GFORLOOP) {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         size_t nret = KLINST_AX_GETX(inst);
         KlValue* argbase = a + 1;
-        klexec_savestate(argbase + nret, pc);
-        KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
-        if (kl_unlikely(!newci))
-          return klstate_throw_oom(state, "doing generic for loop");
-        KlException exception = klexec_callprepare(state, a, nret, NULL);
-        if (newci == state->callinfo) { /* is a klang call ? */
-          KlValue* newbase = newci->base;
-          klexec_updateglobal(newbase);
-        } else {
-          if (kl_unlikely(exception)) return exception;
-          /* C function or C closure */
-          /* stack may have grown. restore stkbase. */
-          stkbase = callinfo->base;
+        kl_assert(nret >= 3, "");
+        if (klvalue_checktype(argbase, KL_ARRAY)) { /* is an array */
+          if (kl_unlikely(!klvalue_checktype(argbase + 1, KL_INT)))
+            return klstate_throw(state, KL_E_INVLD, "for loop is broken, "
+                                                    "expected loop state: (array, integer, element) or (array, integer, integer, element). "
+                                                    "current loop state: %s, %s, %s",
+                                                    klexec_typename(state, argbase),
+                                                    klexec_typename(state, argbase + 1),
+                                                    klexec_typename(state, argbase + 2));
+          KlArray* array = klvalue_getobj(argbase, KlArray*);
+          size_t curridx = klcast(size_t, klvalue_getint(argbase + 1)) + 1;
           KlInstruction jmp = *pc++;
-          kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_TRUEJMP && KLINST_AI_GETA(jmp) == KLINST_AX_GETA(inst) + 3, "");
-          /* test the first porgrammer-visible iteration variable */
-          KlValue* testval = stkbase + KLINST_AX_GETA(inst) + 3;
-          if (kl_likely(klexec_satisfy(testval, KL_TRUE)))
-            pc += KLINST_AI_GETI(jmp);
+          if (kl_likely(curridx < klarray_size(array))) {
+            /* set values */
+            klvalue_setint(argbase + 1, klcast(KlInt, curridx));
+            if (kl_likely(nret == 3)) {
+              klvalue_setvalue(argbase + 2, klarray_access(array, curridx));
+            } else {
+              klvalue_setint(argbase + 2, curridx);
+              klvalue_setvalue(argbase + 3, klarray_access(array, curridx));
+              if (kl_unlikely(nret > 4))
+                klexec_setnils(argbase + 4, nret - 4);
+            }
+            pc += KLINST_AI_GETI(jmp);  /* continue */
+          } /* else does nothing */
+        } else if (klvalue_checktype(argbase, KL_MAP)) {  /* is a map */
+          KlMap* map = klvalue_getobj(argbase, KlMap*);
+          size_t index = klcast(size_t, klvalue_getint(argbase + 1));
+          if (kl_unlikely(!klmap_iter_valid(map, index)))
+            return klstate_throw(state, KL_E_INVLD, "for loop (map) is broken, %zu is not map iteration index", index);
+          index = klmap_iter_next(map, index);
+          KlInstruction jmp = *pc++;
+          if (kl_likely(index != klmap_iter_end(map))) {
+            /* set values */
+            klvalue_setint(argbase + 1, klcast(KlInt, index));
+            klvalue_setvalue(argbase + 2, klmap_iter_getkey(map, index));
+            if (kl_likely(nret == 4)) {
+              klvalue_setvalue(argbase + 3, klmap_iter_getvalue(map, index));
+            } else if (kl_unlikely(nret > 4)) {
+              klvalue_setvalue(argbase + 3, klmap_iter_getvalue(map, index));
+              klexec_setnils(argbase + 4, nret - 4);
+            }
+            pc += KLINST_AI_GETI(jmp);  /* continue */
+          } /* else does nothing */
+        } else {  /* else do generic for loop call */
+          klexec_savestate(argbase + nret, pc);
+          KlCallInfo* newci = klexec_new_callinfo(state, nret, 0);
+          if (kl_unlikely(!newci))
+            return klstate_throw_oom(state, "doing generic for loop");
+          KlException exception = klexec_callprepare(state, a, nret, NULL);
+          if (newci == state->callinfo) { /* is a klang call ? */
+            KlValue* newbase = newci->base;
+            klexec_updateglobal(newbase);
+          } else {
+            if (kl_unlikely(exception)) return exception;
+            /* C function or C closure */
+            /* stack may have grown. restore stkbase. */
+            stkbase = callinfo->base;
+            KlInstruction jmp = *pc++;
+            kl_assert(KLINST_GET_OPCODE(jmp) == KLOPCODE_TRUEJMP && KLINST_AI_GETA(jmp) == KLINST_AX_GETA(inst) + 2, "");
+            /* test the index state variable */
+            KlValue* testval = stkbase + KLINST_AX_GETA(inst) + 2;
+            if (kl_likely(klexec_satisfy(testval, KL_TRUE)))
+              pc += KLINST_AI_GETI(jmp);
+          }
         }
         klexec_break;
       }

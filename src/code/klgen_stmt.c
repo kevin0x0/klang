@@ -685,8 +685,6 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   KlCStkId iterable = forbase;
   klgen_exprtarget_noconst(gen, gforast->expr, iterable);
   klgen_stackfree(gen, forbase);
-  KlCIdx conidx = klgen_newstring(gen, gen->strings->itermethod);
-  klgen_emitmethod(gen, iterable, conidx, 0, gforast->lvals->nexpr + 3, forbase, klgen_astposition(gforast));
 
   /* now enable statement 'break' and 'continue' */
   KlCodeVal bjmplist = klcodeval_none();
@@ -701,8 +699,10 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   gen->jmpinfo.continue_scope = gen->symtbl;
   /* statement 'break' and 'continue' are enabled */
 
+  klgen_emit(gen, klinst_gforprep(iterable, gforast->lvals->nexpr + 2), klgen_astposition(gforast));
   klgen_mergejmplist_maynone(gen, gen->jmpinfo.breaklist,
-                             klcodeval_jmplist(klgen_emit(gen, klinst_falsejmp(forbase + 3, 0), klgen_astposition(gforast))));
+                             klcodeval_jmplist(klgen_emit(gen, klinst_falsejmp(iterable + 2, 0), klgen_astposition(gforast))));
+
   KlCPC looppos = klgen_getjmptarget(gen);
   klgen_pushsymtbl(gen);    /* begin a new scope */
   klgen_stackalloc(gen, 3); /* forbase: iteration function, forbase + 1: static state, forbase + 2: index state */
@@ -728,7 +728,7 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   klgen_popsymtbl(gen);   /* close the scope */
   klgen_jumpto(gen, cjmplist, klgen_getjmptarget(gen));
   klgen_emit(gen, klinst_gforloop(forbase, npattern + 2), klgen_astposition(gforast));
-  klgen_emit(gen, klinst_truejmp(forbase + 3, looppos - klgen_currentpc(gen) - 1), klgen_astposition(gforast));
+  klgen_emit(gen, klinst_truejmp(forbase + 2, looppos - klgen_currentpc(gen) - 1), klgen_astposition(gforast));
   klgen_jumpto(gen, bjmplist, klgen_getjmptarget(gen));
   klgen_stackfree(gen, forbase);
 

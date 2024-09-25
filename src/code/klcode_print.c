@@ -109,6 +109,7 @@ static const char* klcode_get_instname(KlInstruction inst) {
     [KLOPCODE_VFORLOOP] = "VFORLOOP",
     [KLOPCODE_IFORPREP] = "IFORPREP",
     [KLOPCODE_IFORLOOP] = "IFORLOOP",
+    [KLOPCODE_GFORPREP] = "GFORPREP",
     [KLOPCODE_GFORLOOP] = "GFORLOOP",
     [KLOPCODE_ASYNC] = "ASYNC",
     [KLOPCODE_YIELD] = "YIELD",
@@ -873,6 +874,16 @@ static KlInstruction* klcode_print_instruction(const KlCode* code, Ko* out, KlIn
     case KLOPCODE_IFORLOOP: {
       klcode_print_AI(out, inst);
       ko_printf(out, "jump to %u if continue", pc + KLINST_AI_GETI(inst) - code->code);
+      return pc;
+    }
+    case KLOPCODE_GFORPREP: {
+      klcode_print_AX(out, inst);
+      ko_printf(out, "iterable object at R%u, %u iteration variables\n", KLINST_AX_GETA(inst), KLINST_AX_GETX(inst));
+      KlInstruction extra = *pc++;
+
+      klcode_print_prefix(code, out, pc - 1, "FALSEJMP");
+      klcode_print_AI(out, extra);
+      ko_printf(out, "jump to %u if iteration finished", pc + KLINST_AI_GETI(extra) - code->code);
       return pc;
     }
     case KLOPCODE_GFORLOOP: {
