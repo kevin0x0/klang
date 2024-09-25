@@ -56,13 +56,12 @@ static inline bool klmap_testoption(KlMap* map, unsigned bit);
 static inline size_t klmap_getinthash(KlInt key);
 static inline size_t klmap_gethash(const KlValue* key);
 
-bool klmap_insert(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value);
 bool klmap_insert_new(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value);
 bool klmap_insert_hash(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value, size_t hash);
-bool klmap_insertstring(KlMap* map, KlMM* klmm, const KlString* str, const KlValue* value);
 static inline KlMapSlot* klmap_search(const KlMap* map, const KlValue* key);
 static inline KlMapSlot* klmap_searchint(const KlMap* map, KlInt key);
 static inline KlMapSlot* klmap_searchstring(const KlMap* map, const KlString* str);
+KlMapSlot* klmap_searchlstring(const KlMap* map, const KlString* str);
 void klmap_erase(KlMap* map, KlMapSlot* slot);
 void klmap_makeempty(KlMap* map);
 
@@ -83,6 +82,7 @@ static inline size_t klmap_getinthash(KlInt key) {
 
 static inline size_t klmap_gethash(const KlValue* key) {
   switch (klvalue_gettype(key)) {
+    case KL_LSTRING:
     case KL_STRING: {
       return klstring_hash(klvalue_getobj(key, KlString*));
     }
@@ -131,13 +131,13 @@ static inline KlMapSlot* klmap_searchstring(const KlMap* map, const KlString* st
   size_t hash = klstring_hash(str);
   KlMapSlot* slot = &map->slots[hash & (map->capacity - 1)];
   if (!klmap_masterslot(slot)) return NULL;
-  do {
-    if (klvalue_checktype(&slot->key, KL_STRING) &&
-        klvalue_getobj(&slot->key, KlString*) == str)
-      return slot;
-    slot = slot->next;
-  } while (slot);
-  return NULL;
+    do {
+      if (klvalue_checktype(&slot->key, KL_STRING) &&
+          klvalue_getobj(&slot->key, KlString*) == str)
+        return slot;
+      slot = slot->next;
+    } while (slot);
+  return klmap_searchlstring(map, str);
 }
 
 static inline KlMapSlot* klmap_searchint(const KlMap* map, KlInt key) {

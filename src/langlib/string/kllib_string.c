@@ -68,7 +68,7 @@ KlException KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME(KlState* state) {
 static KlException kllib_string_slice(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 2 && klapi_narg(state) != 3))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two or three arguments");
-  if (kl_unlikely(!klapi_checktypeb(state, 0, KL_STRING)))
+  if (kl_unlikely(!klapi_checkstringb(state, 0)))
     return klapi_throw_internal(state, KL_E_TYPE, "expected string, got %s", klstring_content(klapi_typename(state, klapi_accessb(state, 0))));
   KlString* str = klapi_getstringb(state, 0);
   size_t strlength = klstring_length(str);
@@ -86,7 +86,7 @@ static KlException kllib_string_slice(KlState* state) {
   KlString* res = klstrpool_new_string_buf(klstate_strpool(state), klstring_content(str) + begin, end - begin);
   if (kl_unlikely(!res))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating string");
-  klapi_setobj(state, -1, res, KL_STRING);
+  klapi_setobj(state, -1, res, klvalue_getstringtype(res));
   return klapi_return(state, 1);
 }
 
@@ -102,7 +102,7 @@ static KlException kllib_string_find(KlState* state) {
     beginidx = klapi_getint(state, -1);
     klapi_pop(state, 1);
   }
-  if (kl_unlikely(!klapi_checktype(state, -2, KL_STRING) || !klapi_checktype(state, -1, KL_STRING)))
+  if (kl_unlikely(!klapi_checkstring(state, -2) || !klapi_checkstring(state, -1)))
     return klapi_throw_internal(state, KL_E_TYPE,
                                 "expected two strings, got %s, %s",
                                 klstring_content(klapi_typename(state, klapi_access(state, -2))),
@@ -132,7 +132,7 @@ static KlException kllib_string_join(KlState* state) {
 static KlException kllib_string_split(KlState* state) {
   if (klapi_narg(state) != 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two arguments");
-  if (!klapi_checktype(state, -2, KL_STRING) || !klapi_checktype(state, -1, KL_STRING))
+  if (!klapi_checkstring(state, -2) || !klapi_checkstring(state, -1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two strings, got %s, %s", 
                                 klstring_content(klapi_typename(state, klapi_access(state, -2))),
                                 klstring_content(klapi_typename(state, klapi_access(state, -1))));
@@ -162,7 +162,7 @@ static KlException kllib_string_split(KlState* state) {
 static KlException kllib_string_join_raw(KlState* state, size_t nval, KlValue* vals, KlValue* result) {
   size_t totallen = 0;
   for (KlValue* val = vals; val != vals + nval; ++val) {
-    if (kl_unlikely(!klvalue_checktype(val, KL_STRING)))
+    if (kl_unlikely(!klvalue_isstring(val)))
       return klapi_throw_internal(state, KL_E_TYPE, "expected string(s), got an %s", klstring_content(klapi_typename(state, val)));
     totallen += klstring_length(klvalue_getobj(val, KlString*));
   }
@@ -171,7 +171,7 @@ static KlException kllib_string_join_raw(KlState* state, size_t nval, KlValue* v
       KlString* str = klstrpool_new_string(klstate_strpool(state), "");
       if (kl_unlikely(!str))
         return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating string");
-      klvalue_setobj(result, str, KL_STRING);
+      klvalue_setstring(result, str);
       return KL_E_NONE;
     }
     case 1: {
@@ -182,7 +182,7 @@ static KlException kllib_string_join_raw(KlState* state, size_t nval, KlValue* v
       KlString* str = klstrpool_string_concat(klstate_strpool(state), klvalue_getobj(vals, KlString*), klvalue_getobj(vals + 1, KlString*));
       if (kl_unlikely(!str))
         return klapi_throw_internal(state, KL_E_OOM, "out of memory while concatenating strings");
-      klvalue_setobj(result, str, KL_STRING);
+      klvalue_setstring(result, str);
       return KL_E_NONE;
     }
     default: {
@@ -201,7 +201,7 @@ static KlException kllib_string_join_raw(KlState* state, size_t nval, KlValue* v
       klmm_free(klmm, tmpbuf, totallen * sizeof (char));
       if (kl_unlikely(!str))
         return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating string");
-      klvalue_setobj(result, str, KL_STRING);
+      klvalue_setstring(result, str);
       return KL_E_NONE;
     }
   }
@@ -210,7 +210,7 @@ static KlException kllib_string_join_raw(KlState* state, size_t nval, KlValue* v
 static KlException kllib_string_utf8idx(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 2 && klapi_narg(state) != 3))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two or three arguments");
-  if (kl_unlikely(!klapi_checktypeb(state, 0, KL_STRING)))
+  if (kl_unlikely(!klapi_checkstringb(state, 0)))
     return klapi_throw_internal(state, KL_E_TYPE, "expected string, got %s", klstring_content(klapi_typename(state, klapi_accessb(state, 0))));
   if (kl_unlikely(!klapi_checktypeb(state, 1, KL_INT)))
     return klapi_throw_internal(state, KL_E_TYPE, "expected integer, got %s", klstring_content(klapi_typename(state, klapi_accessb(state, 1))));
@@ -241,7 +241,7 @@ static KlException kllib_string_utf8idx(KlState* state) {
 static KlException kllib_string_utf8len(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
-  if (kl_unlikely(!klapi_checktype(state, -1, KL_STRING)))
+  if (kl_unlikely(!klapi_checkstring(state, -1)))
     return klapi_throw_internal(state, KL_E_TYPE, "expected string, got %s", klstring_content(klapi_typename(state, klapi_accessb(state, 0))));
   KlString* str = klapi_getstring(state, -1);
   const unsigned char* text = (unsigned char*)klstring_content(str); 

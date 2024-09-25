@@ -67,6 +67,19 @@ static bool klmap_rehash(KlMap* map, KlMM* klmm) {
   return true;
 }
 
+KlMapSlot* klmap_searchlstring(const KlMap* map, const KlString* str) {
+  size_t hash = klstring_hash(str);
+  KlMapSlot* slot = &map->slots[hash & (map->capacity - 1)];
+  if (!klmap_masterslot(slot)) return NULL;
+  do {
+    if (klvalue_checktype(&slot->key, KL_LSTRING) &&
+        klstring_lequal(klvalue_getobj(&slot->key, KlString*), str))
+      return slot;
+    slot = slot->next;
+  } while (slot);
+  return NULL;
+}
+
 static KlMapSlot* klmap_getfreeslot(KlMap* map) {
   size_t lastfree = map->lastfree;
   KlMapSlot* slots = map->slots;
@@ -116,130 +129,6 @@ static void klmap_insert_rehash(KlMap* map, const KlValue* key, const KlValue* v
     klvalue_setvalue(&slot->value, value);
     slot->hash = hash;
     slot->next = NULL;
-  }
-}
-
-bool klmap_insert(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue* value) {
-  size_t mask = map->capacity - 1;
-  size_t hash = klmap_gethash(key);
-  size_t index = hash & mask;
-  KlMapSlot* slots = map->slots;
-  KlMapSlot* slot = &slots[index];
-  if (klmap_emptyslot(slot)) {  /* slot is empty */
-    klvalue_setvalue_withtag(&slot->key, key, KLMAP_KEYTAG_MASTER);
-    klvalue_setvalue(&slot->value, value);
-    slot->hash = hash;
-    return true;
-  }
-  /* this slot is not empty */
-  /* find */
-  KlMapSlot* findslot = slot;
-  if (klmap_masterslot(slot)) {
-    do {
-      if (hash == findslot->hash && klvalue_equal(&findslot->key, key)) {
-        klvalue_setvalue(&findslot->value, value);
-        return true;
-      }
-      findslot = findslot->next;
-    } while (findslot);
-  }
-
-  /* not found, insert new one */
-  KlMapSlot* newslot = klmap_getfreeslot(map);
-  if (!newslot) { /* no slot */
-    if (kl_unlikely(!klmap_rehash(map, klmm)))
-      return false;
-    klmap_insert_rehash(map, key, value, hash);
-    return true;
-  }
-  if (klmap_masterslot(slot)) {
-    klvalue_setvalue_withtag(&newslot->key, key, KLMAP_KEYTAG_SLAVE);
-    klvalue_setvalue(&newslot->value, value);
-    newslot->hash = hash;
-    newslot->next = slot->next;
-    slot->next = newslot;
-    return true;
-  } else {
-    kl_assert(klmap_slaveslot(slot), "");
-    klvalue_setvalue(&newslot->key, &slot->key);
-    klvalue_setvalue(&newslot->value, &slot->value);
-    newslot->hash = slot->hash;
-    newslot->next = slot->next;
-    /* correct link */
-    KlMapSlot* prevslot = &slots[slot->hash & mask];
-    while (prevslot->next != slot)
-      prevslot = prevslot->next;
-    prevslot->next = newslot;
-
-    klvalue_setvalue_withtag(&slot->key, key, KLMAP_KEYTAG_MASTER);
-    klvalue_setvalue(&slot->value, value);
-    slot->hash = hash;
-    slot->next = NULL;
-    return true;
-  }
-}
-
-bool klmap_insertstring(KlMap* map, KlMM* klmm, const KlString* key, const KlValue* value) {
-  size_t mask = map->capacity - 1;
-  size_t hash = klstring_hash(key);
-  size_t index = hash & mask;
-  KlMapSlot* slots = map->slots;
-  KlMapSlot* slot = &slots[index];
-  if (klmap_emptyslot(slot)) {  /* slot is empty */
-    klvalue_setobj(&slot->key, key, KL_STRING);
-    klvalue_settag(&slot->key, KLMAP_KEYTAG_MASTER);
-    klvalue_setvalue(&slot->value, value);
-    slot->hash = hash;
-    return true;
-  }
-  /* this slot is not empty */
-  /* find */
-  KlMapSlot* findslot = slot;
-  if (klmap_masterslot(slot)) {
-    do {
-      if (klvalue_checktype(&findslot->key, KL_STRING) &&
-          klvalue_getobj(&findslot->key, KlString*) == key) {
-        klvalue_setvalue(&findslot->value, value);
-        return true;
-      }
-      findslot = findslot->next;
-    } while (findslot);
-  }
-
-  /* not found, insert new one */
-  KlMapSlot* newslot = klmap_getfreeslot(map);
-  if (!newslot) { /* no slot */
-    if (kl_unlikely(!klmap_rehash(map, klmm)))
-      return false;
-    klmap_insert_rehash(map, &klvalue_obj(key, KL_STRING), value, klstring_hash(key));
-    return true;
-  }
-  if (klmap_masterslot(slot)) {
-    klvalue_setobj(&newslot->key, key, KL_STRING);
-    klvalue_settag(&newslot->key, KLMAP_KEYTAG_SLAVE);
-    klvalue_setvalue(&newslot->value, value);
-    newslot->hash = hash;
-    newslot->next = slot->next;
-    slot->next = newslot;
-    return true;
-  } else {
-    kl_assert(klmap_slaveslot(slot), "");
-    klvalue_setvalue(&newslot->key, &slot->key);
-    klvalue_setvalue(&newslot->value, &slot->value);
-    newslot->hash = slot->hash;
-    newslot->next = slot->next;
-    /* correct link */
-    KlMapSlot* prevslot = &slots[slot->hash & mask];
-    while (prevslot->next != slot)
-      prevslot = prevslot->next;
-    prevslot->next = newslot;
-
-    klvalue_setobj(&slot->key, key, KL_STRING);
-    klvalue_settag(&slot->key, KLMAP_KEYTAG_MASTER);
-    klvalue_setvalue(&slot->value, value);
-    slot->hash = hash;
-    slot->next = NULL;
-    return true;
   }
 }
 

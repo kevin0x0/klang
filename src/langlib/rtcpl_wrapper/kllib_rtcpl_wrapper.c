@@ -45,7 +45,7 @@ KlException KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME(KlState* state) {
 static KlException kllib_rtcpl_wrapper_compile(KlState* state) {
   if (klapi_narg(state) == 0)
     return klapi_throw_internal(state, KL_E_ARGNO, "please provide source file");
-  if (!klapi_checktypeb(state, 0, KL_STRING))
+  if (!klapi_checkstringb(state, 0))
     return klapi_throw_internal(state, KL_E_TYPE, "please provide source file(string)");
   KLAPI_PROTECT(klapi_checkstack(state, 4));
   KlString* filepath = klapi_getstringb(state, 0);
@@ -60,8 +60,8 @@ static KlException kllib_rtcpl_wrapper_compile(KlState* state) {
   size_t argbase = klapi_framesize(state);
   klapi_pushuserdata(state, ki);
   klapi_pushuserdata(state, ko);
-  klapi_pushvalue(state, &klvalue_obj(filepath, KL_STRING));
-  klapi_pushvalue(state, &klvalue_obj(filepath, KL_STRING));
+  klapi_pushvalue(state, &klvalue_string(filepath));
+  klapi_pushvalue(state, &klvalue_string(filepath));
   KLAPI_MAYFAIL(klapi_scall(state, klapi_getref(state, 0), 4, 1), ki_delete(ki); ko_delete(ko));
   ki_delete(ki);
   ko_delete(ko);
@@ -70,7 +70,7 @@ static KlException kllib_rtcpl_wrapper_compile(KlState* state) {
 }
 
 static KlException kllib_rtcpl_wrapper_evaluate(KlState* state) {
-  if (klapi_narg(state) == 0 || !klapi_checktypeb(state, 0, KL_STRING))
+  if (klapi_narg(state) == 0 || !klapi_checkstringb(state, 0))
     return klapi_throw_internal(state, KL_E_ARGNO, "please provide expression(string)");
   KLAPI_PROTECT(klapi_checkstack(state, 4));
   KlString* expr = klapi_getstringb(state, 0);

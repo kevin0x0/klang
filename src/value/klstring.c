@@ -14,19 +14,7 @@ static const KlGCVirtualFunc klstrpool_gcvfunc = { .destructor = (KlGCDestructor
 static KlString* klstrpool_search(KlStrPool* strpool, const char* str, size_t hash);
 static KlString* klstrpool_insert(KlStrPool* strpool, KlString* klstr);
 
-static KlString* klstring_create(KlMM* klmm, const char* str);
 static KlString* klstring_create_concat(KlMM* klmm, const char* str1, size_t len1, const char* str2, size_t len2);
-
-static KlString* klstring_create(KlMM* klmm, const char* str) {
-  size_t len = strlen(str);
-  if (kl_unlikely(len > KLUINT_MAX)) return NULL;
-  KlString* klstr = (KlString*)klmm_alloc(klmm, sizeof (KlString) + len + 1);
-  if (kl_unlikely(!klstr)) return NULL;
-
-  memcpy(klstr->content, str, len + 1);
-  klstr->length = len;
-  return klstr;
-}
 
 static KlString* klstring_create_buf(KlMM* klmm, const char* buf, size_t buflen) {
   if (kl_unlikely(buflen > KLUINT_MAX)) return NULL;
@@ -80,7 +68,6 @@ static void klstrpool_rehash(KlStrPool* strpool, KlString** new_array, size_t ne
       str = next;
     }
   }
-
   klmm_free(klstrpool_getmm(strpool), strpool->array, strpool->capacity * sizeof (KlString*));
   strpool->array = new_array;
   strpool->capacity = new_capacity;
@@ -108,6 +95,7 @@ KlStrPool* klstrpool_create(KlMM* klmm, size_t capacity) {
   KlString** array = strpool->array;
   for (size_t i = 0; i < capacity; ++i)
     array[i] = NULL;
+  strpool->lstrings = NULL;
   strpool->capacity = capacity;
   strpool->size = 0;
   strpool->klmm = klmm;
@@ -122,6 +110,7 @@ static KlGCObject* klstrpool_propagate(KlStrPool* strpool, KlMM* klmm, KlGCObjec
 
 static void klstrpool_delete(KlStrPool* strpool, KlMM* klmm) {
   KlString** bucketend = strpool->array + strpool->capacity;
+  /* free short strings */
   for (KlString** bucket = strpool->array; bucket != bucketend; ++bucket) {
     KlString* str = *bucket;
     while (str) {
@@ -129,6 +118,13 @@ static void klstrpool_delete(KlStrPool* strpool, KlMM* klmm) {
       klmm_free(klmm, str, klstring_size(str));
       str = next;
     }
+  }
+  /* free long strings */
+  KlString* lstrings = strpool->lstrings;
+  while (lstrings) {
+    KlString* tmp = lstrings->next;
+    klmm_free(klmm, lstrings, klstring_size(lstrings));
+    lstrings = tmp;
   }
   klmm_free(klmm, strpool->array, strpool->capacity * sizeof (KlString*));
   klmm_free(klmm, strpool, sizeof (KlStrPool));
@@ -161,6 +157,12 @@ static KlString* klstrpool_search(KlStrPool* strpool, const char* str, size_t ha
 }
 
 static KlString* klstrpool_insert(KlStrPool* strpool, KlString* str) {
+  if (kl_unlikely(klstring_islong(str))) {
+    str->next = strpool->lstrings;
+    strpool->lstrings = str;
+    return str;
+  }
+
   if (kl_unlikely(strpool->size >= strpool->capacity && !klstrpool_expand(strpool)))
     return NULL;
 
@@ -170,17 +172,6 @@ static KlString* klstrpool_insert(KlStrPool* strpool, KlString* str) {
   strpool->size++;
   klmm_gcobj_enable_delegate(klstrpool_getmm(strpool), klmm_to_gcobjdelegate(str));
   return str;
-}
-
-KlString* klstrpool_new_string(KlStrPool* strpool, const char* str) {
-  size_t hash = klstring_calculate_hash(str);
-  KlString* res = klstrpool_search(strpool, str, hash);
-  if (res) return res;
-  KlMM* klmm = klstrpool_getmm(strpool);
-  KlString* klstr = klstring_create(klmm, str);
-  if (!klstr) return NULL;
-  klstr->hash = hash;
-  return klstrpool_insert(strpool, klstr);
 }
 
 KlString* klstrpool_new_string_buf(KlStrPool* strpool, const char* buf, size_t buflen) {
@@ -197,7 +188,7 @@ KlString* klstrpool_new_string_buf(KlStrPool* strpool, const char* buf, size_t b
 KlString* klstrpool_string_concat_cstyle(KlStrPool* strpool, const char* str1, const char* str2) {
   KlMM* klmm = klstrpool_getmm(strpool);
   KlString* klstr = klstring_create_concat(klmm, str1, strlen(str1), str2, strlen(str2));
-  if (!klstr) return NULL;
+  if (kl_unlikely(!klstr)) return NULL;
   const char* conc = klstring_content(klstr);
   size_t hash = klstring_calculate_hash(conc);
   KlString* res = klstrpool_search(strpool, conc, hash);
@@ -212,7 +203,7 @@ KlString* klstrpool_string_concat_cstyle(KlStrPool* strpool, const char* str1, c
 KlString* klstrpool_string_concat(KlStrPool* strpool, const KlString* str1, const KlString* str2) {
   KlMM* klmm = klstrpool_getmm(strpool);
   KlString* klstr = klstring_create_concat(klmm, klstring_content(str1), str1->length, klstring_content(str2), str2->length);
-  if (!klstr) return NULL;
+  if (kl_unlikely(!klstr)) return NULL;
   const char* conc = klstring_content(klstr);
   size_t hash = klstring_calculate_hash(conc);
   KlString* res = klstrpool_search(strpool, conc, hash);
@@ -227,6 +218,7 @@ KlString* klstrpool_string_concat(KlStrPool* strpool, const KlString* str1, cons
 static void klstrpool_post(KlStrPool* strpool, KlMM* klmm) {
   KlString** bucketend = strpool->array + strpool->capacity;
   size_t freecount = 0;
+  /* handle short strings */
   for (KlString** bucket = strpool->array; bucket != bucketend; ++bucket) {
     KlString** pstr = bucket;
     KlString* str;
@@ -242,4 +234,18 @@ static void klstrpool_post(KlStrPool* strpool, KlMM* klmm) {
     }
   }
   strpool->size -= freecount;
+  /* handle long strings */
+  KlString* survivors = NULL;
+  KlString* lstrings = strpool->lstrings;
+  while (lstrings) {
+    KlString* tmp = lstrings->next;
+    if (klmm_gcobj_isalive(lstrings)) {
+      klmm_gcobj_clearalive(lstrings);
+      lstrings->next = survivors;
+      survivors = lstrings;
+    } else {
+      klmm_free(klmm, lstrings, klstring_size(lstrings));
+    }
+    lstrings = tmp;
+  }
 }

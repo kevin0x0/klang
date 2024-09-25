@@ -11,20 +11,25 @@
 #define klvalue_collectable(value)          (klvalue_gettype((value)) >= KL_COLLECTABLE)
 #define klvalue_callable(value)             (klvalue_gettype((value)) >= KL_CALLABLEOBJ || klvalue_gettype((value)) == KL_CFUNCTION)
 #define klvalue_canrawequal(value)          (klvalue_gettype((value)) <= KL_RAWEQUAL)
+#define klvalue_canequal(value)             (klvalue_gettype((value)) <= KL_EQUAL)
 #define klvalue_checktype(value, valtype)   (klvalue_gettype((value)) == (valtype))
 #define klvalue_isnumber(value)             (klvalue_gettype((value)) < KL_NUMBER)
-#define klvalue_isstrornumber(value)        (klvalue_checktype((value), KL_STRING) || klvalue_isnumber((value)))
+#define klvalue_isstring(value)             (klvalue_checktype((value), KL_STRING) || klvalue_checktype((value), KL_LSTRING))
+#define klvalue_isstrornumber(value)        (klvalue_isstring((value)) || klvalue_isnumber((value)))
 #define klvalue_sametype(val1, val2)        (klvalue_gettype(val1) == klvalue_gettype(val2))
 
 #define klvalue_testtag(value, tag)         (klvalue_gettag((value)) & (tag))
 
 #define klvalue_getobj(val, type)           ((type)((val)->value.gcobj))
 #define klvalue_setobj(val, obj, type)      klvalue_setgcobj((val), (KlGCObject*)(obj), (type))
+#define klvalue_setstring(val, str)         klvalue_setgcobj((val), (KlGCObject*)(str), klvalue_getstringtype((str)))
 
 #define klvalue_equal(v1, v2)               (klvalue_sametype((v1), (v2)) && klvalue_sameinstance((v1), (v2)))
 
 #define klvalue_bothinteger(v1, v2)         (klvalue_gettype(v1) + klvalue_gettype(v2) == KL_INT)
 #define klvalue_bothnumber(v1, v2)          (klvalue_gettype(v1) + klvalue_gettype(v2) <= KL_NUMBER)
+
+#define klvalue_getstringtype(str)          (klstring_islong((str)) ? KL_LSTRING : KL_STRING)
 
 #define KLVALUE_NIL_INITWITHTAG(tagval)     { .typewithtag = { .type = KL_NIL, .tag = (tagval) }, .value.nilval = 0 }
 #define KLVALUE_NIL_INIT                    KLVALUE_NIL_INITWITHTAG(0)
@@ -35,6 +40,7 @@
 #define klvalue_bool(val)                   ((KlValue) { .type = KL_BOOL, .value.boolval = (val) })
 #define klvalue_cfunc(val)                  ((KlValue) { .type = KL_CFUNCTION, .value.cfunc = (val) })
 #define klvalue_obj(val, typetag)           ((KlValue) { .type = (typetag), .value.gcobj = klmm_to_gcobj((val)) })
+#define klvalue_string(val)                 klvalue_obj((val), klvalue_getstringtype((val)))
 
 
 typedef enum tagKlType {
@@ -44,6 +50,8 @@ typedef enum tagKlType {
   KL_USERDATA,                    /* non-collectable type */
   KL_COLLECTABLE , KL_STRING = KL_COLLECTABLE,
   KL_RAWEQUAL = KL_STRING,
+  KL_LSTRING, /* long string */
+  KL_EQUAL = KL_LSTRING,
   KL_MAP, KL_ARRAY, KL_TUPLE, KL_OBJECT,
   KL_CLASS, KL_KFUNCTION,
   KL_CALLABLEOBJ, KL_KCLOSURE = KL_CALLABLEOBJ, KL_CCLOSURE, KL_COROUTINE,

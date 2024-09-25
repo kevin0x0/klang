@@ -76,7 +76,7 @@ static KlException kllib_ifile_init(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "missing arguments");
   if (!kllib_istream_compatible(klapi_accessb(state, 0)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with istream");
-  if (!klapi_checktypeb(state, 1, KL_STRING))
+  if (!klapi_checkstringb(state, 1))
     return klapi_throw_internal(state, KL_E_INVLD, "please provide a file path");
 
   KlString* filepath = klapi_getstringb(state, 1);
@@ -92,7 +92,7 @@ static KlException kllib_ofile_init(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "missing arguments");
   if (!kllib_ostream_compatible(klapi_accessb(state, 0)))
     return klapi_throw_internal(state, KL_E_INVLD, "please call with ostream");
-  if (!klapi_checktypeb(state, 1, KL_STRING))
+  if (!klapi_checkstringb(state, 1))
     return klapi_throw_internal(state, KL_E_INVLD, "please provide a file path");
 
   KlString* filepath = klapi_getstringb(state, 1);

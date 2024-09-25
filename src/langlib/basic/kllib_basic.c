@@ -240,7 +240,7 @@ static KlException kllib_basic_map_weak(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly two argmument(this method should be automatically called in iterration loop)");
   if (!klapi_checktype(state, -2, KL_MAP))
     return klapi_throw_internal(state, KL_E_TYPE, "expected map");
-  if (!klapi_checktype(state, -1, KL_STRING))
+  if (!klapi_checkstring(state, -1))
     return klapi_throw_internal(state, KL_E_TYPE, "expected string(\"k\", \"v\", \"kv\")");
   KlMap* map = klapi_getmap(state, -2);
   KlString* option = klapi_getstring(state, -1);
@@ -377,6 +377,7 @@ static KlException kllib_basic_map_indexas(KlState* state) {
 static KlException kllib_basic_type(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one arguments");
-  klapi_setobj(state, -1, klexec_typename(state, klapi_access(state, -1)), KL_STRING);
+  const KlString* name = klexec_typename(state, klapi_access(state, -1));
+  klapi_setobj(state, -1, name, klvalue_getstringtype(name));
   return klapi_return(state, 1);
 }
