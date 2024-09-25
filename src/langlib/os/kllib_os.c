@@ -31,7 +31,7 @@ static KlException kllib_os_clock(KlState* state) {
 static KlException kllib_os_getenv(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
-  if (kl_unlikely(!klapi_checktype(state, -1, KL_STRING)))
+  if (kl_unlikely(!klapi_checkstring(state, -1)))
     return klapi_throw_internal(state, KL_E_TYPE, "expected string, got %s",
                                 klstring_content(klapi_typename(state, klapi_access(state, -1))));
 

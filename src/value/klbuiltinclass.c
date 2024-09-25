@@ -40,7 +40,7 @@ static KlException klbuiltinclass_string_constructor(KlClass* klclass, KlMM* klm
   kl_unused(klmm);
   KlString* str = klstrpool_new_string(klcast(KlStrPool*, klclass_constructor_data(klclass)), "hello");
   if (kl_unlikely(!str)) return KL_E_OOM;
-  klvalue_setobj(value, str, KL_STRING);
+  klvalue_setobj(value, str, klvalue_getstringtype(str));
   return KL_E_NONE;
 }
 

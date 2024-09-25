@@ -29,6 +29,7 @@ static KlException kllib_cast_toint(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   KlValue* value = klapi_access(state, -1);
   switch (klvalue_gettype(value)) {
+    case KL_LSTRING:
     case KL_STRING: {
       KlString* str = klvalue_getobj(value, KlString*);
       const char* cstr = klstring_content(str);
@@ -56,6 +57,7 @@ static KlException kllib_cast_tofloat(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   KlValue* value = klapi_access(state, -1);
   switch (klvalue_gettype(value)) {
+    case KL_LSTRING:
     case KL_STRING: {
       KlString* str = klvalue_getobj(value, KlString*);
       const char* cstr = klstring_content(str);
@@ -83,6 +85,7 @@ static KlException kllib_cast_tonumber(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   KlValue* value = klapi_access(state, -1);
   switch (klvalue_gettype(value)) {
+    case KL_LSTRING:
     case KL_STRING: {
       KlString* str = klvalue_getobj(value, KlString*);
       const char* cstr = klstring_content(str);
@@ -117,6 +120,7 @@ static KlException kllib_cast_tostring(KlState* state) {
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   KlValue* value = klapi_access(state, -1);
   switch (klvalue_gettype(value)) {
+    case KL_LSTRING:
     case KL_STRING: {
       return klapi_return(state, 1);
     }

@@ -136,7 +136,7 @@ KlException klapi_pushstring(KlState* state, const char* str) {
   kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlString* klstr = klstrpool_new_string(state->strpool, str);
   if (!klstr) return klstate_throw(state, KL_E_OOM, "out of momery");
-  klstack_pushgcobj(klstate_stack(state), (KlGCObject*)klstr, KL_STRING);
+  klstack_pushgcobj(klstate_stack(state), (KlGCObject*)klstr, klvalue_getstringtype(klstr));
   return KL_E_NONE;
 }
 
@@ -144,7 +144,7 @@ KlException klapi_pushstring_buf(KlState* state, const char* buf, size_t buflen)
   kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
   KlString* klstr = klstrpool_new_string_buf(state->strpool, buf, buflen);
   if (!klstr) return klstate_throw(state, KL_E_OOM, "out of momery");
-  klstack_pushgcobj(klstate_stack(state), (KlGCObject*)klstr, KL_STRING);
+  klstack_pushgcobj(klstate_stack(state), (KlGCObject*)klstr, klvalue_getstringtype(klstr));
   return KL_E_NONE;
 }
 
@@ -208,7 +208,7 @@ KlException klapi_setstring(KlState* state, int index, const char* str) {
   KlValue* val = klapi_access(state, index);
   KlString* klstr = klstrpool_new_string(state->strpool, str);
   if (!klstr) return klstate_throw(state, KL_E_OOM, "out of momery");
-  klvalue_setobj(val, klstr, KL_STRING);
+  klvalue_setobj(val, klstr, klvalue_getstringtype(klstr));
   return KL_E_NONE;
 }
 
@@ -293,12 +293,12 @@ KlBool klapi_getboolb(KlState* state, unsigned index) {
 }
 
 KlString* klapi_getstring(KlState* state, int index) {
-  kl_assert(klvalue_checktype(klapi_access(state, index), KL_STRING), "expected type KL_STRING");
+  kl_assert(klvalue_isstring(klapi_access(state, index)), "expected type string");
   return klvalue_getobj(klapi_access(state, index), KlString*);
 }
 
 KlString* klapi_getstringb(KlState* state, unsigned index) {
-  kl_assert(klvalue_checktype(klapi_accessb(state, index), KL_STRING), "expected type KL_STRING");
+  kl_assert(klvalue_isstring(klapi_accessb(state, index)), "expected type string");
   return klvalue_getobj(klapi_accessb(state, index), KlString*);
 }
 
@@ -378,7 +378,7 @@ void klapi_loadglobal(KlState* state) {
 KlException klapi_storeglobal(KlState* state, KlString* varname, int validx) {
   KlMapSlot* slot = klmap_searchstring(state->global, varname);
   if (!slot) {
-    if (kl_unlikely(!klmap_insertstring(state->global, klstate_getmm(state), varname, klapi_access(state, validx))))
+    if (kl_unlikely(!klmap_insert_new(state->global, klstate_getmm(state), &klvalue_string(varname), klapi_access(state, validx))))
       return KL_E_OOM;
   } else {
     klvalue_setvalue(&slot->value, klapi_access(state, validx));
@@ -394,7 +394,7 @@ KlException klapi_toint(KlState* state, int to, int from) {
   } else if (klvalue_checktype(val, KL_FLOAT)) {
     klvalue_setint(klapi_access(state, to), klcast(KlInt, klvalue_getfloat(val)));
     return KL_E_NONE;
-  } else if (klvalue_checktype(val, KL_STRING)) {
+  } else if (klvalue_isstring(val)) {
     char* p = NULL;
     KlString* str = klvalue_getobj(val, KlString*);
     const char* content = klstring_content(str);
@@ -416,7 +416,7 @@ KlException klapi_tofloat(KlState* state, int to, int from) {
   } else if (klvalue_checktype(val, KL_INT)) {
     klvalue_setfloat(klapi_access(state, to), klcast(KlFloat, klvalue_getint(val)));
     return KL_E_NONE;
-  } else if (klvalue_checktype(val, KL_STRING)) {
+  } else if (klvalue_isstring(val)) {
     char* p = NULL;
     KlString* str = klvalue_getobj(val, KlString*);
     const char* content = klstring_content(str);
@@ -433,7 +433,7 @@ KlException klapi_tofloat(KlState* state, int to, int from) {
 KlString* klapi_tostring(KlState* state, int index) {
 #define KLAPI_BUFSIZE   (100)
   KlValue* val = klapi_access(state, index);
-  if (klvalue_checktype(val, KL_STRING)) {
+  if (klvalue_isstring(val)) {
     return klvalue_getobj(val, KlString*);
   } else if (klvalue_checktype(val, KL_INT)) {
     char buf[KLAPI_BUFSIZE];
@@ -577,7 +577,7 @@ KlException klapi_concat(KlState* state) {
   if (kl_unlikely(!str))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while doing concat");
   klapi_pop(state, 1);
-  klapi_setobj(state, -1, str, KL_STRING);
+  klapi_setobj(state, -1, str, klvalue_getstringtype(str));
   return KL_E_NONE;
 }
 
@@ -585,7 +585,7 @@ KlException klapi_concati(KlState* state, int result, int left, int right) {
   KlString* str = klstrpool_string_concat(klstate_strpool(state), klapi_getstring(state, left), klapi_getstring(state, right));
   if (kl_unlikely(!str))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while doing concat");
-  klapi_setobj(state, result, str, KL_STRING);
+  klvalue_setobj(klapi_access(state, result), str, klvalue_getstringtype(str));
   return KL_E_NONE;
 }
 
@@ -688,7 +688,7 @@ KlException klapi_class_newshared_normal(KlState* state, KlClass* klclass, KlStr
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when setting a new shared field: %s", klstring_content(fieldname));
   } else if (exception == KL_E_INVLD) {
-    return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
+    return klstate_throw(state, exception, "can not insert long string"); 
   }
   return KL_E_NONE;
 }
@@ -699,7 +699,7 @@ KlException klapi_class_newshared_method(KlState* state, KlClass* klclass, KlStr
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when setting a new method field: %s", klstring_content(fieldname));
   } else if (exception == KL_E_INVLD) {
-    return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
+    return klstate_throw(state, exception, "can not insert long string"); 
   }
   return KL_E_NONE;
 }
@@ -709,7 +709,7 @@ KlException klapi_class_newlocal(KlState* state, KlClass* klclass, KlString* fie
   if (exception == KL_E_OOM) {
     return klstate_throw(state, exception, "out of memory when adding a new local field: %s", klstring_content(fieldname));
   } else if (exception == KL_E_INVLD) {
-    return klstate_throw(state, exception, "can not overwrite local field: %s", klstring_content(fieldname)); 
+    return klstate_throw(state, exception, "can not insert long string"); 
   }
   return KL_E_NONE;
 }

@@ -8,6 +8,13 @@
 #include <stdbool.h>
 #include <string.h>
 
+#define KLSTRING_LIMIT              (255)
+#define klstring_islong(string)     ((string)->length > KLSTRING_LIMIT)
+
+#define klstrpool_new_string(strpool, str)  klstrpool_new_string_buf((strpool), (str), strlen((str)))
+#define klstring_lequal(str1, str2)         (strcmp(klstring_content((str1)), klstring_content((str2))) == 0)
+
+
 typedef struct tagKlStrPool KlStrPool;
 typedef struct tagKlString KlString;
 
@@ -22,16 +29,16 @@ struct tagKlString {
 struct tagKlStrPool {
   KL_DERIVE_FROM(KlGCObject, _gcbase_);
   KlMM* klmm;
-  KlString** array;
-  size_t capacity;
-  size_t size;
+  KlString* lstrings; /* linked list for long strings */
+  KlString** array;   /* hash table for short strings */
+  size_t capacity;    /* the capacity of hash table */
+  size_t size;        /* the number of short strings */
 };
 
 
 KlStrPool* klstrpool_create(KlMM* klmm, size_t capacity);
 void klstrpool_destroy(KlStrPool* strpool);
 
-KlString* klstrpool_new_string(KlStrPool* strpool, const char* str);
 KlString* klstrpool_new_string_buf(KlStrPool* strpool, const char* buf, size_t buflen);
 
 KlString* klstrpool_string_concat_cstyle(KlStrPool* strpool, const char* str1, const char* str2);
@@ -69,4 +76,5 @@ static inline size_t klstring_length(const KlString* klstr) {
 static inline int klstring_compare(const KlString* str1, const KlString* str2) {
   return str1 == str2 ? 0 : strcmp(klstring_content(str1), klstring_content(str2));
 }
+
 #endif

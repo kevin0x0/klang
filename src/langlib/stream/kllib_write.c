@@ -20,6 +20,7 @@ static void kllib_ostream_write_inner(KlState* state, Ko* ko, const KlValue* val
       ko_printf(ko, "%lf", klvalue_getfloat(val));
       break;
     }
+    case KL_LSTRING:
     case KL_STRING: {
       ko_putc(ko, '"');
       ko_write(ko, klstring_content(klvalue_getobj(val, KlString*)),
@@ -143,6 +144,7 @@ KlException kllib_ostream_write(KlState* state) {
         ko_printf(ko, "%lf", klapi_getfloatb(state, i));
         break;
       }
+      case KL_LSTRING:
       case KL_STRING: {
         ko_write(ko, klstring_content(klapi_getstringb(state, i)), klstring_length(klapi_getstringb(state, i)));
         break;

@@ -63,6 +63,8 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool) {
   done = done && (common->klclass.phony[KL_ARRAY] = klbuiltinclass_array(klmm));
   done = done && (common->klclass.phony[KL_MAP] = klbuiltinclass_map(klmm));
   done = done && (common->klclass.phony[KL_STRING] = klbuiltinclass_string(klmm, strpool));
+  /* long string and short string use the same class */
+  common->klclass.phony[KL_LSTRING] = common->klclass.phony[KL_STRING];
   done = done && (common->klclass.phony[KL_INT] = klbuiltinclass_int(klmm));
   done = done && (common->klclass.phony[KL_FLOAT] = klbuiltinclass_float(klmm));
   done = done && (common->klclass.phony[KL_BOOL] = klbuiltinclass_bool(klmm));

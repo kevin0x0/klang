@@ -9,6 +9,7 @@ static const char* const klvalue_typenames[KL_NTYPE] = {
   [KL_CFUNCTION] = "C function",
   [KL_USERDATA] = "user data",
   [KL_STRING] = "string",
+  [KL_LSTRING] = "long string",
   [KL_MAP] = "map",
   [KL_ARRAY] = "array",
   [KL_TUPLE] = "tuple",

@@ -110,6 +110,8 @@ static KlClassSlot* klclass_getfreeslot(KlClass* klclass) {
 }
 
 static KlClassSlot* klclass_add_rehash(KlClass* klclass, const KlString* key) {
+  kl_assert(!klstring_islong(key), "");
+
   size_t mask = klclass_mask(klclass);
   size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
@@ -148,7 +150,7 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, 
   size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
   KlClassSlot* slot = &slots[index];
-  if (!slot->key) { /* slot is empty */
+  if (kl_likely(!slot->key)) { /* slot is empty */
     slot->key = key;
     klvalue_setvalue(&slot->value, value);
     return KL_E_NONE;
@@ -164,7 +166,10 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, 
     findslot = findslot->next;
   } while (findslot);
 
-  /* not found, insert new one */
+  /* not found, check whether it is a long string */
+  if (kl_unlikely(klstring_islong(key)))  /* do not insert long string */
+    return KL_E_INVLD;
+  /* else is short string, insert it */
   KlClassSlot* newslot = klclass_getfreeslot(klclass);
   if (kl_unlikely(!newslot)) { /* no slot */
     if (kl_unlikely(!klclass_rehash(klclass, klmm)))
@@ -202,12 +207,16 @@ KlException klclass_addnormal_nosearch(KlClass* klclass, KlMM* klmm, const KlStr
   size_t index = klstring_hash(key) & mask;
   KlClassSlot* slots = klclass->slots;
   KlClassSlot* slot = &slots[index];
-  if (!slot->key) { /* slot is empty */
+  if (kl_likely(!slot->key)) { /* slot is empty */
     slot->key = key;
     klvalue_setvalue_withtag(&slot->value, value, KLCLASS_TAG_NORMAL);
     return KL_E_NONE;
   }
-  /* this slot is not empty */
+
+  /* this slot is not empty, check whether the key is a long string */
+  if (kl_unlikely(klstring_islong(key)))  /* do not insert long string */
+    return KL_E_INVLD;
+
   KlClassSlot* newslot = klclass_getfreeslot(klclass);
   if (kl_unlikely(!newslot)) { /* no slot */
     if (kl_unlikely(!klclass_rehash(klclass, klmm)))
