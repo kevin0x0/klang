@@ -1,7 +1,6 @@
 #include "include/klapi.h"
 #include "include/lang/klconfig.h"
 #include "include/misc/klutils.h"
-#include "include/value/klarray.h"
 #include "include/value/klcfunc.h"
 #include "include/value/klmap.h"
 #include "include/value/klstate.h"
@@ -9,11 +8,7 @@
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
 
-static KlException kllib_basic_map_next(KlState* state);
-static KlException kllib_basic_arr_next(KlState* state);
 static KlException kllib_basic_callable_next(KlState* state);
-static KlException kllib_basic_map_iter(KlState* state);
-static KlException kllib_basic_arr_iter(KlState* state);
 static KlException kllib_basic_callable_iter(KlState* state);
 
 static KlException kllib_basic_map_weak(KlState* state);
@@ -75,11 +70,7 @@ static KlException kllib_basic_init_globalvar(KlState* state) {
 
 static KlException kllib_basic_init_iter(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 1));
-  klapi_pushcfunc(state, kllib_basic_map_iter);
-  KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_MAP], state->common->string.iter));
-  klapi_setcfunc(state, -1, kllib_basic_arr_iter);
-  KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_ARRAY], state->common->string.iter));
-  klapi_setcfunc(state, -1, kllib_basic_callable_iter);
+  klapi_pushcfunc(state, kllib_basic_callable_iter);
   KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_COROUTINE], state->common->string.iter));
   klapi_pop(state, 1);
   return KL_E_NONE;
@@ -106,58 +97,6 @@ static KlException kllib_basic_init_map(KlState* state) {
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
-static KlException kllib_basic_map_next(KlState* state) {
-  if (kl_unlikely(klapi_narg(state) < 3))
-    return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 3 arguments(1 iteration variable in for loop)");
-  KLAPI_PROTECT(klapi_checkframeandset(state, 4));
-  KlValue* base = klapi_accessb(state, 0);
-  if (kl_unlikely(!klvalue_checktype(base, KL_MAP)))
-    return klapi_throw_internal(state, KL_E_TYPE, "expected map");
-  KlMap* map = klvalue_getobj(base, KlMap*);
-  size_t index = klvalue_getint(base + 1);
-  if (kl_unlikely(!klmap_iter_valid(map, index)))
-    return klapi_throw_internal(state, KL_E_INVLD, "the for loop is broken");
-  index = klmap_iter_next(map, index);
-  if (kl_unlikely(index == klmap_iter_end(map)))
-    return klapi_return(state, 0);
-  klvalue_setint(base + 1, index);
-  klvalue_setvalue(base + 2, klmap_iter_getkey(map, index));
-  klvalue_setvalue(base + 3, klmap_iter_getvalue(map, index));
-  return klapi_return(state, 4);
-}
-
-static KlException kllib_basic_arr_next_with_index(KlState* state) {
-  if (kl_unlikely(klapi_narg(state) < 2))
-    return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 2 arguments(0 iteration variable in for loop)");
-  KLAPI_PROTECT(klapi_checkframeandset(state, 4));
-  KlValue* base = klapi_accessb(state, 0);
-  if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY)))
-    return klapi_throw_internal(state, KL_E_TYPE, "expected array");
-  KlArray* array = klvalue_getobj(base, KlArray*);
-  KlUInt index = klvalue_getint(base + 1) + 1;
-  if (kl_unlikely(index >= klarray_size(array)))
-    return klapi_return(state, 0);
-  klvalue_setint(base + 1, klcast(KlInt, index));
-  klvalue_setint(base + 2, klcast(KlInt, index));
-  klvalue_setvalue(base + 3, klarray_access(array, index));
-  return klapi_return(state, 4);
-}
-
-static KlException kllib_basic_arr_next(KlState* state) {
-  if (kl_unlikely(klapi_narg(state) < 2))
-    return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 2 arguments(0 iteration variable in for loop)");
-  KLAPI_PROTECT(klapi_checkframeandset(state, 3));
-  KlValue* base = klapi_accessb(state, 0);
-  if (kl_unlikely(!klvalue_checktype(base, KL_ARRAY)))
-    return klapi_throw_internal(state, KL_E_TYPE, "expected array");
-  KlArray* array = klvalue_getobj(base, KlArray*);
-  KlUInt index = klvalue_getint(base + 1) + 1;
-  if (kl_unlikely(index >= klarray_size(array)))
-    return klapi_return(state, 0);
-  klvalue_setint(base + 1, index);
-  klvalue_setvalue(base + 2, klarray_access(array, index));
-  return klapi_return(state, 3);
-}
 
 static KlException kllib_basic_callable_next(KlState* state) {
   if (kl_unlikely(klapi_narg(state) < 2))
@@ -172,49 +111,6 @@ static KlException kllib_basic_callable_next(KlState* state) {
   if (klapi_checktype(state, -nval, KL_NIL))
     return klapi_return(state, 0);
   return klapi_return(state, klapi_nres(state));
-}
-
-static KlException kllib_basic_map_iter(KlState* state) {
-  if (klapi_narg(state) != 1)
-    return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argmument(this method should be automatically called in iterration loop)");
-  if (!klapi_checktype(state, -1, KL_MAP))
-    return klapi_throw_internal(state, KL_E_TYPE, "expected map");
-  KlMap* map = klapi_getmap(state, -1);
-  KLAPI_PROTECT(klapi_checkstack(state, 4));
-  size_t index = klmap_iter_begin(map);
-  if (index == klmap_iter_end(map))
-    return klapi_return(state, 0);
-  klapi_pushobj(state, map, KL_MAP);
-  klapi_pushint(state, index);
-  klapi_pushvalue(state, klmap_iter_getkey(map, index));
-  klapi_pushvalue(state, klmap_iter_getvalue(map, index));
-  klapi_setcfunc(state, -5, kllib_basic_map_next);
-  kl_assert(klapi_framesize(state) == 5, "");
-  return klapi_return(state, 5);
-}
-
-static KlException kllib_basic_arr_iter(KlState* state) {
-  if (klapi_narg(state) != 1)
-    return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argmument(this method should be automatically called in iterration loop)");
-  if (!klapi_checktype(state, -1, KL_ARRAY))
-    return klapi_throw_internal(state, KL_E_TYPE, "expected array");
-  KlArray* array = klapi_getarray(state, -1);
-  if (klarray_size(array) == 0) return klapi_return(state, 0);
-  KLAPI_PROTECT(klapi_checkstack(state, 4));
-  klapi_pushobj(state, array, KL_ARRAY);
-  klapi_pushint(state, 0);
-  if (klapi_nres(state) == 4) {
-    klapi_pushvalue(state, klarray_access(array, 0));
-    klapi_setcfunc(state, -4, kllib_basic_arr_next);
-    kl_assert(klapi_framesize(state) == 4, "");
-    return klapi_return(state, 4);
-  } else {
-    klapi_pushint(state, 0);
-    klapi_pushvalue(state, klarray_access(array, 0));
-    klapi_setcfunc(state, -5, kllib_basic_arr_next_with_index);
-    kl_assert(klapi_framesize(state) == 5, "");
-    return klapi_return(state, 5);
-  }
 }
 
 static KlException kllib_basic_callable_iter(KlState* state) {
