@@ -699,7 +699,7 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   gen->jmpinfo.continue_scope = gen->symtbl;
   /* statement 'break' and 'continue' are enabled */
 
-  klgen_emit(gen, klinst_gforprep(iterable, gforast->lvals->nexpr + 2), klgen_astposition(gforast));
+  klgen_emit(gen, klinst_gforprep(iterable, gforast->lvals->nexpr), klgen_astposition(gforast));
   klgen_mergejmplist_maynone(gen, gen->jmpinfo.breaklist,
                              klcodeval_jmplist(klgen_emit(gen, klinst_falsejmp(iterable + 2, 0), klgen_astposition(gforast))));
 
