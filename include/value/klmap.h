@@ -97,14 +97,13 @@ static inline size_t klmap_gethash(const KlValue* key) {
     }
     case KL_FLOAT: {
       /* NOT PORTABLE */
-      kl_static_assert(sizeof (KlFloat) == sizeof (size_t), "");
       union {
-        size_t hash;
+        KlUInt hash;
         KlFloat floatval;
       } num;
       num.floatval = klvalue_getfloat(key);
       /* +0.0 and -0.0 is equal but have difference binary representations */
-      return num.floatval == 0.0 ? 0 : num.hash ^ (num.hash >> (sizeof (KlFloat) * CHAR_BIT / 2));
+      return num.floatval == 0.0 ? 0 : num.hash ^ (num.hash >> (sizeof (num.hash) * CHAR_BIT / 2));
     }
     case KL_CFUNCTION: {
       return ((uintptr_t)klvalue_getcfunc(key) >> 3);
