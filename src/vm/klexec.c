@@ -2526,13 +2526,15 @@ KlException klexec_execute(KlState* state) {
         KlValue* argbase = a + 1;
         kl_assert(nret >= 3, "");
         if (klvalue_checktype(argbase, KL_ARRAY)) { /* is an array */
-          if (kl_unlikely(!klvalue_checktype(argbase + 1, KL_INT)))
+          if (kl_unlikely(!klvalue_checktype(argbase + 1, KL_INT))) {
+            klexec_savestate(callinfo->top, pc);
             return klstate_throw(state, KL_E_INVLD, "for loop is broken, "
-                                                    "expected loop state: (array, integer, element) or (array, integer, integer, element). "
-                                                    "current loop state: %s, %s, %s",
-                                                    klexec_typename(state, argbase),
-                                                    klexec_typename(state, argbase + 1),
-                                                    klexec_typename(state, argbase + 2));
+                "expected loop state: (array, integer, element) or (array, integer, integer, element). "
+                "current loop state: %s, %s, %s",
+                klexec_typename(state, argbase),
+                klexec_typename(state, argbase + 1),
+                klexec_typename(state, argbase + 2));
+          }
           KlArray* array = klvalue_getobj(argbase, KlArray*);
           size_t curridx = klcast(size_t, klvalue_getint(argbase + 1)) + 1;
           KlInstruction jmp = *pc++;
@@ -2552,8 +2554,10 @@ KlException klexec_execute(KlState* state) {
         } else if (klvalue_checktype(argbase, KL_MAP)) {  /* is a map */
           KlMap* map = klvalue_getobj(argbase, KlMap*);
           size_t index = klcast(size_t, klvalue_getint(argbase + 1));
-          if (kl_unlikely(!klmap_iter_valid(map, index)))
+          if (kl_unlikely(!klmap_iter_valid(map, index))) {
+            klexec_savestate(callinfo->top, pc);
             return klstate_throw(state, KL_E_INVLD, "for loop (map) is broken, %zu is not map iteration index", index);
+          }
           index = klmap_iter_next(map, index);
           KlInstruction jmp = *pc++;
           if (kl_likely(index != klmap_iter_end(map))) {
