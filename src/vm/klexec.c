@@ -2070,23 +2070,42 @@ KlException klexec_execute(KlState* state) {
       klexec_case (KLOPCODE_EQC) {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         const KlValue* b = constants + KLINST_AX_GETX(inst);
-        kl_assert(klvalue_canrawequal(b), "something wrong in EQC");
+        kl_assert(klvalue_canequal(b), "something wrong in EQC");
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
+        kl_assert(KLINST_XI_GETX(*pc) == KL_TRUE, "");
         KlInstruction condjmp = *pc++;
         int offset = KLINST_XI_GETI(condjmp);
-        if (klvalue_equal(a, b))
+        if (kl_likely(klvalue_sametype(a, b))) {
+          if (klvalue_sameinstance(a, b) ||
+              (klvalue_checktype(a, KL_LSTRING) &&
+               klstring_lequal(klvalue_getobj(a, KlString*), klvalue_getobj(b, KlString*))))
+            pc += offset;
+        } else if (klvalue_bothnumber(a, b) && klvalue_getnumber(a) == klvalue_getnumber(b)) {
           pc += offset;
+        }
         klexec_break;
       }
       klexec_case (KLOPCODE_NEC) {
         KlValue* a = stkbase + KLINST_AX_GETA(inst);
         const KlValue* b = constants + KLINST_AX_GETX(inst);
-        kl_assert(klvalue_canrawequal(b), "something wrong in NEC");
+        kl_assert(klvalue_canequal(b), "something wrong in NEC");
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
+        kl_assert(KLINST_XI_GETX(*pc) == KL_TRUE, "");
         KlInstruction condjmp = *pc++;
         int offset = KLINST_XI_GETI(condjmp);
-        if (!klvalue_equal(a, b))
+        if (kl_likely(klvalue_sametype(a, b))) {
+          if (kl_likely(!klvalue_checktype(a, KL_LSTRING))) {
+            if (!klvalue_sameinstance(a, b))
+              pc += offset;
+          } else if (!klstring_lequal(klvalue_getobj(a, KlString*), klvalue_getobj(b, KlString*))) {
+            pc += offset;
+          }
+        } else if (klvalue_bothnumber(a, b)) {
+          if (klvalue_getnumber(a) != klvalue_getnumber(b))
+            pc += offset;
+        } else {
           pc += offset;
+        }
         klexec_break;
       }
       klexec_case (KLOPCODE_LTC) {
@@ -2133,20 +2152,34 @@ KlException klexec_execute(KlState* state) {
         KlValue* a = stkbase + KLINST_AI_GETA(inst);
         int imm = KLINST_AI_GETI(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
+        kl_assert(KLINST_XI_GETX(*pc) == KL_TRUE, "");
         KlInstruction condjmp = *pc++;
         int offset = KLINST_XI_GETI(condjmp);
-        if (klvalue_isnumber(a) && klvalue_getnumber(a) == imm)
-          pc += offset;
+        if (kl_likely(klvalue_checktype(a, KL_INT))) {
+          if (klvalue_getint(a) == imm)
+            pc += offset;
+        } else if (klvalue_checktype(a, KL_FLOAT)) {
+          if (klvalue_getfloat(a) == imm)
+            pc += offset;
+        }
         klexec_break;
       }
       klexec_case (KLOPCODE_NEI) {
         KlValue* a = stkbase + KLINST_AI_GETA(inst);
         KlInt imm = KLINST_AI_GETI(inst);
         kl_assert(KLINST_GET_OPCODE(*pc) == KLOPCODE_CONDJMP, "");
+        kl_assert(KLINST_XI_GETX(*pc) == KL_TRUE, "");
         KlInstruction condjmp = *pc++;
         int offset = KLINST_XI_GETI(condjmp);
-        if (!klvalue_isnumber(a) || klvalue_getnumber(a) != imm)
+        if (kl_likely(klvalue_checktype(a, KL_INT))) {
+          if (klvalue_getint(a) != imm)
+            pc += offset;
+        } else if (klvalue_checktype(a, KL_FLOAT)) {
+          if (klvalue_getfloat(a) != imm)
+            pc += offset;
+        } else {
           pc += offset;
+        }
         klexec_break;
       }
       klexec_case (KLOPCODE_LTI) {
@@ -2285,8 +2318,10 @@ KlException klexec_execute(KlState* state) {
         kl_assert(b + nwanted + 2 < klstack_size(klstate_stack(state)) + klstack_raw(klstate_stack(state)), "compiler error");
         klvalue_setvalue(b + nwanted + 1, b);
         for (size_t i = 0; i < nwanted; ++i) {
-          if (kl_likely(klvalue_canrawequal(key + i))) {
-            const KlMapSlot* slot = klmap_search(map, key + i);
+          if (kl_likely(klvalue_canequal(key + i) || !klmap_testoption(map, KLMAP_OPT_CUSTOMHASH))) {
+            KlMapSlot* slot = kl_unlikely(klvalue_checktype(key + i, KL_LSTRING))
+                            ? klmap_searchlstring(map, klvalue_getobj(key + i, KlString*))
+                            : klmap_search(map, key + i);
             slot ? klvalue_setvalue(a + i, &slot->value) : klvalue_setnil(a + i);
           } else {
             klvalue_setint(b + nwanted + 2, i); /* save current index for pmappost */
@@ -2323,9 +2358,11 @@ KlException klexec_execute(KlState* state) {
         kl_assert(klvalue_checktype(b + nwanted + 1, KL_MAP), "");
         kl_assert(klvalue_checktype(b + nwanted + 2, KL_INT), "");
         for (size_t i = klvalue_getint(b + nwanted + 2); i < nwanted; ++i) {
-          if (kl_likely(klvalue_canrawequal(key + i))) {
-            KlMapSlot* itr = klmap_search(map, key + i);
-            itr ? klvalue_setvalue(a + i, &itr->value) : klvalue_setnil(a + i);
+          if (kl_likely(klvalue_canequal(key + i) || !klmap_testoption(map, KLMAP_OPT_CUSTOMHASH))) {
+            KlMapSlot* slot = kl_unlikely(klvalue_checktype(key + i, KL_LSTRING))
+                            ? klmap_searchlstring(map, klvalue_getobj(key + i, KlString*))
+                            : klmap_search(map, key + i);
+            slot ? klvalue_setvalue(a + i, &slot->value) : klvalue_setnil(a + i);
           } else {
             klvalue_setint(b + nwanted + 2, i); /* save current index */
             klexec_savetop(callinfo->top);
