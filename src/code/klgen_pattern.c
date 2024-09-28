@@ -375,6 +375,7 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId targe
     }
     case KLAST_EXPR_INDEX:
     case KLAST_EXPR_DOT:
+    case KLAST_EXPR_WILDCARD:
     case KLAST_EXPR_ID: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       KlCStkId obj = klgen_stacktop(gen) - 1;
@@ -518,6 +519,7 @@ static void klgen_pattern_fast(KlGenUnit* gen, KlAstExpr* pattern, KlPatternEmit
     }
     case KLAST_EXPR_INDEX:
     case KLAST_EXPR_DOT:
+    case KLAST_EXPR_WILDCARD:
     case KLAST_EXPR_ID: {
       return;
     }
@@ -624,6 +626,7 @@ static bool klgen_pattern_fast_check(KlGenUnit* gen, KlAstExpr* pattern) {
     }
     case KLAST_EXPR_INDEX:
     case KLAST_EXPR_DOT:
+    case KLAST_EXPR_WILDCARD:
     case KLAST_EXPR_ID: {
       return true;
     }
@@ -726,6 +729,7 @@ size_t klgen_pattern_count_result(KlGenUnit* gen, KlAstExpr* pattern) {
     }
     case KLAST_EXPR_INDEX:
     case KLAST_EXPR_DOT:
+    case KLAST_EXPR_WILDCARD:
     case KLAST_EXPR_ID: {
       return 1;
     }
@@ -802,6 +806,7 @@ void klgen_pattern_do_assignment(KlGenUnit* gen, KlAstExpr* pattern) {
     }
     case KLAST_EXPR_INDEX:
     case KLAST_EXPR_DOT:
+    case KLAST_EXPR_WILDCARD:
     case KLAST_EXPR_ID: {
       kl_assert(klgen_stacktop(gen) > 0, "");
       size_t back = klgen_stacktop(gen) - 1;
@@ -880,6 +885,9 @@ KlCStkId klgen_pattern_newsymbol(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId ba
     case KLAST_EXPR_INDEX:
     case KLAST_EXPR_DOT: {
       klgen_error(gen, klast_begin(pattern), klast_end(pattern), "expected an identifier");
+      return base + 1;
+    }
+    case KLAST_EXPR_WILDCARD: {
       return base + 1;
     }
     case KLAST_EXPR_ID: {

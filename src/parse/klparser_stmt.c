@@ -3,6 +3,7 @@
 #include "include/parse/kllex.h"
 #include "include/parse/klparser_expr.h"
 #include "include/parse/klparser_utils.h"
+#include "include/parse/kltokens.h"
 
 static KlAstStmt* klparser_stmtexprandassign(KlParser* parser, KlLex* lex);
 static KlAstStmtLocalDefinition* klparser_stmtlocaldefinition(KlParser* parser, KlLex* lex);
@@ -420,6 +421,7 @@ const bool klparser_isstmtbegin[KLTK_NTOKEN] = {
   [KLTK_STRING] = true,
   [KLTK_BOOLVAL] = true,
   [KLTK_NIL] = true,
+  [KLTK_WILDCARD] = true,
   [KLTK_ID] = true,
   [KLTK_LBRACKET] = true,
   [KLTK_LBRACE] = true,

@@ -9,6 +9,7 @@
 #include "include/parse/klparser_error.h"
 #include "include/parse/klparser_utils.h"
 #include "deps/k/include/array/karray.h"
+#include "include/parse/kltokens.h"
 
 
 static KlAstExprList* klparser_correctfuncparams(KlParser* parser, KlLex* lex, KlAstExpr* expr, bool* vararg);
@@ -198,6 +199,12 @@ static KlAstExpr* klparser_exprunit(KlParser* parser, KlLex* lex) {
     }
     case KLTK_ID: {
       KlAstIdentifier* ast = klast_id_create(lex->tok.string, kllex_tokbegin(lex), kllex_tokend(lex));
+      if (kl_unlikely(!ast)) return klparser_error_oom(parser, lex);
+      kllex_next(lex);
+      return klcast(KlAstExpr*, ast);
+    }
+    case KLTK_WILDCARD: {
+      KlAstWildcard* ast = klast_wildcard_create(kllex_tokbegin(lex), kllex_tokend(lex));
       if (kl_unlikely(!ast)) return klparser_error_oom(parser, lex);
       kllex_next(lex);
       return klcast(KlAstExpr*, ast);
@@ -974,6 +981,7 @@ const bool klparser_isexprbegin[KLTK_NTOKEN] = {
   [KLTK_STRING] = true,
   [KLTK_BOOLVAL] = true,
   [KLTK_NIL] = true,
+  [KLTK_WILDCARD] = true,
   [KLTK_ID] = true,
   [KLTK_LBRACKET] = true,
   [KLTK_LBRACE] = true,

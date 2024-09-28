@@ -21,6 +21,9 @@ def string(KLTK_STRING):
 def boolean(KLTK_BOOLVAL):
   (KLTK_BOOLVAL) $true | false
 
+def nil(KLTK_WILDCARD):
+  (KLTK_WILDCARD) $_
+
 def nil(KLTK_NIL):
   (KLTK_NIL) $nil
 

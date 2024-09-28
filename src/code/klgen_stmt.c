@@ -248,6 +248,8 @@ static void klgen_singleassign(KlGenUnit* gen, KlAstExpr* lval, KlAstExpr* rval)
       }
     }
     klgen_stackfree(gen, stktop);
+  } else if (klast_kind(lval) == KLAST_EXPR_WILDCARD) {
+    /* do nothing */
   } else {
     klgen_error(gen, klast_begin(lval), klast_end(lval), "can not be evaluated to an lvalue");
   }
@@ -308,6 +310,8 @@ void klgen_assignfrom(KlGenUnit* gen, KlAstExpr* lval, KlCStkId stkid) {
       }
     }
     klgen_stackfree(gen, stktop);
+  } else if (klast_kind(lval) == KLAST_EXPR_WILDCARD) {
+    /* do nothing */
   } else {
     klgen_error(gen, klast_begin(lval), klast_end(lval), "can not be evaluated to an lvalue");
   }

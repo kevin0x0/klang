@@ -7,6 +7,7 @@
 #include "include/code/klgen_stmt.h"
 #include "include/ast/klast.h"
 #include "include/ast/klstrtbl.h"
+#include "include/code/klsymtbl.h"
 #include "include/lang/klinst.h"
 #include <setjmp.h>
 
@@ -30,7 +31,44 @@ static void klgen_exprtuple(KlGenUnit* gen, KlAstTuple* tuple, KlCStkId target);
 static KlCodeVal klgen_exprbinleftliteral(KlGenUnit* gen, KlAstBin* binast, KlCodeVal left, KlCStkId target);
 static KlCodeVal klgen_exprbinrightnonstk(KlGenUnit* gen, KlAstBin* binast, KlCodeVal left, KlCodeVal right, KlCStkId target, KlCStkId oristktop);
 
+static bool klgen_exprtuple_fast(KlGenUnit* gen, KlAstTuple* tuple, KlCStkId target) {
+  KlAstExpr** vals = tuple->vals;
+  size_t nval = tuple->nval;
+  if (nval == 0) {
+    klgen_emit(gen, klinst_mktuple(target, 0, 0), klgen_astposition(tuple));
+    if (klgen_stacktop(gen) <= target)
+      klgen_stackfree(gen, target + 1);
+    return true;
+  }
+  if (klast_kind(vals[0]) != KLAST_EXPR_ID)
+    return false;
+  KlSymbol* symbol = klgen_getsymbol(gen, klcast(KlAstIdentifier*, vals[0])->id);
+  if (!symbol || symbol->attr.kind != KLVAL_STACK)
+    return false;
+  KlCStkId prevpos = symbol->attr.idx;
+  for (size_t i = 1; i < nval; ++i) {
+    if (klast_kind(vals[i]) != KLAST_EXPR_ID)
+      return false;
+    symbol = klgen_getsymbol(gen, klcast(KlAstIdentifier*, vals[i])->id);
+    if (!symbol)
+      return false;
+    if (symbol->attr.kind != KLVAL_STACK)
+      return false;
+    if (prevpos + 1 != symbol->attr.idx)
+      return false;
+    prevpos = symbol->attr.idx;
+  }
+  /* now prevpos is the position of last symbol */
+  KlCStkId base = prevpos - nval + 1;
+  klgen_emit(gen, klinst_mktuple(target, base, nval), klgen_astposition(tuple));
+  if (klgen_stacktop(gen) <= target)
+    klgen_stackfree(gen, target + 1);
+  return true;
+}
+
 static void klgen_exprtuple(KlGenUnit* gen, KlAstTuple* tuple, KlCStkId target) {
+  if (klgen_exprtuple_fast(gen, tuple, target))
+    return;
   KlCStkId base = klgen_stacktop(gen);
   klgen_exprlist_raw(gen, tuple->vals, tuple->nval, tuple->nval, klgen_astposition(tuple));
   /* the calculation of a 255-tuple will exceed the maximum number of available registers,
@@ -1091,6 +1129,9 @@ KlCodeVal klgen_expr(KlGenUnit* gen, KlAstExpr* ast) {
     case KLAST_EXPR_CONSTANT: {
       return klgen_exprconstant(gen, klcast(KlAstConstant*, ast));
     }
+    case KLAST_EXPR_WILDCARD: {
+      return klcodeval_nil();
+    }
     case KLAST_EXPR_ID: {
       return klgen_identifier(gen, klcast(KlAstIdentifier*, ast));
     }
@@ -1190,6 +1231,13 @@ KlCodeVal klgen_exprtarget(KlGenUnit* gen, KlAstExpr* ast, KlCStkId target) {
     }
     case KLAST_EXPR_CONSTANT: {
       return klgen_exprconstant(gen, klcast(KlAstConstant*, ast));
+    }
+    case KLAST_EXPR_WILDCARD: {
+      KlCStkId stktop = klgen_stacktop(gen);
+      klgen_emitloadnils(gen, target, 1, klgen_astposition(ast));
+      if (target >= stktop)
+        klgen_stackfree(gen, target + 1);
+      return klcodeval_stack(target);
     }
     case KLAST_EXPR_ID: {
       KlCStkId stktop = klgen_stacktop(gen);

@@ -9,6 +9,7 @@ static void klast_array_destroy(KlAstArray* astarray);
 static void klast_arraycomprehension_destroy(KlAstArrayComprehension* astarraycomprehension);
 static void klast_class_destroy(KlAstClass* astclass);
 static void klast_constant_destroy(KlAstConstant* astconstant);
+static void klast_wildcard_destroy(KlAstWildcard* astwildcard);
 static void klast_vararg_destroy(KlAstVararg* astvararg);
 static void klast_exprlist_destroy(KlAstExprList* astexprlist);
 static void klast_bin_destroy(KlAstBin* astbin);
@@ -33,6 +34,7 @@ static const KlAstInfo klast_array_vfunc = { .destructor = (KlAstDelete)klast_ar
 static const KlAstInfo klast_arraycomprehension_vfunc = { .destructor = (KlAstDelete)klast_arraycomprehension_destroy, .kind = KLAST_EXPR_ARRGEN };
 static const KlAstInfo klast_class_vfunc = { .destructor = (KlAstDelete)klast_class_destroy, .kind = KLAST_EXPR_CLASS };
 static const KlAstInfo klast_constant_vfunc = { .destructor = (KlAstDelete)klast_constant_destroy, .kind = KLAST_EXPR_CONSTANT };
+static const KlAstInfo klast_wildcard_vfunc = { .destructor = (KlAstDelete)klast_wildcard_destroy, .kind = KLAST_EXPR_WILDCARD };
 static const KlAstInfo klast_vararg_vfunc = { .destructor = (KlAstDelete)klast_vararg_destroy, .kind = KLAST_EXPR_VARARG };
 static const KlAstInfo klast_exprlist_vfunc = { .destructor = (KlAstDelete)klast_exprlist_destroy, .kind = KLAST_EXPR_LIST };
 static const KlAstInfo klast_bin_vfunc = { .destructor = (KlAstDelete)klast_bin_destroy, .kind = KLAST_EXPR_BIN };
@@ -197,6 +199,14 @@ KlAstConstant* klast_constant_create_nil(KlFileOffset begin, KlFileOffset end) {
   klast_setposition(astconstant, begin, end);
   klast_init(astconstant, &klast_constant_vfunc);
   return astconstant;
+}
+
+KlAstWildcard* klast_wildcard_create(KlFileOffset begin, KlFileOffset end) {
+  KlAstWildcard* astwildcard = klast_alloc(KlAstWildcard);
+  if (kl_unlikely(!astwildcard)) return NULL;
+  klast_setposition(astwildcard, begin, end);
+  klast_init(astwildcard, &klast_wildcard_vfunc);
+  return astwildcard;
 }
 
 KlAstVararg* klast_vararg_create(KlFileOffset begin, KlFileOffset end) {
@@ -474,6 +484,10 @@ static void klast_class_destroy(KlAstClass* astclass) {
 
 static void klast_constant_destroy(KlAstConstant* astconstant) {
   (void)astconstant;
+}
+
+static void klast_wildcard_destroy(KlAstWildcard* astwildcard) {
+  (void)astwildcard;
 }
 
 static void klast_vararg_destroy(KlAstVararg* astvararg) {

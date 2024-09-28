@@ -7,6 +7,7 @@ static const char* const descrition[KLTK_NTOKEN] = {
   [KLTK_STRING] = "string",
   [KLTK_BOOLVAL] = "boolean",
   [KLTK_NIL] = "nil",
+  [KLTK_WILDCARD] = "_",
   [KLTK_VARARG] = "...",
   [KLTK_CONCAT] = "..",
   [KLTK_ADD] = "+",

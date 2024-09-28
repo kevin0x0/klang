@@ -1,1 +1,0 @@
-lexgen -i lextab.lx -o kllexer.c -t kllexer.tmpl --out-inc kltokens.h --it kltokens.tmpl 

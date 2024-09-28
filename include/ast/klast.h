@@ -30,6 +30,7 @@ typedef enum tagKlAstKind {
   KLAST_EXPR_CLASS,
   KLAST_EXPR_CONSTANT,
   KLAST_EXPR_ID,
+  KLAST_EXPR_WILDCARD,
   KLAST_EXPR_VARARG,
   KLAST_EXPR_TUPLE,
 
@@ -177,6 +178,10 @@ typedef struct tagKlAstConstant {
   KL_DERIVE_FROM(KlAstExpr, _astbase_);
   KlConstant con;
 } KlAstConstant;
+
+typedef struct tagKlAstExprWildcard {
+  KL_DERIVE_FROM(KlAstExpr, _astbase_);
+} KlAstWildcard;
 
 typedef struct tagKlAstVararg {
   KL_DERIVE_FROM(KlAstExpr, _astbase_);
@@ -410,6 +415,7 @@ KlAstConstant* klast_constant_create_integer(KlCInt intval, KlFileOffset begin, 
 KlAstConstant* klast_constant_create_float(KlCFloat floatval, KlFileOffset begin, KlFileOffset end);
 KlAstConstant* klast_constant_create_boolean(KlCBool boolval, KlFileOffset begin, KlFileOffset end);
 KlAstConstant* klast_constant_create_nil(KlFileOffset begin, KlFileOffset end);
+KlAstWildcard* klast_wildcard_create(KlFileOffset begin, KlFileOffset end);
 KlAstVararg* klast_vararg_create(KlFileOffset begin, KlFileOffset end);
 KlAstExprList* klast_exprlist_create(KlAstExpr** exprs, size_t nexpr, KlFileOffset begin, KlFileOffset end);
 KlAstBin* klast_bin_create(KlTokenKind op, KlAstExpr* loperand, KlAstExpr* roperand, KlFileOffset begin, KlFileOffset end);
@@ -430,9 +436,10 @@ KlAstExpr* klast_exprlist_stealfirst_and_destroy(KlAstExprList* exprlist);
 bool klast_isboolexpr(KlAstExpr* ast);
 
 static inline bool klast_expr_islvalue(KlAstExpr* ast) {
-  return klast_kind(ast) == KLAST_EXPR_ID   ||
-         klast_kind(ast) == KLAST_EXPR_DOT  ||
-         klast_kind(ast) == KLAST_EXPR_INDEX;
+  return klast_kind(ast) == KLAST_EXPR_ID    ||
+         klast_kind(ast) == KLAST_EXPR_DOT   ||
+         klast_kind(ast) == KLAST_EXPR_INDEX ||
+         klast_kind(ast) == KLAST_EXPR_WILDCARD;
 }
 
 static inline void klast_exprlist_shallow_replace(KlAstExprList* exprlist, KlAstExpr** exprs, size_t nexpr) {

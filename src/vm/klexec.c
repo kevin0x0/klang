@@ -1555,7 +1555,7 @@ KlException klexec_execute(KlState* state) {
         /* this instruction tells us current stack top */
         KlValue* base = stkbase + KLINST_ABX_GETB(inst);
         size_t nval = KLINST_ABX_GETX(inst);
-        klexec_savestate(base + nval, pc); /* creating map may trigger gc */
+        klexec_savestate(callinfo->top, pc);  /* creating map may trigger gc */
         KlTuple* tuple = kltuple_create(klstate_getmm(state), base, nval);
         if (kl_unlikely(!tuple))
           return klstate_throw_oom(state, "creating a tuple");
