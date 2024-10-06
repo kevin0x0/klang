@@ -89,7 +89,7 @@ static void klcclosure_delete(KlCClosure* cclo, KlMM* klmm) {
   size_t nref = cclo->nref;
   for (size_t i = 0; i < nref; ++i)
     klref_unpin(refs[i], klmm);
-  klmm_free(klmm, cclo, sizeof (KlKClosure) + sizeof (KlRef*) * cclo->nref);
+  klmm_free(klmm, cclo, sizeof (KlCClosure) + sizeof (KlRef*) * cclo->nref);
 }
 
 static KlGCObject* klcclosure_propagate(const KlCClosure* cclo, KlMM* klmm, KlGCObject* gclist) {
