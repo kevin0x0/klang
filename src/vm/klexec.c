@@ -1552,7 +1552,6 @@ KlException klexec_execute(KlState* state) {
       }
       klexec_case (KLOPCODE_MKTUPLE) {
         KlValue* a = stkbase + KLINST_ABX_GETA(inst);
-        /* this instruction tells us current stack top */
         KlValue* base = stkbase + KLINST_ABX_GETB(inst);
         size_t nval = KLINST_ABX_GETX(inst);
         klexec_savestate(callinfo->top, pc);  /* creating map may trigger gc */
