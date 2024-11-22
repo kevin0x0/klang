@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define KLLEX_DEADSTATE (255)
 
@@ -203,7 +204,7 @@ static inline void kllex_handleinteger(KlLex* lex, char* buf, size_t len) {
     len = KLLEX_STRLIMIT - 1;
   }
   buf[len] = '\0';
-  int base = buf[0] != '0' || len == 1 ? 10 : buf[0] == '0' ? 8 : 16;
+  int base = buf[0] != '0' || len == 1 ? 10 : tolower(buf[1]) == 'x' ? 16 : 8;
   lex->tok.intval = strtoll(buf, NULL, base);
 }
 
