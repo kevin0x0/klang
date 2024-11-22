@@ -18,6 +18,7 @@ static KlException kllib_basic_map_index(KlState* state);
 static KlException kllib_basic_map_indexas(KlState* state);
 
 static KlException kllib_basic_type(KlState* state);
+static KlException kllib_basic_loadlib(KlState* state);
 
 static KlException kllib_basic_init_globalvar(KlState* state);
 static KlException kllib_basic_init_iter(KlState* state);
@@ -59,6 +60,9 @@ static KlException kllib_basic_init_globalvar(KlState* state) {
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "type"));
   klapi_setcfunc(state, -1, kllib_basic_type);
+  KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
+  KLAPI_PROTECT(klapi_setstring(state, -2, "loadlib"));
+  klapi_setcfunc(state, -1, kllib_basic_loadlib);
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
   KLAPI_PROTECT(klapi_setstring(state, -2, "global"));
   klapi_setobj(state, -1, klstate_global(state), KL_MAP);
@@ -276,4 +280,21 @@ static KlException kllib_basic_type(KlState* state) {
   const KlString* name = klexec_typename(state, klapi_access(state, -1));
   klapi_setobj(state, -1, name, klvalue_getstringtype(name));
   return klapi_return(state, 1);
+}
+
+static KlException kllib_basic_loadlib(KlState* state) {
+  if (klapi_narg(state) != 1 && klapi_narg(state) != 2)
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected (sopath [, entry function])");
+  if (kl_unlikely(!klapi_checkstring(state, -1) || (klapi_narg(state) == 2 && !klapi_checkstring(state, -2))))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected string(s)(sopath [, entry function])");
+  if (klapi_narg(state) == 2) { /* make sure the sopath is on the top of stack */
+    KlString* tmp = klapi_getstring(state, -2);
+    klapi_setvalue(state, -2, klapi_access(state, -1));
+    klapi_setvalue(state, -1, &klvalue_string(tmp));
+  }
+  const char* entryname = klapi_narg(state) == 1 ? NULL : klstring_content(klapi_getstring(state, -2)); 
+  size_t framesize = klapi_framesize(state);
+  KLAPI_PROTECT(klapi_loadlib(state, 0, entryname));
+  size_t nret = klapi_framesize(state) - framesize + 1;
+  return klapi_return(state, nret);
 }
