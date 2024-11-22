@@ -225,8 +225,11 @@ static KlAstExpr* klparser_exprunit(KlParser* parser, KlLex* lex) {
       KlFileOffset begin = kllex_tokbegin(lex);
       kllex_next(lex);
       KlFileOffset mayend = kllex_tokend(lex);
-      if (kllex_trymatch(lex, KLTK_RPAREN)) /* empty tuple */
-        return klcast(KlAstExpr*, klparser_emptytuple(parser, lex, begin, mayend));
+      if (kllex_trymatch(lex, KLTK_RPAREN)) { /* maybe an exprlist */
+        return kllex_check(lex, KLTK_ARROW) || kllex_check(lex, KLTK_DARROW)
+               ? klcast(KlAstExpr*, klparser_emptyexprlist(parser, lex, begin, mayend))
+               : klcast(KlAstExpr*, klparser_emptytuple(parser, lex, begin, mayend));
+      }
 
       KlAstExpr* expr = klparser_expr(parser, lex);
       if (kllex_check(lex, KLTK_RPAREN)) {  /* maybe an exprlist */
