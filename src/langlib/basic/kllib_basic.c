@@ -137,7 +137,7 @@ static KlException kllib_basic_callable_iter(KlState* state) {
 
 static KlException kllib_basic_map_weak(KlState* state) {
   if (klapi_narg(state) != 2)
-    return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly two argmument(this method should be automatically called in iterration loop)");
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly two argmument");
   if (!klapi_checktype(state, -2, KL_MAP))
     return klapi_throw_internal(state, KL_E_TYPE, "expected map");
   if (!klapi_checkstring(state, -1))
