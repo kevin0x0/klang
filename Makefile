@@ -11,15 +11,17 @@ DEPS_K_DIR = $(ROOT_DIR)deps/k/
 
 AR = ar rcs
 CC = gcc
-OPTIMIZE = -O2
+OPTIMIZE = -O3
 MEMORY_CHECK =
 WARNING = -Wall -Wextra -Winline
 DEBUG = -DNDEBUG
 PLATFORM = Linux
 CONFIG =
 STDC =
+INSTALL_PATH ?= /usr/local/
+CORELIBPATH = $(INSTALL_PATH)/lib/klang/
 
-CFLAGS = $(STDC) $(OPTIMIZE) $(MEMORY_CHECK) $(WARNING) $(DEBUG) $(CONFIG) -I $(ROOT_DIR) -I $(DEPS_K_DIR)
+CFLAGS = $(STDC) $(OPTIMIZE) $(MEMORY_CHECK) $(WARNING) $(DEBUG) $(CONFIG) -I $(ROOT_DIR) -I $(DEPS_K_DIR) -DCORELIBPATH="\"$(CORELIBPATH)\""
 
 KLANG_OBJS = $(OBJ_DIR)klutils.o $(OBJ_DIR)klgc.o $(OBJ_DIR)klmm.o $(OBJ_DIR)kltuple.o $(OBJ_DIR)klarray.o $(OBJ_DIR)klmap.o $(OBJ_DIR)klclass.o \
              $(OBJ_DIR)klclosure.o $(OBJ_DIR)klkfunc.o $(OBJ_DIR)klref.o $(OBJ_DIR)klstring.o $(OBJ_DIR)klcoroutine.o $(OBJ_DIR)klbuiltinclass.o \
@@ -194,6 +196,11 @@ $(LIB_DIR)os.a : $(KLANGLIB_OS_OBJS) | create_dir
 	$(AR) $@ $^
 
 endif
+
+install: all
+	mkdir -p $(INSTALL_PATH)/bin $(CORELIBPATH)
+	install $(BIN_DIR)/klang $(BIN_DIR)/klangc $(INSTALL_PATH)/bin
+	install $(LIB_DIR)/* $(CORELIBPATH)
 
 
 $(BIN_DIR)klangc : $(OBJ_DIR)klangc.o $(LIB_DIR)libklangc.a | create_dir

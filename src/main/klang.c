@@ -17,6 +17,7 @@
 #define KL_OPTION_IN_FILE   ((unsigned)klbit(2))
 #define KL_OPTION_IN_ARG    ((unsigned)klbit(3))
 #define KL_OPTION_UNDUMP    ((unsigned)klbit(4))
+#define KL_OPTION_SHEBANG   ((unsigned)klbit(5))
 
 
 #define KL_NARGRAW(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...)     (_9)
@@ -112,6 +113,8 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
       break;
     } else if (kl_match(argv[i], "-i", "--interactive")) {
       behaviour->option |= KL_OPTION_INTER;
+    } else if (kl_match(argv[i], "-s", "--skip-shebang")) {
+      behaviour->option |= KL_OPTION_SHEBANG;
     } else if (kl_match(argv[i], "-u", "--undump")) {
       if (++i == argc) {
         fprintf(stderr, "expected <filename> after option: %s\n", argv[i - 1]);
@@ -333,6 +336,16 @@ static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicT
     input = kifile_create(behaviour->filename, "rb");
     if (kl_unlikely(!input))
       return klapi_throw_internal(state, KL_E_OOM, "can not open file: %s", behaviour->filename);
+    if (behaviour->option & KL_OPTION_SHEBANG) {
+      int ch;
+      do {
+        ch = ki_getc(input);
+      } while (ch != '\n' && ch != '\r' && ch != KOF);
+      if (ch == '\r' && (ch = ki_getc(input)) != '\n') {
+        if (ch != KOF)
+          ki_ungetc(input);
+      }
+    }
   }
 
   /* push error handler */
@@ -461,14 +474,11 @@ static int kl_validatebehaviour(KlBehaviour* behaviour) {
     behaviour->option |= KL_OPTION_INTER;
 
   if (!behaviour->corelibpath) {
-    if (!(behaviour->corelibpath = kfs_get_bin_dir())) {
-      fprintf(stderr, "out of memory while validating behaviour\n");
-      kl_cleanbehaviour(behaviour);
-      return 1;
-    }
-    size_t pathlen = strlen(behaviour->corelibpath);
-    kl_assert(pathlen > 4, "");
-    strcpy(&behaviour->corelibpath[pathlen - 4], "lib/");
+#ifdef CORELIBPATH
+    behaviour->corelibpath = strdup(CORELIBPATH);
+#else
+    behaviour->corelibpath = strdup("/usr/local/lib/klang");
+#endif
   }
   return 0;
 }
@@ -480,6 +490,7 @@ static void kl_print_help(void) {
   printf("  -e <code>                   execute the code provided by command line.\n");
   printf("  -u --undump <filename>      load byte code from specified file.\n");
   printf("  -i --interactive            always enter interactive mode.\n");
+  printf("  -s --skip-shebang           skip first line.\n");
   printf("  --corelibpath               where to load the core library.\n");
   printf("if input is not specified, enter interactive mode.\n");
 }
