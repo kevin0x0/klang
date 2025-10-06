@@ -2561,7 +2561,7 @@ KlException klexec_execute(KlState* state) {
         size_t nret = KLINST_AX_GETX(inst);
         KlValue* argbase = a + 1;
         kl_assert(nret >= 3, "");
-        if (klvalue_checktype(argbase, KL_ARRAY)) { /* is an array */
+        if (klvalue_checktype(a, KL_ARRAY)) { /* is an array */
           if (kl_unlikely(!klvalue_checktype(argbase + 1, KL_INT))) {
             klexec_savestate(callinfo->top, pc);
             return klstate_throw(state, KL_E_INVLD, "for loop is broken, "
@@ -2587,7 +2587,7 @@ KlException klexec_execute(KlState* state) {
             }
             pc += KLINST_AI_GETI(jmp);  /* continue */
           } /* else does nothing */
-        } else if (klvalue_checktype(argbase, KL_MAP)) {  /* is a map */
+        } else if (klvalue_checktype(a, KL_MAP)) {  /* is a map */
           KlMap* map = klvalue_getobj(argbase, KlMap*);
           size_t index = klcast(size_t, klvalue_getint(argbase + 1));
           if (kl_unlikely(!klmap_iter_valid(map, index))) {

@@ -239,7 +239,7 @@ static void klgen_exprmatch(KlGenUnit* gen, KlAstMatch* matchast, KlCStkId targe
 
     klgen_pushsymtbl(gen);
     klgen_expr_domatching(gen, patterns[i], currstktop, matchobj.index);
-    needresult ? klgen_exprtarget_noconst(gen, exprs[i], target)
+    needresult ? klgen_expr_evaluated_to_noconst(gen, exprs[i], target)
                : klgen_multival(gen, exprs[i], 0, klgen_stacktop(gen));
 
 
@@ -426,7 +426,7 @@ static void klgen_exprclass(KlGenUnit* gen, KlAstClass* classast, KlCStkId targe
   size_t class_size = abovelog2(classast->nfield);
   bool hasbase = classast->baseclass != NULL;
   if (hasbase) /* base is specified */
-    klgen_exprtarget_noconst(gen, classast->baseclass, stktop);
+    klgen_expr_evaluated_to_noconst(gen, classast->baseclass, stktop);
 
   if (classast->nfield == 0) {
     klgen_emit(gen, klinst_mkclass(target, stktop, hasbase, class_size), klgen_astposition(classast));
@@ -480,7 +480,7 @@ static KlCodeVal klgen_identifier(KlGenUnit* gen, KlAstIdentifier* idast) {
 
 static void klgen_method(KlGenUnit* gen, KlAstExpr* objast, KlStrDesc method, KlAstExprList* args, KlFilePosition position, size_t nret, KlCStkId target) {
   KlCStkId base = klgen_stacktop(gen);
-  klgen_exprtarget_noconst(gen, objast, base);
+  klgen_expr_evaluated_to_noconst(gen, objast, base);
   size_t narg = klgen_passargs(gen, args);
   KlCIdx conidx = klgen_newstring(gen, method);
   klgen_emitmethod(gen, base, conidx, narg, nret, target, position);
@@ -497,7 +497,7 @@ static void klgen_exprcall(KlGenUnit* gen, KlAstCall* callast, size_t nret, KlCS
     return;
   }
   KlCStkId base = klgen_stacktop(gen);
-  klgen_exprtarget_noconst(gen, callast->callable, base);
+  klgen_expr_evaluated_to_noconst(gen, callast->callable, base);
   size_t narg = klgen_passargs(gen, callast->args);
   if (target == base) {
     klgen_emit(gen, klinst_scall(base, narg, nret), klgen_astposition(callast));
@@ -546,7 +546,7 @@ void klgen_multival(KlGenUnit* gen, KlAstExpr* ast, size_t nval, KlCStkId target
         klgen_expr(gen, ast);
         klgen_stackfree(gen, stktop);
       } else {
-        klgen_exprtarget_noconst(gen, ast, target);
+        klgen_expr_evaluated_to_noconst(gen, ast, target);
         if (nval > 1)
           klgen_emitloadnils(gen, target + 1, nval - 1, klgen_astposition(ast));
       }
@@ -607,7 +607,7 @@ size_t klgen_takeall(KlGenUnit* gen, KlAstExpr* ast, KlCStkId target) {
       return KLINST_VARRES;
     }
     default: {
-      klgen_exprtarget_noconst(gen, ast, target);
+      klgen_expr_evaluated_to_noconst(gen, ast, target);
       return 1;
     }
   }
@@ -629,7 +629,7 @@ void klgen_exprlist_raw(KlGenUnit* gen, KlAstExpr** asts, size_t nast, size_t nw
   }
   size_t count = nvalid - 1;
   for (size_t i = 0; i < count; ++i)
-    klgen_exprtarget_noconst(gen, asts[i], klgen_stacktop(gen));
+    klgen_expr_evaluated_to_noconst(gen, asts[i], klgen_stacktop(gen));
   klgen_multival(gen, asts[count], nwanted - count, klgen_stacktop(gen));
   KlCStkId stktop = klgen_stacktop(gen);
   for (size_t i = nwanted; i < nast; ++i)

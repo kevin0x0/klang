@@ -88,7 +88,7 @@ static void klgen_stmtlocaldef(KlGenUnit* gen, KlAstStmtLocalDefinition* localde
   if (klast_kind(expr) != KLAST_EXPR_FUNC)
     klgen_emitloadnils(gen, stktop, 1, klgen_astposition(localdefast));
   klgen_newsymbol(gen, localdefast->id, stktop, klgen_position(localdefast->idbegin, localdefast->idend));
-  klgen_exprtarget_noconst(gen, localdefast->expr, stktop);
+  klgen_expr_evaluated_to_noconst(gen, localdefast->expr, stktop);
   kl_assert(klgen_stacktop(gen) == stktop + 1, "");
 }
 
@@ -575,11 +575,11 @@ static void klgen_stmtreturn(KlGenUnit* gen, KlAstStmtReturn* returnast) {
 static void klgen_stmtifor(KlGenUnit* gen, KlAstStmtIFor* iforast) {
   /* compute iteration information(begin, end, step) */
   KlCStkId forbase = klgen_stacktop(gen);
-  klgen_exprtarget_noconst(gen, iforast->begin, forbase);
+  klgen_expr_evaluated_to_noconst(gen, iforast->begin, forbase);
   // KlCodeVal begin = klcodeval_stack(forbase);
-  klgen_exprtarget_noconst(gen, iforast->end, forbase + 1);
+  klgen_expr_evaluated_to_noconst(gen, iforast->end, forbase + 1);
   if (iforast->step) {
-    klgen_exprtarget_noconst(gen, iforast->step, forbase + 2);
+    klgen_expr_evaluated_to_noconst(gen, iforast->step, forbase + 2);
   } else {
     klgen_emitloadnils(gen, forbase + 2, 1, klgen_position(klast_end(iforast->end), klast_end(iforast->end)));
     klgen_stackalloc1(gen);
@@ -687,7 +687,7 @@ static void klgen_stmtgfor(KlGenUnit* gen, KlAstStmtGFor* gforast) {
   /* compute iterable object */
   KlCStkId forbase = klgen_stacktop(gen);
   KlCStkId iterable = forbase;
-  klgen_exprtarget_noconst(gen, gforast->expr, iterable);
+  klgen_expr_evaluated_to_noconst(gen, gforast->expr, iterable);
   klgen_stackfree(gen, forbase);
 
   /* now enable statement 'break' and 'continue' */

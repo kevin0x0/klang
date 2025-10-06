@@ -302,7 +302,7 @@ static KlCStkId klgen_pattern(KlGenUnit* gen, KlAstExpr* pattern, KlCStkId targe
       size_t npair = map->npair;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       for (size_t i = 0; i < npair; ++i)
-        klgen_exprtarget_noconst(gen, keys[i], klgen_stacktop(gen));
+        klgen_expr_evaluated_to_noconst(gen, keys[i], klgen_stacktop(gen));
       klgen_stackalloc(gen, 2); /* need extra stack space in runtime */
       klgen_stackfree(gen, klgen_stacktop(gen) - 2);
       if (klgen_pattern_allislval(vals, npair)) {
@@ -465,7 +465,7 @@ static void klgen_pattern_fast(KlGenUnit* gen, KlAstExpr* pattern, KlPatternEmit
       size_t npair = map->npair;
       KlCStkId obj = klgen_stacktop(gen) - 1;
       for (size_t i = 0; i < npair; ++i)
-        klgen_exprtarget_noconst(gen, keys[i], klgen_stacktop(gen));
+        klgen_expr_evaluated_to_noconst(gen, keys[i], klgen_stacktop(gen));
       klgen_stackalloc(gen, 2); /* need extra stack space in runtime */
       klgen_stackfree(gen, klgen_stacktop(gen) - 2);
       emitter->map(gen, npair, obj, obj, klgen_astposition(pattern));
