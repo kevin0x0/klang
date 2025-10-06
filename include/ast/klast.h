@@ -4,7 +4,7 @@
 
 #include "include/ast/klstrtbl.h"
 #include "include/error/klerror.h"
-#include "include/lang/kltypes.h"
+#include "include/common/kltypes.h"
 #include "include/parse/kltokens.h"
 #include <stdlib.h>
 

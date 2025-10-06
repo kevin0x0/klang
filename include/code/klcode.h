@@ -4,7 +4,7 @@
 #include "include/ast/klast.h"
 #include "include/ast/klstrtbl.h"
 #include "include/error/klerror.h"
-#include "include/lang/klinst.h"
+#include "include/common/klinst.h"
 
 
 typedef struct tagKlCode KlCode;

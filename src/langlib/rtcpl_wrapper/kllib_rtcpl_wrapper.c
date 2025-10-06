@@ -1,5 +1,5 @@
 #include "include/klapi.h"
-#include "include/lang/klconfig.h"
+#include "include/common/klconfig.h"
 #include "include/misc/klutils.h"
 #include "include/vm/klexception.h"
 #include "deps/k/include/kio/kifile.h"

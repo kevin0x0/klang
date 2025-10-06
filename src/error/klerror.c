@@ -21,8 +21,8 @@ void klerror_init(KlError* klerr, Ko* errout) {
 }
 
 
-static unsigned klerror_helper_locateline(Ki* input, KlFileOffset offset);
-static bool klerror_helper_showline_withcurl(KlError* klerr, Ki* input, KlFileOffset begin, KlFileOffset end);
+static unsigned locateline(Ki* input, KlFileOffset offset);
+static bool showline_withcurl(KlError* klerr, Ki* input, KlFileOffset begin, KlFileOffset end);
 
 void klerror_error(KlError* klerr, Ki* input, const char* inputname, KlFileOffset begin, KlFileOffset end, const char* format, ...) {
   va_list args;
@@ -40,7 +40,7 @@ void klerror_errorv(KlError* klerr, Ki* input, const char* inputname, KlFileOffs
   }
   Ko* err = klerr->err;
   KioFileOffset orioffset = ki_tell(input);
-  unsigned line = klerror_helper_locateline(input, begin);
+  unsigned line = locateline(input, begin);
   KioFileOffset linebegin = ki_tell(input);
 
   unsigned col = begin - linebegin + 1;
@@ -50,7 +50,7 @@ void klerror_errorv(KlError* klerr, Ki* input, const char* inputname, KlFileOffs
 
   unsigned nputline = 0;
   while (nputline++ < klerr->config.maxtextline) {
-    if (!klerror_helper_showline_withcurl(klerr, input, begin, end)) {
+    if (!showline_withcurl(klerr, input, begin, end)) {
       break;
     }
   }
@@ -64,7 +64,7 @@ void klerror_errorv(KlError* klerr, Ki* input, const char* inputname, KlFileOffs
 
 #define kl_isnl(ch)       ((ch) == '\n' || (ch) == '\r')
 
-static unsigned klerror_helper_locateline(Ki* input, KlFileOffset offset) {
+static unsigned locateline(Ki* input, KlFileOffset offset) {
   ki_seek(input, 0);
   unsigned currline = 1;
   KioFileOffset lineoff = 0;
@@ -82,7 +82,7 @@ static unsigned klerror_helper_locateline(Ki* input, KlFileOffset offset) {
   return currline;
 }
 
-static bool klerror_helper_showline_withcurl(KlError* klerr, Ki* input, KlFileOffset begin, KlFileOffset end) {
+static bool showline_withcurl(KlError* klerr, Ki* input, KlFileOffset begin, KlFileOffset end) {
   Ko* err = klerr->err;
   KioFileOffset curroffset = ki_tell(input);
   if (curroffset >= end) return false;

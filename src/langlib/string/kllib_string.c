@@ -1,5 +1,5 @@
 #include "include/klapi.h"
-#include "include/lang/klconfig.h"
+#include "include/common/klconfig.h"
 #include "include/misc/klutils.h"
 #include "include/value/klstate.h"
 #include "include/value/klstring.h"

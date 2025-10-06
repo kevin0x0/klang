@@ -1,10 +1,12 @@
 #include "include/klapi.h"
-#include "include/lang/klconfig.h"
-#include "include/lang/klconvert.h"
+#include "include/code/klcodeval.h"
+#include "include/common/klconfig.h"
+#include "include/common/kltypes.h"
 #include "include/misc/klutils.h"
 #include "include/value/klclass.h"
 #include "include/value/klkfunc.h"
 #include "include/value/klstate.h"
+#include "include/value/klstring.h"
 #include "include/value/kltuple.h"
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
@@ -106,6 +108,36 @@ void klapi_move(KlState* state, int from, int to, size_t count) {
   KlValue* pto = klapi_pointer(state, to);
   memmove(pfrom, pto, count * sizeof (KlValue));
 }
+
+
+KlException klapi_checkargs(KlState* state, KlUnsigned narg_min, KlUnsigned narg_max, ...) {
+  KlUnsigned narg = klapi_narg(state);
+  if (kl_unlikely(narg < narg_min)) {
+    return klapi_throw_internal(
+      state, KL_E_ARGNO,
+      "insufficient number of arguments, at least %u are required.", narg_min);
+  }
+  if (kl_unlikely(narg > narg_max)) {
+    return klapi_throw_internal(
+      state, KL_E_ARGNO,
+      "too many arguments, at most %u are required.", narg_max);
+  }
+
+  va_list ap;
+  va_start(ap, narg_max);
+  for (unsigned i = 0; i < narg; ++i) {
+    const char *expect_type = va_arg(ap, const char *);
+    const char *actual_type = klstring_content(klapi_typename(state, klapi_accessb(state, i)));
+    if (kl_unlikely(strcmp(expect_type, actual_type))) {
+      return klapi_throw_internal(state, KL_E_TYPE,
+                                  "The %sth parameter type does not match; it "
+                                  "should be %s, got %s.",
+                                  expect_type, actual_type);
+    }
+  }
+  return KL_E_NONE;
+}
+
 
 void klapi_pushcfunc(KlState* state, KlCFunction* cfunc) {
   kl_assert(klstack_residual(klstate_stack(state)) != 0, "stack index out of range");
@@ -398,7 +430,7 @@ KlException klapi_toint(KlState* state, int to, int from) {
     char* p = NULL;
     KlString* str = klvalue_getobj(val, KlString*);
     const char* content = klstring_content(str);
-    KlInt res = kllang_str2int(content, &p, 0);
+    KlInt res = kltypes_str2int(content, &p, 0);
     if (p != content + klstring_length(str))
       return klstate_throw(state, KL_E_INVLD, "this string can not be converted to integer");
     klvalue_setint(klapi_access(state, to), res);
@@ -420,7 +452,7 @@ KlException klapi_tofloat(KlState* state, int to, int from) {
     char* p = NULL;
     KlString* str = klvalue_getobj(val, KlString*);
     const char* content = klstring_content(str);
-    KlInt res = kllang_str2float(content, &p);
+    KlInt res = kltypes_str2float(content, &p);
     if (p != content + klstring_length(str))
       return klstate_throw(state, KL_E_INVLD, "this string can not be converted to float");
     klvalue_setfloat(klapi_access(state, to), res);
@@ -437,7 +469,7 @@ KlString* klapi_tostring(KlState* state, int index) {
     return klvalue_getobj(val, KlString*);
   } else if (klvalue_checktype(val, KL_INT)) {
     char buf[KLAPI_BUFSIZE];
-    kllang_int2str(buf, KLAPI_BUFSIZE, klvalue_getint(val));
+    kltypes_int2str(buf, KLAPI_BUFSIZE, klvalue_getint(val));
     KlString* str = klstrpool_new_string(klstate_strpool(state), buf);
     if (kl_unlikely(!str)) {
       klstate_throw(state, KL_E_OOM, "out of memory");
@@ -446,7 +478,7 @@ KlString* klapi_tostring(KlState* state, int index) {
     return str;
   } else if (klvalue_checktype(val, KL_FLOAT)) {
     char buf[KLAPI_BUFSIZE];
-    kllang_float2str(buf, KLAPI_BUFSIZE, klvalue_getfloat(val));
+    kltypes_float2str(buf, KLAPI_BUFSIZE, klvalue_getfloat(val));
     KlString* str = klstrpool_new_string(klstate_strpool(state), buf);
     if (kl_unlikely(!str)) {
       klstate_throw(state, KL_E_OOM, "out of memory");

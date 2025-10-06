@@ -1,5 +1,5 @@
 #include "include/klapi.h"
-#include "include/lang/klconfig.h"
+#include "include/common/klconfig.h"
 #include "include/langlib/stream/kllib_stream.h"
 #include "include/langlib/stream/kllib_sstring.h"
 #include "include/langlib/stream/kllib_file.h"

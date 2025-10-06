@@ -106,6 +106,8 @@ void klapi_close(KlState* state, KlValue* bound);
 void klapi_popclose(KlState* state, size_t count);
 void klapi_move(KlState* state, int from, int to, size_t count);
 
+KlException klapi_checkargs(KlState* state, KlUnsigned narg_min, KlUnsigned narg_max, ...);
+
 /* push method */
 void klapi_pushcfunc(KlState* state, KlCFunction* cfunc);
 void klapi_pushint(KlState* state, KlInt val);

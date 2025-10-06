@@ -1,12 +1,12 @@
 #ifndef _KLANG_INCLUDE_VALUE_KLKFUNC_H_
 #define _KLANG_INCLUDE_VALUE_KLKFUNC_H_
 
-#include "include/lang/kltypes.h"
+#include "include/common/kltypes.h"
 #include "include/mm/klmm.h"
 #include "include/value/klstring.h"
 #include "include/value/klvalue.h"
 #include "include/value/klref.h"
-#include "include/lang/klinst.h"
+#include "include/common/klinst.h"
 #include <stdbool.h>
 
 typedef struct tagKlKFuncFilePosition {

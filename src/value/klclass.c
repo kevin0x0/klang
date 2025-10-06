@@ -6,14 +6,14 @@
 #include <stddef.h>
 #include <string.h>
 
-static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist);
-static void klclass_delete(KlClass* klclass, KlMM* klmm);
+static KlGCObject* class_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist);
+static void class_delete(KlClass* klclass, KlMM* klmm);
 
-static const KlGCVirtualFunc klclass_gcvfunc = { .destructor = (KlGCDestructor)klclass_delete, .propagate = (KlGCProp)klclass_propagate, .after = NULL };
+static const KlGCVirtualFunc class_gcvfunc = { .destructor = (KlGCDestructor)class_delete, .propagate = (KlGCProp)class_propagate, .after = NULL };
 
-static KlClassSlot* klclass_getfreeslot(KlClass* klclass);
-static bool klclass_rehash(KlClass* klclass, KlMM* klmm);
-static KlClassSlot* klclass_add_rehash(KlClass* klclass, const KlString* key);
+static KlClassSlot* getfreeslot(KlClass* klclass);
+static bool rehash(KlClass* klclass, KlMM* klmm);
+static KlClassSlot* add_rehash(KlClass* klclass, const KlString* key);
 
 
 KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* constructor_data, KlObjectConstructor constructor) {
@@ -36,7 +36,7 @@ KlClass* klclass_create(KlMM* klmm, size_t capacity, size_t attroffset, void* co
     klclass->slots[i].key = NULL;
     klclass->slots[i].next = NULL;
   }
-  klmm_gcobj_enable(klmm, klmm_to_gcobj(klclass), &klclass_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(klclass), &class_gcvfunc);
   return klclass;
 }
 
@@ -68,11 +68,11 @@ KlClass* klclass_inherit(KlMM* klmm, const KlClass* parent) {
   klclass->nlocal = parent->nlocal;
   klclass->is_final = false;
   klclass->slots = array;
-  klmm_gcobj_enable(klmm, klmm_to_gcobj(klclass), &klclass_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(klclass), &class_gcvfunc);
   return klclass;
 }
 
-static bool klclass_rehash(KlClass* klclass, KlMM* klmm) {
+static bool rehash(KlClass* klclass, KlMM* klmm) {
   KlClassSlot* oldslots = klclass->slots;
   KlClassSlot* endslots = oldslots + klclass_capacity(klclass);
   size_t new_capacity = klclass_capacity(klclass) * 2;
@@ -90,14 +90,14 @@ static bool klclass_rehash(KlClass* klclass, KlMM* klmm) {
   klclass->mask = new_capacity - 1;
   klclass->lastfree = new_capacity; /* reset lastfree */
   for (KlClassSlot* slot = oldslots; slot != endslots; ++slot) {
-    KlClassSlot* inserted = klclass_add_rehash(klclass, slot->key);
+    KlClassSlot* inserted = add_rehash(klclass, slot->key);
     klvalue_setvalue(&inserted->value, &slot->value);
   }
   klmm_free(klmm, oldslots, (endslots - oldslots) * sizeof (KlClassSlot));
   return true;
 }
 
-static KlClassSlot* klclass_getfreeslot(KlClass* klclass) {
+static KlClassSlot* getfreeslot(KlClass* klclass) {
   size_t lastfree = klclass->lastfree;
   KlClassSlot* slots = klclass->slots;
   while (lastfree--) {
@@ -109,7 +109,7 @@ static KlClassSlot* klclass_getfreeslot(KlClass* klclass) {
   return NULL;
 }
 
-static KlClassSlot* klclass_add_rehash(KlClass* klclass, const KlString* key) {
+static KlClassSlot* add_rehash(KlClass* klclass, const KlString* key) {
   kl_assert(!klstring_islong(key), "");
 
   size_t mask = klclass_mask(klclass);
@@ -122,7 +122,7 @@ static KlClassSlot* klclass_add_rehash(KlClass* klclass, const KlString* key) {
   }
   /* this slot is not empty */
   /* just insert, no need to check whether this key is duplicated */
-  KlClassSlot* newslot = klclass_getfreeslot(klclass);
+  KlClassSlot* newslot = getfreeslot(klclass);
   size_t oldindex = klstring_hash(slot->key) & mask;
   if (oldindex == index) {
     newslot->key = key;
@@ -170,11 +170,11 @@ KlException klclass_newfield(KlClass* klclass, KlMM* klmm, const KlString* key, 
   if (kl_unlikely(klstring_islong(key)))  /* do not insert long string */
     return KL_E_INVLD;
   /* else is short string, insert it */
-  KlClassSlot* newslot = klclass_getfreeslot(klclass);
+  KlClassSlot* newslot = getfreeslot(klclass);
   if (kl_unlikely(!newslot)) { /* no slot */
-    if (kl_unlikely(!klclass_rehash(klclass, klmm)))
+    if (kl_unlikely(!rehash(klclass, klmm)))
       return KL_E_OOM;
-    KlClassSlot* slot = klclass_add_rehash(klclass, key);
+    KlClassSlot* slot = add_rehash(klclass, key);
     klvalue_setvalue(&slot->value, value);
     return KL_E_NONE;
   }
@@ -217,11 +217,11 @@ KlException klclass_addnormal_nosearch(KlClass* klclass, KlMM* klmm, const KlStr
   if (kl_unlikely(klstring_islong(key)))  /* do not insert long string */
     return KL_E_INVLD;
 
-  KlClassSlot* newslot = klclass_getfreeslot(klclass);
+  KlClassSlot* newslot = getfreeslot(klclass);
   if (kl_unlikely(!newslot)) { /* no slot */
-    if (kl_unlikely(!klclass_rehash(klclass, klmm)))
+    if (kl_unlikely(!rehash(klclass, klmm)))
       return KL_E_OOM;
-    KlClassSlot* slot = klclass_add_rehash(klclass, key);
+    KlClassSlot* slot = add_rehash(klclass, key);
     klvalue_setvalue_withtag(&slot->value, value, KLCLASS_TAG_NORMAL);
     return KL_E_NONE;
   }
@@ -249,7 +249,7 @@ KlException klclass_addnormal_nosearch(KlClass* klclass, KlMM* klmm, const KlStr
   }
 }
 
-static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* class_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
   KlClassSlot* slots = klclass->slots;
   KlClassSlot* end = slots + klclass_capacity(klclass);
@@ -263,7 +263,7 @@ static KlGCObject* klclass_propagate(KlClass* klclass, KlMM* klmm, KlGCObject* g
   return gclist;
 }
 
-static void klclass_delete(KlClass* klclass, KlMM* klmm) {
+static void class_delete(KlClass* klclass, KlMM* klmm) {
   klmm_free(klmm, klclass->slots, klclass_capacity(klclass) * sizeof (KlClassSlot));
   klmm_free(klmm, klclass, sizeof (KlClass));
 }
@@ -277,16 +277,16 @@ static void klclass_delete(KlClass* klclass, KlMM* klmm) {
 
 
 
-static void klobject_delete(KlObject* object, KlMM* klmm);
-static KlGCObject* klobject_propagate(KlObject* object, KlMM* klmm, KlGCObject* gclist);
+static void object_delete(KlObject* object, KlMM* klmm);
+static KlGCObject* object_propagate(KlObject* object, KlMM* klmm, KlGCObject* gclist);
 
-static KlGCVirtualFunc klobject_gcvfunc = { .destructor = (KlGCDestructor)klobject_delete, .propagate = (KlGCProp)klobject_propagate };
+static KlGCVirtualFunc object_gcvfunc = { .destructor = (KlGCDestructor)object_delete, .propagate = (KlGCProp)object_propagate };
 
 
 KlException klclass_default_constructor(KlClass* klclass, KlMM* klmm, KlValue* value) {
   KlObject* obj = klclass_objalloc(klclass, klmm);
   if (kl_unlikely(!obj)) return KL_E_OOM;
-  klmm_gcobj_enable(klmm, klmm_to_gcobj(obj), &klobject_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(obj), &object_gcvfunc);
   klvalue_setobj(value, obj, KL_OBJECT);
   return KL_E_NONE;
 }
@@ -305,7 +305,7 @@ KlObject* klclass_objalloc(KlClass* klclass, KlMM* klmm) {
   return obj;
 }
 
-static KlGCObject* klobject_propagate(KlObject* object, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* object_propagate(KlObject* object, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
   klmm_gcobj_mark(klmm_to_gcobj(object->klclass), gclist);
   KlValue* attrs = klobject_attrs(object);
@@ -317,6 +317,6 @@ static KlGCObject* klobject_propagate(KlObject* object, KlMM* klmm, KlGCObject* 
   return gclist;
 }
 
-static void klobject_delete(KlObject* object, KlMM* klmm) {
+static void object_delete(KlObject* object, KlMM* klmm) {
   klobject_free(object, klmm);
 }

@@ -1,5 +1,5 @@
 #include "include/klapi.h"
-#include "include/lang/klconfig.h"
+#include "include/common/klconfig.h"
 #include "include/misc/klutils.h"
 
 static KlException kllib_print(KlState* state);

@@ -5,12 +5,12 @@
 #include <stdarg.h>
 
 
-static KlGCObject* klstate_propagate(KlState* state, KlMM* klmm, KlGCObject* gclist);
-static void klstate_delete(KlState* state, KlMM* klmm);
+static KlGCObject* propagate(KlState* state, KlMM* klmm, KlGCObject* gclist);
+static void delete(KlState* state, KlMM* klmm);
 
-static const KlGCVirtualFunc klstate_gcvfunc = { .propagate = (KlGCProp)klstate_propagate, .destructor = (KlGCDestructor)klstate_delete, .after = NULL };
+static const KlGCVirtualFunc gcvfunc = { .propagate = (KlGCProp)propagate, .destructor = (KlGCDestructor)delete, .after = NULL };
 
-static void klstate_correct_callinfo(KlState* state, ptrdiff_t diff);
+static void correct_callinfo(KlState* state, ptrdiff_t diff);
 
 
 KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* strpool, KlKClosure* kclo) {
@@ -47,11 +47,11 @@ KlState* klstate_create(KlMM* klmm, KlMap* global, KlCommon* common, KlStrPool* 
   state->baseci.top = klstack_raw(klstate_stack(state));
   state->baseci.status = KLSTATE_CI_STATUS_NORM;
 
-  klmm_gcobj_enable(klmm, klmm_to_gcobj(state), &klstate_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(state), &gcvfunc);
   return state;
 }
 
-static void klstate_delete(KlState* state, KlMM* klmm) {
+static void delete(KlState* state, KlMM* klmm) {
   klstack_destroy(klstate_stack(state), klmm);
   klreflist_delete(state->reflist, klmm);
   klthrow_destroy(&state->throwinfo, klmm);
@@ -65,7 +65,7 @@ static void klstate_delete(KlState* state, KlMM* klmm) {
   klmm_free(klmm, state, sizeof (KlState));
 }
 
-static KlGCObject* klstate_propagate(KlState* state, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* propagate(KlState* state, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
   gclist = klstack_propagate(klstate_stack(state), gclist);
   gclist = klcommon_propagate(state->common, gclist);
@@ -83,7 +83,7 @@ static KlGCObject* klstate_propagate(KlState* state, KlMM* klmm, KlGCObject* gcl
   return gclist;
 }
 
-static void klstate_correct_callinfo(KlState* state, ptrdiff_t diff) {
+static void correct_callinfo(KlState* state, ptrdiff_t diff) {
   if (diff == 0) return;
   KlCallInfo* callinfo = state->callinfo;
   while (callinfo) {
@@ -109,7 +109,7 @@ KlException klstate_growstack(KlState* state, size_t framesize) {
   KlValue* newstk = klstack_raw(klstate_stack(state));
   ptrdiff_t diff = newstk - oristk;
   klreflist_correct(state->reflist, diff);
-  klstate_correct_callinfo(state, diff);
+  correct_callinfo(state, diff);
   return KL_E_NONE;
 }
 

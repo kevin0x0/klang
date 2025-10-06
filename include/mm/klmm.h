@@ -3,7 +3,7 @@
 #ifndef _INCLUDE_MM_KLMM_H_
 #define _INCLUDE_MM_KLMM_H_
 
-#include "include/lang/kltypes.h"
+#include "include/common/kltypes.h"
 #include "include/misc/klutils.h"
 
 #include <stdlib.h>
@@ -184,14 +184,14 @@ static inline void klmm_gcobj_aftersweep(KlMM* klmm, KlGCObject* obj) {
 
 static inline void klmm_gcobj_enable(KlMM* klmm, KlGCObject* gcobj, const KlGCVirtualFunc* vfunc) {
   gcobj->virtualfunc = vfunc;
-  gcobj->base.gc_state = KLGC_NORM | KLGC_INLIST;
+  gcobj->base.gc_state = KLGC_INLIST;
   gcobj->next = klmm->allgc;
   klmm->allgc = gcobj;
 }
 
 static inline void klmm_gcobj_enable_delegate(KlMM* klmm, KlGCObjectDelegate* gcobj) {
   kl_unused(klmm);
-  gcobj->gc_state = KLGC_NORM | KLGC_ISLEAF;
+  gcobj->gc_state = KLGC_ISLEAF;
 }
 
 static inline void klmm_stopgc(KlMM* klmm) {

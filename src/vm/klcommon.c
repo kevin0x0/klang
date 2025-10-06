@@ -5,17 +5,17 @@
 #include "include/vm/klexception.h"
 #include "include/misc/klutils.h"
 
-static KlClass* klcommon_phonyclass(KlMM* klmm);
-static KlException klcommon_null_contructor(KlClass* klclass, KlMM* klmm, KlValue* value);
+static KlClass* phonyclass(KlMM* klmm);
+static KlException null_contructor(KlClass* klclass, KlMM* klmm, KlValue* value);
 
-static KlException klcommon_null_contructor(KlClass* klclass, KlMM* klmm, KlValue* value) {
+static KlException null_contructor(KlClass* klclass, KlMM* klmm, KlValue* value) {
   kl_unused(klclass);
   kl_unused(klmm);
   kl_unused(value);
   return KL_E_INVLD;
 }
-static KlClass* klcommon_phonyclass(KlMM* klmm) {
-  KlClass* klclass = klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, klcommon_null_contructor);
+static KlClass* phonyclass(KlMM* klmm) {
+  KlClass* klclass = klclass_create(klmm, 5, KLOBJECT_DEFAULT_ATTROFF, NULL, null_contructor);
   if (kl_unlikely(!klclass)) return NULL;
   klclass_final(klclass);
   return klclass;
@@ -55,7 +55,7 @@ KlCommon* klcommon_create(KlMM* klmm, KlStrPool* strpool) {
   for (KlType type = 0; type < KL_NTYPE; ++type)
     done = done && (common->typenames[type] = klstrpool_new_string(strpool, klvalue_typename(type)));
 
-  KlClass* fallback = klcommon_phonyclass(klmm);
+  KlClass* fallback = phonyclass(klmm);
   done = done && fallback;
   for (KlType type = 0; type < KL_NTYPE; ++type)
     common->klclass.phony[type] = fallback;

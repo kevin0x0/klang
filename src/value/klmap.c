@@ -7,18 +7,18 @@
 #include <string.h>
 
 
-static KlGCObject* klmap_propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist);
-static void klmap_delete(KlMap* map, KlMM* klmm);
-static void klmap_post(KlMap* map, KlMM* klmm);
+static KlGCObject* propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist);
+static void delete(KlMap* map, KlMM* klmm);
+static void post(KlMap* map, KlMM* klmm);
 
-static const KlGCVirtualFunc klmap_gcvfunc = { .propagate = (KlGCProp)klmap_propagate, .destructor = (KlGCDestructor)klmap_delete, .after = (KlGCAfter)klmap_post };
+static const KlGCVirtualFunc gcvfunc = { .propagate = (KlGCProp)propagate, .destructor = (KlGCDestructor)delete, .after = (KlGCAfter)post };
 
 
-static KlMapSlot* klmap_getfreeslot(KlMap* map);
-static bool klmap_rehash(KlMap* map, KlMM* klmm);
-static void klmap_insert_rehash(KlMap* map, const KlValue* key, const KlValue* value, size_t hash);
+static KlMapSlot* getfreeslot(KlMap* map);
+static bool rehash(KlMap* map, KlMM* klmm);
+static void insert_rehash(KlMap* map, const KlValue* key, const KlValue* value, size_t hash);
 
-static void klmap_correctlastfree(KlMap* map, size_t newemptyslotindex) {
+static void correct_lastfree(KlMap* map, size_t newemptyslotindex) {
   if (map->lastfree <= newemptyslotindex)
     map->lastfree = newemptyslotindex + 1;
 }
@@ -41,11 +41,11 @@ KlMap* klmap_create(KlMM* klmm, size_t capacity) {
     klvalue_settag(&slots[i].key, KLMAP_KEYTAG_EMPTY);
     slots[i].next = NULL;
   }
-  klmm_gcobj_enable(klmm, klmm_to_gcobj(map), &klmap_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(map), &gcvfunc);
   return map;
 }
 
-static bool klmap_rehash(KlMap* map, KlMM* klmm) {
+static bool rehash(KlMap* map, KlMM* klmm) {
   size_t new_capacity = map->capacity * 2;
   KlMapSlot* slots = (KlMapSlot*)klmm_alloc(klmm, new_capacity * sizeof (KlMapSlot)); 
   if (kl_unlikely(!slots)) return false;
@@ -61,7 +61,7 @@ static bool klmap_rehash(KlMap* map, KlMM* klmm) {
   map->capacity = new_capacity;
   map->lastfree = new_capacity; /* reset lastfree */
   for (KlMapSlot* slot = oldslots; slot != endslots; ++slot)
-    klmap_insert_rehash(map, &slot->key, &slot->value, slot->hash);
+    insert_rehash(map, &slot->key, &slot->value, slot->hash);
 
   klmm_free(klmm, oldslots, (endslots - oldslots) * sizeof (KlMapSlot));
   return true;
@@ -80,7 +80,7 @@ KlMapSlot* klmap_searchlstring(const KlMap* map, const KlString* str) {
   return NULL;
 }
 
-static KlMapSlot* klmap_getfreeslot(KlMap* map) {
+static KlMapSlot* getfreeslot(KlMap* map) {
   size_t lastfree = map->lastfree;
   KlMapSlot* slots = map->slots;
   while (lastfree--) {
@@ -92,7 +92,7 @@ static KlMapSlot* klmap_getfreeslot(KlMap* map) {
   return NULL;
 }
 
-static void klmap_insert_rehash(KlMap* map, const KlValue* key, const KlValue* value, size_t hash) {
+static void insert_rehash(KlMap* map, const KlValue* key, const KlValue* value, size_t hash) {
   size_t mask = map->capacity - 1;
   size_t index = hash & mask;
   KlMapSlot* slots = map->slots;
@@ -105,7 +105,7 @@ static void klmap_insert_rehash(KlMap* map, const KlValue* key, const KlValue* v
   }
   /* this slot is not empty */
   /* just insert, no need to check whether this key is duplicated */
-  KlMapSlot* newslot = klmap_getfreeslot(map);
+  KlMapSlot* newslot = getfreeslot(map);
   if (klmap_masterslot(slot)) {
     klvalue_setvalue_withtag(&newslot->key, key, KLMAP_KEYTAG_SLAVE);
     klvalue_setvalue(&newslot->value, value);
@@ -144,11 +144,11 @@ bool klmap_insert_hash(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue
     return true;
   }
 
-  KlMapSlot* newslot = klmap_getfreeslot(map);
+  KlMapSlot* newslot = getfreeslot(map);
   if (!newslot) { /* no slot */
-    if (kl_unlikely(!klmap_rehash(map, klmm)))
+    if (kl_unlikely(!rehash(map, klmm)))
       return false;
-    klmap_insert_rehash(map, key, value, hash);
+    insert_rehash(map, key, value, hash);
     return true;
   }
   if (klmap_masterslot(slot)) {
@@ -182,7 +182,7 @@ bool klmap_insert_new(KlMap* map, KlMM* klmm, const KlValue* key, const KlValue*
   return klmap_insert_hash(map, klmm, key, value, klmap_gethash(key));
 }
 
-static KlGCObject* klmap_propagate_nonweak(KlMap* map, KlGCObject* gclist) {
+static KlGCObject* propagate_nonweak(KlMap* map, KlGCObject* gclist) {
   KlMapSlot* slots = map->slots;
   KlMapSlot* end = slots + map->capacity;
   for (KlMapSlot* itr = slots; itr != end; ++itr) {
@@ -195,7 +195,7 @@ static KlGCObject* klmap_propagate_nonweak(KlMap* map, KlGCObject* gclist) {
   return gclist;
 }
 
-static KlGCObject* klmap_propagate_keyweak(KlMap* map, KlGCObject* gclist) {
+static KlGCObject* propagate_keyweak(KlMap* map, KlGCObject* gclist) {
   KlMapSlot* slots = map->slots;
   KlMapSlot* end = slots + map->capacity;
   for (KlMapSlot* itr = slots; itr != end; ++itr) {
@@ -206,7 +206,7 @@ static KlGCObject* klmap_propagate_keyweak(KlMap* map, KlGCObject* gclist) {
   return gclist;
 }
 
-static KlGCObject* klmap_propagate_valweak(KlMap* map, KlGCObject* gclist) {
+static KlGCObject* propagate_valweak(KlMap* map, KlGCObject* gclist) {
   KlMapSlot* slots = map->slots;
   KlMapSlot* end = slots + map->capacity;
   for (KlMapSlot* itr = slots; itr != end; ++itr) {
@@ -217,10 +217,10 @@ static KlGCObject* klmap_propagate_valweak(KlMap* map, KlGCObject* gclist) {
   return gclist;
 }
 
-static KlGCObject* klmap_propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist) {
   switch (map->option & (KLMAP_OPT_WEAKKEY | KLMAP_OPT_WEAKVAL)) {
     case 0: { /* not a week map */
-      return klmap_propagate_nonweak(map, gclist);
+      return propagate_nonweak(map, gclist);
     }
     case KLMAP_OPT_WEAKKEY | KLMAP_OPT_WEAKVAL: { /* both keys and values are weak */
       klmm_gcobj_aftermark(klmm, klmm_to_gcobj(map));
@@ -228,11 +228,11 @@ static KlGCObject* klmap_propagate(KlMap* map, KlMM* klmm, KlGCObject* gclist) {
     }
     case KLMAP_OPT_WEAKKEY: { /* only the keys are weak */
       klmm_gcobj_aftermark(klmm, klmm_to_gcobj(map));
-      return klmap_propagate_keyweak(map, gclist);
+      return propagate_keyweak(map, gclist);
     }
     case KLMAP_OPT_WEAKVAL: {  /* only the values are week */
       klmm_gcobj_aftermark(klmm, klmm_to_gcobj(map));
-      return klmap_propagate_valweak(map, gclist);
+      return propagate_valweak(map, gclist);
     }
     default: {
       kl_assert(false, "unreachable");
@@ -252,11 +252,11 @@ void klmap_erase(KlMap* map, KlMapSlot* slot) {
       slot->next = next->next;
       klvalue_settag(&next->key, KLMAP_KEYTAG_EMPTY);
       next->next = NULL;
-      klmap_correctlastfree(map, next - map->slots);
+      correct_lastfree(map, next - map->slots);
     } else {
       klvalue_settag(&slot->key, KLMAP_KEYTAG_EMPTY);
       slot->next = NULL;
-      klmap_correctlastfree(map, index);
+      correct_lastfree(map, index);
     }
   } else {
     /* correct link */
@@ -267,11 +267,11 @@ void klmap_erase(KlMap* map, KlMapSlot* slot) {
 
     klvalue_settag(&slot->key, KLMAP_KEYTAG_EMPTY);
     slot->next = NULL;
-    klmap_correctlastfree(map, index);
+    correct_lastfree(map, index);
   }
 }
 
-static void klmap_post(KlMap* map, KlMM* klmm) {
+static void post(KlMap* map, KlMM* klmm) {
   kl_unused(klmm);
   KlMapSlot* slots = map->slots;
   KlMapSlot* end = slots + map->capacity;
@@ -284,7 +284,7 @@ static void klmap_post(KlMap* map, KlMM* klmm) {
   }
 }
 
-static void klmap_delete(KlMap* map, KlMM* klmm) {
+static void delete(KlMap* map, KlMM* klmm) {
   klmm_free(klmm, map->slots, map->capacity * sizeof (KlMapSlot));
   klmm_free(klmm, map, sizeof (KlMap));
 }

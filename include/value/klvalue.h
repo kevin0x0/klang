@@ -2,7 +2,7 @@
 #define _KLANG_INCLUDE_VALUE_KLVALUE_H_
 
 #include "include/value/klcfunc.h"
-#include "include/lang/kltypes.h"
+#include "include/common/kltypes.h"
 #include "include/mm/klmm.h"
 
 #include <stdbool.h>

@@ -2,10 +2,17 @@
 
 
 
-.PHONY: clean create_dir all
+.PHONY: clean create_dir all install
 clean :
 	$(RM) -r $(OBJ_DIR)* $(LIB_DIR)* $(BIN_DIR)*
 	$(MAKE) -C $(DEPS_K_DIR) clean
 
 create_dir :
 	mkdir -p $(OBJ_DIR) $(LIB_DIR) $(BIN_DIR)
+
+install : all
+	mkdir -p $(INSTALL_PATH)/bin $(CORELIBPATH)
+	install $(BIN_DIR)/klang $(BIN_DIR)/klangc $(INSTALL_PATH)/bin
+	install $(LIB_DIR)/* $(CORELIBPATH)
+
+

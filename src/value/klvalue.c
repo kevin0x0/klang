@@ -1,6 +1,6 @@
 #include "include/value/klvalue.h"
 
-static const char* const klvalue_typenames[KL_NTYPE] = {
+static const char* const typenames[KL_NTYPE] = {
   [KL_INT] = "integer",
   [KL_FLOAT] = "float",
   [KL_NUMBER] = "number",
@@ -22,5 +22,5 @@ static const char* const klvalue_typenames[KL_NTYPE] = {
 };
 
 const char* klvalue_typename(KlType type) {
-  return klvalue_typenames[type];
+  return typenames[type];
 }

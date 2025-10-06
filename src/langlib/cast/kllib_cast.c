@@ -1,6 +1,5 @@
 #include "include/klapi.h"
-#include "include/lang/klconfig.h"
-#include "include/lang/klconvert.h"
+#include "include/common/klconfig.h"
 #include "include/misc/klutils.h"
 #include "include/value/klstate.h"
 #include "include/value/klstring.h"
@@ -35,7 +34,7 @@ static KlException kllib_cast_toint(KlState* state) {
       const char* cstr = klstring_content(str);
       size_t len = klstring_length(str);
       char* endptr;
-      KlInt result = kllang_str2int(cstr, &endptr, 0);
+      KlInt result = kltypes_str2int(cstr, &endptr, 0);
       if (kl_unlikely(endptr != cstr + len))
         return klapi_throw_internal(state, KL_E_INVLD, "not a valid integer string");
       klapi_setint(state, -1, result);
@@ -63,7 +62,7 @@ static KlException kllib_cast_tofloat(KlState* state) {
       const char* cstr = klstring_content(str);
       size_t len = klstring_length(str);
       char* endptr;
-      KlFloat result = kllang_str2float(cstr, &endptr);
+      KlFloat result = kltypes_str2float(cstr, &endptr);
       if (kl_unlikely(endptr != cstr + len))
         return klapi_throw_internal(state, KL_E_INVLD, "not a valid floating number string");
       klapi_setfloat(state, -1, result);
@@ -92,13 +91,13 @@ static KlException kllib_cast_tonumber(KlState* state) {
       size_t len = klstring_length(str);
       char* endptr;
       /* first try to cast to integer */
-      KlInt intres = kllang_str2int(cstr, &endptr, 0);
+      KlInt intres = kltypes_str2int(cstr, &endptr, 0);
       if (endptr == cstr + len) { /* success */
         klapi_setint(state, -1, intres);
         return klapi_return(state, 1);
       }
       /* else try to cast to floating number */
-      KlFloat floatres = kllang_str2float(cstr, &endptr);
+      KlFloat floatres = kltypes_str2float(cstr, &endptr);
       if (kl_unlikely(endptr != cstr + len))
         return klapi_throw_internal(state, KL_E_INVLD, "not a valid number string");
       klapi_setfloat(state, -1, floatres);
@@ -126,13 +125,13 @@ static KlException kllib_cast_tostring(KlState* state) {
     }
     case KL_INT: {
       char buf[sizeof (KlInt) * CHAR_BIT];
-      kllang_int2str(buf, sizeof (KlInt) * CHAR_BIT, klvalue_getint(value));
+      kltypes_int2str(buf, sizeof (KlInt) * CHAR_BIT, klvalue_getint(value));
       KLAPI_PROTECT(klapi_setstring(state, -1, buf));
       return klapi_return(state, 1);
     }
     case KL_FLOAT: {
       char buf[200];
-      kllang_float2str(buf, sizeof (buf) / sizeof (buf[0]), klvalue_getfloat(value));
+      kltypes_float2str(buf, sizeof (buf) / sizeof (buf[0]), klvalue_getfloat(value));
       KLAPI_PROTECT(klapi_setstring(state, -1, buf));
       return klapi_return(state, 1);
     }

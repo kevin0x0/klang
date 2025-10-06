@@ -6,7 +6,7 @@
 #include "include/code/klgen_pattern.h"
 #include "include/code/klsymtbl.h"
 #include "include/ast/klast.h"
-#include "include/lang/klinst.h"
+#include "include/common/klinst.h"
 
 
 bool klgen_stmtblock(KlGenUnit *gen, KlAstStmtList *stmtlist) {

@@ -1,7 +1,7 @@
 #ifndef _KLANG_INCLUDE_VALUE_KLCLASS_H_
 #define _KLANG_INCLUDE_VALUE_KLCLASS_H_
 
-#include "include/lang/kltypes.h"
+#include "include/common/kltypes.h"
 #include "include/misc/klutils.h"
 #include "include/value/klstring.h"
 #include "include/value/klvalue.h"

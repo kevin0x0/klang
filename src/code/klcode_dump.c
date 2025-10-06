@@ -1,7 +1,7 @@
 #include "include/code/klcode.h"
 #include "include/ast/klast.h"
 #include "include/ast/klstrtbl.h"
-#include "include/lang/klinst.h"
+#include "include/common/klinst.h"
 #include "include/misc/klutils.h"
 #include <setjmp.h>
 

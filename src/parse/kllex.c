@@ -1,5 +1,5 @@
 #include "include/parse/kllex.h"
-#include "include/lang/kltypes.h"
+#include "include/common/kltypes.h"
 #include "include/parse/kltokens.h"
 #include "deps/k/include/kio/ki.h"
 #include "deps/k/include/kio/kio_common.h"

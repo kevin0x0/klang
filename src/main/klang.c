@@ -1,5 +1,5 @@
 #include "include/klapi.h"
-#include "include/lang/klconfig.h"
+#include "include/common/klconfig.h"
 #include "include/value/klcoroutine.h"
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"

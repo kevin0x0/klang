@@ -1,13 +1,13 @@
 #include "include/value/klkfunc.h"
-#include "include/lang/klinst.h"
-#include "include/lang/kltypes.h"
+#include "include/common/klinst.h"
+#include "include/common/kltypes.h"
 #include "include/misc/klutils.h"
 #include "include/value/klvalue.h"
 
-static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject* gclist);
-static void klkfunc_delete(KlKFunction* kfunc, KlMM* klmm);
+static KlGCObject* propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject* gclist);
+static void delete(KlKFunction* kfunc, KlMM* klmm);
 
-static const KlGCVirtualFunc klkfunc_gcvfunc = { .destructor = (KlGCDestructor)klkfunc_delete, .propagate = (KlGCProp)klkfunc_propagate, .after = NULL };
+static const KlGCVirtualFunc gcvfunc = { .destructor = (KlGCDestructor)delete, .propagate = (KlGCProp)propagate, .after = NULL };
 
 
 KlKFunction* klkfunc_alloc(KlMM* klmm, unsigned codelen, unsigned short nconst, unsigned short nref, unsigned short nsubfunc, KlUByte framesize, KlUByte nparam) {
@@ -40,7 +40,7 @@ KlKFunction* klkfunc_alloc(KlMM* klmm, unsigned codelen, unsigned short nconst, 
 }
 
 void klkfunc_initdone(KlMM* klmm, KlKFunction* kfunc) {
-  klmm_gcobj_enable(klmm, klmm_to_gcobj(kfunc), &klkfunc_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(kfunc), &gcvfunc);
 }
 
 void klkfunc_initabort(KlMM* klmm, KlKFunction* kfunc) {
@@ -53,7 +53,7 @@ void klkfunc_initabort(KlMM* klmm, KlKFunction* kfunc) {
   klmm_free(klmm, kfunc, sizeof (KlKFunction));
 }
 
-static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
   for (KlValue* constant = kfunc->constants;
        constant != kfunc->constants + kfunc->nconst;
@@ -68,7 +68,7 @@ static KlGCObject* klkfunc_propagate(KlKFunction* kfunc, KlMM* klmm, KlGCObject*
   return gclist;
 }
 
-static void klkfunc_delete(KlKFunction* kfunc, KlMM* klmm) {
+static void delete(KlKFunction* kfunc, KlMM* klmm) {
   klmm_free(klmm, kfunc->constants, kfunc->nconst * sizeof (KlValue));
   klmm_free(klmm, kfunc->refinfo, kfunc->nref * sizeof (KlRefInfo));
   klmm_free(klmm, kfunc->subfunc, kfunc->nsubfunc * sizeof (KlKFunction*));

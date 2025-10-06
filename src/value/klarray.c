@@ -5,10 +5,10 @@
 
 #define KLARRAY_DEFAULT_SIZE      (8)
 
-static KlGCObject* klarray_propagate(KlArray* array, KlMM* klmm, KlGCObject* gclist);
-static void klarray_delete(KlArray* array, KlMM* klmm);
+static KlGCObject* propagate(KlArray* array, KlMM* klmm, KlGCObject* gclist);
+static void delete(KlArray* array, KlMM* klmm);
 
-static const KlGCVirtualFunc klarray_gcvfunc = { .destructor = (KlGCDestructor)klarray_delete, .propagate = (KlGCProp)klarray_propagate, .after = NULL };
+static const KlGCVirtualFunc gcvfunc = { .destructor = (KlGCDestructor)delete, .propagate = (KlGCProp)propagate, .after = NULL };
 
 
 KlArray* klarray_create(KlMM* klmm, size_t capacity) {
@@ -22,11 +22,11 @@ KlArray* klarray_create(KlMM* klmm, size_t capacity) {
   }
   array->capacity = capacity;
   array->size = 0;
-  klmm_gcobj_enable(klmm, klmm_to_gcobj(array), &klarray_gcvfunc);
+  klmm_gcobj_enable(klmm, klmm_to_gcobj(array), &gcvfunc);
   return array;
 }
 
-static void klarray_delete(KlArray* array, KlMM* klmm) {
+static void delete(KlArray* array, KlMM* klmm) {
   if (kl_likely(array->begin)) klmm_free(klmm, array->begin, klarray_capacity(array) * sizeof (KlValue));
   klmm_free(klmm, array, sizeof (KlArray));
 }
@@ -44,7 +44,7 @@ bool klarray_grow(KlArray* array, KlMM* klmm, size_t new_capacity) {
 }
 
 
-static KlGCObject* klarray_propagate(KlArray* array, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* propagate(KlArray* array, KlMM* klmm, KlGCObject* gclist) {
   kl_unused(klmm);
   KlArrayIter end = klarray_iter_end(array);
   KlArrayIter begin = klarray_iter_begin(array);
