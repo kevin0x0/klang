@@ -1,0 +1,6 @@
+../lexgen/lexgen/bin/lexgen -i meta/keywords.lx -o meta/keywords.c -t meta/tmpl
+sed '/^#include/d; s/\(uint8_t\)\|\(size_t\)/const KlUByte/g' meta/keywords.c -i
+sed 's/Callback\* callbacks/const KlTokenKind tokenkind/g' meta/keywords.c -i
+sed '/kev_lexgen/,/}/d' meta/keywords.c -i
+sed '/char\*/,/}/d' meta/keywords.c -i
+sed '/Callback/d' meta/keywords.c -i

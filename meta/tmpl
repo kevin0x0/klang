@@ -1,0 +1,7 @@
+$r transition-table $:$;
+
+$r callback-array $:$;
+
+$r info-array $:$;
+
+$r start-state $:$;

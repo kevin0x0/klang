@@ -11,21 +11,20 @@
 #include "deps/k/include/string/kstring.h"
 #include <stdarg.h>
 
-#define KL_OPTION_NORMAL    ((unsigned)0)
-#define KL_OPTION_HELP      ((unsigned)klbit(0))
-#define KL_OPTION_INTER     ((unsigned)klbit(1))
-#define KL_OPTION_IN_FILE   ((unsigned)klbit(2))
-#define KL_OPTION_IN_ARG    ((unsigned)klbit(3))
-#define KL_OPTION_UNDUMP    ((unsigned)klbit(4))
-#define KL_OPTION_SHEBANG   ((unsigned)klbit(5))
+#define OPTION_NORMAL    ((unsigned)0)
+#define OPTION_HELP      ((unsigned)klbit(0))
+#define OPTION_INTER     ((unsigned)klbit(1))
+#define OPTION_IN_FILE   ((unsigned)klbit(2))
+#define OPTION_IN_ARG    ((unsigned)klbit(3))
+#define OPTION_UNDUMP    ((unsigned)klbit(4))
 
 
-#define KL_NARGRAW(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...)     (_9)
-#define KL_NARG(...)        KL_NARGRAW(__VA_ARGS__ , 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
-#define kl_match(opt, ...)  kl_matchraw((opt), KL_NARG(__VA_ARGS__), __VA_ARGS__)
-#define kl_isfilename(arg)  ((arg)[0] != '-')
+#define NARGRAW(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...)     (_9)
+#define NARG(...)        NARGRAW(__VA_ARGS__ , 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+#define match(opt, ...)  matchraw((opt), NARG(__VA_ARGS__), __VA_ARGS__)
+#define isfilename(arg)  ((arg)[0] != '-')
 
-typedef struct tagKlBehaviour {
+typedef struct tagBehaviour {
   union {
     char* filename;
     const char* stmt;
@@ -34,14 +33,14 @@ typedef struct tagKlBehaviour {
   char** args;
   size_t narg;
   unsigned option;
-} KlBehaviour;
+} Behaviour;
 
-typedef struct tagKlBasicTool {
+typedef struct tagBasicTool {
   KlCFunction* bcloader;
   KlCFunction* compiler;
   KlCFunction* compileri;
   KlCFunction* traceback;
-} KlBasicTool;
+} BasicTool;
 
 typedef struct tagKiInteractive {
   Ki base;
@@ -51,104 +50,103 @@ typedef struct tagKiInteractive {
   bool eof;
 } KiInteractive;
 
-static void kl_interactive_input_delete(KiInteractive* ki);
-static void kl_interactive_input_reader(KiInteractive* ki);
-static Ki* kl_interactive_create(void);
+static void interactive_delete(KiInteractive* ki);
+static void interactive_reader(KiInteractive* ki);
+static Ki* interactive_create(void);
 
-static KiVirtualFunc kl_interactive_input_vfunc = {
+static KiVirtualFunc interactive_vfunc = {
   .size = NULL,
-  .delete = (KiDelete)kl_interactive_input_delete,
-  .reader = (KiReader)kl_interactive_input_reader,
+  .delete = (KiDelete)interactive_delete,
+  .reader = (KiReader)interactive_reader,
 };
 
-static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour);
-static bool kl_matchraw(const char* arg, unsigned nopts, ...);
-static void kl_cleanbehaviour(KlBehaviour* behaviour);
-static int kl_validatebehaviour(KlBehaviour* behaviour);
-static void kl_print_help(void);
+static int parse_argv(int argc, char** argv, Behaviour* behaviour);
+static bool matchraw(const char* arg, unsigned nopts, ...);
+static void cleanbehaviour(Behaviour* behaviour);
+static int validatebehaviour(Behaviour* behaviour);
+static void print_help(void);
 
-static int kl_fatalerror(const char* stage, const char* fmt, ...);
+static int fatalerror(const char* stage, const char* fmt, ...);
 
-static int kl_do(KlBehaviour* behaviour);
-static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool);
-static KlException kl_call_bcloader(KlState* state, Ki* input, Ko* err, KlCFunction* bcloader);
-static KlException kl_call_compiler(KlState* state, Ki* input, Ko* err, const char* inputname, const char* srcfile, KlCFunction* compiler);
-static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool, Ko* err);
-static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err);
+static int real_main(Behaviour* behaviour);
+static KlException preload(Behaviour* behaviour, KlState* state, BasicTool* btool);
+static KlException call_bcloader(KlState* state, Ki* input, Ko* err, KlCFunction* bcloader);
+static KlException call_compiler(KlState* state, Ki* input, Ko* err, const char* inputname, const char* srcfile, KlCFunction* compiler);
+static KlException execute_script(Behaviour* behaviour, KlState* state, BasicTool* btool, Ko* err);
+static KlException interactive(KlState* state, BasicTool* btool, Ko* err);
 
-static KlException kl_errhandler(KlState* state);
+static KlException errhandler(KlState* state);
 
 int main(int argc, char** argv) {
-  KlBehaviour behaviour;
-  int ret = kl_parse_argv(argc, argv, &behaviour);
-  if (kl_unlikely(ret)) return ret;
-  return kl_do(&behaviour);
+  Behaviour behaviour;
+  int ret = parse_argv(argc, argv, &behaviour);
+  if (kl_unlikely(ret))
+    return ret;
+  return real_main(&behaviour);
 }
 
-static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
+static int parse_argv(int argc, char** argv, Behaviour* behaviour) {
   behaviour->filename = NULL;
   behaviour->corelibpath = NULL;
   behaviour->args = NULL;
   behaviour->narg = 0;
   behaviour->stmt = NULL;
-  behaviour->option = KL_OPTION_NORMAL;
+  behaviour->option = OPTION_NORMAL;
   for (int i = 1; i < argc; ++i) {
-    if (kl_match(argv[i], "-h", "--help")) {
-      behaviour->option |= KL_OPTION_HELP;
-    } else if (kl_match(argv[i], "-e")) {
-      if (behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)) {
+    if (match(argv[i], "-h", "--help")) {
+      behaviour->option |= OPTION_HELP;
+    } else if (match(argv[i], "-e")) {
+      if (behaviour->option & (OPTION_IN_FILE | OPTION_IN_ARG)) {
         fprintf(stderr, "the input is specified more than once: %s.\n", argv[i]);
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
       if (!argv[++i]) {
         fprintf(stderr, "expected to be executed statement after %s.\n", argv[i - 1]);
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
-      behaviour->option |= KL_OPTION_IN_ARG;
+      behaviour->option |= OPTION_IN_ARG;
       behaviour->stmt = argv[i++];
       behaviour->args = argv + i;
       behaviour->narg = argc - i;
       break;
-    } else if (kl_match(argv[i], "-i", "--interactive")) {
-      behaviour->option |= KL_OPTION_INTER;
-    } else if (kl_match(argv[i], "-s", "--skip-shebang")) {
-      behaviour->option |= KL_OPTION_SHEBANG;
-    } else if (kl_match(argv[i], "-u", "--undump")) {
+    } else if (match(argv[i], "-i", "--interactive")) {
+      behaviour->option |= OPTION_INTER;
+    } else if (match(argv[i], "-u", "--undump")) {
       if (++i == argc) {
         fprintf(stderr, "expected <filename> after option: %s\n", argv[i - 1]);
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
-      if (behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)) {
+      if (behaviour->option & (OPTION_IN_FILE | OPTION_IN_ARG)) {
         fprintf(stderr, "the input is specified more than once: %s.\n", argv[i]);
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
-      behaviour->option |= KL_OPTION_IN_FILE | KL_OPTION_UNDUMP;
+      behaviour->option |= OPTION_IN_FILE | OPTION_UNDUMP;
       if (!(behaviour->filename = kfs_abspath(argv[i]))) {
         fprintf(stderr, "out of memory while parsing command line\n");
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
       behaviour->args = argv + ++i;
       behaviour->narg = argc - i;
       break;
-    } else if (kl_match(argv[i], "--corelibpath")) {
+    } else if (match(argv[i], "--corelibpath")) {
       if (++i == argc) {
         fprintf(stderr, "expected <directory path> after option: %s\n", argv[i - 1]);
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
       if (behaviour->corelibpath) {
         fprintf(stderr, "the core library path is specified more than once: %s.\n", argv[i]);
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
       if (!(behaviour->corelibpath = kstr_copy(argv[i]))) {
         fprintf(stderr, "out of memory while parsing command line\n");
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
       size_t len = strlen(behaviour->corelibpath);
@@ -156,16 +154,16 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
                    || behaviour->corelibpath[len - 1] == '\\')) {
         behaviour->corelibpath[len - 1] = '\0';
       }
-    } else if (kl_isfilename(argv[i])) {
-      if (behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)) {
+    } else if (isfilename(argv[i])) {
+      if (behaviour->option & (OPTION_IN_FILE | OPTION_IN_ARG)) {
         fprintf(stderr, "the input is specified more than once: %s.\n", argv[i]);
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
-      behaviour->option |= KL_OPTION_IN_FILE;
+      behaviour->option |= OPTION_IN_FILE;
       if (!(behaviour->filename = kfs_abspath(argv[i]))) {
         fprintf(stderr, "out of memory while parsing command line\n");
-        kl_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
       behaviour->args = argv + ++i;
@@ -173,18 +171,18 @@ static int kl_parse_argv(int argc, char** argv, KlBehaviour* behaviour) {
       break;
     } else {
       fprintf(stderr, "unrecognized option: %s\n", argv[i]);
-      kl_print_help();
-      kl_cleanbehaviour(behaviour);
+      print_help();
+      cleanbehaviour(behaviour);
       return 1;
     }
   }
-  return kl_validatebehaviour(behaviour);
+  return validatebehaviour(behaviour);
 }
 
-static int kl_do(KlBehaviour* behaviour) {
-  if (behaviour->option & KL_OPTION_HELP) {
-    kl_print_help();
-    kl_cleanbehaviour(behaviour);
+static int real_main(Behaviour* behaviour) {
+  if (behaviour->option & OPTION_HELP) {
+    print_help();
+    cleanbehaviour(behaviour);
     return 0;
   }
   int failure = 0;
@@ -192,40 +190,40 @@ static int kl_do(KlBehaviour* behaviour) {
   klmm_init(&klmm, 32 * 1024);
   KlState* state = klapi_new_state(&klmm);
   if (kl_unlikely(!state)) {
-    failure = kl_fatalerror("initializing", "can not create virtual machine");
+    failure = fatalerror("initializing", "can not create virtual machine");
     goto error_create_vm;
   }
-  KlBasicTool btool = { NULL, NULL, NULL, NULL };
-  failure = kl_dopreload(behaviour, state, &btool);
+  BasicTool btool = { NULL, NULL, NULL, NULL };
+  failure = preload(behaviour, state, &btool);
   if (kl_unlikely(failure)) {
     fprintf(stderr, "%s\n", klapi_exception_message(state));
     goto error_preload;
   }
   Ko* err = kofile_attach(stderr);
   if (kl_unlikely(!err)) {
-    failure = kl_fatalerror("initializing", "can not create error output stream");
+    failure = fatalerror("initializing", "can not create error output stream");
     goto error_create_err;
   }
-  if (behaviour->option & (KL_OPTION_IN_ARG | KL_OPTION_IN_FILE)) {
-    failure = kl_do_script(behaviour, state, &btool, err);
+  if (behaviour->option & (OPTION_IN_ARG | OPTION_IN_FILE)) {
+    failure = execute_script(behaviour, state, &btool, err);
     if (kl_unlikely(failure)) {
       fprintf(stderr, "%s\n", klapi_exception_message(state));
-      goto error_do_script;
+      goto error_execute_script;
     }
   }
-  if (behaviour->option & KL_OPTION_INTER) {
-    failure = kl_interactive(state, &btool, err);
+  if (behaviour->option & OPTION_INTER) {
+    failure = interactive(state, &btool, err);
     if (kl_unlikely(failure))
       fprintf(stderr, "%s\n", klapi_exception_message(state));
   }
 
-error_do_script:
+error_execute_script:
   ko_delete(err);
 error_create_err:
 error_preload:
   klmm_destroy(&klmm);
 error_create_vm:
-  kl_cleanbehaviour(behaviour);
+  cleanbehaviour(behaviour);
   return failure;
 }
 
@@ -237,7 +235,7 @@ static KlException kl_dopreload_helper_loadlib(KlState* state, const char* libna
   return KL_E_NONE;
 }
 
-static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool) {
+static KlException preload(Behaviour* behaviour, KlState* state, BasicTool* btool) {
   kl_unused(behaviour);
   KLAPI_PROTECT(klapi_checkstack(state, 1));
   KLAPI_PROTECT(klapi_pushstring(state, behaviour->corelibpath));
@@ -284,13 +282,13 @@ static KlException kl_dopreload(KlBehaviour* behaviour, KlState* state, KlBasicT
   KLAPI_PROTECT(klapi_pushstring(state, "traceback"));
   klapi_pushnil(state, 1);
   klapi_pushcfunc(state, btool->traceback);
-  KLAPI_PROTECT(klapi_mkcclosure(state, -2, kl_errhandler, 1));
+  KLAPI_PROTECT(klapi_mkcclosure(state, -2, errhandler, 1));
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -3), -2));
   klapi_popclose(state, 3);
   return 0;
 }
 
-static KlException kl_call_bcloader(KlState* state, Ki* input, Ko* err, KlCFunction* bcloader) {
+static KlException call_bcloader(KlState* state, Ki* input, Ko* err, KlCFunction* bcloader) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
 
   klapi_pushuserdata(state, input); /* first argument: input stream */
@@ -303,7 +301,7 @@ static KlException kl_call_bcloader(KlState* state, Ki* input, Ko* err, KlCFunct
   return KL_E_NONE;
 }
 
-static KlException kl_call_compiler(KlState* state, Ki* input, Ko* err, const char* inputname, const char* srcfile, KlCFunction* compiler) {
+static KlException call_compiler(KlState* state, Ki* input, Ko* err, const char* inputname, const char* srcfile, KlCFunction* compiler) {
   KLAPI_PROTECT(klapi_checkstack(state, 4));
 
   klapi_pushuserdata(state, input); /* first argument: input stream */
@@ -324,28 +322,18 @@ static KlException kl_call_compiler(KlState* state, Ki* input, Ko* err, const ch
   return KL_E_NONE;
 }
 
-static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicTool* btool, Ko* err) {
+static KlException execute_script(Behaviour* behaviour, KlState* state, BasicTool* btool, Ko* err) {
   Ki* input = NULL;
   /* create input stream */
-  if (behaviour->option & KL_OPTION_IN_ARG) {
+  if (behaviour->option & OPTION_IN_ARG) {
     input = kibuf_create(behaviour->stmt, strlen(behaviour->stmt));
     if (kl_unlikely(!input))
       return klapi_throw_internal(state, KL_E_OOM, "can not create input stream");
   } else {
-    kl_assert(behaviour->option & KL_OPTION_IN_FILE, "");
+    kl_assert(behaviour->option & OPTION_IN_FILE, "");
     input = kifile_create(behaviour->filename, "rb");
     if (kl_unlikely(!input))
       return klapi_throw_internal(state, KL_E_OOM, "can not open file: %s", behaviour->filename);
-    if (behaviour->option & KL_OPTION_SHEBANG) {
-      int ch;
-      do {
-        ch = ki_getc(input);
-      } while (ch != '\n' && ch != '\r' && ch != KOF);
-      if (ch == '\r' && (ch = ki_getc(input)) != '\n') {
-        if (ch != KOF)
-          ki_ungetc(input);
-      }
-    }
   }
 
   /* push error handler */
@@ -354,13 +342,13 @@ static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicT
   klapi_loadglobal(state);  /* error handler: traceback */
 
   /* call compiler */
-  if (behaviour->option & KL_OPTION_UNDUMP) {
-    kl_assert(behaviour->option & KL_OPTION_IN_FILE, "");
-    KLAPI_MAYFAIL(kl_call_bcloader(state, input, err, btool->bcloader), ki_delete(input));
+  if (behaviour->option & OPTION_UNDUMP) {
+    kl_assert(behaviour->option & OPTION_IN_FILE, "");
+    KLAPI_MAYFAIL(call_bcloader(state, input, err, btool->bcloader), ki_delete(input));
   } else {
-    KLAPI_MAYFAIL(kl_call_compiler(state, input, err, 
-                                   (behaviour->option & KL_OPTION_IN_ARG) ? "command line" : behaviour->filename,
-                                   (behaviour->option & KL_OPTION_IN_ARG) ? NULL : behaviour->filename,
+    KLAPI_MAYFAIL(call_compiler(state, input, err, 
+                                   (behaviour->option & OPTION_IN_ARG) ? "command line" : behaviour->filename,
+                                   (behaviour->option & OPTION_IN_ARG) ? NULL : behaviour->filename,
                                    btool->compiler),
                   ki_delete(input));
   }
@@ -382,17 +370,17 @@ static KlException kl_do_script(KlBehaviour* behaviour, KlState* state, KlBasicT
   return 0;
 }
 
-static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
+static KlException interactive(KlState* state, BasicTool* btool, Ko* err) {
   KLAPI_PROTECT(klapi_checkstack(state, 1));
   KLAPI_PROTECT(klapi_pushstring(state, "traceback"));
   klapi_loadglobal(state);  /* error handler: traceback */
   while (true) {
-    Ki* input = kl_interactive_create();
+    Ki* input = interactive_create();
     if (kl_unlikely(!input))
       return klapi_throw_internal(state, KL_E_OOM, "can not create input stream");
 
     /* call compiler */
-    KLAPI_MAYFAIL(kl_call_compiler(state, input, err, "stdin", NULL, btool->compileri),
+    KLAPI_MAYFAIL(call_compiler(state, input, err, "stdin", NULL, btool->compileri),
                   ki_delete(input));
 
     bool eof = klcast(KiInteractive*, input)->eof;
@@ -422,7 +410,7 @@ static KlException kl_interactive(KlState* state, KlBasicTool* btool, Ko* err) {
   }
 }
 
-static KlException kl_errhandler(KlState* state) {
+static KlException errhandler(KlState* state) {
   KlException exception = klapi_currexception(state);
   if (exception == KL_E_USER) {
     fprintf(stderr, "|| user defined exception currently is not completely supported\n");
@@ -449,7 +437,7 @@ static KlException kl_errhandler(KlState* state) {
   return klapi_tailcall(state, traceback, 0);
 }
 
-static bool kl_matchraw(const char* arg, unsigned nopts, ...) {
+static bool matchraw(const char* arg, unsigned nopts, ...) {
   va_list opts;
   va_start(opts, nopts);
   for (unsigned i = 0; i < nopts; ++i) { 
@@ -462,16 +450,16 @@ static bool kl_matchraw(const char* arg, unsigned nopts, ...) {
   return false;
 }
 
-static void kl_cleanbehaviour(KlBehaviour* behaviour) {
-  if (behaviour->option & KL_OPTION_IN_FILE)
+static void cleanbehaviour(Behaviour* behaviour) {
+  if (behaviour->option & OPTION_IN_FILE)
     free(behaviour->filename);
   if (behaviour->corelibpath)
     free(behaviour->corelibpath);
 }
 
-static int kl_validatebehaviour(KlBehaviour* behaviour) {
-  if (!(behaviour->option & (KL_OPTION_IN_FILE | KL_OPTION_IN_ARG)))
-    behaviour->option |= KL_OPTION_INTER;
+static int validatebehaviour(Behaviour* behaviour) {
+  if (!(behaviour->option & (OPTION_IN_FILE | OPTION_IN_ARG)))
+    behaviour->option |= OPTION_INTER;
 
   if (!behaviour->corelibpath) {
 #ifdef CORELIBPATH
@@ -483,19 +471,18 @@ static int kl_validatebehaviour(KlBehaviour* behaviour) {
   return 0;
 }
 
-static void kl_print_help(void) {
+static void print_help(void) {
   printf("Usage: klang [options] [(<script> | -e <code> | -u <filename>) [args...]]\n");
   printf("options:\n");
   printf("  -h --help                   show this message.\n");
   printf("  -e <code>                   execute the code provided by command line.\n");
   printf("  -u --undump <filename>      load byte code from specified file.\n");
   printf("  -i --interactive            always enter interactive mode.\n");
-  printf("  -s --skip-shebang           skip first line.\n");
   printf("  --corelibpath               where to load the core library.\n");
   printf("if input is not specified, enter interactive mode.\n");
 }
 
-static int kl_fatalerror(const char* stage, const char* fmt, ...) {
+static int fatalerror(const char* stage, const char* fmt, ...) {
   fprintf(stderr, "fatal error while %s: ", stage);
   va_list args;
   va_start(args, fmt);
@@ -506,12 +493,12 @@ static int kl_fatalerror(const char* stage, const char* fmt, ...) {
 }
 
 
-static void kl_interactive_input_delete(KiInteractive* ki) {
+static void interactive_delete(KiInteractive* ki) {
   free(ki->buf);
   free(ki);
 }
 
-static void kl_interactive_input_reader(KiInteractive* ki) {
+static void interactive_reader(KiInteractive* ki) {
   KioFileOffset readpos = ki_tell((Ki*)ki);
   if (readpos < (KioFileOffset)(ki->curr - ki->buf)) {
     ki_setbuf((Ki*)ki, ki->buf + readpos, ki->curr - (ki->buf + readpos), readpos);
@@ -550,13 +537,13 @@ static void kl_interactive_input_reader(KiInteractive* ki) {
   return;
 }
 
-static Ki* kl_interactive_create(void) {
+static Ki* interactive_create(void) {
   KiInteractive* input = (KiInteractive*)malloc(sizeof (KiInteractive));
   if (kl_unlikely(!input)) return NULL;
   input->buf = NULL;
   input->curr = NULL;
   input->end = NULL;
   input->eof = false;
-  ki_init(klcast(Ki*, input), &kl_interactive_input_vfunc);
+  ki_init(klcast(Ki*, input), &interactive_vfunc);
   return klcast(Ki*, input);
 }

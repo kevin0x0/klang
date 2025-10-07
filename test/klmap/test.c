@@ -7,7 +7,7 @@
 #include "include/value/klmap.h"
 #include "include/value/klstring.h"
 #include "include/value/klvalue.h"
-#include "include/lang/klinst.h"
+#include "include/common/klinst.h"
 #include <stdio.h>
 #include <time.h>
 
