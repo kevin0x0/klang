@@ -141,7 +141,7 @@ static size_t kllex_escapestring(KlLex* lex, char* buf) {
           }
           ch = ki_getc(input);  /* get B */
           if ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
-            hex = ch <= '9' ? ch - '0': (kl_tolower(ch) - 'a' + 10);
+            hex += ch <= '9' ? ch - '0': (kl_tolower(ch) - 'a' + 10);
           } else {
             if (kl_isnl(ch)) kllex_finishnl(lex, input);
             kllex_error(lex, "error: unexpected character in a string");
