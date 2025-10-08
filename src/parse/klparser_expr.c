@@ -243,7 +243,7 @@ static KlAstExpr* parse_unit(KlParser* parser, KlLex* lex) {
       }
       /* is an exprlist or a tuple */
       klparser_returnifnull(expr);
-      size_t nexpr;
+      size_t nexpr = 0;
       KlAstExpr** exprs = finish_commasepexpr(parser, lex, expr, &nexpr);
       klparser_returnifnull(exprs);
       KlFileOffset end = kllex_tokend(lex);
@@ -327,7 +327,7 @@ static KlAstExpr** finish_commasepexpr(KlParser* parser, KlLex* lex, KlAstExpr* 
 }
 
 KlAstExprList* klparser_finishexprlist(KlParser* parser, KlLex* lex, KlAstExpr* expr) {
-  size_t nelem;
+  size_t nelem = 0;
   KlAstExpr** exprs = finish_commasepexpr(parser, lex, expr, &nelem);
   klparser_returnifnull(exprs);
   KlAstExprList* exprlist = klast_exprlist_create(exprs, nelem, klast_begin(expr), klast_end(exprs[nelem - 1]));
