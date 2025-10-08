@@ -19,59 +19,59 @@ static const KlTokenKind tokenkind[164];
 static const KlUByte transition[164][256];
 static const KlUByte start;
 
-static void kllex_error(KlLex* lex, const char* format, ...);
+static void error(KlLex* lex, const char* format, ...);
 
 /* finish read 'new line' and return '\n'. */
-static inline char kllex_finishnl(KlLex* lex, Ki* input);
-static inline int kllex_readmaybenl(KlLex* lex, Ki* input);
+static inline char finishnl(KlLex* lex, Ki* input);
+static inline int readmaybenl(KlLex* lex, Ki* input);
 
-static size_t kllex_escapestring(KlLex* lex, char* buf);
-static size_t kllex_longstring(KlLex* lex, char* buf);
-static void kllex_handlestring(KlLex* lex, char* buf, int ch);
-static inline void kllex_handleinteger(KlLex* lex, char* buf, size_t len);
-static inline void kllex_handlefloat(KlLex* lex, char* buf, size_t len);
-static size_t kllex_escapeid(KlLex* lex, char* buf);
+static size_t parse_escaped_string(KlLex* lex, char* buf);
+static size_t parse_longstring(KlLex* lex, char* buf);
+static void parse_string(KlLex* lex, char* buf, int ch);
+static inline void parse_integer(KlLex* lex, char* buf, size_t len);
+static inline void parse_float(KlLex* lex, char* buf, size_t len);
+static size_t parse_escaped_identifier(KlLex* lex, char* buf);
 
 /* exclude '\n' */
-static inline int kllex_nextnonblank(Ki* ki);
+static inline int nextnonblank(Ki* ki);
 /* read next character.
  * discard leading whilespaces('\t', '\n', ' ') and comments. */
-static inline int kllex_nextvalid(KlLex* lex);
-static inline void kllex_discardto(KlLex* lex, char end);
+static inline int nextvalid(KlLex* lex);
+static inline void discardto(KlLex* lex, char end);
 
-static inline char kllex_finishnl(KlLex* lex, Ki* input) {
+static inline char finishnl(KlLex* lex, Ki* input) {
   int ch = ki_getc(input);
   if (ch != '\n' && ch != KOF) ki_ungetc(input);
   ++lex->currline;
   return '\n';
 }
 
-static inline int kllex_readmaybenl(KlLex* lex, Ki* input) {
+static inline int readmaybenl(KlLex* lex, Ki* input) {
   int ch = ki_getc(input);
-  return kl_isnl(ch) ? kllex_finishnl(lex, input) : ch;
+  return kl_isnl(ch) ? finishnl(lex, input) : ch;
 }
 
-static inline int kllex_nextnonblank(Ki* ki) {
+static inline int nextnonblank(Ki* ki) {
   int ch = ki_getc(ki);
   while (ch == ' ' || ch == '\t')
     ch = ki_getc(ki);
   return ch;
 }
 
-static inline void kllex_discardto(KlLex* lex, char end) {
+static inline void discardto(KlLex* lex, char end) {
   Ki* input = lex->input;
   int ch;
   do {
-    ch = kllex_readmaybenl(lex, input);
+    ch = readmaybenl(lex, input);
   } while (ch != end && ch != KOF);
 }
 
-static inline int kllex_nextvalid(KlLex* lex) {
+static inline int nextvalid(KlLex* lex) {
   Ki* input = lex->input;
   while (true) {
-    int ch = kllex_nextnonblank(input);
+    int ch = nextnonblank(input);
     if (kl_isnl(ch)) {      /* is new line */
-      kllex_finishnl(lex, input);
+      finishnl(lex, input);
     } else {                /* else is valid */
       return ch;
     }
@@ -110,7 +110,7 @@ void kllex_delete(KlLex* lex) {
   free(lex);
 }
 
-static size_t kllex_escapestring(KlLex* lex, char* buf) {
+static size_t parse_escaped_string(KlLex* lex, char* buf) {
   char* p = buf;
   char* pend = buf + KLLEX_STRLIMIT;
   Ki* input = lex->input;
@@ -134,27 +134,27 @@ static size_t kllex_escapestring(KlLex* lex, char* buf) {
           if ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
             hex = ch <= '9' ? (ch - '0') * 16 : (kl_tolower(ch) - 'a' + 10) * 16;
           } else {
-            if (kl_isnl(ch)) kllex_finishnl(lex, input);
-            kllex_error(lex, "error: unexpected character in a string");
-            kllex_discardto(lex, '"');
+            if (kl_isnl(ch)) finishnl(lex, input);
+            error(lex, "error: unexpected character in a string");
+            discardto(lex, '"');
             return 0;
           }
           ch = ki_getc(input);  /* get B */
           if ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
             hex += ch <= '9' ? ch - '0': (kl_tolower(ch) - 'a' + 10);
           } else {
-            if (kl_isnl(ch)) kllex_finishnl(lex, input);
-            kllex_error(lex, "error: unexpected character in a string");
-            kllex_discardto(lex, '"');
+            if (kl_isnl(ch)) finishnl(lex, input);
+            error(lex, "error: unexpected character in a string");
+            discardto(lex, '"');
             return 0;
           }
           *p++ = hex;
         }
       }
     } else if (kl_isnl(ch)) {
-      kllex_finishnl(lex, input);
-      kllex_error(lex, "error: unexpected character in a string");
-      kllex_discardto(lex, '"');
+      finishnl(lex, input);
+      error(lex, "error: unexpected character in a string");
+      discardto(lex, '"');
       return 0;
     } else if (ch != '"') { /* normal character */
       *p++ = ch;
@@ -163,44 +163,44 @@ static size_t kllex_escapestring(KlLex* lex, char* buf) {
     }
   }
   if (ki_getc(input) != '"') {
-    kllex_error(lex, "error: string too long");
-    kllex_discardto(lex, '"');
+    error(lex, "error: string too long");
+    discardto(lex, '"');
     return 0;
   }
   return p - buf;
 }
 
-static size_t kllex_longstring(KlLex* lex, char* buf) {
+static size_t parse_longstring(KlLex* lex, char* buf) {
   char* p = buf;
   char* pend = buf + KLLEX_STRLIMIT;
   Ki* input = lex->input;
-  int ch = kllex_readmaybenl(lex, input);
+  int ch = readmaybenl(lex, input);
   while (p != pend && ch != '`' && ch != KOF) {
     *p++ = ch;
-    ch = kllex_readmaybenl(lex, input);
+    ch = readmaybenl(lex, input);
   }
   if (ch == KOF) {
-    kllex_error(lex, "error: missing '`'");
+    error(lex, "error: missing '`'");
     return 0;
   } else if (ch != '`') {
-    kllex_error(lex, "error: string too long");
-    kllex_discardto(lex, '`');
+    error(lex, "error: string too long");
+    discardto(lex, '`');
     return 0;
   }
   return p - buf;
 }
 
-static void kllex_handlestring(KlLex* lex, char* buf, int ch) {
+static void parse_string(KlLex* lex, char* buf, int ch) {
   kl_assert(ch == '\"' || ch == '`', "something wrong in lexer when reading a string");
-  size_t len = ch == '`' ? kllex_longstring(lex, buf) : kllex_escapestring(lex, buf);
+  size_t len = ch == '`' ? parse_longstring(lex, buf) : parse_escaped_string(lex, buf);
   lex->tok.string.id = klstrtbl_pushstring(lex->strtbl, len);
   lex->tok.string.length = len;
 }
 
-static inline void kllex_handleinteger(KlLex* lex, char* buf, size_t len) {
+static inline void parse_integer(KlLex* lex, char* buf, size_t len) {
   if (len == KLLEX_STRLIMIT) {  /* too long */
     /* we can't use strtoll in this case because there is no space for '\0'. */
-    kllex_error(lex, "number too long");
+    error(lex, "number too long");
     len = KLLEX_STRLIMIT - 1;
   }
   buf[len] = '\0';
@@ -208,17 +208,17 @@ static inline void kllex_handleinteger(KlLex* lex, char* buf, size_t len) {
   lex->tok.intval = strtoll(buf, NULL, base);
 }
 
-static inline void kllex_handlefloat(KlLex* lex, char* buf, size_t len) {
+static inline void parse_float(KlLex* lex, char* buf, size_t len) {
   if (len == KLLEX_STRLIMIT) {  /* too long */
     /* we can't use strtoll in this case because there is no space for '\0'. */
-    kllex_error(lex, "number too long");
+    error(lex, "number too long");
     len = KLLEX_STRLIMIT - 1;
   }
   buf[len] = '\0';
   lex->tok.floatval = strtod(buf, NULL);
 }
 
-static size_t kllex_escapeid(KlLex* lex, char* buf) {
+static size_t parse_escaped_identifier(KlLex* lex, char* buf) {
   char* p = buf;
   char* pend = buf + KLLEX_STRLIMIT;
   Ki* input = lex->input;
@@ -239,9 +239,9 @@ static size_t kllex_escapeid(KlLex* lex, char* buf) {
         default: *p++ = ch; break;
       }
     } else if (kl_isnl(ch)) {
-      kllex_finishnl(lex, input);
-      kllex_error(lex, "error: unexpected character in an identifier");
-      kllex_discardto(lex, '\'');
+      finishnl(lex, input);
+      error(lex, "error: unexpected character in an identifier");
+      discardto(lex, '\'');
       return 0;
     } else if (ch != '\'') { /* normal character */
       *p++ = ch;
@@ -250,14 +250,14 @@ static size_t kllex_escapeid(KlLex* lex, char* buf) {
     }
   }
   if (ki_getc(input) != '\'') {
-    kllex_error(lex, "error: identifier too long");
-    kllex_discardto(lex, '\'');
+    error(lex, "error: identifier too long");
+    discardto(lex, '\'');
     return 0;
   }
   return p - buf;
 }
 
-void kllex_error(KlLex* lex, const char* format, ...) {
+void error(KlLex* lex, const char* format, ...) {
   va_list arglist;
   va_start(arglist, format);
   klerror_errorv(lex->klerror, lex->input, lex->inputname, lex->tok.begin, lex->tok.begin, format, arglist);
@@ -274,7 +274,7 @@ void kllex_next(KlLex* lex) {
   Ki* input = lex->input;
   while (true) {
     KioFileOffset orioff = ki_tell(input);
-    int ch = kllex_nextvalid(lex);
+    int ch = nextvalid(lex);
     KioFileOffset curroff = ki_tell(input);
     lex->tok.hasleadingblank = orioff + 1 != curroff;
     if (ch == KOF) {
@@ -286,7 +286,7 @@ void kllex_next(KlLex* lex) {
     KlUByte nextstate;
     char* buf = klstrtbl_allocstring(lex->strtbl, KLLEX_STRLIMIT);
     if (kl_unlikely(!buf)) {
-      kllex_error(lex, "out of memory in kllex_next(). pretend to reach end of file");
+      error(lex, "out of memory in kllex_next(). pretend to reach end of file");
       kllex_return(KLTK_END);
     }
     size_t strlength = 0;
@@ -299,23 +299,23 @@ void kllex_next(KlLex* lex) {
     KlTokenKind kind = tokenkind[state];
     switch (kind) {
       case KLTK_STRING: {
-        kllex_handlestring(lex, buf, buf[0]);
+        parse_string(lex, buf, buf[0]);
         kllex_return(KLTK_STRING);
       }
       case KLTK_INT: {
-        kllex_handleinteger(lex, buf, strlength);
+        parse_integer(lex, buf, strlength);
         kllex_return(KLTK_INT);
       }
       case KLTK_INTDOT: {
-        kllex_handleinteger(lex, buf, strlength - 1);
+        parse_integer(lex, buf, strlength - 1);
         kllex_return(KLTK_INTDOT);
       }
       case KLTK_FLOAT: {
-        kllex_handlefloat(lex, buf, strlength);
+        parse_float(lex, buf, strlength);
         kllex_return(KLTK_FLOAT);
       }
       case KLTK_ID: {
-        size_t len = buf[0] == '\'' ? kllex_escapeid(lex, buf) : strlength;
+        size_t len = buf[0] == '\'' ? parse_escaped_identifier(lex, buf) : strlength;
         lex->tok.string.length = len;
         lex->tok.string.id = klstrtbl_pushstring(lex->strtbl, len);
         kllex_return(KLTK_ID);
@@ -332,7 +332,7 @@ void kllex_next(KlLex* lex) {
         lex->tok.begin = ki_tell(input);
         lex->tok.end = lex->tok.begin;
         if (strlength == 0) ki_getc(input);
-        kllex_error(lex, "unexpected character");
+        error(lex, "unexpected character");
         /* redo kllex_next */
         continue;
       }

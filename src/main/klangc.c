@@ -7,18 +7,18 @@
 #include "deps/k/include/os_spec/kfs.h"
 #include <stdarg.h>
 
-#define KLC_OPTION_NORMAL   ((unsigned)0)
-#define KLC_OPTION_HELP     ((unsigned)klbit(0))
-#define KLC_OPTION_PRINT    ((unsigned)klbit(1))
-#define KLC_OPTION_DUMP     ((unsigned)klbit(2))
-#define KLC_OPTION_UNDUMP   ((unsigned)klbit(3))
-#define KLC_OPTION_STDIN    ((unsigned)klbit(4))
+#define OPTION_NORMAL   ((unsigned)0)
+#define OPTION_HELP     ((unsigned)klbit(0))
+#define OPTION_PRINT    ((unsigned)klbit(1))
+#define OPTION_DUMP     ((unsigned)klbit(2))
+#define OPTION_UNDUMP   ((unsigned)klbit(3))
+#define OPTION_STDIN    ((unsigned)klbit(4))
 
 
-#define KLC_NARGRAW(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...)     (_9)
-#define KLC_NARG(...)         KLC_NARGRAW(__VA_ARGS__ , 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
-#define klc_match(opt, ...)   klc_matchraw((opt), KLC_NARG(__VA_ARGS__), __VA_ARGS__)
-#define klc_isfilename(arg)   ((arg)[0] != '-')
+#define NARGRAW(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...)     (_9)
+#define NARG(...)         NARGRAW(__VA_ARGS__ , 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+#define match(opt, ...)   matchraw((opt), NARG(__VA_ARGS__), __VA_ARGS__)
+#define isfilename(arg)   ((arg)[0] != '-')
 
 typedef struct tagKlCBehaviour {
   Ki* input;
@@ -28,46 +28,46 @@ typedef struct tagKlCBehaviour {
   unsigned option;
 } KlCBehaviour;
 
-static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour);
-static KlCode* klc_undump(KlCBehaviour* behaviour, KlStrTbl* strtbl);
-static KlCode* klc_compile(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* klerr);
-static KlCode* klc_getcode(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* klerr);
-static int klc_output(KlCBehaviour* behaviour, KlCode* code);
-static int klc_do(KlCBehaviour* behaviour);
-static bool klc_matchraw(const char* arg, unsigned nopts, ...);
-static void klc_cleanbehaviour(KlCBehaviour* behaviour);
-static int klc_validatebehaviour(KlCBehaviour* behaviour);
-static void klc_print_help(void);
+static int parse_argv(int argc, char** argv, KlCBehaviour* behaviour);
+static KlCode* undump(KlCBehaviour* behaviour, KlStrTbl* strtbl);
+static KlCode* compile(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* klerr);
+static KlCode* getcode(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* klerr);
+static int output(KlCBehaviour* behaviour, KlCode* code);
+static int real_main(KlCBehaviour* behaviour);
+static bool matchraw(const char* arg, unsigned nopts, ...);
+static void cleanbehaviour(KlCBehaviour* behaviour);
+static int validatebehaviour(KlCBehaviour* behaviour);
+static void print_help(void);
 
 
 
 int main(int argc, char** argv) {
   KlCBehaviour behaviour;
-  int ret = klc_parse_argv(argc, argv, &behaviour);
+  int ret = parse_argv(argc, argv, &behaviour);
   if (kl_unlikely(ret)) return ret;
-  return klc_do(&behaviour);
+  return real_main(&behaviour);
 }
 
-static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
+static int parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
   behaviour->input = NULL;
   behaviour->inputname = NULL;
   behaviour->dumpoutput = NULL;
   behaviour->textoutput = NULL;
-  behaviour->option = KLC_OPTION_NORMAL;
+  behaviour->option = OPTION_NORMAL;
   if (argc == 1) {
     fprintf(stderr, "no argument\n");
-    klc_print_help();
-    klc_cleanbehaviour(behaviour);
+    print_help();
+    cleanbehaviour(behaviour);
     return 1;
   }
   for (int i = 1; i < argc; ++i) {
-    if (klc_match(argv[i], "-h", "--help")) {
-      behaviour->option |= KLC_OPTION_HELP;
-    } else if (klc_match(argv[i], "-p", "--print")) {
-      behaviour->option |= KLC_OPTION_PRINT;
+    if (match(argv[i], "-h", "--help")) {
+      behaviour->option |= OPTION_HELP;
+    } else if (match(argv[i], "-p", "--print")) {
+      behaviour->option |= OPTION_PRINT;
       if (behaviour->textoutput)
         ko_delete(behaviour->textoutput);
-      bool isfilename = argv[i + 1] && klc_isfilename(argv[i + 1]);
+      bool isfilename = argv[i + 1] && isfilename(argv[i + 1]);
       behaviour->textoutput = isfilename
         ? kofile_create(argv[i + 1], "wb")
         : kofile_attach(stdout);
@@ -78,14 +78,14 @@ static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
         } else {
           fprintf(stderr, "failed to attach to stdout\n");
         }
-        klc_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
-    } else if (klc_match(argv[i], "-d", "--dump")) {
-      behaviour->option |= KLC_OPTION_DUMP;
-      if (!(argv[i + 1] && klc_isfilename(argv[i + 1]))) {
+    } else if (match(argv[i], "-d", "--dump")) {
+      behaviour->option |= OPTION_DUMP;
+      if (!(argv[i + 1] && isfilename(argv[i + 1]))) {
         fprintf(stderr, "%s should specify output file\n", argv[i]);
-        klc_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
       if (behaviour->dumpoutput)
@@ -93,34 +93,34 @@ static int klc_parse_argv(int argc, char** argv, KlCBehaviour* behaviour) {
       behaviour->dumpoutput = kofile_create(argv[++i], "wb");
       if (kl_unlikely(!behaviour->dumpoutput)) {
         fprintf(stderr, "failed to open file: %s\n", argv[i]);
-        klc_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
-    } else if (klc_match(argv[i], "-u", "--undump")) {
-      behaviour->option |= KLC_OPTION_UNDUMP;
-    } else if (klc_isfilename(argv[i])) {
+    } else if (match(argv[i], "-u", "--undump")) {
+      behaviour->option |= OPTION_UNDUMP;
+    } else if (isfilename(argv[i])) {
       if (behaviour->input) {
         fprintf(stderr, "the input is specified more than once\n");
-        klc_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
       if (kl_unlikely(!(behaviour->input = kifile_create(argv[i], "rb")))) {
         fprintf(stderr, "failed to open file: %s\n", argv[i]);
-        klc_cleanbehaviour(behaviour);
+        cleanbehaviour(behaviour);
         return 1;
       }
       behaviour->inputname = argv[i];
     } else {
       fprintf(stderr, "unrecognized option: %s\n", argv[i]);
-      klc_print_help();
-      klc_cleanbehaviour(behaviour);
+      print_help();
+      cleanbehaviour(behaviour);
       return 1;
     }
   }
-  return klc_validatebehaviour(behaviour);
+  return validatebehaviour(behaviour);
 }
 
-static KlCode* klc_undump(KlCBehaviour* behaviour, KlStrTbl* strtbl) {
+static KlCode* undump(KlCBehaviour* behaviour, KlStrTbl* strtbl) {
   KlUnDumpError error;
   KlCode* code = klcode_undump(behaviour->input, strtbl, &error);
   if (kl_likely(code)) return code;
@@ -159,8 +159,8 @@ static KlCode* klc_undump(KlCBehaviour* behaviour, KlStrTbl* strtbl) {
   return NULL;
 }
 
-static int klc_getsrcfilename(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlStrDesc* srcfile) {
-  if (behaviour->option & KLC_OPTION_STDIN) {
+static int getsrcfilename(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlStrDesc* srcfile) {
+  if (behaviour->option & OPTION_STDIN) {
     *srcfile = (KlStrDesc) { .id = 0, .length = 0 };
     return 0;
   }
@@ -176,7 +176,7 @@ static int klc_getsrcfilename(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlStrDe
   return 0;
 }
 
-static KlCode* klc_compile(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* klerr) {
+static KlCode* compile(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* klerr) {
   KlLex lex;
   if (kl_unlikely(!kllex_init(&lex, behaviour->input, klerr, behaviour->inputname, strtbl)))
     return NULL;
@@ -194,7 +194,7 @@ static KlCode* klc_compile(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* k
   }
 
   KlStrDesc srcfilename;
-  if (kl_unlikely(klc_getsrcfilename(behaviour, strtbl, &srcfilename))) {
+  if (kl_unlikely(getsrcfilename(behaviour, strtbl, &srcfilename))) {
     if (ast) klast_delete(ast);
     kllex_destroy(&lex);
     return NULL;
@@ -219,16 +219,16 @@ static KlCode* klc_compile(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* k
   return code;
 }
 
-static KlCode* klc_getcode(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* klerr) {
-  return behaviour->option & KLC_OPTION_UNDUMP ? klc_undump(behaviour, strtbl)
-                                               : klc_compile(behaviour, strtbl, klerr);
+static KlCode* getcode(KlCBehaviour* behaviour, KlStrTbl* strtbl, KlError* klerr) {
+  return behaviour->option & OPTION_UNDUMP ? undump(behaviour, strtbl)
+                                               : compile(behaviour, strtbl, klerr);
   
 }
 
-static int klc_output(KlCBehaviour* behaviour, KlCode* code) {
-  if (behaviour->option & KLC_OPTION_PRINT)
+static int output(KlCBehaviour* behaviour, KlCode* code) {
+  if (behaviour->option & OPTION_PRINT)
     klcode_print(code, behaviour->textoutput);
-  if (behaviour->option & KLC_OPTION_DUMP) {
+  if (behaviour->option & OPTION_DUMP) {
     if (kl_unlikely(!klcode_dump(code, behaviour->dumpoutput))) {
       fprintf(stderr, "dump failure\n");
       return 1;
@@ -237,10 +237,10 @@ static int klc_output(KlCBehaviour* behaviour, KlCode* code) {
   return 0;
 }
 
-static int klc_do(KlCBehaviour* behaviour) {
-  if (behaviour->option & KLC_OPTION_HELP) {
-    klc_print_help();
-    klc_cleanbehaviour(behaviour);
+static int real_main(KlCBehaviour* behaviour) {
+  if (behaviour->option & OPTION_HELP) {
+    print_help();
+    cleanbehaviour(behaviour);
     return 0;
   }
   KlStrTbl* strtbl = klstrtbl_create();
@@ -253,29 +253,29 @@ static int klc_do(KlCBehaviour* behaviour) {
   klerror_init(&klerr, errout);
 
   int ret = 0;
-  KlCode* code = klc_getcode(behaviour, strtbl, &klerr);
+  KlCode* code = getcode(behaviour, strtbl, &klerr);
   if (kl_unlikely(!code)) {
     ret = 1;
     goto getcode_error;
   }
 
-  ret = klc_output(behaviour, code);
+  ret = output(behaviour, code);
   klcode_delete(code);
 getcode_error:
   ko_delete(errout);
   klstrtbl_delete(strtbl);
-  klc_cleanbehaviour(behaviour);
+  cleanbehaviour(behaviour);
   return ret;
 
 error_errout:
   klstrtbl_delete(strtbl);
 error_strtbl:
   fprintf(stderr, "fatal error: out of memory\n");
-  klc_cleanbehaviour(behaviour);
+  cleanbehaviour(behaviour);
   return 1;
 }
 
-static bool klc_matchraw(const char* arg, unsigned nopts, ...) {
+static bool matchraw(const char* arg, unsigned nopts, ...) {
   va_list opts;
   va_start(opts, nopts);
   for (unsigned i = 0; i < nopts; ++i) { 
@@ -288,7 +288,7 @@ static bool klc_matchraw(const char* arg, unsigned nopts, ...) {
   return false;
 }
 
-static void klc_cleanbehaviour(KlCBehaviour* behaviour) {
+static void cleanbehaviour(KlCBehaviour* behaviour) {
   if (behaviour->textoutput) ko_delete(behaviour->textoutput);
   if (behaviour->dumpoutput) ko_delete(behaviour->dumpoutput);
   if (behaviour->input) ki_delete(behaviour->input);
@@ -298,19 +298,19 @@ static void klc_cleanbehaviour(KlCBehaviour* behaviour) {
   behaviour->inputname = NULL;
 }
 
-static int klc_validatebehaviour(KlCBehaviour* behaviour) {
-  if (!(behaviour->option & KLC_OPTION_HELP) && !behaviour->input) {
+static int validatebehaviour(KlCBehaviour* behaviour) {
+  if (!(behaviour->option & OPTION_HELP) && !behaviour->input) {
     if (kl_unlikely(!(behaviour->input = kifile_attach_keepcontent(stdin)))) {
-      klc_cleanbehaviour(behaviour);
+      cleanbehaviour(behaviour);
       return 1;
     }
-    behaviour->option |= KLC_OPTION_STDIN;
+    behaviour->option |= OPTION_STDIN;
     behaviour->inputname = "stdin";
   }
   return 0;
 }
 
-static void klc_print_help(void) {
+static void print_help(void) {
   printf("Usage: klangc [<inputfile>] [options [<filename>]]\n");
   printf("options:\n");
   printf("  -h --help                   show this message.\n");

@@ -5,17 +5,33 @@
 #include "include/parse/klparser_utils.h"
 #include "include/parse/kltokens.h"
 
-static KlAstStmt* klparser_stmtexprandassign(KlParser* parser, KlLex* lex);
-static KlAstStmtLocalDefinition* klparser_stmtlocaldefinition(KlParser* parser, KlLex* lex);
-static KlAstStmtMethod* klparser_stmtmethod(KlParser* parser, KlLex* lex);
-static KlAstStmtMatch* klparser_stmtmatch(KlParser* parser, KlLex* lex);
-static KlAstStmtIf* klparser_stmtif(KlParser* parser, KlLex* lex);
-static KlAstStmt* klparser_stmtfor(KlParser* parser, KlLex* lex);
-static KlAstStmtWhile* klparser_stmtwhile(KlParser* parser, KlLex* lex);
-static KlAstStmtRepeat* klparser_stmtrepeat(KlParser* parser, KlLex* lex);
-static KlAstStmtReturn* klparser_stmtreturn(KlParser* parser, KlLex* lex);
-static inline KlAstStmtBreak* klparser_stmtbreak(KlParser* parser, KlLex* lex);
-static inline KlAstStmtContinue* klparser_stmtcontinue(KlParser* parser, KlLex* lex);
+static KlAstStmt* parse_exprandassign(KlParser* parser, KlLex* lex);
+static KlAstStmtLocalDefinition* parse_local_definition(KlParser* parser, KlLex* lex);
+static KlAstStmtMethod* parse_method(KlParser* parser, KlLex* lex);
+static KlAstStmtMatch* parse_match(KlParser* parser, KlLex* lex);
+static KlAstStmtIf* parse_if(KlParser* parser, KlLex* lex);
+static KlAstStmt* parse_for(KlParser* parser, KlLex* lex);
+static KlAstStmtWhile* parse_while(KlParser* parser, KlLex* lex);
+static KlAstStmtRepeat* parse_repeat(KlParser* parser, KlLex* lex);
+static KlAstStmtReturn* parse_return(KlParser* parser, KlLex* lex);
+static inline KlAstStmtBreak* parse_break(KlParser* parser, KlLex* lex);
+static inline KlAstStmtContinue* parse_continue(KlParser* parser, KlLex* lex);
+
+static inline KlAstStmtBreak* parse_break(KlParser* parser, KlLex* lex) {
+  kl_assert(kllex_check(lex, KLTK_BREAK), "expected 'break'");
+  KlAstStmtBreak* stmtbreak = klast_stmtbreak_create(lex->tok.begin, lex->tok.end);
+  kllex_next(lex);
+  if (kl_unlikely(!stmtbreak)) return klparser_error_oom(parser, lex);
+  return stmtbreak;
+}
+
+static inline KlAstStmtContinue* parse_continue(KlParser* parser, KlLex* lex) {
+  kl_assert(kllex_check(lex, KLTK_CONTINUE), "expected 'continue'");
+  KlAstStmtContinue* stmtcontinue = klast_stmtcontinue_create(lex->tok.begin, lex->tok.end);
+  kllex_next(lex);
+  if (kl_unlikely(!stmtcontinue)) return klparser_error_oom(parser, lex);
+  return stmtcontinue;
+}
 
 
 KlAstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex) {
@@ -44,7 +60,7 @@ KlAstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex) {
 KlAstStmt* klparser_stmt(KlParser* parser, KlLex* lex) {
   switch (kllex_tokkind(lex)) {
     case KLTK_LOCAL: {
-      KlAstStmtLocalDefinition* stmtlocalfunc = klparser_stmtlocaldefinition(parser, lex);
+      KlAstStmtLocalDefinition* stmtlocalfunc = parse_local_definition(parser, lex);
       return klcast(KlAstStmt*, stmtlocalfunc);
     }
     case KLTK_LET: {
@@ -52,68 +68,68 @@ KlAstStmt* klparser_stmt(KlParser* parser, KlLex* lex) {
       return klcast(KlAstStmt*, stmtlet);
     }
     case KLTK_METHOD: {
-      KlAstStmtMethod* stmtmethod = klparser_stmtmethod(parser, lex);
+      KlAstStmtMethod* stmtmethod = parse_method(parser, lex);
       return klcast(KlAstStmt*, stmtmethod);
     }
     case KLTK_MATCH: {
-      KlAstStmtMatch* stmtmatch = klparser_stmtmatch(parser, lex);
+      KlAstStmtMatch* stmtmatch = parse_match(parser, lex);
       return klcast(KlAstStmt*, stmtmatch);
     }
     case KLTK_IF: {
-      KlAstStmtIf* stmtif = klparser_stmtif(parser, lex);
+      KlAstStmtIf* stmtif = parse_if(parser, lex);
       return klcast(KlAstStmt*, stmtif);
     }
     case KLTK_REPEAT: {
-      KlAstStmtRepeat* stmtrepeat = klparser_stmtrepeat(parser, lex);
+      KlAstStmtRepeat* stmtrepeat = parse_repeat(parser, lex);
       return klcast(KlAstStmt*, stmtrepeat);
     }
     case KLTK_WHILE: {
-      KlAstStmtWhile* stmtwhile = klparser_stmtwhile(parser, lex);
+      KlAstStmtWhile* stmtwhile = parse_while(parser, lex);
       return klcast(KlAstStmt*, stmtwhile);
     }
     case KLTK_RETURN: {
-      KlAstStmtReturn* stmtreturn = klparser_stmtreturn(parser, lex);
+      KlAstStmtReturn* stmtreturn = parse_return(parser, lex);
       return klcast(KlAstStmt*, stmtreturn);
     }
     case KLTK_BREAK: {
-      KlAstStmtBreak* stmtbreak = klparser_stmtbreak(parser, lex);
+      KlAstStmtBreak* stmtbreak = parse_break(parser, lex);
       return klcast(KlAstStmt*, stmtbreak);
     }
     case KLTK_CONTINUE: {
-      KlAstStmtContinue* stmtcontinue = klparser_stmtcontinue(parser, lex);
+      KlAstStmtContinue* stmtcontinue = parse_continue(parser, lex);
       return klcast(KlAstStmt*, stmtcontinue);
     }
     case KLTK_FOR: {
-      KlAstStmt* stmtfor = klparser_stmtfor(parser, lex);
+      KlAstStmt* stmtfor = parse_for(parser, lex);
       return stmtfor;
     }
     default: {
-      return klparser_stmtexprandassign(parser, lex);
+      return parse_exprandassign(parser, lex);
     }
   }
 }
 
-static KlAstStmt* klparser_discoveryforblock(KlParser* parser, KlLex* lex) {
+static KlAstStmt* discovery_forblock(KlParser* parser, KlLex* lex) {
   klparser_match(parser, lex, KLTK_COLON);
   KlAstStmtList* block = klparser_stmtblock(parser, lex);
   if (block) klast_delete(block);
   return NULL;
 }
 
-static inline KlAstStmtList* klparser_finishstmtfor(KlParser* parser, KlLex* lex) {
+static inline KlAstStmtList* finish_for(KlParser* parser, KlLex* lex) {
   kllex_trymatch(lex, KLTK_COLON);
   return klparser_stmtblock(parser, lex);
 }
 
-static KlAstStmt* klparser_stmtinfor(KlParser* parser, KlLex* lex) {
+static KlAstStmt* parse_infor(KlParser* parser, KlLex* lex) {
   KlAstExprList* lvals = klparser_exprlist(parser, lex);
   if (kllex_trymatch(lex, KLTK_ASSIGN)) { /* stmtfor -> for i = n, m, s */
     KlAstExprList* exprlist = klparser_exprlist(parser, lex);
     if (kl_unlikely(!exprlist)) {
       if (lvals) klast_delete(lvals);
-      return klparser_discoveryforblock(parser, lex);
+      return discovery_forblock(parser, lex);
     }
-    KlAstStmtList* block = klparser_finishstmtfor(parser, lex);
+    KlAstStmtList* block = finish_for(parser, lex);
     if (kl_unlikely(!block)) {
       if (lvals) klast_delete(lvals);
       klast_delete(exprlist);
@@ -146,9 +162,9 @@ static KlAstStmt* klparser_stmtinfor(KlParser* parser, KlLex* lex) {
   KlAstExpr* iterable = klparser_expr(parser, lex);
   if (kl_unlikely(!iterable)) {
     if (lvals) klast_delete(lvals);
-    return klparser_discoveryforblock(parser, lex);
+    return discovery_forblock(parser, lex);
   }
-  KlAstStmtList* block = klparser_finishstmtfor(parser, lex);
+  KlAstStmtList* block = finish_for(parser, lex);
   if (kl_unlikely(!block)) {
     if (lvals) klast_delete(lvals);
     klast_delete(iterable);
@@ -190,7 +206,7 @@ KlAstStmtLet* klparser_stmtlet(KlParser* parser, KlLex* lex) {
   return stmtlet;
 }
 
-static KlAstStmtMethod* klparser_stmtmethod(KlParser* parser, KlLex* lex) {
+static KlAstStmtMethod* parse_method(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_METHOD), "expected 'method'");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
@@ -213,7 +229,7 @@ static KlAstStmtMethod* klparser_stmtmethod(KlParser* parser, KlLex* lex) {
   return stmtmethod;
 }
 
-static KlAstStmtMatch* klparser_stmtmatch(KlParser* parser, KlLex* lex) {
+static KlAstStmtMatch* parse_match(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_MATCH), "expected 'match'");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
@@ -260,7 +276,7 @@ static KlAstStmtMatch* klparser_stmtmatch(KlParser* parser, KlLex* lex) {
   return stmtmatch;
 }
 
-static KlAstStmt* klparser_stmtexprandassign(KlParser* parser, KlLex* lex) {
+static KlAstStmt* parse_exprandassign(KlParser* parser, KlLex* lex) {
   KlAstExprList* maybelvals = klparser_exprlist(parser, lex);
   if (kllex_trymatch(lex, KLTK_ASSIGN)) { /* is assignment */
     KlAstExprList* rvals = klparser_exprlist(parser, lex);
@@ -281,7 +297,7 @@ static KlAstStmt* klparser_stmtexprandassign(KlParser* parser, KlLex* lex) {
   }
 }
 
-static KlAstStmtLocalDefinition* klparser_stmtlocaldefinition(KlParser* parser, KlLex* lex) {
+static KlAstStmtLocalDefinition* parse_local_definition(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_LOCAL), "expected 'local'");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
@@ -298,7 +314,7 @@ static KlAstStmtLocalDefinition* klparser_stmtlocaldefinition(KlParser* parser, 
   return stmtlocalfunc;
 }
 
-static KlAstStmtIf* klparser_stmtif(KlParser* parser, KlLex* lex) {
+static KlAstStmtIf* parse_if(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_IF), "expected 'if'");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
@@ -321,17 +337,17 @@ static KlAstStmtIf* klparser_stmtif(KlParser* parser, KlLex* lex) {
   return stmtif;
 }
 
-static KlAstStmt* klparser_stmtfor(KlParser* parser, KlLex* lex) {
+static KlAstStmt* parse_for(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_FOR), "expected '('");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
-  KlAstStmt* stmtfor = klparser_stmtinfor(parser, lex);
+  KlAstStmt* stmtfor = parse_infor(parser, lex);
   klparser_returnifnull(stmtfor);
   klast_setposition(klcast(KlAst*, stmtfor), begin, klast_end(stmtfor));
   return stmtfor;
 }
 
-static KlAstStmtWhile* klparser_stmtwhile(KlParser* parser, KlLex* lex) {
+static KlAstStmtWhile* parse_while(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_WHILE), "expected 'while'");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
@@ -370,13 +386,13 @@ KlAstStmtList* klparser_stmtlist(KlParser* parser, KlLex* lex) {
   return stmtlist;
 }
 
-static KlAstExpr* klparser_stmtrepeat_defaultcondition(KlParser* parser, KlLex* lex, KlFileOffset begin, KlFileOffset end) {
+static KlAstExpr* default_condition_for_repeat(KlParser* parser, KlLex* lex, KlFileOffset begin, KlFileOffset end) {
   KlAstExpr* con = klcast(KlAstExpr*, klast_constant_create_boolean(KLC_FALSE, begin, end));
   klparser_oomifnull(con);
   return con;
 }
 
-static KlAstStmtRepeat* klparser_stmtrepeat(KlParser* parser, KlLex* lex) {
+static KlAstStmtRepeat* parse_repeat(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_REPEAT), "expected 'repeat'");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);
@@ -384,7 +400,7 @@ static KlAstStmtRepeat* klparser_stmtrepeat(KlParser* parser, KlLex* lex) {
   KlAstStmtList* block = klparser_stmtblock(parser, lex);
   KlAstExpr* cond = kllex_trymatch(lex, KLTK_UNTIL)
                   ? klparser_expr(parser, lex)
-                  : klparser_stmtrepeat_defaultcondition(parser, lex, klast_end(block), klast_end(block));
+                  : default_condition_for_repeat(parser, lex, klast_end(block), klast_end(block));
   if (kl_unlikely(!cond || !block)) {
     if (cond) klast_delete(cond);
     if (block) klast_delete(block);
@@ -395,7 +411,7 @@ static KlAstStmtRepeat* klparser_stmtrepeat(KlParser* parser, KlLex* lex) {
   return stmtrepeat;
 }
 
-static KlAstStmtReturn* klparser_stmtreturn(KlParser* parser, KlLex* lex) {
+static KlAstStmtReturn* parse_return(KlParser* parser, KlLex* lex) {
   kl_assert(kllex_check(lex, KLTK_RETURN), "expected 'return'");
   KlFileOffset begin = kllex_tokbegin(lex);
   kllex_next(lex);

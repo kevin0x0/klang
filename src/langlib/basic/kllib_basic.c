@@ -8,30 +8,30 @@
 #include "include/vm/klexception.h"
 #include "include/vm/klexec.h"
 
-static KlException kllib_basic_callable_next(KlState* state);
-static KlException kllib_basic_callable_iter(KlState* state);
+static KlException callable_next(KlState* state);
+static KlException callable_iter(KlState* state);
 
-static KlException kllib_basic_map_weak(KlState* state);
-static KlException kllib_basic_map_customhash(KlState* state);
-static KlException kllib_basic_map_getslot(KlState* state);
-static KlException kllib_basic_map_index(KlState* state);
-static KlException kllib_basic_map_indexas(KlState* state);
+static KlException map_weak(KlState* state);
+static KlException map_customhash(KlState* state);
+static KlException map_getslot(KlState* state);
+static KlException map_index(KlState* state);
+static KlException map_indexas(KlState* state);
 
-static KlException kllib_basic_type(KlState* state);
-static KlException kllib_basic_loadlib(KlState* state);
+static KlException type(KlState* state);
+static KlException loadlib(KlState* state);
 
-static KlException kllib_basic_init_globalvar(KlState* state);
-static KlException kllib_basic_init_iter(KlState* state);
-static KlException kllib_basic_init_map(KlState* state);
+static KlException init_globalvar(KlState* state);
+static KlException init_iter(KlState* state);
+static KlException init_map(KlState* state);
 
 KlException KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME(KlState* state) {
-  KLAPI_PROTECT(kllib_basic_init_globalvar(state));
-  KLAPI_PROTECT(kllib_basic_init_iter(state));
-  KLAPI_PROTECT(kllib_basic_init_map(state));
+  KLAPI_PROTECT(init_globalvar(state));
+  KLAPI_PROTECT(init_iter(state));
+  KLAPI_PROTECT(init_map(state));
   return klapi_return(state, 0);
 }
 
-static KlException kllib_basic_init_globalvar(KlState* state) {
+static KlException init_globalvar(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   KLAPI_PROTECT(klapi_pushstring(state, "string"));
   klapi_pushobj(state, state->common->klclass.phony[KL_STRING], KL_CLASS);
@@ -59,10 +59,10 @@ static KlException kllib_basic_init_globalvar(KlState* state) {
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "type"));
-  klapi_setcfunc(state, -1, kllib_basic_type);
+  klapi_setcfunc(state, -1, type);
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
   KLAPI_PROTECT(klapi_setstring(state, -2, "loadlib"));
-  klapi_setcfunc(state, -1, kllib_basic_loadlib);
+  klapi_setcfunc(state, -1, loadlib);
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
   KLAPI_PROTECT(klapi_setstring(state, -2, "global"));
   klapi_setobj(state, -1, klstate_global(state), KL_MAP);
@@ -72,37 +72,37 @@ static KlException kllib_basic_init_globalvar(KlState* state) {
   return KL_E_NONE;
 }
 
-static KlException kllib_basic_init_iter(KlState* state) {
+static KlException init_iter(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 1));
-  klapi_pushcfunc(state, kllib_basic_callable_iter);
+  klapi_pushcfunc(state, callable_iter);
   KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_COROUTINE], state->common->string.iter));
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
 
-static KlException kllib_basic_init_map(KlState* state) {
+static KlException init_map(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   KLAPI_PROTECT(klapi_pushstring(state, "weak"));
-  klapi_pushcfunc(state, kllib_basic_map_weak);
+  klapi_pushcfunc(state, map_weak);
   KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_MAP], klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -1, "customhash"));
-  klapi_pushcfunc(state, kllib_basic_map_customhash);
+  klapi_pushcfunc(state, map_customhash);
   KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_MAP], klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -1, "=[]"));
-  klapi_pushcfunc(state, kllib_basic_map_index);
+  klapi_pushcfunc(state, map_index);
   KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_MAP], klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -1, "[]="));
-  klapi_pushcfunc(state, kllib_basic_map_indexas);
+  klapi_pushcfunc(state, map_indexas);
   KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_MAP], klapi_getstring(state, -2)));
 
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
 
-static KlException kllib_basic_callable_next(KlState* state) {
+static KlException callable_next(KlState* state) {
   if (kl_unlikely(klapi_narg(state) < 2))
     return klapi_throw_internal(state, KL_E_ARGNO, "there should be more than 2 arguments(0 iteration variable in for loop)");
   if (klapi_nres(state) < 3)
@@ -117,7 +117,7 @@ static KlException kllib_basic_callable_next(KlState* state) {
   return klapi_return(state, klapi_nres(state));
 }
 
-static KlException kllib_basic_callable_iter(KlState* state) {
+static KlException callable_iter(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argmument(this method should be automatically called in iterration loop)");
   if (klapi_nres(state) < 4)
@@ -131,11 +131,11 @@ static KlException kllib_basic_callable_iter(KlState* state) {
   KLAPI_PROTECT(klapi_scall(state, klapi_access(state, -2), 0, nval));
   if (klapi_checktype(state, -nval, KL_NIL))
     return klapi_return(state, 0);
-  klapi_setcfunc(state, -klapi_framesize(state), kllib_basic_callable_next);
+  klapi_setcfunc(state, -klapi_framesize(state), callable_next);
   return klapi_return(state, klapi_nres(state));
 }
 
-static KlException kllib_basic_map_weak(KlState* state) {
+static KlException map_weak(KlState* state) {
   if (klapi_narg(state) != 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly two argmument");
   if (!klapi_checktype(state, -2, KL_MAP))
@@ -159,7 +159,7 @@ static KlException kllib_basic_map_weak(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_basic_map_customhash(KlState* state) {
+static KlException map_customhash(KlState* state) {
   if (klapi_narg(state) == 0)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected at least one argument");
   if (!klapi_checktypeb(state, 0, KL_MAP))
@@ -176,7 +176,7 @@ static KlException kllib_basic_map_customhash(KlState* state) {
 }
 
 /* try get slot, if the slot does not exist, return key's hash */
-static KlException kllib_basic_map_getslot(KlState* state) {
+static KlException map_getslot(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 3));
 
   /* call hash method */
@@ -233,7 +233,7 @@ static KlException kllib_basic_map_getslot(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_basic_map_index(KlState* state) {
+static KlException map_index(KlState* state) {
   if (klapi_narg(state) != 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly two arguments");
   if (!klapi_checktypeb(state, 0, KL_MAP))
@@ -242,7 +242,7 @@ static KlException kllib_basic_map_index(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   klapi_pushvalue(state, klapi_access(state, -2));
   klapi_pushvalue(state, klapi_access(state, -2));
-  KLAPI_PROTECT(klapi_scall(state, &klvalue_cfunc(kllib_basic_map_getslot), 2, 1));
+  KLAPI_PROTECT(klapi_scall(state, &klvalue_cfunc(map_getslot), 2, 1));
   if (kl_unlikely(klapi_checktype(state, -1, KL_INT)))
     return klapi_return(state, 0);
   KlMapSlot* slot = klcast(KlMapSlot*, klapi_getuserdata(state, -1));
@@ -250,7 +250,7 @@ static KlException kllib_basic_map_index(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_basic_map_indexas(KlState* state) {
+static KlException map_indexas(KlState* state) {
   if (klapi_narg(state) != 3)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly three arguments");
   if (!klapi_checktypeb(state, 0, KL_MAP))
@@ -259,7 +259,7 @@ static KlException kllib_basic_map_indexas(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   klapi_pushvalue(state, klapi_access(state, -3));
   klapi_pushvalue(state, klapi_access(state, -3));
-  KLAPI_PROTECT(klapi_scall(state, &klvalue_cfunc(kllib_basic_map_getslot), 2, 1));
+  KLAPI_PROTECT(klapi_scall(state, &klvalue_cfunc(map_getslot), 2, 1));
   if (kl_unlikely(klapi_checktype(state, -1, KL_INT))) {
     if (kl_unlikely(!klmap_insert_hash(klapi_getmapb(state, 0),
                                        klstate_getmm(state),
@@ -274,7 +274,7 @@ static KlException kllib_basic_map_indexas(KlState* state) {
   return klapi_return(state, 0);
 }
 
-static KlException kllib_basic_type(KlState* state) {
+static KlException type(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one arguments");
   const KlString* name = klexec_typename(state, klapi_access(state, -1));
@@ -282,7 +282,7 @@ static KlException kllib_basic_type(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_basic_loadlib(KlState* state) {
+static KlException loadlib(KlState* state) {
   if (klapi_narg(state) != 1 && klapi_narg(state) != 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected (sopath [, entry function])");
   if (kl_unlikely(!klapi_checkstring(state, -1) || (klapi_narg(state) == 2 && !klapi_checkstring(state, -2))))

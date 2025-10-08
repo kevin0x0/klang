@@ -6,24 +6,24 @@
 #include "include/value/klvalue.h"
 #include "include/vm/klexception.h"
 
-static KlException kllib_cast_toint(KlState* state);
-static KlException kllib_cast_tofloat(KlState* state);
-static KlException kllib_cast_tonumber(KlState* state);
-static KlException kllib_cast_tostring(KlState* state);
-static KlException kllib_cast_tobool(KlState* state);
-static KlException kllib_cast_createclass(KlState* state);
+static KlException toint(KlState* state);
+static KlException tofloat(KlState* state);
+static KlException tonumber(KlState* state);
+static KlException tostring(KlState* state);
+static KlException tobool(KlState* state);
+static KlException createclass(KlState* state);
 
 
 
 KlException KLCONFIG_LIBRARY_CAST_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 1));
   KLAPI_PROTECT(klapi_pushstring(state, "cast"));
-  KLAPI_PROTECT(kllib_cast_createclass(state));
+  KLAPI_PROTECT(createclass(state));
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -2), -1));
   return klapi_return(state, 0);
 }
 
-static KlException kllib_cast_toint(KlState* state) {
+static KlException toint(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   KlValue* value = klapi_access(state, -1);
@@ -51,7 +51,7 @@ static KlException kllib_cast_toint(KlState* state) {
   }
 }
 
-static KlException kllib_cast_tofloat(KlState* state) {
+static KlException tofloat(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   KlValue* value = klapi_access(state, -1);
@@ -79,7 +79,7 @@ static KlException kllib_cast_tofloat(KlState* state) {
   }
 }
 
-static KlException kllib_cast_tonumber(KlState* state) {
+static KlException tonumber(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   KlValue* value = klapi_access(state, -1);
@@ -114,7 +114,7 @@ static KlException kllib_cast_tonumber(KlState* state) {
   }
 }
 
-static KlException kllib_cast_tostring(KlState* state) {
+static KlException tostring(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   KlValue* value = klapi_access(state, -1);
@@ -150,7 +150,7 @@ static KlException kllib_cast_tostring(KlState* state) {
   }
 }
 
-static KlException kllib_cast_tobool(KlState* state) {
+static KlException tobool(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   KlValue* value = klapi_access(state, -1);
@@ -163,7 +163,7 @@ static KlException kllib_cast_tobool(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_cast_createclass(KlState* state) {
+static KlException createclass(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 3));
   KlClass* castclass = klclass_create(klstate_getmm(state), 1, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
   if (kl_unlikely(!castclass))
@@ -171,23 +171,23 @@ static KlException kllib_cast_createclass(KlState* state) {
   klapi_pushobj(state, castclass, KL_CLASS);
 
   KLAPI_PROTECT(klapi_pushstring(state, "toint"));
-  klapi_pushcfunc(state, kllib_cast_toint);
+  klapi_pushcfunc(state, toint);
   KLAPI_PROTECT(klapi_class_newshared_normal(state, castclass, klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "tofloat"));
-  klapi_setcfunc(state, -1, kllib_cast_tofloat);
+  klapi_setcfunc(state, -1, tofloat);
   KLAPI_PROTECT(klapi_class_newshared_normal(state, castclass, klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "tonumber"));
-  klapi_setcfunc(state, -1, kllib_cast_tonumber);
+  klapi_setcfunc(state, -1, tonumber);
   KLAPI_PROTECT(klapi_class_newshared_normal(state, castclass, klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "tostring"));
-  klapi_setcfunc(state, -1, kllib_cast_tostring);
+  klapi_setcfunc(state, -1, tostring);
   KLAPI_PROTECT(klapi_class_newshared_normal(state, castclass, klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "tobool"));
-  klapi_setcfunc(state, -1, kllib_cast_tobool);
+  klapi_setcfunc(state, -1, tobool);
   KLAPI_PROTECT(klapi_class_newshared_normal(state, castclass, klapi_getstring(state, -2)));
 
   klapi_pop(state, 2);

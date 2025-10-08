@@ -8,16 +8,16 @@
 #include <string.h>
 
 
-static KlException kllib_string_join_raw(KlState* state, size_t nval, KlValue* vals, KlValue* result);
-static KlException kllib_string_slice(KlState* state);
-static KlException kllib_string_find(KlState* state);
-static KlException kllib_string_join(KlState* state);
-static KlException kllib_string_split(KlState* state);
+static KlException join_raw(KlState* state, size_t nval, KlValue* vals, KlValue* result);
+static KlException slice(KlState* state);
+static KlException find(KlState* state);
+static KlException join(KlState* state);
+static KlException split(KlState* state);
 
-static KlException kllib_string_utf8idx(KlState* state);
-static KlException kllib_string_utf8len(KlState* state);
+static KlException utf8idx(KlState* state);
+static KlException utf8len(KlState* state);
 
-static inline size_t kllib_string_utf8charlen(const unsigned char* str) {
+static inline size_t utf8charlen(const unsigned char* str) {
   unsigned char ch = *str;
   if (ch < 0xC0) return 1;
   if (ch < 0xE0) return 2;
@@ -25,7 +25,7 @@ static inline size_t kllib_string_utf8charlen(const unsigned char* str) {
   return 4;
 }
 
-static inline KlInt kllib_normalise_stringidx(KlInt idx, size_t strlength) {
+static inline KlInt normalise_stringidx(KlInt idx, size_t strlength) {
   while (idx < 0)
     idx = strlength + idx;
   if (idx > klcast(KlInt, strlength))
@@ -39,33 +39,33 @@ KlException KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME(KlState* state) {
   KlClass* strclass = klstate_common(state)->klclass.phony[KL_STRING];
 
   KLAPI_PROTECT(klapi_pushstring(state, "find"));
-  klapi_pushcfunc(state, kllib_string_find);
+  klapi_pushcfunc(state, find);
   KLAPI_PROTECT(klapi_class_newshared_method(state, strclass, klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "join"));
-  klapi_setcfunc(state, -1, kllib_string_join);
+  klapi_setcfunc(state, -1, join);
   KLAPI_PROTECT(klapi_class_newshared_method(state, strclass, klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "slice"));
-  klapi_setcfunc(state, -1, kllib_string_slice);
+  klapi_setcfunc(state, -1, slice);
   KLAPI_PROTECT(klapi_class_newshared_method(state, strclass, klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "split"));
-  klapi_setcfunc(state, -1, kllib_string_split);
+  klapi_setcfunc(state, -1, split);
   KLAPI_PROTECT(klapi_class_newshared_method(state, strclass, klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "utf8len"));
-  klapi_setcfunc(state, -1, kllib_string_utf8len);
+  klapi_setcfunc(state, -1, utf8len);
   KLAPI_PROTECT(klapi_class_newshared_method(state, strclass, klapi_getstring(state, -2)));
 
   KLAPI_PROTECT(klapi_setstring(state, -2, "utf8idx"));
-  klapi_setcfunc(state, -1, kllib_string_utf8idx);
+  klapi_setcfunc(state, -1, utf8idx);
   KLAPI_PROTECT(klapi_class_newshared_method(state, strclass, klapi_getstring(state, -2)));
 
   return klapi_return(state, 0);
 }
 
-static KlException kllib_string_slice(KlState* state) {
+static KlException slice(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 2 && klapi_narg(state) != 3))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two or three arguments");
   if (kl_unlikely(!klapi_checkstringb(state, 0)))
@@ -74,12 +74,12 @@ static KlException kllib_string_slice(KlState* state) {
   size_t strlength = klstring_length(str);
   if (kl_unlikely(!klapi_checktypeb(state, 1, KL_INT)))
     return klapi_throw_internal(state, KL_E_TYPE, "expected integer, got %s", klstring_content(klapi_typename(state, klapi_accessb(state, 1))));
-  KlInt begin = kllib_normalise_stringidx(klapi_getintb(state, 1), strlength);
+  KlInt begin = normalise_stringidx(klapi_getintb(state, 1), strlength);
   KlInt end = strlength;
   if (klapi_narg(state) == 3) {
     if (kl_unlikely(!klapi_checktype(state, -1, KL_INT)))
       return klapi_throw_internal(state, KL_E_TYPE, "expected integer, got %s", klstring_content(klapi_typename(state, klapi_access(state, -1))));
-    end = kllib_normalise_stringidx(klapi_getint(state, -1), strlength);
+    end = normalise_stringidx(klapi_getint(state, -1), strlength);
   }
   if (kl_unlikely(end < begin))
       return klapi_throw_internal(state, KL_E_RANGE, "invalid range: (%zd, %zd) for string: %s", begin, end, klstring_content(str));
@@ -90,7 +90,7 @@ static KlException kllib_string_slice(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_string_find(KlState* state) {
+static KlException find(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 2 && klapi_narg(state) != 3))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two or three arguments");
   KlInt beginidx = 0;
@@ -108,7 +108,7 @@ static KlException kllib_string_find(KlState* state) {
                                 klstring_content(klapi_typename(state, klapi_access(state, -2))),
                                 klstring_content(klapi_typename(state, klapi_access(state, -1))));
   KlString* textklstr = klapi_getstring(state, -2);
-  beginidx = kllib_normalise_stringidx(beginidx, klstring_length(textklstr));
+  beginidx = normalise_stringidx(beginidx, klstring_length(textklstr));
   const char* text = klstring_content(textklstr);
   const char* pattern = klstring_content(klapi_getstring(state, -1));
   const char* str = strstr(text + beginidx, pattern);
@@ -116,7 +116,7 @@ static KlException kllib_string_find(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_string_join(KlState* state) {
+static KlException join(KlState* state) {
   KLAPI_PROTECT(klapi_checkframe(state, 1));
   size_t nstr = klapi_narg(state);
   if (nstr == 0) {
@@ -125,11 +125,11 @@ static KlException kllib_string_join(KlState* state) {
   }
 
   KlValue* strs = klapi_pointer(state, -nstr);
-  KLAPI_PROTECT(kllib_string_join_raw(state, nstr, strs, strs + nstr - 1));
+  KLAPI_PROTECT(join_raw(state, nstr, strs, strs + nstr - 1));
   return klapi_return(state, 1);
 }
 
-static KlException kllib_string_split(KlState* state) {
+static KlException split(KlState* state) {
   if (klapi_narg(state) != 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two arguments");
   if (!klapi_checkstring(state, -2) || !klapi_checkstring(state, -1))
@@ -159,7 +159,7 @@ static KlException kllib_string_split(KlState* state) {
   return klapi_return(state, nret);
 }
 
-static KlException kllib_string_join_raw(KlState* state, size_t nval, KlValue* vals, KlValue* result) {
+static KlException join_raw(KlState* state, size_t nval, KlValue* vals, KlValue* result) {
   size_t totallen = 0;
   for (KlValue* val = vals; val != vals + nval; ++val) {
     if (kl_unlikely(!klvalue_isstring(val)))
@@ -207,7 +207,7 @@ static KlException kllib_string_join_raw(KlState* state, size_t nval, KlValue* v
   }
 }
 
-static KlException kllib_string_utf8idx(KlState* state) {
+static KlException utf8idx(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 2 && klapi_narg(state) != 3))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected two or three arguments");
   if (kl_unlikely(!klapi_checkstringb(state, 0)))
@@ -220,7 +220,7 @@ static KlException kllib_string_utf8idx(KlState* state) {
   if (klapi_narg(state) == 3) {
     if (kl_unlikely(!klapi_checktype(state, -1, KL_INT)))
       return klapi_throw_internal(state, KL_E_TYPE, "expected integer, got %s", klstring_content(klapi_typename(state, klapi_access(state, -1))));
-    begin = kllib_normalise_stringidx(klapi_getint(state, -1), klstring_length(str));
+    begin = normalise_stringidx(klapi_getint(state, -1), klstring_length(str));
   }
   if (kl_unlikely(count < 0))
     return klapi_throw_internal(state, KL_E_TYPE, "expected positive index");
@@ -229,7 +229,7 @@ static KlException kllib_string_utf8idx(KlState* state) {
   size_t strlength = klstring_length(str);
   size_t idx = begin;
   while (count-- > 0) {
-    idx += kllib_string_utf8charlen(text + idx);
+    idx += utf8charlen(text + idx);
     if (kl_unlikely(idx >= strlength))
       return klapi_throw_internal(state, KL_E_RANGE, "there are not that many utf8 characters");
   }
@@ -238,7 +238,7 @@ static KlException kllib_string_utf8idx(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_string_utf8len(KlState* state) {
+static KlException utf8len(KlState* state) {
   if (kl_unlikely(klapi_narg(state) != 1))
     return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly one argument");
   if (kl_unlikely(!klapi_checkstring(state, -1)))
@@ -249,7 +249,7 @@ static KlException kllib_string_utf8len(KlState* state) {
   size_t idx = 0;
   KlInt count = 0;
   while (idx < strlength) {
-    idx += kllib_string_utf8charlen(text + idx);
+    idx += utf8charlen(text + idx);
     ++count;
   }
   klapi_setint(state, -1, count);

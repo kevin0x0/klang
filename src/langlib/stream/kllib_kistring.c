@@ -9,11 +9,11 @@ typedef struct tagKiString {
   KlString* str;
 } KiString;
 
-static void kistring_delete(KiString* kistring);
-static KioFileOffset kistring_size(KiString* kistring);
-static void kistring_reader(KiString* kistring);
+static void delete(KiString* kistring);
+static KioFileOffset size(KiString* kistring);
+static void reader(KiString* kistring);
 
-static const KiVirtualFunc kistring_vfunc = { .reader = (KiReader)kistring_reader, .delete = (KiDelete)kistring_delete, .size = (KiSize)kistring_size };
+static const KiVirtualFunc kistring_vfunc = { .reader = (KiReader)reader, .delete = (KiDelete)delete, .size = (KiSize)size };
 
 
 Ki* kistring_create(KlString* str) {
@@ -25,15 +25,15 @@ Ki* kistring_create(KlString* str) {
   return (Ki*)kistring;
 }
 
-static void kistring_delete(KiString* kistring) {
+static void delete(KiString* kistring) {
   free(kistring);
 }
 
-static KioFileOffset kistring_size(KiString* kistring) {
+static KioFileOffset size(KiString* kistring) {
   return klstring_length(kistring->str);
 }
 
-static void kistring_reader(KiString* kistring) {
+static void reader(KiString* kistring) {
   size_t readpos = ki_tell((Ki*)kistring);
   if (readpos >= klstring_length(kistring->str)) {
     ki_setbuf((Ki*)kistring, ki_getbuf((Ki*)kistring), 0, readpos);

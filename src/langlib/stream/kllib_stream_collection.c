@@ -10,7 +10,7 @@
 
 
 
-static KlException kllib_create_istream_collection(KlState* state) {
+static KlException create_istream_collection(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 5));
   KlClass* istreamcollection = klclass_create(klstate_getmm(state), 3, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
   if (kl_unlikely(!istreamcollection))
@@ -41,7 +41,7 @@ static KlException kllib_create_istream_collection(KlState* state) {
   return KL_E_NONE;
 }
 
-static KlException kllib_create_ostream_collection(KlState* state) {
+static KlException create_ostream_collection(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 5));
   KlClass* ostreamcollection = klclass_create(klstate_getmm(state), 3, KLOBJECT_DEFAULT_ATTROFF, NULL, NULL);
   if (kl_unlikely(!ostreamcollection))
@@ -79,11 +79,11 @@ static KlException kllib_create_ostream_collection(KlState* state) {
 KlException KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
 
-  KLAPI_PROTECT(kllib_create_istream_collection(state));
+  KLAPI_PROTECT(create_istream_collection(state));
   KLAPI_PROTECT(klapi_pushstring(state, "istream"));
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -1), -2));
   klapi_pop(state, 2);
-  KLAPI_PROTECT(kllib_create_ostream_collection(state));
+  KLAPI_PROTECT(create_ostream_collection(state));
   KLAPI_PROTECT(klapi_pushstring(state, "ostream"));
   KLAPI_PROTECT(klapi_storeglobal(state, klapi_getstring(state, -1), -2));
   return klapi_return(state, 0);

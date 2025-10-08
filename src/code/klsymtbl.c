@@ -3,17 +3,17 @@
 #include <stdlib.h>
 
 
-static inline void klsymtbl_node_insert(KlSymbol* insertpos, KlSymbol* elem);
-static inline void klsymtbl_init_head_tail(KlSymbol* head, KlSymbol* tail);
+static inline void insert_node(KlSymbol* insertpos, KlSymbol* elem);
+static inline void init_head_tail(KlSymbol* head, KlSymbol* tail);
 
-static inline void klsymtbl_node_insert(KlSymbol* insertpos, KlSymbol* node) {
+static inline void insert_node(KlSymbol* insertpos, KlSymbol* node) {
   node->prev = insertpos->prev;
   insertpos->prev->next = node;
   node->next = insertpos;
   insertpos->prev = node;
 }
 
-static inline void klsymtbl_init_head_tail(KlSymbol* head, KlSymbol* tail) {
+static inline void init_head_tail(KlSymbol* head, KlSymbol* tail) {
   head->next = tail;
   tail->prev = head;
   head->prev = NULL;
@@ -21,7 +21,7 @@ static inline void klsymtbl_init_head_tail(KlSymbol* head, KlSymbol* tail) {
 }
 
 
-inline static size_t klsymtbl_hashing(KlStrTbl* strtbl, KlStrDesc name) {
+inline static size_t hash(KlStrTbl* strtbl, KlStrDesc name) {
   char* str = klstrtbl_getstring(strtbl, name.id);
   char* end = str + name.length;
   size_t hash = 0;
@@ -30,14 +30,14 @@ inline static size_t klsymtbl_hashing(KlStrTbl* strtbl, KlStrDesc name) {
   return hash;
 }
 
-static void klsymtbl_rehash(KlSymTbl* symtbl, KlSymbol** new_array, size_t new_capacity) {
+static void rehash(KlSymTbl* symtbl, KlSymbol** new_array, size_t new_capacity) {
   size_t mask = new_capacity - 1;
   KlSymbol* symbol = symtbl->head.next;
   KlSymbol* end = &symtbl->tail;
 
   KlSymbol tmphead;
   KlSymbol tmptail;
-  klsymtbl_init_head_tail(&tmphead, &tmptail);
+  init_head_tail(&tmphead, &tmptail);
 
   while (symbol != end) {
     KlSymbol* tmp = symbol->next;
@@ -46,9 +46,9 @@ static void klsymtbl_rehash(KlSymTbl* symtbl, KlSymbol** new_array, size_t new_c
       /* this means 'symbol' is the first element that put in this bucket,
        * so this bucket has not added to bucket list yet. */
       new_array[index] = symbol;
-      klsymtbl_node_insert(tmphead.next, symbol);
+      insert_node(tmphead.next, symbol);
     } else {
-      klsymtbl_node_insert(new_array[index]->next, symbol);
+      insert_node(new_array[index]->next, symbol);
     }
     symbol = tmp;
   }
@@ -63,13 +63,13 @@ static void klsymtbl_rehash(KlSymTbl* symtbl, KlSymbol** new_array, size_t new_c
   symtbl->capacity = new_capacity;
 }
 
-static bool klsymtbl_expand(KlSymTbl* symtbl) {
+static bool grow(KlSymTbl* symtbl) {
   size_t new_capacity = symtbl->capacity << 1;
   KlSymbol** new_array = (KlSymbol**)malloc(new_capacity * sizeof (KlSymbol*));
   if (kl_unlikely(!new_array)) return false;
   for (size_t i = 0; i < new_capacity; ++i)
     new_array[i] = NULL;
-  klsymtbl_rehash(symtbl, new_array, new_capacity);
+  rehash(symtbl, new_array, new_capacity);
   return true;
 }
 
@@ -89,7 +89,7 @@ bool klsymtbl_init(KlSymTbl* symtbl, KlSymbolPool* pool, size_t capacity, KlStrT
     array[i] = NULL;
   }
 
-  klsymtbl_init_head_tail(&symtbl->head, &symtbl->tail);
+  init_head_tail(&symtbl->head, &symtbl->tail);
   
   symtbl->array = array;
   symtbl->capacity = capacity;
@@ -131,35 +131,35 @@ void klreftbl_setrefinfo(KlSymTbl* reftbl, KlCRefInfo* refinfo) {
 }
 
 KlSymbol* klsymtbl_insert(KlSymTbl* symtbl, KlStrDesc name) {
-  if (kl_unlikely(symtbl->size >= symtbl->capacity && !klsymtbl_expand(symtbl)))
+  if (kl_unlikely(symtbl->size >= symtbl->capacity && !grow(symtbl)))
     return NULL;
 
   KlSymbol* newsymbol = klsymbolpool_alloc(symtbl->symbolpool);
   if (kl_unlikely(!newsymbol)) return NULL;
 
-  size_t hash = klsymtbl_hashing(symtbl->strtbl, name);
-  size_t index = (symtbl->capacity - 1) & hash;
+  size_t hashval = hash(symtbl->strtbl, name);
+  size_t index = (symtbl->capacity - 1) & hashval;
   newsymbol->name = name;
-  newsymbol->hash = hash;
+  newsymbol->hash = hashval;
   if (!symtbl->array[index]) {
     symtbl->array[index] = newsymbol;
-    klsymtbl_node_insert(symtbl->head.next, newsymbol);
+    insert_node(symtbl->head.next, newsymbol);
   } else {
-    klsymtbl_node_insert(symtbl->array[index]->next, newsymbol);
+    insert_node(symtbl->array[index]->next, newsymbol);
   }
   symtbl->size++;
   return newsymbol;
 }
 
 KlSymbol* klsymtbl_search(KlSymTbl* symtbl, KlStrDesc name) {
-  size_t hash = klsymtbl_hashing(symtbl->strtbl, name);
+  size_t hashval = hash(symtbl->strtbl, name);
   size_t mask = symtbl->capacity - 1;
-  size_t index = mask & hash;
+  size_t index = mask & hashval;
   KlSymbol* symbol = symtbl->array[index];
   if (!symbol) return NULL;
   KlSymbol* end = klsymtbl_iter_end(symtbl);
   do {
-    if (hash == symbol->hash && symbol->name.length == name.length &&
+    if (hashval == symbol->hash && symbol->name.length == name.length &&
         0 == strncmp(klstrtbl_getstring(symtbl->strtbl, symbol->name.id),
                      klstrtbl_getstring(symtbl->strtbl, name.id), name.length)) {
       return symbol;
@@ -196,7 +196,7 @@ KlSymTbl* klsymtblpool_alloc(KlSymTblPool* pool, KlStrTbl* strtbl, KlSymTbl* par
     pool->tables = symtbl->next;
     symtbl->parent = parent;
     symtbl->strtbl = strtbl;
-    klsymtbl_init_head_tail(&symtbl->head, &symtbl->tail);
+    init_head_tail(&symtbl->head, &symtbl->tail);
     return symtbl;
   }
   return klsymtbl_create(4, &pool->symbolpool, strtbl, parent);

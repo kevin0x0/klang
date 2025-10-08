@@ -3,29 +3,29 @@
 #include "include/code/klcode.h"
 #include "include/parse/klparser.h"
 
-static KlException kllib_codetokfunc(KlState* state, KlCode* code);
-static KlException kllib_mkclosure(KlState* state, KlCode* code);
-static void kllib_setconstant_nonstring(KlValue* val, KlConstant* constant);
+static KlException codetokfunc(KlState* state, KlCode* code);
+static KlException mkclosure(KlState* state, KlCode* code);
+static void setconstant_nonstring(KlValue* val, KlConstant* constant);
 /* compiler */
-static KlException kllib_rtcpl_compiler(KlState* state);
+static KlException compiler(KlState* state);
 /* interactive compiler(only accept a statement) */
-static KlException kllib_rtcpl_compileri(KlState* state);
+static KlException compileri(KlState* state);
 /* byte code loader */
-static KlException kllib_rtcpl_bcloader(KlState* state);
+static KlException bcloader(KlState* state);
 /* evaluate expression */
-static KlException kllib_rtcpl_evaluate(KlState* state);
+static KlException evaluate(KlState* state);
 
 
 KlException KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(klapi_allocstack(state, 4));
-  klapi_setcfunc(state, -4, kllib_rtcpl_compiler);
-  klapi_setcfunc(state, -3, kllib_rtcpl_compileri);
-  klapi_setcfunc(state, -2, kllib_rtcpl_bcloader);
-  klapi_setcfunc(state, -1, kllib_rtcpl_evaluate);
+  klapi_setcfunc(state, -4, compiler);
+  klapi_setcfunc(state, -3, compileri);
+  klapi_setcfunc(state, -2, bcloader);
+  klapi_setcfunc(state, -1, evaluate);
   return klapi_return(state, 4);
 }
 
-static KlException kllib_rtcpl_compile(KlState* state, KlAstStmtList* (*parse)(KlParser*, KlLex*)) {
+static KlException compile(KlState* state, KlAstStmtList* (*parse)(KlParser*, KlLex*)) {
   kl_assert(klapi_narg(state) == 4, "expected exactly 4 argmuments");
   kl_assert(klapi_checktypeb(state, 0, KL_USERDATA) &&
             klapi_checktypeb(state, 1, KL_USERDATA) &&
@@ -97,7 +97,7 @@ static KlException kllib_rtcpl_compile(KlState* state, KlAstStmtList* (*parse)(K
     /* semantic error, not an exception, return nothing */
     return klapi_return(state, 0);
   }
-  KlException exception = kllib_mkclosure(state, code);
+  KlException exception = mkclosure(state, code);
   klcode_delete(code);
   klstrtbl_delete(strtbl);
   if (kl_unlikely(exception))
@@ -106,19 +106,19 @@ static KlException kllib_rtcpl_compile(KlState* state, KlAstStmtList* (*parse)(K
   return klapi_return(state, 1);
 }
 
-static KlException kllib_rtcpl_compiler(KlState* state) {
-  return kllib_rtcpl_compile(state, klparser_file);
+static KlException compiler(KlState* state) {
+  return compile(state, klparser_file);
 }
 
-static KlException kllib_rtcpl_compileri(KlState* state) {
-  return kllib_rtcpl_compile(state, klparser_interactive);
+static KlException compileri(KlState* state) {
+  return compile(state, klparser_interactive);
 }
 
-static KlException kllib_rtcpl_evaluate(KlState* state) {
-  return kllib_rtcpl_compile(state, klparser_evaluate);
+static KlException evaluate(KlState* state) {
+  return compile(state, klparser_evaluate);
 }
 
-static KlException kllib_rtcpl_bcloader(KlState* state) {
+static KlException bcloader(KlState* state) {
   kl_assert(klapi_narg(state) == 2, "expected exactly 2 argmuments");
   kl_assert(klapi_checktypeb(state, 0, KL_USERDATA) && klapi_checktypeb(state, 1, KL_USERDATA),
             "expected Ki, Ko(use type tag: KL_USERDATA)");
@@ -170,7 +170,7 @@ static KlException kllib_rtcpl_bcloader(KlState* state) {
     ko_printf(err, "undump failure: %s\n", errmsg);
     return klapi_return(state, 0);
   }
-  KlException exception = kllib_mkclosure(state, code);
+  KlException exception = mkclosure(state, code);
   klcode_delete(code);
   klstrtbl_delete(strtbl);
   if (kl_unlikely(exception)) return exception;
@@ -178,8 +178,8 @@ static KlException kllib_rtcpl_bcloader(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_mkclosure(KlState* state, KlCode* code) {
-  KlException exception = kllib_codetokfunc(state, code);
+static KlException mkclosure(KlState* state, KlCode* code) {
+  KlException exception = codetokfunc(state, code);
   if (kl_unlikely(exception)) return exception;
   KlKClosure* kclo = klkclosure_create(klstate_getmm(state), klapi_getobj(state, -1, KlKFunction*), NULL, klstate_reflist(state), NULL);
   if (kl_unlikely(!kclo))
@@ -188,11 +188,11 @@ static KlException kllib_mkclosure(KlState* state, KlCode* code) {
   return KL_E_NONE;
 }
 
-static KlException kllib_codetokfunc(KlState* state, KlCode* code) {
+static KlException codetokfunc(KlState* state, KlCode* code) {
   size_t nnested = code->nnested;
   KlCode** nestedfunc = code->nestedfunc;
   for (size_t i = 0; i < nnested; ++i) {
-    KLAPI_PROTECT(kllib_codetokfunc(state, nestedfunc[i]));
+    KLAPI_PROTECT(codetokfunc(state, nestedfunc[i]));
   }
 
   KlMM* klmm = klstate_getmm(state);
@@ -227,7 +227,7 @@ static KlException kllib_codetokfunc(KlState* state, KlCode* code) {
   KlValue* conkfunc = klapi_kfunc_constants(state, kfunc);
   for (size_t i = 0; i < nconst; ++i) {
     if (concode[i].type != KLC_STRING) { /* not a gc constant */
-      kllib_setconstant_nonstring(&conkfunc[i], &concode[i]);
+      setconstant_nonstring(&conkfunc[i], &concode[i]);
     } else {  /* a gc constant, push it to stack to avoid being collected */
       KLAPI_MAYFAIL(klapi_checkstack(state, 1), klapi_kfunc_initabort(state, kfunc));
       KLAPI_MAYFAIL(klapi_pushstring_buf(state, klstrtbl_getstring(code->strtbl, concode[i].string.id), concode[i].string.length),
@@ -260,7 +260,7 @@ static KlException kllib_codetokfunc(KlState* state, KlCode* code) {
   return KL_E_NONE;
 }
 
-static void kllib_setconstant_nonstring(KlValue* val, KlConstant* constant) {
+static void setconstant_nonstring(KlValue* val, KlConstant* constant) {
   switch (constant->type) {
     case KLC_INT: {
       klvalue_setint(val, constant->intval);

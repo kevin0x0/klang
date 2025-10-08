@@ -5,12 +5,12 @@
 
 #define KLLIB_BASIC_PRINT_DEPTH_LIMIT   (3)
 
-static void kllib_ostream_write_map(KlState* state, Ko* ko, const KlMap* map, size_t depth);
-static void kllib_ostream_write_tuple(KlState* state, Ko* ko, const KlTuple* tuple, size_t depth);
-static void kllib_ostream_write_array(KlState* state, Ko* ko, const KlArray* array, size_t depth);
-static void kllib_ostream_write_inner(KlState* state, Ko* ko, const KlValue* val, size_t depth);
+static void ostream_write_map(KlState* state, Ko* ko, const KlMap* map, size_t depth);
+static void ostream_write_tuple(KlState* state, Ko* ko, const KlTuple* tuple, size_t depth);
+static void ostream_write_array(KlState* state, Ko* ko, const KlArray* array, size_t depth);
+static void ostream_write_inner(KlState* state, Ko* ko, const KlValue* val, size_t depth);
 
-static void kllib_ostream_write_inner(KlState* state, Ko* ko, const KlValue* val, size_t depth) {
+static void ostream_write_inner(KlState* state, Ko* ko, const KlValue* val, size_t depth) {
   switch (klvalue_gettype(val)) {
     case KL_INT: {
       ko_printf(ko, "%lld", klvalue_getint(val));
@@ -41,15 +41,15 @@ static void kllib_ostream_write_inner(KlState* state, Ko* ko, const KlValue* val
       break;
     }
     case KL_TUPLE: {
-      kllib_ostream_write_tuple(state, ko, klvalue_getobj(val, KlTuple*), depth + 1);
+      ostream_write_tuple(state, ko, klvalue_getobj(val, KlTuple*), depth + 1);
       break;
     }
     case KL_ARRAY: {
-      kllib_ostream_write_array(state, ko, klvalue_getobj(val, KlArray*), depth + 1);
+      ostream_write_array(state, ko, klvalue_getobj(val, KlArray*), depth + 1);
       break;
     }
     case KL_MAP: {
-      kllib_ostream_write_map(state, ko, klvalue_getobj(val, KlMap*), depth + 1);
+      ostream_write_map(state, ko, klvalue_getobj(val, KlMap*), depth + 1);
       break;
     }
     default: {
@@ -59,7 +59,7 @@ static void kllib_ostream_write_inner(KlState* state, Ko* ko, const KlValue* val
   }
 }
 
-static void kllib_ostream_write_tuple(KlState* state, Ko* ko, const KlTuple* tuple, size_t depth) {
+static void ostream_write_tuple(KlState* state, Ko* ko, const KlTuple* tuple, size_t depth) {
   const KlValue* end = kltuple_iter_end(tuple);
   const KlValue* itr = kltuple_iter_begin(tuple);
   if (itr == end) {
@@ -71,16 +71,16 @@ static void kllib_ostream_write_tuple(KlState* state, Ko* ko, const KlTuple* tup
     return;
   }
   ko_putc(ko, '(');
-  kllib_ostream_write_inner(state, ko, itr, depth);
+  ostream_write_inner(state, ko, itr, depth);
   ++itr;
   for (; itr != end; ++itr) {
     ko_puts(ko, ", ");
-    kllib_ostream_write_inner(state, ko, itr, depth);
+    ostream_write_inner(state, ko, itr, depth);
   }
   ko_putc(ko, ')');
 }
 
-static void kllib_ostream_write_array(KlState* state, Ko* ko, const KlArray* array, size_t depth) {
+static void ostream_write_array(KlState* state, Ko* ko, const KlArray* array, size_t depth) {
   KlArrayIter end = klarray_iter_end(array);
   KlArrayIter itr = klarray_iter_begin(array);
   if (itr == end) {
@@ -92,16 +92,16 @@ static void kllib_ostream_write_array(KlState* state, Ko* ko, const KlArray* arr
     return;
   }
   ko_putc(ko, '[');
-  kllib_ostream_write_inner(state, ko, itr, depth);
+  ostream_write_inner(state, ko, itr, depth);
   itr = klarray_iter_next(itr);
   for (; itr != end; itr = klarray_iter_next(itr)) {
     ko_puts(ko, ", ");
-    kllib_ostream_write_inner(state, ko, itr, depth);
+    ostream_write_inner(state, ko, itr, depth);
   }
   ko_putc(ko, ']');
 }
 
-static void kllib_ostream_write_map(KlState* state, Ko* ko, const KlMap* map, size_t depth) {
+static void ostream_write_map(KlState* state, Ko* ko, const KlMap* map, size_t depth) {
   size_t end = klmap_iter_end(map);
   size_t itr = klmap_iter_begin(map);
   if (itr == end) {
@@ -113,15 +113,15 @@ static void kllib_ostream_write_map(KlState* state, Ko* ko, const KlMap* map, si
     return;
   }
   ko_putc(ko, '{');
-  kllib_ostream_write_inner(state, ko, klmap_iter_getkey(map, itr), depth);
+  ostream_write_inner(state, ko, klmap_iter_getkey(map, itr), depth);
   ko_putc(ko, ':');
-  kllib_ostream_write_inner(state, ko, klmap_iter_getvalue(map, itr), depth);
+  ostream_write_inner(state, ko, klmap_iter_getvalue(map, itr), depth);
   itr = klmap_iter_next(map, itr);
   for (; itr != end; itr = klmap_iter_next(map, itr)) {
     ko_puts(ko, ", ");
-    kllib_ostream_write_inner(state, ko, klmap_iter_getkey(map, itr), depth);
+    ostream_write_inner(state, ko, klmap_iter_getkey(map, itr), depth);
     ko_putc(ko, ':');
-    kllib_ostream_write_inner(state, ko, klmap_iter_getvalue(map, itr), depth);
+    ostream_write_inner(state, ko, klmap_iter_getvalue(map, itr), depth);
   }
   ko_putc(ko, '}');
 }
@@ -150,15 +150,15 @@ KlException kllib_ostream_write(KlState* state) {
         break;
       }
       case KL_TUPLE: {
-        kllib_ostream_write_tuple(state, ko, klapi_gettupleb(state, i), 0);
+        ostream_write_tuple(state, ko, klapi_gettupleb(state, i), 0);
         break;
       }
       case KL_ARRAY: {
-        kllib_ostream_write_array(state, ko, klapi_getarrayb(state, i), 0);
+        ostream_write_array(state, ko, klapi_getarrayb(state, i), 0);
         break;
       }
       case KL_MAP: {
-        kllib_ostream_write_map(state, ko, klapi_getmapb(state, i), 0);
+        ostream_write_map(state, ko, klapi_getmapb(state, i), 0);
         break;
       }
       case KL_NIL: {

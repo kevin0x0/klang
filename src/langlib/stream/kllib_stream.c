@@ -14,29 +14,29 @@
 
 kgarray_impl(char, KlStringBuf, klstrbuf, pass_val, nonstatic);
 
-static KlGCObject* kllib_istream_prop(KlInputStream* istream, KlMM* klmm, KlGCObject* gclist);
-static KlGCObject* kllib_ostream_prop(KlOutputStream* ostream, KlMM* klmm, KlGCObject* gclist);
-static void kllib_istream_delete(KlInputStream* istream, KlMM* klmm);
-static void kllib_ostream_delete(KlOutputStream* ostream, KlMM* klmm);
+static KlGCObject* istream_prop(KlInputStream* istream, KlMM* klmm, KlGCObject* gclist);
+static KlGCObject* ostream_prop(KlOutputStream* ostream, KlMM* klmm, KlGCObject* gclist);
+static void istream_delete(KlInputStream* istream, KlMM* klmm);
+static void ostream_delete(KlOutputStream* ostream, KlMM* klmm);
 
 
-KlGCVirtualFunc kllib_istream_gcvfunc = { .propagate = (KlGCProp)kllib_istream_prop, .after = NULL, .destructor = (KlGCDestructor)kllib_istream_delete };
-KlGCVirtualFunc kllib_ostream_gcvfunc = { .propagate = (KlGCProp)kllib_ostream_prop, .after = NULL, .destructor = (KlGCDestructor)kllib_ostream_delete };
+KlGCVirtualFunc kllib_istream_gcvfunc = { .propagate = (KlGCProp)istream_prop, .after = NULL, .destructor = (KlGCDestructor)istream_delete };
+KlGCVirtualFunc kllib_ostream_gcvfunc = { .propagate = (KlGCProp)ostream_prop, .after = NULL, .destructor = (KlGCDestructor)ostream_delete };
 
 
-static KlException kllib_istream_objconstructor(KlClass* klclass, KlMM* klmm, KlValue* result);
-static KlException kllib_ostream_objconstructor(KlClass* klclass, KlMM* klmm, KlValue* result);
+static KlException istream_objconstructor(KlClass* klclass, KlMM* klmm, KlValue* result);
+static KlException ostream_objconstructor(KlClass* klclass, KlMM* klmm, KlValue* result);
 
 
-static KlException kllib_istream_readline(KlState* state);
-static KlException kllib_ostream_writeline(KlState* state);
-static KlException kllib_istream_close(KlState* state);
-static KlException kllib_ostream_close(KlState* state);
+static KlException istream_readline(KlState* state);
+static KlException ostream_writeline(KlState* state);
+static KlException istream_close(KlState* state);
+static KlException ostream_close(KlState* state);
 
 KlException kllib_istream_createclass(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   KlMM* klmm = klstate_getmm(state);
-  KlClass* istreambase = klclass_create(klmm, 3, klobject_attrarrayoffset(KlInputStream), NULL, kllib_istream_objconstructor);
+  KlClass* istreambase = klclass_create(klmm, 3, klobject_attrarrayoffset(KlInputStream), NULL, istream_objconstructor);
   if (kl_unlikely(!istreambase))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating class for istreambase");
   klapi_pushobj(state, istreambase, KL_CLASS);
@@ -48,9 +48,9 @@ KlException kllib_istream_createclass(KlState* state) {
   KLAPI_PROTECT(klapi_setstring(state, -1, "read"));
   KLAPI_PROTECT(klclass_newshared_method(istreambase, klmm, klapi_getstring(state, -1), &nil));
   KLAPI_PROTECT(klapi_setstring(state, -1, "readline"));
-  KLAPI_PROTECT(klclass_newshared_method(istreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_istream_readline)));
+  KLAPI_PROTECT(klclass_newshared_method(istreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(istream_readline)));
   KLAPI_PROTECT(klapi_setstring(state, -1, "close"));
-  KLAPI_PROTECT(klclass_newshared_method(istreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_istream_close)));
+  KLAPI_PROTECT(klclass_newshared_method(istreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(istream_close)));
   klapi_pop(state, 1); /* pop string */
   return KL_E_NONE;
 }
@@ -58,7 +58,7 @@ KlException kllib_istream_createclass(KlState* state) {
 KlException kllib_ostream_createclass(KlState* state) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
   KlMM* klmm = klstate_getmm(state);
-  KlClass* ostreambase = klclass_create(klmm, 3, klobject_attrarrayoffset(KlInputStream), NULL, kllib_ostream_objconstructor);
+  KlClass* ostreambase = klclass_create(klmm, 3, klobject_attrarrayoffset(KlInputStream), NULL, ostream_objconstructor);
   if (kl_unlikely(!ostreambase))
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating class for istreambase");
   klapi_pushobj(state, ostreambase, KL_CLASS);
@@ -70,19 +70,19 @@ KlException kllib_ostream_createclass(KlState* state) {
   KLAPI_PROTECT(klapi_setstring(state, -1, "write"));
   KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostream_write)));
   KLAPI_PROTECT(klapi_setstring(state, -1, "writeline"));
-  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostream_writeline)));
+  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(ostream_writeline)));
   KLAPI_PROTECT(klapi_setstring(state, -1, "close"));
-  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostream_close)));
+  KLAPI_PROTECT(klclass_newshared_method(ostreambase, klmm, klapi_getstring(state, -1), &klvalue_cfunc(ostream_close)));
   klapi_pop(state, 1); /* pop string */
   return KL_E_NONE;
 }
 
 bool kllib_istream_compatible(KlValue* val) {
-  return klvalue_checktype(val, KL_OBJECT) && klobject_compatible(klvalue_getobj(val, KlObject*), kllib_istream_objconstructor);
+  return klvalue_checktype(val, KL_OBJECT) && klobject_compatible(klvalue_getobj(val, KlObject*), istream_objconstructor);
 }
 
 bool kllib_ostream_compatible(KlValue* val) {
-  return klvalue_checktype(val, KL_OBJECT) && klobject_compatible(klvalue_getobj(val, KlObject*), kllib_ostream_objconstructor);
+  return klvalue_checktype(val, KL_OBJECT) && klobject_compatible(klvalue_getobj(val, KlObject*), ostream_objconstructor);
 }
 
 Ki* kllib_istream_getki(KlInputStream* istream) {
@@ -105,7 +105,7 @@ void kllib_ostream_set(KlOutputStream* ostream, Ko* ko, KoProp koprop) {
   ostream->koprop = koprop;
 }
 
-static KlException kllib_istream_readline(KlState* state) {
+static KlException istream_readline(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with exactly 1 argument('this')!");
   if (!kllib_istream_compatible(klapi_access(state, -1)))
@@ -140,7 +140,7 @@ static KlException kllib_istream_readline(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_ostream_writeline(KlState* state) {
+static KlException ostream_writeline(KlState* state) {
   if (klapi_narg(state) == 0)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with at least 1 argument(including 'this')!");
   if (!kllib_ostream_compatible(klapi_accessb(state, 0)))
@@ -154,7 +154,7 @@ static KlException kllib_ostream_writeline(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_istream_close(KlState* state) {
+static KlException istream_close(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with exactly 1 argument('this')!");
   if (!kllib_istream_compatible(klapi_access(state, -1)))
@@ -167,7 +167,7 @@ static KlException kllib_istream_close(KlState* state) {
   return klapi_return(state, 0);
 }
 
-static KlException kllib_ostream_close(KlState* state) {
+static KlException ostream_close(KlState* state) {
   if (klapi_narg(state) != 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "please call with exactly 1 argument('this')!");
   if (!kllib_ostream_compatible(klapi_access(state, -1)))
@@ -180,7 +180,7 @@ static KlException kllib_ostream_close(KlState* state) {
   return klapi_return(state, 0);
 }
 
-static KlException kllib_istream_objconstructor(KlClass* klclass, KlMM* klmm, KlValue* result) {
+static KlException istream_objconstructor(KlClass* klclass, KlMM* klmm, KlValue* result) {
   KlInputStream* istream = klcast(KlInputStream*, klclass_objalloc(klclass, klmm));
   if (kl_unlikely(!istream)) return KL_E_OOM;
   istream->ki = NULL;
@@ -191,7 +191,7 @@ static KlException kllib_istream_objconstructor(KlClass* klclass, KlMM* klmm, Kl
   return KL_E_NONE;
 }
 
-static KlException kllib_ostream_objconstructor(KlClass* klclass, KlMM* klmm, KlValue* result) {
+static KlException ostream_objconstructor(KlClass* klclass, KlMM* klmm, KlValue* result) {
   KlOutputStream* ostream = klcast(KlOutputStream*, klclass_objalloc(klclass, klmm));
   if (kl_unlikely(!ostream)) return KL_E_OOM;
   ostream->ko = NULL;
@@ -202,22 +202,22 @@ static KlException kllib_ostream_objconstructor(KlClass* klclass, KlMM* klmm, Kl
   return KL_E_NONE;
 }
 
-static KlGCObject* kllib_istream_prop(KlInputStream* istream, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* istream_prop(KlInputStream* istream, KlMM* klmm, KlGCObject* gclist) {
   if (istream->kiprop) istream->kiprop(istream->ki, klmm, gclist);
   return klobject_propagate_nomm(klcast(KlObject*, istream), gclist);
 }
 
-static KlGCObject* kllib_ostream_prop(KlOutputStream* ostream, KlMM* klmm, KlGCObject* gclist) {
+static KlGCObject* ostream_prop(KlOutputStream* ostream, KlMM* klmm, KlGCObject* gclist) {
   if (ostream->koprop) ostream->koprop(ostream->ko, klmm, gclist);
   return klobject_propagate_nomm(klcast(KlObject*, ostream), gclist);
 }
 
-static void kllib_istream_delete(KlInputStream* istream, KlMM* klmm) {
+static void istream_delete(KlInputStream* istream, KlMM* klmm) {
   if (istream->ki) ki_delete(istream->ki);
   klobject_free(klcast(KlObject*, istream), klmm);
 }
 
-static void kllib_ostream_delete(KlOutputStream* ostream, KlMM* klmm) {
+static void ostream_delete(KlOutputStream* ostream, KlMM* klmm) {
   if (ostream->ko) ko_delete(ostream->ko);
   klobject_free(klcast(KlObject*, ostream), klmm);
 }

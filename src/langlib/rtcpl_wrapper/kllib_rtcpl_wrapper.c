@@ -8,8 +8,8 @@
 #include "deps/k/include/os_spec/kfs.h"
 #include "deps/k/include/string/kstring.h"
 
-static KlException kllib_rtcpl_wrapper_compile(KlState* state);
-static KlException kllib_rtcpl_wrapper_evaluate(KlState* state);
+static KlException compile_wrapper(KlState* state);
+static KlException evaluate_wrapper(KlState* state);
 
 
 KlException KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME(KlState* state) {
@@ -26,12 +26,12 @@ KlException KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME(KlState* state) {
   free(librtcpl);
   KLAPI_PROTECT(klapi_loadlib(state, 0, KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME_QUOTE));
 
-  KLAPI_PROTECT(klapi_mkcclosure(state, -5, kllib_rtcpl_wrapper_evaluate, 1));
+  KLAPI_PROTECT(klapi_mkcclosure(state, -5, evaluate_wrapper, 1));
   klapi_popclose(state, 1); /* pop and close evaluate */
 
   klapi_pop(state, 2);      /* bcloader and compileri is not needed */
 
-  KLAPI_PROTECT(klapi_mkcclosure(state, -3, kllib_rtcpl_wrapper_compile, 1));
+  KLAPI_PROTECT(klapi_mkcclosure(state, -3, compile_wrapper, 1));
   klapi_popclose(state, 1); /* pop and close compiler */
 
   KLAPI_PROTECT(klapi_pushstring(state, "eval"));
@@ -42,7 +42,7 @@ KlException KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME(KlState* state) {
   return klapi_return(state, 0);
 }
 
-static KlException kllib_rtcpl_wrapper_compile(KlState* state) {
+static KlException compile_wrapper(KlState* state) {
   if (klapi_narg(state) == 0)
     return klapi_throw_internal(state, KL_E_ARGNO, "please provide source file");
   if (!klapi_checkstringb(state, 0))
@@ -69,7 +69,7 @@ static KlException kllib_rtcpl_wrapper_compile(KlState* state) {
   return klapi_return(state, 1);
 }
 
-static KlException kllib_rtcpl_wrapper_evaluate(KlState* state) {
+static KlException evaluate_wrapper(KlState* state) {
   if (klapi_narg(state) == 0 || !klapi_checkstringb(state, 0))
     return klapi_throw_internal(state, KL_E_ARGNO, "please provide expression(string)");
   KLAPI_PROTECT(klapi_checkstack(state, 4));

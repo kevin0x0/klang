@@ -9,8 +9,8 @@
 #include "deps/k/include/kio/kofile.h"
 
 
-static KlException kllib_ifile_init(KlState* state);
-static KlException kllib_ofile_init(KlState* state);
+static KlException ifile_init(KlState* state);
+static KlException ofile_init(KlState* state);
 
 KlException kllib_ifile_createclass(KlState* state, KlClass* istream) {
   KLAPI_PROTECT(klapi_checkstack(state, 2));
@@ -20,7 +20,7 @@ KlException kllib_ifile_createclass(KlState* state, KlClass* istream) {
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating ifile class");
   klapi_pushobj(state, ifile, KL_CLASS);
   KLAPI_PROTECT(klapi_pushstring(state, "init"));
-  KLAPI_PROTECT(klclass_newshared_method(ifile, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_ifile_init)));
+  KLAPI_PROTECT(klclass_newshared_method(ifile, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(ifile_init)));
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
@@ -33,7 +33,7 @@ KlException kllib_ofile_createclass(KlState* state, KlClass* ostream) {
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating ofile class");
   klapi_pushobj(state, ofile, KL_CLASS);
   KLAPI_PROTECT(klapi_pushstring(state, "init"));
-  KLAPI_PROTECT(klclass_newshared_method(ofile, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_ofile_init)));
+  KLAPI_PROTECT(klclass_newshared_method(ofile, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(ofile_init)));
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
@@ -71,7 +71,7 @@ KlException kllib_ofile_createstderr(KlState* state, KlClass* ofile) {
   return KL_E_NONE;
 }
 
-static KlException kllib_ifile_init(KlState* state) {
+static KlException ifile_init(KlState* state) {
   if (klapi_narg(state) < 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "missing arguments");
   if (!kllib_istream_compatible(klapi_accessb(state, 0)))
@@ -87,7 +87,7 @@ static KlException kllib_ifile_init(KlState* state) {
   return klapi_return(state, 0);
 }
 
-static KlException kllib_ofile_init(KlState* state) {
+static KlException ofile_init(KlState* state) {
   if (klapi_narg(state) < 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "missing arguments");
   if (!kllib_ostream_compatible(klapi_accessb(state, 0)))

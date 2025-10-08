@@ -3,7 +3,6 @@
 
 #include "include/ast/klast.h"
 #include "include/parse/klparser.h"
-#include "include/parse/klparser_error.h"
 
 
 KlAstStmt* klparser_stmt(KlParser* parser, KlLex* lex);
@@ -13,8 +12,6 @@ KlAstStmtList* klparser_stmtblock(KlParser* parser, KlLex* lex);
 KlAstStmtList* klparser_stmtlist(KlParser* parser, KlLex* lex);
 KlAstStmtList* klparser_emptystmtlist(KlParser* parser, KlLex* lex);
 KlAstStmtLet* klparser_stmtlet(KlParser* parser, KlLex* lex);
-static inline KlAstStmtBreak* klparser_stmtbreak(KlParser* parser, KlLex* lex);
-static inline KlAstStmtContinue* klparser_stmtcontinue(KlParser* parser, KlLex* lex);
 
 extern const bool klparser_isstmtbegin[KLTK_NTOKEN];
 static inline bool klparser_stmtbegin(KlLex* lex);
@@ -22,22 +19,6 @@ static inline bool klparser_stmtbegin(KlLex* lex);
 
 static inline bool klparser_stmtbegin(KlLex* lex) {
   return klparser_isstmtbegin[kllex_tokkind(lex)];
-}
-
-static inline KlAstStmtBreak* klparser_stmtbreak(KlParser* parser, KlLex* lex) {
-  kl_assert(kllex_check(lex, KLTK_BREAK), "expected 'break'");
-  KlAstStmtBreak* stmtbreak = klast_stmtbreak_create(lex->tok.begin, lex->tok.end);
-  kllex_next(lex);
-  if (kl_unlikely(!stmtbreak)) return klparser_error_oom(parser, lex);
-  return stmtbreak;
-}
-
-static inline KlAstStmtContinue* klparser_stmtcontinue(KlParser* parser, KlLex* lex) {
-  kl_assert(kllex_check(lex, KLTK_CONTINUE), "expected 'continue'");
-  KlAstStmtContinue* stmtcontinue = klast_stmtcontinue_create(lex->tok.begin, lex->tok.end);
-  kllex_next(lex);
-  if (kl_unlikely(!stmtcontinue)) return klparser_error_oom(parser, lex);
-  return stmtcontinue;
 }
 
 #endif

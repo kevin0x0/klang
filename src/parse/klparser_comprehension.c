@@ -4,7 +4,7 @@
 #include "include/parse/klparser_utils.h"
 #include "deps/k/include/array/karray.h"
 
-static KlAst* klparser_comprehensionfor(KlParser* parser, KlLex* lex, KlAstExprList* lvals, KlAstStmt* inner_stmt) {
+static KlAst* parse_new_block(KlParser* parser, KlLex* lex, KlAstExprList* lvals, KlAstStmt* inner_stmt) {
   if (kllex_trymatch(lex, KLTK_ASSIGN)) { /* i = n, m, s */
     KlAstExprList* exprlist = klparser_exprlist(parser, lex);
     kllex_trymatch(lex, KLTK_SEMI);
@@ -81,7 +81,7 @@ KlAstStmtList* klparser_comprehension(KlParser* parser, KlLex* lex, KlAstStmt* i
         continue;
       }
       if (kllex_check(lex, KLTK_IN) || kllex_check(lex, KLTK_ASSIGN)) {
-        KlAst* stmt = klparser_comprehensionfor(parser, lex, exprlist, inner_stmt);
+        KlAst* stmt = parse_new_block(parser, lex, exprlist, inner_stmt);
         if (kl_unlikely(!stmt)) {
           /* 'exprlist' is deleted in klparser_comprehensionfor() */
           klparser_destroy_astarray(&stmtarr);

@@ -4,7 +4,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-static inline size_t klcontbl_hashing(const KlStrTbl* strtbl, const KlConstant* con) {
+static inline size_t hash(const KlStrTbl* strtbl, const KlConstant* con) {
   switch (con->type) {
     case KLC_INT: {
       return (con->intval << 8) + con->intval;
@@ -39,7 +39,7 @@ static inline size_t klcontbl_hashing(const KlStrTbl* strtbl, const KlConstant* 
     }
   }
 }
-static inline bool klcontbl_constant_equal(const KlStrTbl* strtbl, const KlConstant* con1, const KlConstant* con2) {
+static inline bool constant_equal(const KlStrTbl* strtbl, const KlConstant* con1, const KlConstant* con2) {
   if (con1->type != con2->type) return false;
   switch (con1->type) {
     case KLC_INT: {
@@ -63,7 +63,7 @@ static inline bool klcontbl_constant_equal(const KlStrTbl* strtbl, const KlConst
   }
 }
 
-static void klcontbl_rehash(KlConTbl* to, KlConTbl* from) {
+static void rehash(KlConTbl* to, KlConTbl* from) {
   size_t from_capacity = from->capacity;
   size_t to_capacity = to->capacity;
   KlConEntry** from_array = from->array;
@@ -87,7 +87,7 @@ static void klcontbl_rehash(KlConTbl* to, KlConTbl* from) {
   from->size = 0;
 }
 
-static bool klcontbl_expand(KlConTbl* contbl) {
+static bool grow(KlConTbl* contbl) {
   KlConTbl new_map;
   size_t newcap = contbl->capacity * 2;
   KlConEntry** array = (KlConEntry**)malloc(sizeof (KlConEntry*) * newcap);
@@ -105,12 +105,12 @@ static bool klcontbl_expand(KlConTbl* contbl) {
   new_map.size = 0;
   new_map.strtbl = contbl->strtbl;
   new_map.entries = contbl->entries;
-  klcontbl_rehash(&new_map, contbl);
+  rehash(&new_map, contbl);
   *contbl = new_map;
   return true;
 }
 
-static void klcontbl_bucket_free(KlConEntry* bucket) {
+static void bucket_free(KlConEntry* bucket) {
   while (bucket) {
     KlConEntry* tmp = bucket->next;
     free(bucket);
@@ -159,7 +159,7 @@ void klcontbl_destroy(KlConTbl* contbl) {
   KlConEntry** array = contbl->array;
   size_t capacity = contbl->capacity;
   for (size_t i = 0; i < capacity; ++i)
-    klcontbl_bucket_free(array[i]);
+    bucket_free(array[i]);
   free(array);
   karray_destroy(&contbl->entries);
   contbl->array = NULL;
@@ -188,7 +188,7 @@ void klcontbl_setconstants(const KlConTbl* contbl, KlConstant* constants) {
 }
 
 KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
-  if (kl_unlikely(contbl->size >= contbl->capacity && !klcontbl_expand(contbl)))
+  if (kl_unlikely(contbl->size >= contbl->capacity && !grow(contbl)))
     return NULL;
 
   KlConEntry* newconentry = (KlConEntry*)malloc(sizeof (*newconentry));
@@ -198,10 +198,10 @@ KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
     return NULL;
   }
 
-  size_t hash = klcontbl_hashing(contbl->strtbl, con);
-  size_t index = (contbl->capacity - 1) & hash;
+  size_t hashval = hash(contbl->strtbl, con);
+  size_t index = (contbl->capacity - 1) & hashval;
   newconentry->con = *con;
-  newconentry->hash = hash;
+  newconentry->hash = hashval;
   newconentry->index = contbl->size++;
   newconentry->next = contbl->array[index];
   contbl->array[index] = newconentry;
@@ -210,11 +210,11 @@ KlConEntry* klcontbl_insert(KlConTbl* contbl, KlConstant* con) {
 }
 
 KlConEntry* klcontbl_search(const KlConTbl* contbl, const KlConstant* constant) {
-  size_t hash = klcontbl_hashing(contbl->strtbl, constant);
-  size_t index = (contbl->capacity - 1) & hash;
+  size_t hashval = hash(contbl->strtbl, constant);
+  size_t index = (contbl->capacity - 1) & hashval;
   KlConEntry* conentry = contbl->array[index];
   for (; conentry; conentry = conentry->next) {
-    if (hash == conentry->hash && klcontbl_constant_equal(contbl->strtbl, constant, &conentry->con))
+    if (hashval == conentry->hash && constant_equal(contbl->strtbl, constant, &conentry->con))
       return conentry;
   }
 
@@ -222,15 +222,15 @@ KlConEntry* klcontbl_search(const KlConTbl* contbl, const KlConstant* constant) 
 }
 
 KlConEntry* klcontbl_get(KlConTbl* contbl, KlConstant* constant) {
-  size_t hash = klcontbl_hashing(contbl->strtbl, constant);
-  size_t index = (contbl->capacity - 1) & hash;
+  size_t hashval = hash(contbl->strtbl, constant);
+  size_t index = (contbl->capacity - 1) & hashval;
   KlConEntry* conentry = contbl->array[index];
   for (; conentry; conentry = conentry->next) {
-    if (hash == conentry->hash && klcontbl_constant_equal(contbl->strtbl, constant, &conentry->con))
+    if (hashval == conentry->hash && constant_equal(contbl->strtbl, constant, &conentry->con))
       return conentry;
   }
   /* not found, insert */
-  if (kl_unlikely(contbl->size >= contbl->capacity && !klcontbl_expand(contbl)))
+  if (kl_unlikely(contbl->size >= contbl->capacity && !grow(contbl)))
     return NULL;
   KlConEntry* newconentry = (KlConEntry*)malloc(sizeof (*newconentry));
   if (kl_unlikely(!newconentry)) return NULL;
@@ -239,7 +239,7 @@ KlConEntry* klcontbl_get(KlConTbl* contbl, KlConstant* constant) {
     return NULL;
   }
   newconentry->con = *constant;
-  newconentry->hash = hash;
+  newconentry->hash = hashval;
   newconentry->index = contbl->size++;
   newconentry->next = contbl->array[index];
   contbl->array[index] = newconentry;

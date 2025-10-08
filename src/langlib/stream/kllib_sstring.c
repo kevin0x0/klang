@@ -10,9 +10,9 @@
 #include "include/vm/klexception.h"
 
 
-static KlException kllib_istring_init(KlState* state);
-static KlException kllib_ostring_init(KlState* state);
-static KlException kllib_ostring_tostring(KlState* state);
+static KlException istring_init(KlState* state);
+static KlException ostring_init(KlState* state);
+static KlException ostring_tostring(KlState* state);
 
 
 
@@ -24,7 +24,7 @@ KlException kllib_istring_createclass(KlState* state, KlClass* istream) {
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating istring class");
   klapi_pushobj(state, istring, KL_CLASS);
   KLAPI_PROTECT(klapi_pushstring(state, "init"));
-  KLAPI_PROTECT(klclass_newshared_method(istring, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_istring_init)));
+  KLAPI_PROTECT(klclass_newshared_method(istring, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(istring_init)));
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
@@ -37,14 +37,14 @@ KlException kllib_ostring_createclass(KlState* state, KlClass* ostream) {
     return klapi_throw_internal(state, KL_E_OOM, "out of memory while creating istring class");
   klapi_pushobj(state, ostring, KL_CLASS);
   KLAPI_PROTECT(klapi_pushstring(state, "init"));
-  KLAPI_PROTECT(klclass_newshared_method(ostring, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostring_init)));
+  KLAPI_PROTECT(klclass_newshared_method(ostring, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(ostring_init)));
   KLAPI_PROTECT(klapi_setstring(state, -1, "tostring"));
-  KLAPI_PROTECT(klclass_newshared_method(ostring, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(kllib_ostring_tostring)));
+  KLAPI_PROTECT(klclass_newshared_method(ostring, klstate_getmm(state), klapi_getstring(state, -1), &klvalue_cfunc(ostring_tostring)));
   klapi_pop(state, 1);
   return KL_E_NONE;
 }
 
-static KlException kllib_istring_init(KlState* state) {
+static KlException istring_init(KlState* state) {
   if (klapi_narg(state) < 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "missing arguments");
   if (!kllib_istream_compatible(klapi_accessb(state, 0)))
@@ -59,7 +59,7 @@ static KlException kllib_istring_init(KlState* state) {
   return klapi_return(state, 0);
 }
 
-static KlException kllib_ostring_init(KlState* state) {
+static KlException ostring_init(KlState* state) {
   if (klapi_narg(state) < 2)
     return klapi_throw_internal(state, KL_E_ARGNO, "missing arguments");
   if (!kllib_ostream_compatible(klapi_accessb(state, 0)))
@@ -74,7 +74,7 @@ static KlException kllib_ostring_init(KlState* state) {
   return klapi_return(state, 0);
 }
 
-static KlException kllib_ostring_tostring(KlState* state) {
+static KlException ostring_tostring(KlState* state) {
   if (klapi_narg(state) < 1)
     return klapi_throw_internal(state, KL_E_ARGNO, "missing arguments");
   if (!kllib_ostream_compatible(klapi_accessb(state, 0)))
