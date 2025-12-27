@@ -66,8 +66,11 @@ KLANGLIB_CAST_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGLIB_CAST_OBJS))
 KLANGLIB_OS_OBJS = $(OBJ_DIR)kllib_os.o
 KLANGLIB_OS_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGLIB_OS_OBJS))
 
+KLANGLIB_GC_OBJS = $(OBJ_DIR)kllib_gc.o
+KLANGLIB_GC_PIC_OBJS = $(patsubst %.o, %.pic.o, $(KLANGLIB_GC_OBJS))
 
-KLANGLIBS_A = $(LIB_DIR)traceback.a $(LIB_DIR)runtime_compiler.a $(LIB_DIR)basic.a $(LIB_DIR)stream.a $(LIB_DIR)string.a $(LIB_DIR)rtcpl_wrapper.a $(LIB_DIR)print.a $(LIB_DIR)cast.a $(LIB_DIR)os.a
+
+KLANGLIBS_A = $(LIB_DIR)traceback.a $(LIB_DIR)runtime_compiler.a $(LIB_DIR)basic.a $(LIB_DIR)stream.a $(LIB_DIR)string.a $(LIB_DIR)rtcpl_wrapper.a $(LIB_DIR)print.a $(LIB_DIR)cast.a $(LIB_DIR)os.a $(LIB_DIR)gc.a
 KLANGLIBS_SO = $(patsubst %.a, %.so, $(KLANGLIBS_A))
 
 
@@ -109,6 +112,9 @@ $(LIB_DIR)cast.so : $(KLANGLIB_CAST_PIC_OBJS) $(LIB_DIR)klang.dll | create_dir
 $(LIB_DIR)os.so : $(KLANGLIB_OS_PIC_OBJS) $(LIB_DIR)klang.dll | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $^
 
+$(LIB_DIR)gc.so : $(KLANGLIB_GC_PIC_OBJS) $(LIB_DIR)klang.dll | create_dir
+	$(CC) -shared $(CFLAGS) -o $@ $^
+
 endif
 
 ifeq ($(PLATFORM), Linux)
@@ -148,6 +154,9 @@ $(LIB_DIR)cast.so : $(KLANGLIB_CAST_PIC_OBJS) | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $^
 
 $(LIB_DIR)os.so : $(KLANGLIB_OS_PIC_OBJS) | create_dir
+	$(CC) -shared $(CFLAGS) -o $@ $^
+
+$(LIB_DIR)gc.so : $(KLANGLIB_GC_PIC_OBJS) | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $^
 
 endif
@@ -193,6 +202,9 @@ $(LIB_DIR)cast.a : $(KLANGLIB_CAST_OBJS) | create_dir
 	$(AR) $@ $^
 
 $(LIB_DIR)os.a : $(KLANGLIB_OS_OBJS) | create_dir
+	$(AR) $@ $^
+
+$(LIB_DIR)gc.a : $(KLANGLIB_GC_OBJS) | create_dir
 	$(AR) $@ $^
 
 endif

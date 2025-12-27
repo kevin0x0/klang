@@ -227,7 +227,7 @@ error_create_vm:
   return failure;
 }
 
-static KlException kl_dopreload_helper_loadlib(KlState* state, const char* libname, const char* entryfunc) {
+static KlException dopreload_helper_loadlib(KlState* state, const char* libname, const char* entryfunc) {
   KLAPI_PROTECT(klapi_checkstack(state, 1));
   KLAPI_PROTECT(klapi_pushstring(state, libname));
   KLAPI_PROTECT(klapi_concati(state, -1, -2, -1));
@@ -241,7 +241,7 @@ static KlException preload(Behaviour* behaviour, KlState* state, BasicTool* btoo
   KLAPI_PROTECT(klapi_pushstring(state, behaviour->corelibpath));
 
   /* load compiler */
-  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/runtime_compiler.so", KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME_QUOTE));
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/runtime_compiler.so", KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME_QUOTE));
   klapi_pop(state, 1); /* pop evaluate, not used here */
   btool->compiler = klapi_getcfunc(state, -3);
   btool->compileri = klapi_getcfunc(state, -2);
@@ -249,30 +249,33 @@ static KlException preload(Behaviour* behaviour, KlState* state, BasicTool* btoo
   klapi_pop(state, 3); /* pop 3 results */
 
   /* load traceback */
-  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/traceback.so", KLCONFIG_LIBRARY_TRACEBACK_ENTRYFUNCNAME_QUOTE));
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/traceback.so", KLCONFIG_LIBRARY_TRACEBACK_ENTRYFUNCNAME_QUOTE));
   btool->traceback = klapi_getcfunc(state, -1);
   klapi_pop(state, 1); /* pop 1 result */
 
   /* load basic */
-  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/basic.so", KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME_QUOTE));
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/basic.so", KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME_QUOTE));
 
   /* load stream */
-  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/stream.so", KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME_QUOTE));
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/stream.so", KLCONFIG_LIBRARY_STREAM_ENTRYFUNCNAME_QUOTE));
 
   /* load rtcpl_wrapper */
-  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/rtcpl_wrapper.so", KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME_QUOTE));
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/rtcpl_wrapper.so", KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME_QUOTE));
 
   /* load print */
-  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/print.so", KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME_QUOTE));
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/print.so", KLCONFIG_LIBRARY_PRINT_ENTRYFUNCNAME_QUOTE));
 
   /* load string */
-  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/string.so", KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME_QUOTE));
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/string.so", KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME_QUOTE));
 
   /* load cast */
-  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/cast.so", KLCONFIG_LIBRARY_CAST_ENTRYFUNCNAME_QUOTE));
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/cast.so", KLCONFIG_LIBRARY_CAST_ENTRYFUNCNAME_QUOTE));
 
   /* load os */
-  KLAPI_PROTECT(kl_dopreload_helper_loadlib(state, "/os.so", KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME_QUOTE));
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/os.so", KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME_QUOTE));
+
+  /* load gc */
+  KLAPI_PROTECT(dopreload_helper_loadlib(state, "/gc.so", KLCONFIG_LIBRARY_GC_ENTRYFUNCNAME_QUOTE));
 
   klapi_pop(state, 1);  /* pop corelibpath */
 

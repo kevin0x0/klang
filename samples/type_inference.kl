@@ -32,8 +32,6 @@ local Node {
     if other_type == "TypeVar": return true where other.union(self);
     return false;
   };
-
-  method print = virtual;
 };
 
 local InnerNode inherit Node: {
@@ -49,17 +47,6 @@ local InnerNode inherit Node: {
 
   method getop = self -> self.operator;
   method getchildren = self -> self.children;
-
-  method print = (self, out) => {
-    out.write(self.getop(), "(");
-    let children = self.getchildren();
-    if $children != 0: {
-      for i = 0, $children - 1:
-        children[i].print(out), out.write(", ");
-      children[$children - 1].print(out);
-    }
-    out.write(")");
-  };
 }
 
 local TypeVar inherit Node: {
@@ -71,23 +58,68 @@ local TypeVar inherit Node: {
     Node.init(self);
     self.name = name;
   };
-
-  method print = (self, out) => {
-    let repre = self.find();
-    if repre === self: out.write("type variable: ", self.name) else repre.print(out);
-  }
 }
 
-method string.print = (self, out) => out.write(self);
 method string.find = self -> self;
 method string.unify = Node.unify;
+
+local print_type(t, out) => {
+  local assign_name(t, visited, namemap, id) => {
+    t = t.find();
+    if visited[t]: {
+      if namemap[t]:
+        return id;
+      namemap[t] = "t" .. id;
+      return id + 1;
+    }
+    if type t != "InnerNode":
+      return id;
+
+    visited[t] = true;
+
+    for child in t.getchildren():
+      id = assign_name(child, visited, namemap, id);
+    return id;
+  };
+  t = t.find();
+  let namemap = {:};
+  assign_name(t, {:}, namemap, 0);
+
+  local get_string(t, namemap, skip_first_name_check) => {
+    t = t.find();
+    return case type t of
+      "string" = t,
+      "TypeVar" = t.name,
+      "InnerNode" = str where {
+        let str = nil;
+        if namemap[t] and not skip_first_name_check: {
+          str = namemap[t];
+        } else {
+          str = t.getop() .. "(";
+          let delim = "";
+          for child in t.getchildren(): {
+            str = str .. delim .. get_string(child, namemap);
+            delim = ","
+          }
+          str = str .. ")";
+        }
+      };
+  }
+
+  out.write(get_string(t, namemap));
+  let prefix = " where\n    ";
+  for typenode, name in namemap: {
+    out.write(prefix, name, " = ", get_string(typenode, namemap, true));
+    prefix = "\n    ";
+  }
+  print();
+}
 
 local printresult(head, type) => {
   let out = ostream.stdout;
   out.write(head);
-  type.print(out);
-  print();  -- just print '\n'
-};
+  print_type(type, out);
+}
 
 let typevarA = new TypeVar("a");
 let typevarB = new TypeVar("b");
@@ -102,5 +134,5 @@ if type1.unify(type2): {
   printresult("b: ", typevarB);
   printresult("c: ", typevarC);
 } else {
-  print("type mismatch");
+  to_string("type mismatch");
 }

@@ -72,7 +72,7 @@ static unsigned locateline(Ki* input, KlFileOffset offset) {
     int ch = ki_getc(input);
     if (ch == KOF) break;
     if (kl_isnl(ch)) {
-      if ((ch = ki_getc(input)) != '\n' && ch != KOF)
+      if (ch == '\r' && (ch = ki_getc(input)) != '\n' && ch != KOF)
         ki_ungetc(input);
       ++currline;
       lineoff = ki_tell(input);

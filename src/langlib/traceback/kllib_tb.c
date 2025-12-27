@@ -36,7 +36,7 @@ KlException KLCONFIG_LIBRARY_TRACEBACK_ENTRYFUNCNAME(KlState* state) {
 
 static KlException tb_main(KlState* state) {
   KlCallInfo* currci = klstate_currci(state);
-  kl_assert(currci->status & KLSTATE_CI_STATUS_CFUN && currci->callable.cfunc == kllib_tb_main, "");
+  kl_assert(currci->status & KLSTATE_CI_STATUS_CFUN && currci->callable.cfunc == tb_main, "");
   FILE* err = NULL;
   if (klapi_narg(state) == 0) {
     err = stderr;

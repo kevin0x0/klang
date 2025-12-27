@@ -15,7 +15,8 @@
   macro(STREAM)                         \
   macro(STRING)                         \
   macro(CAST)                           \
-  macro(OS)
+  macro(OS)                             \
+  macro(GC)
 
 
 
@@ -28,6 +29,7 @@
 #define KLCONFIG_LIBRARY_STRING_LIBNAME_QUOTE         "string.so"
 #define KLCONFIG_LIBRARY_CAST_LIBNAME_QUOTE           "cast.so"
 #define KLCONFIG_LIBRARY_OS_LIBNAME_QUOTE             "os.so"
+#define KLCONFIG_LIBRARY_GC_LIBNAME_QUOTE             "gc.so"
 
 #define KLCONFIG_LIBRARY_RTCPL_ENTRYFUNCNAME          kllib_rtcpl_init
 #define KLCONFIG_LIBRARY_RTCPL_WRAPPER_ENTRYFUNCNAME  kllib_rtcpl_wrapper_init
@@ -38,6 +40,7 @@
 #define KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME         kllib_string_init
 #define KLCONFIG_LIBRARY_CAST_ENTRYFUNCNAME           kllib_cast_init
 #define KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME             kllib_os_init
+#define KLCONFIG_LIBRARY_GC_ENTRYFUNCNAME             kllib_gc_init
 
 #define KLCONFIG_TOSTRING_RAW(s)  #s
 #define KLCONFIG_TOSTRING(s)      KLCONFIG_TOSTRING_RAW(s)
@@ -51,6 +54,7 @@
 #define KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME_QUOTE         KLCONFIG_TOSTRING(KLCONFIG_LIBRARY_STRING_ENTRYFUNCNAME)
 #define KLCONFIG_LIBRARY_CAST_ENTRYFUNCNAME_QUOTE           KLCONFIG_TOSTRING(KLCONFIG_LIBRARY_CAST_ENTRYFUNCNAME)
 #define KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME_QUOTE             KLCONFIG_TOSTRING(KLCONFIG_LIBRARY_OS_ENTRYFUNCNAME)
+#define KLCONFIG_LIBRARY_GC_ENTRYFUNCNAME_QUOTE             KLCONFIG_TOSTRING(KLCONFIG_LIBRARY_GC_ENTRYFUNCNAME)
 
 
 #endif
