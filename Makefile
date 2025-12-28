@@ -141,7 +141,7 @@ $(LIB_DIR)basic.so : $(KLANGLIB_BASIC_PIC_OBJS) | create_dir
 $(LIB_DIR)stream.so : $(KLANGLIB_STREAM_PIC_OBJS) $(DEPS_K_DIR)lib/libk.pic.a | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $^
 
-$(LIB_DIR)string.so : $(KLANGLIB_STRING_OBJS) | create_dir
+$(LIB_DIR)string.so : $(KLANGLIB_STRING_PIC_OBJS) | create_dir
 	$(CC) -shared $(CFLAGS) -o $@ $^
 
 $(LIB_DIR)rtcpl_wrapper.so : $(KLANGLIB_RTCPL_WRAPPER_PIC_OBJS) | create_dir
