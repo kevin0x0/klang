@@ -7,7 +7,6 @@
 #include "deps/k/include/kio/kibuf.h"
 #include "deps/k/include/kio/kifile.h"
 #include "deps/k/include/kio/kofile.h"
-#include "deps/k/include/os_spec/kfs.h"
 #include "deps/k/include/string/kstring.h"
 #include <stdarg.h>
 
@@ -92,7 +91,10 @@ static int parse_argv(int argc, char** argv, Behaviour* behaviour) {
   behaviour->narg = 0;
   behaviour->stmt = NULL;
   behaviour->option = OPTION_NORMAL;
-  for (int i = 1; i < argc; ++i) {
+  int i = 1;
+  for (; i < argc; ++i) {
+    if (argv[i][0] != '-' || argv[i][1] == '\0')
+      break;
     if (match(argv[i], "-h", "--help")) {
       behaviour->option |= OPTION_HELP;
     } else if (match(argv[i], "-e")) {
@@ -125,13 +127,11 @@ static int parse_argv(int argc, char** argv, Behaviour* behaviour) {
         return 1;
       }
       behaviour->option |= OPTION_IN_FILE | OPTION_UNDUMP;
-      if (!(behaviour->filename = kfs_abspath(argv[i]))) {
+      if (!(behaviour->filename = argv[i])) {
         fprintf(stderr, "out of memory while parsing command line\n");
         cleanbehaviour(behaviour);
         return 1;
       }
-      behaviour->args = argv + ++i;
-      behaviour->narg = argc - i;
       break;
     } else if (match(argv[i], "--corelibpath")) {
       if (++i == argc) {
@@ -154,20 +154,8 @@ static int parse_argv(int argc, char** argv, Behaviour* behaviour) {
                    || behaviour->corelibpath[len - 1] == '\\')) {
         behaviour->corelibpath[len - 1] = '\0';
       }
-    } else if (isfilename(argv[i])) {
-      if (behaviour->option & (OPTION_IN_FILE | OPTION_IN_ARG)) {
-        fprintf(stderr, "the input is specified more than once: %s.\n", argv[i]);
-        cleanbehaviour(behaviour);
-        return 1;
-      }
-      behaviour->option |= OPTION_IN_FILE;
-      if (!(behaviour->filename = kfs_abspath(argv[i]))) {
-        fprintf(stderr, "out of memory while parsing command line\n");
-        cleanbehaviour(behaviour);
-        return 1;
-      }
-      behaviour->args = argv + ++i;
-      behaviour->narg = argc - i;
+    } else if (match(argv[i], "--")) {
+      ++i;
       break;
     } else {
       fprintf(stderr, "unrecognized option: %s\n", argv[i]);
@@ -176,6 +164,19 @@ static int parse_argv(int argc, char** argv, Behaviour* behaviour) {
       return 1;
     }
   }
+
+  if (!(behaviour->option & (OPTION_IN_FILE | OPTION_IN_ARG))) {
+    if (i == argc) {
+      behaviour->option |= OPTION_INTER;
+    } else {
+      behaviour->option |= OPTION_IN_FILE;
+      behaviour->filename = argv[i];
+      ++i;
+    }
+  }
+
+  behaviour->args = argv + i;
+  behaviour->narg = argc - i;
   return validatebehaviour(behaviour);
 }
 
@@ -334,7 +335,10 @@ static KlException execute_script(Behaviour* behaviour, KlState* state, BasicToo
       return klapi_throw_internal(state, KL_E_OOM, "can not create input stream");
   } else {
     kl_assert(behaviour->option & OPTION_IN_FILE, "");
-    input = kifile_create(behaviour->filename, "rb");
+    if (strcmp(behaviour->filename, "-") == 0)
+      input = kifile_attach_keepcontent(stdin);
+    else
+      input = kifile_create(behaviour->filename, "rb");
     if (kl_unlikely(!input))
       return klapi_throw_internal(state, KL_E_OOM, "can not open file: %s", behaviour->filename);
   }
@@ -349,9 +353,22 @@ static KlException execute_script(Behaviour* behaviour, KlState* state, BasicToo
     kl_assert(behaviour->option & OPTION_IN_FILE, "");
     KLAPI_MAYFAIL(call_bcloader(state, input, err, btool->bcloader), ki_delete(input));
   } else {
+    const char *inputname;
+    const char *srcfile = NULL;
+    if (behaviour->option & OPTION_IN_ARG) {
+      inputname = "command line";
+    } else {
+      kl_assert(behaviour->option & OPTION_IN_FILE, "");
+      if (strcmp(behaviour->filename, "-") == 0) {
+        inputname = "<stdin>";
+      } else {
+        inputname = behaviour->filename;
+        srcfile = behaviour->filename;
+      }
+    }
     KLAPI_MAYFAIL(call_compiler(state, input, err, 
-                                   (behaviour->option & OPTION_IN_ARG) ? "command line" : behaviour->filename,
-                                   (behaviour->option & OPTION_IN_ARG) ? NULL : behaviour->filename,
+                                   inputname,
+                                   srcfile,
                                    btool->compiler),
                   ki_delete(input));
   }
@@ -454,16 +471,11 @@ static bool matchraw(const char* arg, unsigned nopts, ...) {
 }
 
 static void cleanbehaviour(Behaviour* behaviour) {
-  if (behaviour->option & OPTION_IN_FILE)
-    free(behaviour->filename);
   if (behaviour->corelibpath)
     free(behaviour->corelibpath);
 }
 
 static int validatebehaviour(Behaviour* behaviour) {
-  if (!(behaviour->option & (OPTION_IN_FILE | OPTION_IN_ARG)))
-    behaviour->option |= OPTION_INTER;
-
   if (!behaviour->corelibpath) {
 #ifdef CORELIBPATH
     behaviour->corelibpath = strdup(CORELIBPATH);
