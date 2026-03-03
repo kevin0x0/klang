@@ -145,7 +145,7 @@ static KlException tostring(KlState* state) {
     }
     default: {
       return klapi_throw_internal(state, KL_E_INVLD, "can not cast type '%s' to string",
-                                  klapi_typename(state, value));
+                                  klstring_content(klapi_typename(state, value)));
     }
   }
 }
