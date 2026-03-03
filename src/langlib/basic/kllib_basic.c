@@ -1,6 +1,7 @@
 #include "include/klapi.h"
 #include "include/common/klconfig.h"
 #include "include/misc/klutils.h"
+#include "include/value/klarray.h"
 #include "include/value/klcfunc.h"
 #include "include/value/klmap.h"
 #include "include/value/klstate.h"
@@ -17,17 +18,23 @@ static KlException map_getslot(KlState* state);
 static KlException map_index(KlState* state);
 static KlException map_indexas(KlState* state);
 
+static KlException array_push(KlState* state);
+static KlException array_pop(KlState* state);
+static KlException array_resize(KlState* state);
+
 static KlException type(KlState* state);
 static KlException loadlib(KlState* state);
 
 static KlException init_globalvar(KlState* state);
 static KlException init_iter(KlState* state);
 static KlException init_map(KlState* state);
+static KlException init_array(KlState* state);
 
 KlException KLCONFIG_LIBRARY_BASIC_ENTRYFUNCNAME(KlState* state) {
   KLAPI_PROTECT(init_globalvar(state));
   KLAPI_PROTECT(init_iter(state));
   KLAPI_PROTECT(init_map(state));
+  KLAPI_PROTECT(init_array(state));
   return klapi_return(state, 0);
 }
 
@@ -97,6 +104,77 @@ static KlException init_map(KlState* state) {
   KLAPI_PROTECT(klapi_setstring(state, -1, "[]="));
   klapi_pushcfunc(state, map_indexas);
   KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_MAP], klapi_getstring(state, -2)));
+
+  klapi_pop(state, 1);
+  return KL_E_NONE;
+}
+
+static KlException array_push(KlState* state) {
+  if (klapi_narg(state) < 2)
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected at least two argmument");
+  if (!klapi_checktypeb(state, 0, KL_ARRAY))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected array");
+  KlArray* array = klapi_getarrayb(state, 0);
+  if (kl_unlikely(!klarray_push_back(array, klstate_getmm(state),
+                                     klapi_pointerb(state, 1),
+                                     klapi_narg(state) - 1))) {
+    return klapi_throw_internal(state, KL_E_OOM, "out of memory");
+  }
+  return klapi_return(state, 0);
+}
+
+static KlException array_pop(KlState* state) {
+  if (klapi_narg(state) < 1)
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected at least one argmument");
+  if (!klapi_checktypeb(state, 0, KL_ARRAY))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected array");
+  KlArray* array = klapi_getarrayb(state, 0);
+  KlInt popcount = 0;
+  if (klapi_narg(state) > 1) {
+    if (!klapi_checktypeb(state, 1, KL_INT))
+      return klapi_throw_internal(state, KL_E_TYPE, "expected integer as second parameter");
+    popcount = klapi_getintb(state, 1);
+    if (popcount < 0)
+      return klapi_throw_internal(state, KL_E_INVLD, "expected a non-negative integer");
+  }
+
+  if (kl_unlikely((size_t)popcount > klarray_size(array)))
+    return klapi_throw_internal(state, KL_E_INVLD,
+                                "pop too many values. pop: %zu, size: %zu",
+                                (size_t)popcount, klarray_size(array));
+  klarray_multipop(array, popcount);
+  return klapi_return(state, 0);
+}
+
+static KlException array_resize(KlState* state) {
+  if (klapi_narg(state) != 2)
+    return klapi_throw_internal(state, KL_E_ARGNO, "expected exactly two argmuments");
+  if (!klapi_checktypeb(state, 0, KL_ARRAY))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected array");
+  if (!klapi_checktypeb(state, 1, KL_INT))
+    return klapi_throw_internal(state, KL_E_TYPE, "expected integer as second parameter");
+  KlInt newsize =  klapi_getintb(state, 1);
+  if (newsize < 0)
+    return klapi_throw_internal(state, KL_E_INVLD, "expected a non-negative integer");
+  KlArray* array = klapi_getarrayb(state, 0);
+  if (!klarray_resize(array, klstate_getmm(state), newsize))
+    return klapi_throw_internal(state, KL_E_OOM, "out of memory");
+  return klapi_return(state, 0);
+}
+
+static KlException init_array(KlState* state) {
+  KLAPI_PROTECT(klapi_checkstack(state, 2));
+  KLAPI_PROTECT(klapi_pushstring(state, "resize"));
+  klapi_pushcfunc(state, array_resize);
+  KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_ARRAY], klapi_getstring(state, -2)));
+
+  KLAPI_PROTECT(klapi_setstring(state, -1, "pop"));
+  klapi_pushcfunc(state, array_pop);
+  KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_ARRAY], klapi_getstring(state, -2)));
+
+  KLAPI_PROTECT(klapi_setstring(state, -1, "push"));
+  klapi_pushcfunc(state, array_push);
+  KLAPI_PROTECT(klapi_class_newshared_method(state, state->common->klclass.phony[KL_ARRAY], klapi_getstring(state, -2)));
 
   klapi_pop(state, 1);
   return KL_E_NONE;

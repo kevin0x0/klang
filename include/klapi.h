@@ -95,6 +95,7 @@ bool klapi_checkrange(KlState* state, int index);
 
 KlValue* klapi_stacktop(KlState* state);
 KlValue* klapi_pointer(KlState* state, int index);
+KlValue* klapi_pointerb(KlState* state, unsigned index);
 KlValue* klapi_access(KlState* state, int index);
 /* access from frame base */
 KlValue* klapi_accessb(KlState* state, unsigned index);

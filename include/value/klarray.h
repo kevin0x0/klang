@@ -25,6 +25,7 @@ static inline size_t klarray_capacity(const KlArray* array);
 
 static inline bool klarray_expand(KlArray* array, KlMM* klmm);
 
+static inline bool klarray_resize(KlArray* array, KlMM* klmm, size_t newsize);
 static inline void klarray_fill(KlArray* array, const KlValue* elems, size_t nelem);
 static inline bool klarray_push_back(KlArray* array, KlMM* klmm, const KlValue* vals, size_t nval);
 static inline void klarray_pop_back(KlArray* array);
@@ -53,6 +54,20 @@ static inline size_t klarray_capacity(const KlArray* array) {
 
 static inline bool klarray_expand(KlArray* array, KlMM* klmm) {
   return klarray_grow(array, klmm, klarray_size(array) * 2);
+}
+
+static inline bool klarray_resize(KlArray* array, KlMM* klmm, size_t newsize) {
+  if (newsize <= array->size) {
+    array->size = newsize;
+  } else {
+    if (kl_unlikely(newsize > array->capacity && !klarray_grow(array, klmm, newsize)))
+      return false;
+
+    for (size_t i = array->size; i < newsize; ++i)
+      klvalue_setnil(&array->begin[i]);
+    array->size = newsize;
+  }
+  return true;
 }
 
 static inline void klarray_fill(KlArray* array, const KlValue* elems, size_t nelem) {

@@ -69,6 +69,10 @@ KlValue* klapi_pointer(KlState* state, int index) {
   return klstate_getval(state, index);
 }
 
+KlValue* klapi_pointerb(KlState* state, unsigned index) {
+  return klstate_currci(state)->base + index;
+}
+
 KlValue* klapi_accessb(KlState* state, unsigned index) {
   return klstate_currci(state)->base + index;
 }
